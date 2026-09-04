@@ -1,0 +1,142 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>에러로그</title><style>
+:root{--line:#9ba8b4;--line2:#c6d0d8;--blue:#2f75b5;--ink:#344757;--head1:#e8f1f8;--head2:#cbddea}
+*{box-sizing:border-box}html,body{height:100%;margin:0}body{font-family:"Malgun Gothic","맑은 고딕",Arial,sans-serif;font-size:12px;color:var(--ink);background:#fff;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}.screen{height:100%;display:flex;flex-direction:column;background:#fff}
+.title{height:48px;padding:9px 14px 5px;border-bottom:2px solid #3978ae}.title h1{margin:0;font-size:22px;font-weight:500;color:#4b5c6a}.title h1:before{content:'◯';margin-right:6px;color:#8796a1}.title small{font-size:11px;color:#9ca7af;margin-left:10px}
+.searchline{min-height:38px;margin:0 14px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;border-left:1px solid var(--line);border-right:1px solid var(--line);padding:4px 8px;background:#f6f8fa}
+.searchline input,.searchline select{height:27px;border:1px solid #aeb9c3;padding:0 7px}.searchline input.q{width:min(280px,32vw)}.searchline .lab{font-weight:700;color:#4a5c6c}
+.btn{height:28px;min-width:62px;border:1px solid #9ba8b4;background:linear-gradient(#fff,#dfe6eb)}.btn:hover{background:#fff}.btn.danger{color:#b3261e}
+.gridbox{flex:1;min-height:0;margin:0 14px;border:1px solid var(--line);overflow:auto;background:#fff}
+table{border-collapse:collapse;min-width:1000px;width:100%;table-layout:fixed}
+th,td{height:27px;border-right:1px solid var(--line2);border-bottom:1px solid var(--line2);padding:0 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+th{position:sticky;top:0;z-index:2;text-align:center;background:linear-gradient(var(--head1),var(--head2));color:#405266}
+tbody tr:nth-child(even) td{background:#fafcfd}tbody tr:hover td{background:#edf6fd}tbody tr.sel td{background:#2d75b7;color:#fff}
+.c{text-align:center}td.b{background:#fde7e7;color:#b3261e;font-weight:700}td.w{background:#fff4d6;color:#8a6100;font-weight:700}
+tbody tr.sel td.b,tbody tr.sel td.w{background:#2d75b7;color:#fff}
+.detail{margin:5px 14px 0;border:1px solid var(--line);background:#f9fbfc;height:140px;overflow:auto;padding:6px 8px;white-space:pre-wrap;font-family:Consolas,"Malgun Gothic",monospace;font-size:11px;color:#3c4c5c}
+.foot{height:43px;display:flex;align-items:center;padding:5px 14px;border-top:1px solid var(--line);background:#eef2f5;gap:5px}
+.msg{margin-left:10px;color:#687784;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.foot .right{margin-left:auto;color:#7c8993}
+@media(max-width:880px){.gridbox{margin:0 6px}.searchline{margin:0 6px;padding:4px 6px}.detail{margin:5px 6px 0}
+.title{height:auto;min-height:44px;padding:7px 8px 5px}.title h1{font-size:17px}.title small{display:block;margin:2px 0 0;font-size:10px}
+.searchline input,.searchline select{font-size:16px;height:34px}.foot{height:auto;min-height:43px;flex-wrap:wrap;padding:6px}.btn{height:34px;min-width:56px}.foot .msg{margin-left:0;flex:1 0 100%;order:9}}
+</style></head>
+<body><div class="screen">
+<div class="title"><h1>에러로그 <small>화면 실행 중 발생한 오류가 자동으로 기록됩니다. (디버깅용)</small></h1></div>
+<div class="searchline">
+<span class="lab">기간</span><input id="dt_f" type="date"> ~ <input id="dt_t" type="date">
+<span class="lab">등급</span><select id="flv"><option></option><option>ERROR</option><option>WARN</option></select>
+<span class="lab">화면</span><select id="fpg"><option></option></select>
+<span class="lab">사용자</span><input id="fus" style="width:110px">
+<span class="lab">검색어</span><input id="q" class="q" placeholder="메시지/상세 내용">
+<button class="btn" onclick="search()">⌕ 검색</button>
+<button class="btn" onclick="clearSearch()">지우기</button>
+<button class="btn" onclick="exportCsv()">▤ EXCEL</button>
+</div>
+<div class="gridbox"><table><thead><tr>
+<th style="width:44px">No</th><th style="width:145px">발생일시</th><th style="width:62px">등급</th>
+<th style="width:170px">화면</th><th style="width:170px">메뉴</th><th style="width:110px">사용자</th>
+<th style="width:150px">발생위치</th><th style="width:420px">메시지</th>
+</tr></thead><tbody id="body"></tbody></table></div>
+<div class="detail" id="detail">행을 클릭하면 상세 내용(스택/응답 본문)이 표시됩니다.</div>
+<footer class="foot">
+<button class="btn" onclick="load()">↻ 새로고침</button>
+<button class="btn danger" onclick="delSel()">선택삭제</button>
+<button class="btn danger" onclick="delAll()">전체삭제</button>
+<button class="btn" onclick="purge()">90일 이전 정리</button>
+<button class="btn" onclick="testError()">⚠ 테스트</button>
+<button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button>
+<span class="msg" id="message">최근 500건을 불러옵니다.</span><span class="right" id="countText"></span>
+</footer>
+</div>
+<script src="mes_db.js?v=67"></script>
+<script>
+let data=[],view=[],selId=null;
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function msg(t){message.textContent=t}
+function when(v){return String(v??'').replace('T',' ').slice(0,19)}
+
+async function load(){
+  try{
+    const rows=await MESDB.table('error_log').select('select=*&order=err_id.desc&limit=500');
+    data=rows||[];
+    const pages=[...new Set(data.map(r=>r.page).filter(Boolean))].sort();
+    fpg.innerHTML='<option></option>'+pages.map(p=>`<option>${esc(p)}</option>`).join('');
+    search();
+    msg(`에러로그 ${data.length}건 조회 (최근 500건)`);
+  }catch(e){msg('조회 실패: '+e.message)}
+}
+function search(){
+  const f=dt_f.value,t=dt_t.value,lv=flv.value,pg=fpg.value,us=fus.value.trim(),kw=q.value.trim().toLowerCase();
+  view=data.filter(r=>{
+    const d=String(r.occurred_at||'').slice(0,10);
+    if(f&&d<f)return false;
+    if(t&&d>t)return false;
+    if(lv&&r.level!==lv)return false;
+    if(pg&&r.page!==pg)return false;
+    if(us&&!String(r.user_name||r.user_key||'').includes(us))return false;
+    if(kw&&!((r.message||'')+' '+(r.detail||'')+' '+(r.source||'')).toLowerCase().includes(kw))return false;
+    return true;
+  });
+  render();
+}
+function clearSearch(){dt_f.value='';dt_t.value='';flv.value='';fpg.value='';fus.value='';q.value='';search()}
+function render(){
+  body.innerHTML=view.map((r,i)=>`<tr onclick="pick(${r.err_id},this)">`
+   +`<td class="c">${i+1}</td><td>${esc(when(r.occurred_at))}</td>`
+   +`<td class="c ${r.level==='ERROR'?'b':'w'}">${esc(r.level)}</td>`
+   +`<td>${esc(r.page)}</td><td>${esc(r.menu)}</td><td>${esc(r.user_name||r.user_key)}</td>`
+   +`<td>${esc(r.source)}</td><td>${esc(r.message)}</td></tr>`).join('');
+  countText.textContent=`${view.length} / ${data.length} 건`;
+  detail.textContent='행을 클릭하면 상세 내용(스택/응답 본문)이 표시됩니다.';selId=null;
+}
+function pick(id,tr){
+  selId=id;
+  [...body.querySelectorAll('tr')].forEach(x=>x.classList.remove('sel'));tr.classList.add('sel');
+  const r=data.find(x=>x.err_id===id)||{};
+  detail.textContent=
+    `[${r.level}] ${when(r.occurred_at)}\n`+
+    `화면 : ${r.page||'-'}   메뉴 : ${r.menu||'-'}\n`+
+    `사용자: ${r.user_name||'-'} (${r.user_key||'-'})\n`+
+    `위치 : ${r.source||'-'}\n`+
+    `URL  : ${r.page_url||'-'}\n`+
+    `UA   : ${r.user_agent||'-'}\n`+
+    `─────────────────────────────────────\n`+
+    `${r.message||''}\n\n${r.detail||'(상세 없음)'}`;
+}
+async function delSel(){
+  if(!selId)return msg('삭제할 행을 선택하세요.');
+  if(!confirm('선택한 로그를 삭제할까요?'))return;
+  try{await MESDB.table('error_log').delete({err_id:selId});msg('1건 삭제');load()}
+  catch(e){msg('삭제 실패: '+e.message)}
+}
+async function delAll(){
+  if(!view.length)return msg('삭제할 자료가 없습니다.');
+  if(!confirm(`현재 조회된 ${view.length}건을 삭제할까요?`))return;
+  try{
+    for(const r of view)await MESDB.table('error_log').delete({err_id:r.err_id});
+    msg(`${view.length}건 삭제`);load();
+  }catch(e){msg('삭제 실패: '+e.message)}
+}
+async function purge(){
+  if(!confirm('90일 이전 로그를 정리할까요?'))return;
+  try{const n=await MESDB.rpc('error_log_purge',{keep_days:90});
+    msg('정리 완료: '+(n?.error_log_purge??n??0)+'건 삭제');load()}
+  catch(e){msg('정리 실패: '+e.message)}
+}
+function testError(){
+  window.MESLOG?.error('테스트 오류 발생','에러로그 화면의 [테스트] 버튼으로 생성한 표본 로그입니다.');
+  setTimeout(load,700);msg('테스트 로그를 기록했습니다.');
+}
+function exportCsv(){
+  const head=['일시','등급','화면','메뉴','사용자','위치','메시지','상세'];
+  const q1=s=>'"'+String(s??'').replace(/"/g,'""')+'"';
+  const csv=[head.join(',')].concat(view.map(r=>[when(r.occurred_at),r.level,r.page,r.menu,
+    r.user_name||r.user_key,r.source,r.message,r.detail].map(q1).join(','))).join('\r\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));
+  a.download='error_log_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+}
+['dt_f','dt_t','flv','fpg','fus'].forEach(id=>document.getElementById(id).addEventListener('change',search));
+q.addEventListener('keydown',e=>{if(e.key==='Enter')search()});
+load();
+</script></body></html>

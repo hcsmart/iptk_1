@@ -1,0 +1,123 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>교정이력등록</title><style>
+:root{--line:#9ba8b4;--line2:#c6d0d8;--blue:#2f75b5;--ink:#344757;--head1:#e8f1f8;--head2:#cbddea}
+*{box-sizing:border-box}html,body{height:100%;margin:0}body{font-family:"Malgun Gothic","맑은 고딕",Arial,sans-serif;font-size:12px;color:var(--ink);background:#fff;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}.screen{height:100%;display:flex;flex-direction:column;background:#fff}
+.title{height:48px;padding:9px 14px 5px;border-bottom:2px solid #3978ae}.title h1{margin:0;font-size:22px;font-weight:500;color:#4b5c6a}.title h1:before{content:'◯';margin-right:6px;color:#8796a1}.title small{font-size:11px;color:#9ca7af;margin-left:10px}
+.form{padding:8px 14px 7px;border-bottom:1px solid var(--line2);background:#fafbfc;max-height:40%;overflow:auto}.formgrid{display:grid;grid-template-columns:92px minmax(0,1fr) 92px minmax(0,1fr) 92px minmax(0,1fr);gap:5px;align-items:center}.formgrid+.formgrid{margin-top:5px}.label{font-weight:700}.field{height:27px;border:1px solid #b5c0c9;background:#fff;padding:0 6px;width:100%}
+.field.ro{background:#eef2f5;color:#6b7885}
+textarea.field{height:46px;padding:4px 6px;resize:vertical;font-size:12px}
+.pick{display:flex;gap:3px}.pick .field{flex:1}.pick button{width:26px;height:27px;border:1px solid #9ba8b4;background:linear-gradient(#fff,#dfe6eb)}
+.searchline{min-height:38px;margin:0 14px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;border-left:1px solid var(--line);border-right:1px solid var(--line);padding:4px 8px;background:#f6f8fa}.searchline input,.searchline select{height:27px;border:1px solid #aeb9c3;padding:0 7px}.searchline input.q{width:min(300px,36vw)}.searchline .lab{font-weight:700;color:#4a5c6c}
+.btn{height:28px;min-width:62px;border:1px solid #9ba8b4;background:linear-gradient(#fff,#dfe6eb)}.btn:hover{background:#fff}
+.gridbox{flex:1;min-height:0;margin:0 14px;border:1px solid var(--line);overflow:auto;background:#fff}table{border-collapse:collapse;min-width:900px;width:100%;table-layout:fixed}th,td{height:27px;border-right:1px solid var(--line2);border-bottom:1px solid var(--line2);padding:0 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}th{position:sticky;top:0;z-index:2;text-align:center;background:linear-gradient(var(--head1),var(--head2));color:#405266}tbody tr:nth-child(even) td{background:#fafcfd}tbody tr:hover td{background:#edf6fd}tbody tr.sel td{background:#2d75b7;color:#fff}.c{text-align:center}.num{text-align:right}
+td.w{background:#fff4d6;color:#8a6100;font-weight:700}td.b{background:#fde7e7;color:#b3261e;font-weight:700}td.g{color:#2e7d32}
+tbody tr.sel td.w,tbody tr.sel td.b,tbody tr.sel td.g{background:#2d75b7;color:#fff}
+.foot{height:43px;display:flex;align-items:center;padding:5px 14px;border-top:1px solid var(--line);background:#eef2f5;gap:5px}.msg{margin-left:10px;color:#687784;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.foot .right{margin-left:auto;color:#7c8993}
+@media(max-width:1400px){.formgrid{grid-template-columns:92px minmax(0,1fr) 92px minmax(0,1fr)}}
+@media(max-width:880px){.formgrid{grid-template-columns:88px minmax(0,1fr)}.gridbox{margin:0 6px}.searchline{margin:0 6px;padding:4px 6px}.title{height:auto;min-height:44px;padding:7px 8px 5px}.title h1{font-size:17px}.title small{display:block;margin:2px 0 0;font-size:10px}.form{max-height:50%;padding:8px 6px 7px}.field,.searchline input,.searchline select{font-size:16px;height:34px}textarea.field{height:56px}.pick button{width:34px;height:34px}.foot{height:auto;min-height:43px;flex-wrap:wrap;padding:6px}.btn{height:34px;min-width:56px}.foot .msg{margin-left:0;flex:1 0 100%;order:9}.foot .right{margin-left:auto}}
+.formgrid>*{min-width:0}
+</style></head>
+<body><div class="screen">
+<div class="title"><h1>교정이력등록 <small>계측기별 교정 실적을 등록하면 대장의 최근·차기 교정일이 자동 갱신됩니다.</small></h1></div>
+<section class="form"><div class="formgrid"><div class="label">교정번호</div><div><input id="calno" type="text" class="field"></div><div class="label">계측기</div><div><select id="gcode" class="field"><option></option></select></div><div class="label">계측기명</div><div><input id="gname" type="text" class="field ro" readonly></div></div><div class="formgrid"><div class="label">교정일</div><div><input id="caldate" type="date" class="field"></div><div class="label">차기교정일</div><div><input id="nextdate" type="date" class="field"></div><div class="label">교정구분</div><div><select id="caltype" class="field"><option>외부교정</option><option>자체교정</option></select></div></div><div class="formgrid"><div class="label">교정기관</div><div><input id="agency" type="text" class="field"></div><div class="label">성적서번호</div><div><input id="certno" type="text" class="field"></div><div class="label">판정</div><div><select id="result" class="field"><option>합격</option><option>조정후합격</option><option>불합격</option></select></div></div><div class="formgrid"><div class="label">교정비용</div><div><input id="cost" type="number" class="field"></div><div class="label">담당자</div><div><div class="pick"><input id="inspector" class="field"><button type="button" title="조회" onclick="pick(&#39;employee&#39;,&#39;inspector&#39;,null)">⌕</button></div></div><div class="label">비고</div><div><input id="remark" type="text" class="field"></div></div></section>
+<div class="searchline"><input id="query" class="q" placeholder="Enter text to search..."><button class="btn" onclick="search()">찾기</button><button class="btn" onclick="clearSearch()">지우기</button></div>
+<div class="gridbox"><table><thead><tr><th style="width:44px">No</th><th style="width:130px">교정번호</th><th style="width:100px">계측기코드</th><th style="width:180px">계측기명</th><th style="width:95px">교정일</th><th style="width:95px">차기교정일</th><th style="width:80px">구분</th><th style="width:150px">교정기관</th><th style="width:130px">성적서번호</th><th style="width:80px">판정</th><th style="width:90px">비용</th><th style="width:80px">담당자</th></tr></thead><tbody id="body"></tbody></table></div>
+<footer class="foot"><button class="btn" onclick="save()">▣ 저장</button><button class="btn" onclick="add()">＋ 신규</button><button class="btn" onclick="sampleFill()" title="예시값을 채웁니다. 저장은 직접 누르세요.">◈ 등록예제</button><button class="btn" onclick="window.remove()">✖ 삭제</button><button class="btn" onclick="exportCsv()">▤ EXCEL</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">데이터를 조회했습니다.</span><span class="right" id="countText"></span></footer>
+</div>
+<script>
+let data=[],view=[],selected=-1;
+const fieldIds=["calno", "gcode", "gname", "caldate", "nextdate", "caltype", "agency", "certno", "result", "cost", "inspector", "remark"];
+const colKeys=["calno", "gcode", "gname", "caldate", "nextdate", "caltype", "agency", "certno", "result", "cost", "inspector"];
+const colCls={"result": {"불합격": "b", "합격": "g"}};
+const keyName="calno";
+const AUTO="CAL";
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function msg(t){message.textContent=t}
+function cls(k,v){const m=colCls[k];if(!m)return '';return (m[v]||'')}
+function render(){
+  body.innerHTML=view.map((r,i)=>`<tr onclick="selectRow(&quot;${String(r[keyName]??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;')}&quot;,this)"><td class="c">${i+1}</td>`
+    +colKeys.map(k=>`<td class="${cls(k,r[k])}">${esc(r[k])}</td>`).join('')+`</tr>`).join('');
+  countText.textContent=`${view.length}건`;
+}
+function selectRow(k,tr){
+  selected=data.findIndex(x=>String(x[keyName])===String(k));
+  document.querySelectorAll('tbody tr').forEach(x=>x.classList.remove('sel'));tr?.classList.add('sel');
+  const r=data[selected];if(!r)return;
+  fieldIds.forEach(id=>{const e=document.getElementById(id);if(e)e.value=r[id]??''});
+  msg(`${k} 항목을 선택했습니다.`);
+}
+function search(){const q=query.value.trim().toLowerCase();
+  view=!q?[...data]:data.filter(r=>Object.values(r).some(v=>String(v??'').toLowerCase().includes(q)));
+  render();msg(`검색 결과 ${view.length}건입니다.`)}
+function clearSearch(){query.value='';view=[...data];render();msg('검색조건을 초기화했습니다.')}
+function nextNo(p){const d=new Date();
+  const b=p+String(d.getFullYear()).slice(2)+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'-';
+  let m=0;data.forEach(r=>{const v=String(r[keyName]||'');if(v.startsWith(b)){const n=parseInt(v.slice(b.length),10);if(n>m)m=n}});
+  return b+String(m+1).padStart(3,'0')}
+function today(){return new Date().toISOString().slice(0,10)}
+function add(){selected=-1;
+  fieldIds.forEach(id=>{const e=document.getElementById(id);if(!e)return;
+    if(e.tagName==='SELECT')e.selectedIndex=0;else e.value=''});
+  document.querySelectorAll('tbody tr').forEach(x=>x.classList.remove('sel'));
+  if(AUTO)document.getElementById(keyName).value=nextNo(AUTO);
+  document.getElementById('caldate').value=today();document.getElementById('caltype').value='외부교정';document.getElementById('result').value='합격';
+  msg('신규 항목을 입력하세요.')}
+function save(){
+  autoNext();
+  const k=String(document.getElementById(keyName)?.value||'').trim();
+  if(!k)return msg('교정번호를 입력하세요.');
+  let r=selected>=0?data[selected]:data.find(x=>String(x[keyName])===k);
+  if(!r){r={};data.push(r)}
+  fieldIds.forEach(id=>{const e=document.getElementById(id);if(e)r[id]=e.value});
+  selected=data.indexOf(r);view=[...data];render();msg(`${k} 항목을 저장했습니다.`)}
+function remove(){if(selected<0)return msg('삭제할 항목을 선택하세요.');
+  if(!confirm('선택한 항목을 삭제하시겠습니까?'))return;
+  const k=data[selected][keyName];data.splice(selected,1);selected=-1;view=[...data];render();add();
+  msg(`${k} 항목을 삭제했습니다.`)}
+function exportCsv(){const header=["교정번호", "계측기코드", "계측기명", "교정일", "차기교정일", "구분", "교정기관", "성적서번호", "판정", "비용", "담당자"];
+  const out=[header,...data.map(r=>colKeys.map(k=>r[k]??''))];
+  const csv='\ufeff'+out.map(a=>a.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download='gauge_calibration_input.csv';a.click();URL.revokeObjectURL(a.href);msg('CSV 파일을 생성했습니다.')}
+function pick(kind,codeId,nameId){if(window.MESLOOK)MESLOOK.bindPair(kind,codeId,nameId);else msg('조회 모듈을 불러오지 못했습니다.')}
+const REF={};
+async function fillRef(id,table,order,val,lab){
+  try{const rows=await MESDB.table(table).select('select=*&order='+order);
+    REF[id]=rows;const el=document.getElementById(id);if(!el)return;const cur=el.value;
+    el.innerHTML='<option></option>'+rows.map(r=>`<option value="${esc(r[val])}">${esc(r[val])}${lab&&r[lab]?' · '+esc(r[lab]):''}</option>`).join('');
+    el.value=cur;}catch(e){}
+}
+function sampleFill(){
+  if(window.MESDEMO)return MESDEMO.run('gauge_calibration_input',{keyId:keyName,auto:AUTO});
+  if(!window.MESSAMPLE)return msg('예제 모듈을 불러오지 못했습니다.');
+  msg(MESSAMPLE.fill('gauge_calibration_input',{keyId:keyName,auto:AUTO}).msg);
+}
+window.MES={search,add,delete:remove,save,exportCsv,setMessage:msg};render();
+
+function addMonths(d,m){const t=new Date(d+'T00:00:00Z'),day=t.getUTCDate();t.setUTCDate(1);t.setUTCMonth(t.getUTCMonth()+m);
+  const last=new Date(Date.UTC(t.getUTCFullYear(),t.getUTCMonth()+1,0)).getUTCDate();t.setUTCDate(Math.min(day,last));return t.toISOString().slice(0,10)}
+function autoNext(){
+  const g=document.getElementById('gcode').value,d=document.getElementById('caldate').value;
+  const nx=document.getElementById('nextdate');
+  /* v55: 사용자가 직접 입력한 값은 유지, 자동 계산분은 계측기·교정일 변경 시 다시 계산 (월말 보정) */
+  if(!d||(nx.value&&nx.value!==nx.dataset.auto))return;
+  const row=(REF['gcode']||[]).find(r=>r.gauge_code===g);
+  const m=Number(row?.cycle_months)||12;
+  nx.value=addMonths(d,m);nx.dataset.auto=nx.value;
+}
+document.addEventListener('change',e=>{
+  if(e.target.id==='gcode'){
+    const row=(REF['gcode']||[]).find(r=>r.gauge_code===e.target.value);
+    document.getElementById('gname').value=row?.gauge_name||'';autoNext();
+  }
+  if(e.target.id==='caldate')autoNext();
+});
+</script>
+<script src="mes_lookup.js?v=67"></script>
+<script src="mes_sample.js?v=67"></script><script src="mes_demo.js?v=67"></script><script src="mes_db.js?v=67"></script>
+<script src="mes_paste.js?v=67"></script>
+<script>MESDB.master({page:"gauge_calibration_input",table:"gauge_calibrations",pk:"calno",
+  map:{"calno": "calibration_no", "gcode": "gauge_code", "gname": "gauge_name", "caldate": {"col": "cal_date", "type": "text"}, "nextdate": {"col": "next_cal_date", "type": "text"}, "caltype": "cal_type", "agency": "agency", "certno": "certificate_no", "result": "cal_result", "cost": {"col": "cal_cost", "type": "num"}, "inspector": "inspector", "remark": "remark"},get:()=>data,render:()=>{view=[...data];render()}});
+fillRef('gcode','gauges','gauge_code','gauge_code','gauge_name');</script>
+<script src="mes_ctx.js?v=67"></script>
+</body></html>

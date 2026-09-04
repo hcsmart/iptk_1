@@ -1,0 +1,146 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>수정요청게시판</title><style>
+:root{--line:#9ba8b4;--line2:#c6d0d8;--blue:#2f75b5;--ink:#344757;--head1:#e8f1f8;--head2:#cbddea}
+*{box-sizing:border-box}html,body{height:100%;margin:0}body{font-family:"Malgun Gothic","맑은 고딕",Arial,sans-serif;font-size:12px;color:var(--ink);background:#fff;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}.screen{height:100%;display:flex;flex-direction:column;background:#fff}
+.title{height:48px;padding:9px 14px 5px;border-bottom:2px solid #3978ae;flex-shrink:0}.title h1{margin:0;font-size:22px;font-weight:500;color:#4b5c6a}.title h1:before{content:'◯';margin-right:6px;color:#8796a1}.title small{font-size:11px;color:#9ca7af;margin-left:10px}
+.searchline{min-height:38px;margin:0 14px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;border-left:1px solid var(--line);border-right:1px solid var(--line);padding:4px 8px;background:#f6f8fa;flex-shrink:0}
+.searchline input,.searchline select{height:27px;border:1px solid #aeb9c3;padding:0 7px;background:#fff}.searchline input.q{width:min(260px,30vw)}.searchline .lab{font-weight:700;color:#4a5c6c;margin-left:6px}
+.btn{height:28px;min-width:62px;border:1px solid #9ba8b4;background:linear-gradient(#fff,#dfe6eb);cursor:pointer}.btn:hover{background:#fff}.btn.danger{color:#b3261e}.btn.pri{background:linear-gradient(#5f96cf,#2f75b5);color:#fff;border-color:#2a68a3}
+.body{flex:1;min-height:0;margin:0 14px 0;display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:0}
+.gridbox{min-height:0;border:1px solid var(--line);overflow:auto;background:#fff}
+table{border-collapse:collapse;width:100%;table-layout:fixed;min-width:640px}
+th,td{height:27px;border-right:1px solid var(--line2);border-bottom:1px solid var(--line2);padding:0 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+th{position:sticky;top:0;z-index:2;text-align:center;background:linear-gradient(var(--head1),var(--head2));color:#405266}
+tbody tr:nth-child(even) td{background:#fafcfd}tbody tr:hover td{background:#edf6fd;cursor:pointer}tbody tr.sel td{background:#2d75b7;color:#fff}.c{text-align:center}
+.st{display:inline-block;padding:1px 8px;border-radius:9px;font-size:11px;font-weight:700}
+.st.접수{background:#fff3dc;color:#a76a00}.st.검토{background:#e3ecf8;color:#2a5aa8}.st.진행{background:#e3f6ee;color:#1e8a5c}.st.완료{background:#e8ecf3;color:#4a5568}.st.보류{background:#fde6e3;color:#b23a2c}
+tr.sel .st{background:#fff;color:#2d75b7}
+.pr.높음{color:#c62828;font-weight:700}
+.detail{border:1px solid var(--line);border-left:0;background:#fafbfc;padding:10px 12px;overflow:auto;display:grid;gap:6px;align-content:start}
+.detail h2{margin:0 0 4px;font-size:14px;color:#3a4e60;border-bottom:1px solid var(--line2);padding-bottom:5px}
+.row{display:grid;grid-template-columns:78px 1fr;align-items:center;gap:6px}.row.two{grid-template-columns:78px 1fr 78px 1fr}
+.lab{height:27px;display:flex;align-items:center;justify-content:center;border:1px solid #bdc7cf;background:#eef2f5;font-weight:700;font-size:11.5px}
+.fld{height:27px;border:1px solid #b5c0c9;background:#fff;padding:0 6px;min-width:0;width:100%}
+textarea.fld{height:auto;min-height:110px;padding:5px 6px;resize:vertical;line-height:1.5}
+textarea.fld.reply{min-height:80px;background:#f6fbf6}
+.detail .acts{display:flex;gap:5px;margin-top:4px;flex-wrap:wrap}
+.foot{height:40px;display:flex;align-items:center;padding:5px 14px;border-top:1px solid var(--line);background:#eef2f5;gap:5px;flex-shrink:0}.msg{margin-left:10px;color:#687784}.foot .right{margin-left:auto;color:#7c8993}
+.sum{display:flex;gap:8px;margin-left:auto;font-size:11.5px}.sum b{margin-left:2px}
+@media(max-width:1000px){.body{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto}.detail{border-left:1px solid var(--line);border-top:0;max-height:48%}}
+</style></head><body><div class="screen">
+<div class="title"><h1>수정요청게시판 <small>화면 수정·오류·기능추가 요청을 등록하고 처리 상태를 확인합니다.</small></h1></div>
+<div class="searchline">
+  <span class="lab">상태</span><select id="fst"><option value="">전체</option><option>접수</option><option>검토</option><option>진행</option><option>완료</option><option>보류</option></select>
+  <span class="lab">모듈</span><select id="fmod"><option value=""></option></select>
+  <span class="lab">구분</span><select id="fcat"><option value="">전체</option><option>수정</option><option>오류</option><option>추가</option><option>문의</option></select>
+  <input id="q" class="q" placeholder="제목 / 내용 / 화면 / 요청자 검색">
+  <button class="btn" onclick="search()">⌕ 조회</button>
+  <button class="btn" onclick="load()">↻ 새로고침</button>
+  <label style="margin-left:6px"><input type="checkbox" id="hideDone" checked> 완료 숨김</label>
+  <span class="sum" id="sum"></span>
+</div>
+<div class="body">
+  <div class="gridbox"><table><thead><tr>
+    <th style="width:48px">No</th><th style="width:88px">요청일</th><th style="width:72px">요청자</th><th style="width:80px">모듈</th><th style="width:130px">화면</th><th style="width:54px">구분</th><th style="width:50px">우선</th><th>제목</th><th style="width:60px">상태</th><th style="width:88px">처리일</th>
+  </tr></thead><tbody id="tb"></tbody></table></div>
+  <div class="detail">
+    <h2 id="dtitle">신규 요청</h2>
+    <div class="row two"><div class="lab">번호</div><input id="req_id" class="fld" readonly><div class="lab">요청일</div><input id="req_date" type="date" class="fld"></div>
+    <div class="row two"><div class="lab">요청자</div><input id="requester" class="fld"><div class="lab">상태</div><select id="status" class="fld"><option>접수</option><option>검토</option><option>진행</option><option>완료</option><option>보류</option></select></div>
+    <div class="row two"><div class="lab">모듈</div><select id="module" class="fld"><option></option></select><div class="lab">구분</div><select id="category" class="fld"><option>수정</option><option>오류</option><option>추가</option><option>문의</option></select></div>
+    <div class="row two"><div class="lab">화면</div><input id="screen" class="fld" list="screens" placeholder="화면명 (현재 열린 화면 자동)"><datalist id="screens"></datalist><div class="lab">우선순위</div><select id="priority" class="fld"><option>높음</option><option selected>보통</option><option>낮음</option></select></div>
+    <div class="row"><div class="lab">제목</div><input id="title" class="fld" placeholder="요청 제목"></div>
+    <div class="row" style="align-items:start"><div class="lab" style="height:auto;min-height:27px">요청내용</div><textarea id="content" class="fld" placeholder="어느 화면의 어떤 부분을 어떻게 바꾸면 좋을지 구체적으로 적어주세요.&#10;예) 수주현황 목록에 납기일 컬럼 추가"></textarea></div>
+    <div class="row" style="align-items:start"><div class="lab" style="height:auto;min-height:27px">처리답변</div><textarea id="reply" class="fld reply" placeholder="개발자 답변 / 처리 내용"></textarea></div>
+    <div class="acts">
+      <button class="btn pri" onclick="save()">▣ 저장</button>
+      <button class="btn" onclick="fresh()">＋ 신규</button>
+      <button class="btn" onclick="setStatus('완료')">✔ 완료처리</button>
+      <button class="btn danger" onclick="window.remove()">✖ 삭제</button>
+    </div>
+  </div>
+</div>
+<footer class="foot"><button class="btn" onclick="exportCsv()">⇩ CSV</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">조회 중…</span><span class="right" id="countText"></span></footer>
+</div>
+<script src="mes_db.js?v=67"></script>
+<script>
+const T='mod_requests';
+let data=[],view=[],selId=null;
+const F=['req_id','req_date','requester','module','screen','category','priority','title','content','status','reply'];
+const $=id=>document.getElementById(id);
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function msg(t){message.textContent=t}
+const today=()=>new Date().toLocaleDateString('sv-SE');
+function who(){try{const a=MESDB.auth();return a?.name||''}catch(e){return ''}}
+/* 부모 index 의 메뉴 구조로 모듈/화면 목록 채움 */
+function fillLists(){
+  let mods=[],screens=[];
+  try{const A=window.parent.IPMES?.APP;if(A){mods=Object.keys(A).filter(m=>m!=='사용메뉴얼');for(const m of mods)for(const gs of Object.values(A[m].menus||{}))for(const g of gs)screens.push(...g.items)}}catch(e){}
+  if(!mods.length)mods=['영업관리','설계관리','구매관리','조립관리','원가관리','SQ','기준정보','공통'];
+  $('module').innerHTML='<option></option>'+mods.map(m=>`<option>${esc(m)}</option>`).join('');
+  $('fmod').innerHTML='<option value="">전체</option>'+mods.map(m=>`<option>${esc(m)}</option>`).join('');
+  $('screens').innerHTML=[...new Set(screens)].map(s=>`<option value="${esc(s)}">`).join('');
+}
+async function load(){
+  try{
+    const rows=await MESDB.table(T).select('select=*&order=req_id.desc&limit=1000');
+    data=rows||[];search();msg(`수정요청 ${data.length}건 조회`);
+  }catch(e){msg('조회 실패: '+e.message+' (mod_requests 테이블이 없으면 mod_requests.sql 실행)')}
+}
+function search(){
+  const st=$('fst').value,mo=$('fmod').value,ca=$('fcat').value,kw=$('q').value.trim().toLowerCase(),hd=$('hideDone').checked;
+  view=data.filter(r=>(!st||r.status===st)&&(!mo||r.module===mo)&&(!ca||r.category===ca)&&!(hd&&!st&&r.status==='완료')
+    &&(!kw||[r.title,r.content,r.screen,r.requester,r.reply].some(v=>String(v??'').toLowerCase().includes(kw))));
+  render();
+}
+function render(){
+  tb.innerHTML=view.map((r,i)=>`<tr data-id="${r.req_id}" class="${r.req_id===selId?'sel':''}" onclick="pick(${r.req_id})">
+    <td class="c">${view.length-i}</td><td class="c">${esc(r.req_date)}</td><td>${esc(r.requester)}</td><td>${esc(r.module)}</td><td>${esc(r.screen)}</td><td class="c">${esc(r.category)}</td><td class="c pr ${esc(r.priority)}">${esc(r.priority)}</td><td title="${esc(r.title)}">${esc(r.title)}</td><td class="c"><span class="st ${esc(r.status)}">${esc(r.status)}</span></td><td class="c">${r.replied_at?String(r.replied_at).slice(0,10):''}</td></tr>`).join('');
+  countText.textContent=`${view.length} / ${data.length}건`;
+  const c=s=>data.filter(r=>r.status===s).length;
+  sum.innerHTML=`접수<b>${c('접수')}</b> 검토<b>${c('검토')}</b> 진행<b>${c('진행')}</b> 완료<b>${c('완료')}</b> 보류<b>${c('보류')}</b>`;
+}
+function pick(id){
+  selId=id;const r=data.find(x=>x.req_id===id);if(!r)return;
+  F.forEach(k=>{$(k).value=r[k]??''});
+  dtitle.textContent=`요청 #${r.req_id}`;
+  tb.querySelectorAll('tr').forEach(t=>t.classList.toggle('sel',Number(t.dataset.id)===id));
+}
+function fresh(){
+  selId=null;F.forEach(k=>$(k).value='');
+  $('req_date').value=today();$('status').value='접수';$('category').value='수정';$('priority').value='보통';$('requester').value=who();
+  try{const I=window.parent.IPMES;let cur=I?.active;if(cur&&cur.id==='mod_request_board')cur=I.prev;if(cur&&cur.menu&&cur.menu!=='수정요청게시판'){$('screen').value=cur.menu;$('module').value=cur.mod||''}}catch(e){}
+  dtitle.textContent='신규 요청';tb.querySelectorAll('tr').forEach(t=>t.classList.remove('sel'));$('title').focus();
+}
+async function save(){
+  const t=$('title').value.trim();if(!t)return msg('제목을 입력하세요.');
+  const row={};F.forEach(k=>{if(k!=='req_id')row[k]=$(k).value===''?null:$(k).value});
+  row.updated_at=new Date().toISOString();
+  const prev=selId?data.find(x=>x.req_id===selId):null;
+  if(row.reply&&(!prev||prev.reply!==row.reply||prev.status!==row.status))row.replied_at=new Date().toISOString();
+  if(row.status==='완료'&&!(prev&&prev.status==='완료'))row.replied_at=new Date().toISOString();
+  try{
+    if(selId){row.req_id=selId;await MESDB.table(T).upsert(row,'req_id')}
+    else{const ins=await MESDB.table(T).insertOne(row);selId=ins?.req_id??null}
+    await load();if(selId)pick(selId);msg(`#${selId} 저장했습니다.`);
+    try{window.parent.MESDB?.notify?.(T)}catch(e){}
+  }catch(e){msg('저장 실패: '+e.message)}
+}
+function setStatus(s){if(!selId)return msg('요청을 먼저 선택하세요.');$('status').value=s;if(!$('reply').value.trim())$('reply').value='처리 완료';save()}
+async function remove(){
+  if(!selId)return msg('삭제할 요청을 선택하세요.');if(!confirm(`#${selId} 요청을 삭제하시겠습니까?`))return;
+  try{await MESDB.table(T).delete({req_id:selId});selId=null;await load();fresh();msg('삭제했습니다.')}catch(e){msg('삭제 실패: '+e.message)}
+}
+function exportCsv(){
+  const H=['번호','요청일','요청자','모듈','화면','구분','우선순위','제목','요청내용','상태','처리답변','처리일'];
+  const out=[H,...view.map(r=>[r.req_id,r.req_date,r.requester,r.module,r.screen,r.category,r.priority,r.title,r.content,r.status,r.reply,r.replied_at?String(r.replied_at).slice(0,19).replace('T',' '):''])];
+  const csv='\ufeff'+out.map(a=>a.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='mod_requests_'+today()+'.csv';a.click();URL.revokeObjectURL(a.href);
+}
+['fst','fmod','fcat','hideDone'].forEach(id=>$(id).addEventListener('change',search));
+$('q').addEventListener('keydown',e=>{if(e.key==='Enter')search()});
+window.MES={search,add:fresh,delete:remove,save,exportCsv,setMessage:msg};
+fillLists();fresh();load();
+</script>
+<script src="mes_ctx.js?v=67"></script>
+</body></html>
