@@ -1,0 +1,278 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>수주정보 등록</title><style>
+:root{--line:#98a6b2;--line2:#c5d0d8;--blue:#2f75b5;--ink:#344757;--head1:#e8f1f8;--head2:#c8dbe9}
+*{box-sizing:border-box}html,body{height:100%;margin:0}body{font-family:"Malgun Gothic","맑은 고딕",Arial,sans-serif;font-size:12px;color:var(--ink);background:#fff;overflow:hidden}
+button,input,select{font:inherit;color:inherit}.screen{height:100%;display:flex;flex-direction:column;background:#fff}
+.title{height:48px;padding:8px 14px 5px;border-bottom:2px solid #3978ae;display:flex;align-items:center}.title h1{margin:0;font-size:22px;font-weight:500;color:#4b5c6a}.title h1:before{content:'◯';margin-right:6px;color:#8796a1}.title small{font-size:11px;color:#9ca7af;margin-left:12px}
+.form{padding:7px 14px;background:#fafbfc;border-bottom:1px solid var(--line2)}.formrow{display:grid;grid-template-columns:78px 140px 78px 150px 90px 150px 90px minmax(160px,1fr);gap:5px;align-items:center}.formrow+.formrow{margin-top:5px}.label{font-weight:700}.field{height:27px;border:1px solid #b5c0c9;background:#fff;padding:0 6px;min-width:0}
+.entrybox,.gridbox{margin:0 14px;border:1px solid var(--line);overflow:auto;background:#fff}.entrybox{height:190px}.gridbox{flex:1;min-height:0}
+.searchline{height:39px;margin:0 14px;display:flex;align-items:center;gap:5px;border-left:1px solid var(--line);border-right:1px solid var(--line);padding:4px 8px;background:#f6f8fa}.searchline input{width:min(430px,48vw);height:27px;border:1px solid #aeb9c3;padding:0 7px}
+.btn{height:29px;min-width:62px;border:1px solid #9ba8b4;background:linear-gradient(#fff,#dfe6eb);cursor:pointer}.btn:hover{background:#fff}
+table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th,td{height:27px;border-right:1px solid var(--line2);border-bottom:1px solid var(--line2);padding:0 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}th{position:sticky;top:0;z-index:2;text-align:center;background:linear-gradient(var(--head1),var(--head2));color:#405266}tbody tr:nth-child(even) td{background:#fafcfd}tbody tr:hover td{background:#edf6fd}tbody tr.sel td{background:#2d75b7;color:#fff}.c{text-align:center}.num{text-align:right}.toolbar{height:40px;display:flex;align-items:center;gap:5px;padding:4px 14px;background:#f5f7f8;border-bottom:1px solid var(--line2)}
+.foot{height:42px;display:flex;align-items:center;padding:5px 14px;border-top:1px solid var(--line);background:#eef2f5;gap:5px}.msg{margin-left:8px;color:#687784}.right{margin-left:auto;color:#7c8993}
+.split{flex:1;min-height:0;display:grid;grid-template-rows:1fr 1fr;gap:10px;padding:0 14px 8px}.split .gridbox{margin:0}
+@media(max-width:900px){.formrow{grid-template-columns:78px 1fr 78px 1fr}.entrybox,.gridbox,.searchline{margin-left:6px;margin-right:6px}}
+
+.formgrid{display:grid;grid-template-columns:repeat(6,72px minmax(96px,1fr));gap:4px 5px;align-items:center;padding:8px 14px;background:#fafbfc;border-bottom:1px solid var(--line2)}
+.formgrid .label{font-weight:700;text-align:right;padding-right:4px}
+.formgrid .field{width:100%}
+.span2{grid-column:span 2}.span3{grid-column:span 3}.span4{grid-column:span 4}
+.lk{display:flex;gap:3px;min-width:0}.lk input{flex:1;min-width:0;height:27px;border:1px solid #b5c0c9;padding:0 6px}
+.lk button{width:24px;height:27px;border:1px solid #9ba8b4;background:linear-gradient(#fff,#dfe6eb);cursor:pointer}
+.att{margin:0 14px;border:1px solid var(--line);flex:1;min-height:0;overflow:auto;background:#fff}
+.secthead{padding:6px 14px 2px;font-weight:700;color:#4b5c6a}
+.mask{position:fixed;inset:0;background:rgba(40,50,60,.28);display:none;align-items:flex-start;justify-content:center;z-index:50}
+.mask.on{display:flex}
+.dlg{margin-top:60px;width:min(520px,92vw);background:#f3f6f8;border:1px solid #7d8d99;box-shadow:0 8px 26px rgba(0,0,0,.25)}
+.dlghead{display:flex;align-items:center;height:30px;padding:0 6px 0 10px;background:linear-gradient(#eef4f9,#dbe6ef);border-bottom:1px solid #b9c6d0;font-weight:700}
+.dlghead button{margin-left:auto;width:26px;height:20px;border:1px solid #b04a4a;background:#c9484a;color:#fff;cursor:pointer;line-height:1}
+.dlgbody{padding:8px}
+.dlgbody .srch{display:flex;gap:4px;margin-bottom:6px}
+.dlgbody .srch input{flex:1;height:26px;border:1px solid #aeb9c3;padding:0 6px}
+.dlgwrap{height:300px;overflow:auto;border:1px solid var(--line);background:#fff}
+.dlgfoot{display:flex;justify-content:center;gap:10px;padding:8px}
+
+/* v21 입력란 배치 보정: 좁은 폭에서 필드를 숨기지 않고 단계적으로 줄바꿈 */
+.field,.formrow input,.formrow select,.formgrid input,.formgrid select,.detail-grid input,.detail-grid select{min-width:0;max-width:100%}
+.lab,.label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:1400px){.formrow{grid-template-columns:78px minmax(0,1fr) 78px minmax(0,1fr)}}
+@media(max-width:880px){.formrow{grid-template-columns:78px minmax(0,1fr)}}
+.formrow>*{min-width:0}
+
+/* ── v24 수주등록 입력박스 크기·배치 정리 ─────────────────────────
+ * 기존: 라벨 72px + 필드 min 96px 짜리 6쌍 고정 → 화면이 좁으면 오른쪽
+ *       3~6번째 쌍의 입력칸이 화면 밖으로 밀려 라벨만 보였다.
+ * 변경: 라벨 폭을 넓히고 쌍 수를 화면 폭에 따라 4→3→2→1로 단계 축소. */
+.formgrid{grid-template-columns:repeat(4,86px minmax(132px,1fr));gap:5px 6px;padding:9px 14px}
+.formgrid>*{min-width:0}
+.field{height:27px}
+.field.r{text-align:right}
+/* v24.1 입력란 크기 통일: span 해제 */
+.span3{grid-column:auto}
+/* 코드+명칭+돋보기 조합: 코드칸을 고정폭으로, 명칭칸이 남는 폭을 차지 */
+.lk{display:grid;grid-template-columns:62px minmax(0,1fr) 26px;gap:3px;align-items:center}
+.lk input{width:100%;min-width:0;height:27px;border:1px solid #b5c0c9;padding:0 6px;box-sizing:border-box}
+.lk input[readonly]{background:#f4f7f9}
+.lk button{width:26px;height:27px}
+/* 코드가 2~3자리인 항목은 코드칸을 더 좁게 */
+#proc_cnt{max-width:56px}
+@media(min-width:1750px){.formgrid{grid-template-columns:repeat(5,86px minmax(132px,1fr))}}
+@media(max-width:1400px){.formgrid{grid-template-columns:repeat(3,86px minmax(120px,1fr))}}
+@media(max-width:1080px){.formgrid{grid-template-columns:repeat(2,86px minmax(120px,1fr))}}
+@media(max-width:760px){.formgrid{grid-template-columns:86px minmax(0,1fr)}}
+/* 첨부파일: 비어 있을 때 과도한 여백 축소 */
+.filearea .empty,#fileEmpty{height:64px!important}
+</style></head><body><div class="screen">
+<div class="title"><h1>수주정보 등록</h1></div>
+<section class="formgrid">
+ <div class="label">제 번</div><div class="span3"><input id="job_no" class="field"></div>
+ <div class="label">수주일</div><div><input id="order_date" type="date" class="field"></div>
+ <div class="label">Try-Out 예정일</div><div><input id="s1p" type="date" class="field"></div>
+
+ <div class="label">수주상태</div><div><select id="status" class="field"><option>진행</option><option>보류</option><option>완료</option><option>취소</option></select></div>
+ <div class="label">수주유형</div><div><select id="otype" class="field"><option>신작</option><option>개조</option><option>수리</option></select></div>
+ <div class="label">견적서번호</div><div><input id="quo" class="field"></div>
+ <div class="label">아이템</div><div class="lk"><input id="item_code"><input id="item_name" readonly><button onclick="openLook('item','item_code','item_name')">…</button></div>
+ <div class="label">납기예정일</div><div><input id="dlvp" type="date" class="field"></div>
+ <div class="label">국내/해외</div><div><select id="dom" class="field"><option>국내</option><option>해외</option></select></div>
+
+ <div class="label">도 번</div><div class="span3"><input id="drawing_no" class="field"></div>
+ <div class="label">담당자</div><div class="lk"><input id="mgr_code"><input id="mgr_name" readonly><button onclick="openLook('employee','mgr_code','mgr_name')">…</button></div>
+ <div class="label">고객사</div><div class="lk"><input id="cust_code"><input id="cust_name" readonly><button onclick="openLook('customer','cust_code','cust_name')">…</button></div>
+
+ <div class="label">금형타입</div><div class="lk"><input id="mold_code"><input id="mold_name" readonly><button onclick="openLook('mold','mold_code','mold_name')">…</button></div>
+ <div class="label">개발유형</div><div><select id="devtype" class="field"><option value=""></option><option>사내</option><option>외주</option></select></div>
+ <div class="label">양산처</div><div class="lk"><input id="mp_code"><input id="mp_name" readonly><button onclick="openLook('mass_production','mp_code','mp_name')">…</button></div>
+ <div class="label">품 명</div><div><input id="product_name" class="field"></div>
+ <div class="label">모 델</div><div><input id="model" class="field"></div>
+ <div class="label">공 정</div><div><input id="proc_cnt" class="field num"></div>
+
+ <div class="label">견적가</div><div><input id="quo_price" class="field num"></div>
+ <div class="label">기계사양</div><div class="lk"><input id="ms_code"><input id="ms_name" readonly><button onclick="openLook('mspec','ms_code','ms_name')">…</button></div>
+ <div class="label">사용재료</div><div><input id="material_used" class="field"></div>
+ <div class="label">Try-Out 완료일</div><div><input id="s1c" type="date" class="field"></div>
+ <div class="label">납기완료일</div><div><input id="dlvc" type="date" class="field"></div>
+ <div class="label">ECO</div><div><input id="eco" class="field"></div>
+
+ <div class="label">비 고</div><div class="span3"><input id="remark" class="field"></div>
+ <div class="label">수주가</div><div><input id="order_price" class="field num"></div>
+ <div class="label">판매가</div><div><input id="sales_price" class="field num"></div>
+ <div class="label">완료일</div><div><input id="comp_date" type="date" class="field"></div>
+</section>
+<div class="secthead">첨부파일</div>
+<div class="toolbar"><button class="btn" onclick="attPick()">파일첨부</button><button class="btn" onclick="attOpen(1)">다운로드</button><button class="btn" onclick="attOpen()">미리보기</button><button class="btn" onclick="attDel()">파일삭제</button><input type="file" id="attFile" multiple style="display:none" onchange="attUpload(this.files)"></div>
+<div class="att"><table style="min-width:900px"><thead><tr><th style="width:34px"></th><th>파일명</th><th style="width:150px">Version</th><th style="width:280px">파일내용</th><th style="width:90px">크기</th><th style="width:90px">확장자</th></tr></thead><tbody id="attBody"></tbody></table></div>
+<footer class="foot"><button class="btn" onclick="save()">▤ 저장</button><button class="btn" onclick="sampleFill()" title="예시값을 순서대로 채우며 등록요점을 설명합니다.">▶ 등록예제</button><button class="btn" onclick="clearForm()">＋ 신규</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">제번 등 필수항목을 입력하고 저장하세요.</span></footer>
+</div>
+
+
+<script src="mes_lookup.js?v=67"></script>
+
+<script>
+/* 마스터 조회는 mes_lookup.js(MESLOOK) 사용 - DB 직결 */
+const seed={"row_no": 1, "job_no": "J26137", "plant_name": "1공장", "order_status": "진행", "order_type": "신작", "quotation_no": null, "drawing_no": "hfghfgh", "business_division_code": "BN001", "business_division_name": "금형", "item_code": "J", "item_name": "키친", "order_date": "2026-08-22", "s1_planned_date": "2026-08-26", "delivery_planned_date": "2026-08-31", "mold_type_code": null, "mold_type_name": null, "development_type": "사내", "mass_production_vendor_code": "V028", "mass_production_vendor_name": "서한산업", "manager_code": "user01", "manager_name": "권태윤", "domestic_overseas": "국내", "customer_code": "V022", "customer_name": "바림정밀", "quotation_price": null, "machine_spec_code": null, "machine_spec_name": null, "product_name": "vdfs", "model": "asf", "process_set_qty": null, "remark": null, "order_price": null, "sales_price": null, "material_used": null, "s1_completed_date": null, "delivery_completed_date": null, "eco": null, "completion_date": null, "attachments": []};
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const msg=t=>message.textContent=t;
+function openLook(key,codeId,nameId){
+ const kind={'employee':'employee','vendor':'vendor','customer':'customer',
+  'mass_production':'mass_production','item':'item','biz':'biz','mold':'mold','mspec':'mspec'}[key]||key;
+ MESLOOK.bindPair(kind,codeId,nameId);
+}
+const MAP={job_no:'job_no',order_date:'order_date',s1p:'s1_planned_date',
+ status:'order_status',otype:'order_type',quo:'quotation_no',item_code:'item_code',item_name:'item_name',
+ dlvp:'delivery_planned_date',dom:'domestic_overseas',drawing_no:'drawing_no',
+ mgr_code:'manager_code',mgr_name:'manager_name',cust_code:'customer_code',cust_name:'customer_name',
+ mold_code:'mold_type_code',mold_name:'mold_type_name',devtype:'development_type',
+ mp_code:'mass_production_vendor_code',mp_name:'mass_production_vendor_name',
+ product_name:'product_name',model:'model',proc_cnt:'process_set_qty',quo_price:'quotation_price',
+ ms_code:'machine_spec_code',ms_name:'machine_spec_name',material_used:'material_used',
+ s1c:'s1_completed_date',dlvc:'delivery_completed_date',eco:'eco',remark:'remark',
+ order_price:'order_price',sales_price:'sales_price',comp_date:'completion_date'};
+function load(o){for(const[el,k]of Object.entries(MAP)){const n=document.getElementById(el);if(n)n.value=o[k]??''}}
+function clearForm(){for(const el of Object.keys(MAP)){const n=document.getElementById(el);if(n)n.value=''}document.getElementById('status').value='진행';otype.value='신작';dom.value='국내';ATT.length=0;renderAtt();msg('신규 입력 상태입니다.')}
+const NUMF=['quotation_price','order_price','sales_price'];   /* v62: 공정(process_set_qty)은 '1/1' 형식 text — 숫자변환 제외 */
+const DATEF=['order_date','s1_planned_date','delivery_planned_date','s1_completed_date','delivery_completed_date','completion_date'];
+async function save(mode){
+ const ACT=(typeof mode==='string'&&mode)?mode:'저장';
+ if(!job_no.value.trim()){msg('제번은 필수입니다.');return false}
+ const o={};for(const[el,k]of Object.entries(MAP)){const n=document.getElementById(el);if(n)o[k]=n.value||null}
+ o.plant_name='1공장';o.attachments=ATT;
+ for(const k of NUMF){const v=Number(o[k]);o[k]=(o[k]===null||o[k]===''||Number.isNaN(v))?null:v}
+ for(const k of DATEF)if(o[k]==='')o[k]=null;
+ if(!window.MESDB||!MESDB.online){msg(`${o.job_no} ${ACT}했습니다. (DB 미연결 - 로컬)`);return true}
+ /* v28: 수주취소 시 하위 진행분 경고 (취소 파급이 없어 발주가 고아로 남던 문제) */
+ if(o.order_status==='취소'){
+  try{
+   const [sl,ol]=await Promise.all([
+    MESDB.table('set_order_lines').select(`select=line_id,status&job_no=eq.${encodeURIComponent(o.job_no)}`),
+    MESDB.table('order_lines').select(`select=line_id,status&job_no=eq.${encodeURIComponent(o.job_no)}`)]);
+   const done=[...(sl||[]),...(ol||[])].filter(r=>r.status!=='발주').length;
+   const open=[...(sl||[]),...(ol||[])].filter(r=>r.status==='발주').length;
+   if(open+done>0){
+    if(done>0){msg(`${o.job_no} 은(는) 이미 입고·확정된 건이 ${done}건 있어 취소할 수 없습니다. 입고취소 후 진행하세요.`);return false}
+    if(!confirm(`${o.job_no}\n미입고 발주 ${open}건이 남아 있습니다.\n수주를 취소하면 해당 발주는 SET발주등록 / 입고등록 화면에서 직접 취소해야 합니다.\n계속하시겠습니까?`))return false;
+   }
+  }catch(e){
+   /* v62: 하위 발주 조회에 실패하면 취소를 막는다 (조용히 통과하던 문제) */
+   msg(`${o.job_no} 하위 발주 확인에 실패해 취소할 수 없습니다: `+String(e.message||e).slice(0,100));return false}
+ }
+ try{
+  /* FK 순서: jobs(부모) → sale_orders → 수주현황 */
+  await MESDB.table('jobs').upsert({job_no:o.job_no,item_name:o.item_name,customer_name:o.customer_name,
+    order_status:o.order_status,order_date:o.order_date,source_count:1},'job_no');
+  await MESDB.table('sale_orders').upsert(o,'job_no');
+  /* 같은 제번을 다시 저장해도 현황에 중복행이 생기지 않도록 기존 row_no 재사용 */
+  let rowNo=null;
+  try{
+   const ex=await MESDB.table('sale_order_status_rows')
+     .select(`select=row_no&job_no=eq.${encodeURIComponent(o.job_no)}&limit=1`);
+   if(ex&&ex[0])rowNo=ex[0].row_no;
+  }catch(e){rowNo=null}
+  /* v39: 신규는 row_no 를 보내지 않고 DB identity 에 맡긴다 (수동 max+1 은 동시 저장 시 충돌) */
+  const _sr={job_no:o.job_no,model:o.model,
+    drawing_no:o.drawing_no,item_name:o.item_name,eco:o.eco,customer_name:o.customer_name,set_qty:(v=>{const n=Number(v);return v==null||v===''||Number.isNaN(n)?null:Math.trunc(n)})(o.process_set_qty),
+    development_type:o.development_type,order_type:o.order_type,mold_type_name:o.mold_type_name,
+    machine_spec_name:o.machine_spec_name,order_date:o.order_date,s1_planned_date:o.s1_planned_date,
+    completion_date:o.completion_date,mass_production_vendor_name:o.mass_production_vendor_name,
+    order_status:o.order_status,plant_name:o.plant_name};
+  if(rowNo!=null)await MESDB.table('sale_order_status_rows').upsert({row_no:Number(rowNo),..._sr},'row_no');
+  else{const r=await MESDB.table('sale_order_status_rows').insertOne(_sr);rowNo=r&&r.row_no}
+  /* v60: 열려 있는 수주현황 탭이 스스로 다시 읽도록 알린다 */
+  try{MESDB.notify&&MESDB.notify(['sale_orders','sale_order_status_rows','jobs'])}catch(e){}
+  msg(`${o.job_no} 수주를 ${ACT}했습니다. (제번·수주·수주현황 반영 / 현황 No.${rowNo??'-'})`);
+ }catch(e){msg(`DB ${ACT} 실패: `+e.message.slice(0,140));return false}
+ return true;
+}
+
+/* ── v46 첨부파일: Supabase Storage(mes-attach) 업로드 ─────────── */
+const ATT=[];   /* {name,path,size,ext,note} */
+const SB_URL='https://ipggvrzxfcryzryileuv.supabase.co';
+const SB_KEY='sb_publishable_CHO-dAOU00HNwno52255mg_H3C1_vew';
+function sbTok(){try{return (window.MES_AUTH||window.parent.MES_AUTH)?.token||null}catch(e){return null}}
+function attUrl(p){return SB_URL+'/storage/v1/object/public/mes-attach/'+p.split('/').map(encodeURIComponent).join('/')}
+function fmtSize(n){return n>=1048576?(n/1048576).toFixed(1)+'MB':n>=1024?(n/1024).toFixed(1)+'KB':n+'B'}
+function renderAtt(){
+ attBody.innerHTML=ATT.length?ATT.map((a,i)=>`<tr><td class="c"><input type="radio" name="attSel" value="${i}"></td><td>${esc(a.name)}</td><td class="c">${i+1}</td><td>${esc(a.note||'')}</td><td class="c">${fmtSize(a.size||0)}</td><td class="c">${esc(a.ext||'')}</td></tr>`).join('')
+ :'<tr><td colspan="6" class="c" style="height:64px;color:#8a97a2">첨부파일이 없습니다.</td></tr>';
+}
+function attSel(){const r=document.querySelector('input[name=attSel]:checked');return r?ATT[Number(r.value)]:null}
+function attPick(){
+ if(!job_no.value.trim())return msg('제번을 먼저 입력하세요. (첨부는 제번별로 저장됩니다)');
+ if(!sbTok())return msg('로그인 후 파일을 첨부할 수 있습니다.');
+ document.getElementById('attFile').click();
+}
+async function attUpload(files){
+ if(!files||!files.length)return;
+ const job=job_no.value.trim();
+ for(const f of files){
+  const safe=f.name.replace(/[^\w.\-가-힣 ]/g,'_');
+  const path=job+'/'+Date.now()+'_'+safe;
+  try{
+   const r=await fetch(SB_URL+'/storage/v1/object/mes-attach/'+path.split('/').map(encodeURIComponent).join('/'),
+    {method:'POST',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbTok(),'Content-Type':f.type||'application/octet-stream','x-upsert':'true'},body:f});
+   if(!r.ok){const t=await r.text();throw new Error(t.slice(0,120))}
+   ATT.push({name:f.name,path,size:f.size,ext:(f.name.split('.').pop()||'').toUpperCase(),note:''});
+  }catch(e){msg('업로드 실패('+f.name+'): '+String(e.message||e).slice(0,120));document.getElementById('attFile').value='';renderAtt();return}
+ }
+ document.getElementById('attFile').value='';renderAtt();
+ msg(`${files.length}개 파일을 업로드했습니다. [저장]을 눌러야 수주에 확정 반영됩니다.`);
+}
+function attOpen(dl){const a=attSel();if(!a)return msg(dl?'다운로드할 파일을 선택하세요.':'미리보기할 파일을 선택하세요.');
+ const u=attUrl(a.path);if(dl){const el=document.createElement('a');el.href=u;el.download=a.name;el.target='_blank';el.click()}else window.open(u,'_blank')}
+async function attDel(){const a=attSel();if(!a)return msg('삭제할 파일을 선택하세요.');
+ if(!confirm(a.name+' 파일을 삭제할까요?'))return;
+ try{await fetch(SB_URL+'/storage/v1/object/mes-attach/'+a.path.split('/').map(encodeURIComponent).join('/'),
+  {method:'DELETE',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+(sbTok()||SB_KEY)}})}catch(e){}
+ ATT.splice(ATT.indexOf(a),1);renderAtt();msg('첨부를 삭제했습니다. [저장]으로 반영하세요.')}
+/* 제번으로 기존 수주정보 + 첨부를 화면에 채운다.
+ * v60: 첨부만 읽던 것을 전체 행 로드로 확장. 빈 화면 상태로 [수정]을 눌러
+ *      기존 값이 통째로 지워지던 문제를 막는다.
+ * quiet=true 면 미등록 제번일 때 조용히 넘어간다(제번 직접 입력 중일 때). */
+async function loadJob(job,quiet){
+ job=String(job||'').trim();
+ if(!job){clearForm();job_no.focus();msg('새 수주정보를 입력한 뒤 [등록]하세요.');return false}
+ if(!window.MESDB||!MESDB.online){job_no.value=job;msg('DB 미연결 — 기존 수주정보를 불러올 수 없습니다.');return false}
+ try{
+  const rs=await MESDB.table('sale_orders').select(`select=*&job_no=eq.${encodeURIComponent(job)}&limit=1`);
+  if(rs&&rs[0]){
+   const o=rs[0];load(o);job_no.value=job;
+   ATT.length=0;ATT.push(...(o.attachments||[]));renderAtt();
+   msg(`${job} 수주정보를 불러왔습니다. (첨부 ${ATT.length}건) 내용을 고친 뒤 [수정]을 누르세요.`);
+   return true;
+  }
+  if(!quiet){clearForm();job_no.value=job}
+  msg(`${job} 은(는) 미등록 제번입니다. 입력 후 [등록]하세요.`);
+ }catch(e){msg('불러오기 실패: '+String(e.message||e).slice(0,120))}
+ return false;
+}
+/* 제번 입력 후 포커스 이탈 시 자동 조회 */
+job_no.addEventListener('change',()=>loadJob(job_no.value,true));
+
+/* 수주현황에서 [수정]/[등록]으로 넘어온 경우 부모가 남긴 인계값을 읽는다 */
+(function(){
+ let h=null;
+ try{const P=window.parent;
+  if(P&&P!==window&&P.__mesHandoff&&P.__mesHandoff.file==='sale_order_input.html'
+     &&Date.now()-(P.__mesHandoff.at||0)<15000){h=P.__mesHandoff;delete P.__mesHandoff}
+ }catch(e){}
+ if(!h)return;
+ const go=()=>{try{MESDB&&MESDB.ready?MESDB.ready.then(()=>loadJob(h.job_no)).catch(()=>loadJob(h.job_no)):loadJob(h.job_no)}
+   catch(e){loadJob(h.job_no)}};
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',go);else go();
+})();
+renderAtt();
+
+window.MES={save,clearForm,setMessage:msg,load,loadJob};
+clearForm();
+</script><script src="mes_sample.js?v=67"></script><script src="mes_demo.js?v=67"></script><script src="mes_db.js?v=67"></script>
+<script src="mes_ctx.js?v=67"></script>
+
+<script>
+function sampleFill(){
+  var say=(window.msg||function(t){var e=document.getElementById('message');if(e)e.textContent=t});
+  if(window.MESDEMO)return MESDEMO.run('sale_order_input',{keyId:'job_no',auto:null});
+  if(!window.MESSAMPLE)return say('예제 모듈을 불러오지 못했습니다.');
+  say(MESSAMPLE.fill('sale_order_input',{keyId:'job_no',auto:null}).msg);
+}
+</script>
+</body></html>

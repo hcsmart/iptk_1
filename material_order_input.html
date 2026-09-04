@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>원재료 발주</title>
+<style>
+:root{--line:#9daab6;--line2:#c5ced6;--ink:#344758}
+*{box-sizing:border-box}html,body{height:100%;margin:0}body{font-family:"Malgun Gothic","맑은 고딕",Arial,sans-serif;font-size:12px;color:var(--ink);background:#fff;overflow:hidden}button,input,select{font:inherit;color:inherit}
+.screen{height:100%;display:flex;flex-direction:column}.title{height:46px;padding:9px 14px 4px;border-bottom:2px solid #3977ad;display:flex;align-items:center;gap:14px}.title h1{margin:0;font-size:21px;font-weight:500;color:#4b5b69}.title h1:before{content:'◯';margin-right:6px;color:#8795a1}.title .plant{margin-left:auto;display:flex;align-items:center;gap:6px;color:#6b7885}
+.filters{padding:7px 14px;border-bottom:1px solid var(--line2);background:#fafbfc;display:flex;gap:6px;align-items:center}.label{font-weight:700;min-width:44px}.field{height:27px;border:1px solid #b7c2cb;background:#fff;padding:0 7px;outline:none}.field:focus{border-color:#4e88bb}
+.panes{display:grid;grid-template-columns:1.15fr .62fr 1.6fr;gap:6px;padding:7px 14px 0;height:210px}
+.box{border:1px solid var(--line);display:flex;flex-direction:column;min-height:0;background:#fff}.box-title{height:24px;display:flex;align-items:center;justify-content:center;background:linear-gradient(#deebf5,#caddea);border-bottom:1px solid var(--line);font-weight:700;color:#536677}
+.tablewrap{flex:1;min-height:0;overflow:auto}table{border-collapse:collapse;width:100%;table-layout:fixed}th,td{height:24px;padding:0 5px;border-right:1px solid var(--line2);border-bottom:1px solid var(--line2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}th{position:sticky;top:0;z-index:2;text-align:center;background:linear-gradient(#dbe9f4,#c7d9e8);color:#405266;font-weight:700}tbody tr:hover td{background:#edf6fd}tbody tr.sel td{background:#2e78bd;color:#fff}.c{text-align:center}.r{text-align:right}
+.midbar{display:flex;align-items:center;gap:6px;padding:6px 14px;justify-content:flex-end}
+.reqbox{flex:1;min-height:0;margin:0 14px 6px;border:1px solid var(--line);display:flex;flex-direction:column}.reqbox table{min-width:1500px}
+.btn{height:28px;min-width:66px;border:1px solid #9ca9b5;background:linear-gradient(#fff,#dfe6eb)}.btn:hover{background:#fff}.btn.primary{background:linear-gradient(#f9ffff,#d2e7f6);color:#1e5e91}
+.foot{height:42px;display:flex;align-items:center;padding:5px 14px;border-top:1px solid var(--line);background:#eef2f5;gap:5px}.msg{margin-left:10px;color:#687784}.foot .right{margin-left:auto;color:#7c8993}
+.modal{position:fixed;inset:0;background:rgba(40,50,60,.45);display:none;align-items:center;justify-content:center;z-index:50}.modal.on{display:flex}.sheet{width:min(720px,94%);max-height:88%;overflow:auto;background:#fff;border:1px solid #7c8894;box-shadow:0 8px 26px rgba(0,0,0,.3)}.sheet-head{height:30px;display:flex;align-items:center;padding:0 8px;background:linear-gradient(#f3f6f8,#dfe6ec);border-bottom:1px solid #b6c1ca;font-weight:700}.sheet-head .x{margin-left:auto;border:1px solid #c0392b;background:#e74c3c;color:#fff;width:24px;height:20px}
+.doc{padding:26px 30px}.doc h2{text-align:center;font-size:19px;font-weight:600;margin:0 0 18px}.doc table{border-collapse:collapse;table-layout:auto}.doc td,.doc th{border:1px solid #666;height:24px;padding:2px 8px}.doc .info{margin-bottom:8px}.doc .items{width:100%;margin-top:10px}
+@media(max-width:900px){.panes{grid-template-columns:1fr;height:auto}.title h1{font-size:18px}}
+
+/* v46 발주서 실제 인쇄: 미리보기의 발주서 영역만 출력 */
+@media print{
+ body *{visibility:hidden!important}
+ #preview,#preview *{visibility:visible!important}
+ #preview{display:block!important;position:absolute!important;inset:0!important;background:#fff!important}
+ #preview .sheet{width:100%!important;max-height:none!important;border:0!important;box-shadow:none!important;overflow:visible!important}
+ #preview .sheet-head{display:none!important}
+}
+</style>
+</head>
+<body>
+<div class="screen">
+  <div class="title"><h1>원재료 발주</h1></div>
+  <section class="filters">
+    <span class="label">제번</span><input id="jobQ" class="field" style="width:220px" placeholder="제번">
+    <span class="label">품명</span><input id="itemQ" class="field" style="width:260px" placeholder="품명">
+    <button class="btn" onclick="search()">⌕ 조회</button>
+  </section>
+  <section class="panes">
+    <div class="box"><div class="box-title">제번리스트</div><div class="tablewrap"><table>
+      <colgroup><col style="width:36%"><col style="width:34%"><col style="width:15%"><col style="width:15%"></colgroup>
+      <thead><tr><th>제번</th><th>품명</th><th>공정코드</th><th>공정명</th></tr></thead><tbody id="jobBody"></tbody></table></div></div>
+    <div class="box"><div class="box-title">협력업체리스트</div><div class="tablewrap"><table><thead><tr><th>협력업체</th></tr></thead><tbody id="venBody"></tbody></table></div></div>
+    <div class="box"><div class="box-title">자재표 리스트</div><div class="tablewrap"><table>
+      <colgroup><col style="width:38px"><col style="width:15%"><col style="width:18%"><col style="width:14%"><col style="width:23%"><col style="width:10%"><col style="width:12%"></colgroup>
+      <thead><tr><th></th><th>품번</th><th>부품명</th><th>재질</th><th>규격</th><th>수량</th><th>첨부</th></tr></thead><tbody id="bomBody"></tbody></table></div></div>
+  </section>
+  <div class="midbar"><span class="label">입고요구일</span><input id="reqDate" class="field" type="date"><button class="btn" onclick="pushDown()">⬇ 요청추가</button><button class="btn" onclick="pullUp()">⬆ 요청삭제</button></div>
+  <div class="reqbox"><div class="box-title">구매요청 리스트</div><div class="tablewrap"><table>
+    <colgroup><col style="width:40px"><col style="width:38px"><col style="width:100px"><col style="width:100px"><col style="width:50px"><col style="width:70px"><col style="width:120px"><col style="width:66px"><col style="width:130px"><col style="width:66px"><col style="width:66px"><col style="width:66px"><col style="width:56px"><col style="width:70px"><col style="width:70px"><col style="width:88px"><col style="width:88px"><col style="width:60px"><col style="width:90px"></colgroup>
+    <thead><tr><th>No</th><th>선택</th><th>협력업체</th><th>제번</th><th>공정</th><th>품번</th><th>부품명</th><th>재질</th><th>설계치수</th><th>두께/Ø</th><th>가로</th><th>세로</th><th>수량</th><th>발주수량</th><th>총중량</th><th>발주일</th><th>입고요구일</th><th>첨부</th><th>비고</th></tr></thead>
+    <tbody id="reqBody"></tbody>
+    <tfoot><tr><th colspan="12" class="r">합 계</th><th class="r" id="sumQty">0</th><th class="r" id="sumOrd">0</th><th colspan="5"></th></tr></tfoot>
+  </table></div></div>
+  <footer class="foot"><button class="btn" onclick="search()">⌕ 검색</button><button class="btn" onclick="save()">▣ 저장</button><button class="btn" onclick="sampleFill()" title="화면 순서대로 시연하며 등록요점을 설명합니다.">▶ 등록예제</button><button class="btn primary" onclick="printOrder()">⎙ PRINT</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">제번을 선택하면 자재표가 조회됩니다.</span><span class="right" id="countText"></span></footer>
+</div>
+
+<div class="modal" id="preview"><div class="sheet">
+  <div class="sheet-head"><span>미리 보기</span><button class="btn" style="margin-left:auto;height:22px;min-width:56px" onclick="window.print()">⎙ 인쇄</button><button class="x" style="margin-left:6px" onclick="preview.classList.remove('on')">×</button></div>
+  <div class="doc" id="docArea"></div>
+</div></div>
+
+<script>
+/* v46: 작성자/담당자 기본값 = 로그인 사용자 (회사명 하드코딩 제거) */
+const OWNER=(function(){try{return (window.MES_AUTH||window.parent.MES_AUTH)?.name||'담당자'}catch(e){return '담당자'}})();
+
+const JOBS=[];
+let VENDORS=[];  /* 협력업체는 마스터에서 로드 (mes_lookup.js) */
+const REQ=[];
+let jobIdx=0,venIdx=5,jobView=[...JOBS];
+const n=v=>v==null?'':Number(v).toLocaleString('ko-KR',{maximumFractionDigits:2});
+function renderJobs(){jobBody.innerHTML=jobView.map((j,i)=>`<tr class="${i===jobIdx?'sel':''}" onclick="pickJob(${i})"><td>${j.job}</td><td>${j.item}</td><td class="c">${j.proc}</td><td class="c">${j.procName}</td></tr>`).join('');countText.textContent=`제번 ${jobView.length}건 / 요청 ${REQ.length}건`}
+function renderVendors(){venBody.innerHTML=VENDORS.map((v,i)=>`<tr class="${i===venIdx?'sel':''}" onclick="pickVendor(${i})"><td>${v}</td></tr>`).join('')}
+function renderBom(){const b=jobView[jobIdx]?.bom||[];bomBody.innerHTML=b.length?b.map((r,i)=>`<tr><td class="c"><input type="checkbox" checked data-i="${i}"></td><td>${r.part}</td><td>${r.name}</td><td class="c">${r.mat}</td><td>${r.spec}</td><td class="r">${r.qty}</td><td class="c">${r.att}</td></tr>`).join(''):'<tr><td colspan="7" class="c" style="color:#8b98a4">자재표가 없습니다.</td></tr>'}
+function renderReq(){reqBody.innerHTML=REQ.map((r,i)=>`<tr onclick="this.classList.toggle('sel')"><td class="c">${i+1}</td><td class="c"><input type="checkbox" data-no="${r.no}"></td><td>${r.vendor}</td><td>${r.job}</td><td class="c">${r.proc}</td><td>${r.part}</td><td>${r.name}</td><td class="c">${r.mat}</td><td>${r.design}</td><td class="r">${n(r.th)}</td><td class="r">${n(r.w)}</td><td class="r">${n(r.l)}</td><td class="r">${r.qty??''}</td><td class="r">${r.ord??''}</td><td class="r">${r.wt==null||r.wt===''?'':Number(r.wt).toFixed(2)}</td><td class="c">${r.odate}</td><td class="c">${r.rdate}</td><td class="c">${r.att}</td><td>${r.remark}</td></tr>`).join('');sumQty.textContent=REQ.reduce((a,r)=>a+(r.qty||0),0);sumOrd.textContent=REQ.reduce((a,r)=>a+(r.ord||0),0)}
+function pickJob(i){jobIdx=i;renderJobs();renderBom();if(typeof loadBom==='function')loadBom();msg(`${jobView[i].job} / 공정 ${jobView[i].proc} 자재표를 조회했습니다.`)}
+function pickVendor(i){venIdx=i;renderVendors();msg(`협력업체 ${VENDORS[i]} 선택`)}
+function search(){const j=jobQ.value.trim().toLowerCase(),it=itemQ.value.trim().toLowerCase();jobView=JOBS.filter(x=>(!j||x.job.toLowerCase().includes(j))&&(!it||(x.item||'').toLowerCase().includes(it)));jobIdx=0;renderJobs();renderBom();msg(`제번 ${jobView.length}건을 조회했습니다.`)}
+async function pushDown(){const j=jobView[jobIdx];if(!j)return;const picks=[...bomBody.querySelectorAll('input:checked')].map(x=>j.bom[Number(x.dataset.i)]);if(!picks.length)return msg('자재표에서 발주할 품번을 선택하세요.');const d=reqDate.value||new Date().toISOString().slice(0,10);picks.forEach(b=>{const dims=String(b.spec).split(/[*xX×]/).map(Number);REQ.push({no:REQ.length?Math.max(...REQ.map(r=>r.no))+1:1,vendor:VENDORS[venIdx],job:j.job,proc:j.proc,part:b.part,name:b.name,mat:b.mat,design:b.spec,th:dims[0]||null,w:dims[1]||null,l:dims[2]||null,qty:b.qty,ord:b.qty,wt:null,price:0,amount:0,odate:new Date().toISOString().slice(0,10),rdate:d,att:b.att,remark:''})});
+ /* v39: 중량(설계치수 기준)과 자재 단가를 자동 산출해 발주금액을 채운다.
+    금액이 없으면 입고확정을 해도 제조원가에 원재료비가 0으로 잡힌다. */
+ if(window.MESPRICE){
+  for(const r of REQ){
+   if(r.amount)continue;
+   r.wt=MESPRICE.weightKg(r.design,r.ord||r.qty||1)||null;
+   /* v40: 단가변동 규칙 - 발주일 시점에 적용시작된 단가, 사이즈(두께) 일치 우선 */
+   const hit=await MESPRICE.material(r.mat,r.vendor,{size:r.th,asOf:r.odate});
+   r.price=hit?hit.price:0;
+   r.priceNote=hit?hit.matched:'';
+   r.amount=r.price?Math.round(r.price*(r.wt||Number(r.ord)||1)):0;
+  }
+ }
+ renderReq();
+ const tot=REQ.reduce((a,r)=>a+(Number(r.amount)||0),0);
+ const noPrice=REQ.filter(r=>!r.amount).length;
+ msg(`${picks.length}건을 구매요청 리스트에 추가했습니다. 발주금액 합계 ${tot.toLocaleString('ko-KR')}원`+
+   (noPrice?` (단가 미등록 ${noPrice}건 - 자재단가변동등록 확인)`:'')+
+  (REQ.some(r=>r.priceNote&&r.priceNote!=='일치')?
+   ` (대체단가 적용: ${[...new Set(REQ.filter(r=>r.priceNote&&r.priceNote!=='일치').map(r=>r.priceNote))].join(', ')})`:''));}
+function pullUp(){const ids=[...reqBody.querySelectorAll('input:checked')].map(x=>Number(x.dataset.no));if(!ids.length)return msg('삭제할 요청 행을 선택하세요.');for(let i=REQ.length-1;i>=0;i--)if(ids.includes(REQ[i].no))REQ.splice(i,1);renderReq();msg(`${ids.length}건을 요청 리스트에서 삭제했습니다.`)}
+/* v62: 같은 제번·품번·업체(외주가공은 가공공정 포함)의 미입고 발주가 있으면 중복 등록 차단 */
+async function dupCheck(cat,job,rows){
+ const ex=await MESDB.table('order_lines').select(`select=part_no,vendor_name,machining_process_code&category=eq.${encodeURIComponent(cat)}&status=eq.발주&job_no=eq.${encodeURIComponent(job)}`);
+ const key=(p,v,m)=>[p||'',v||'',cat==='외주가공'?(m||''):''].join('|');
+ const have=new Set((ex||[]).map(e=>key(e.part_no,e.vendor_name,e.machining_process_code)));
+ return rows.filter(r=>have.has(key(r.part,r.vendor,r.mp)));
+}
+async function save(){if(!REQ.length)return msg('저장할 구매요청이 없습니다.');if(!window.MESDB||!MESDB.online){msg(`구매요청 ${REQ.length}건을 저장했습니다. (DB 미연결 - 로컬)`);return}try{const j=jobView[jobIdx]||{};
+ const dup=await dupCheck('원재료',j.job,REQ);if(dup.length)return msg(`이미 발주(미입고) 된 품번이 있습니다: ${[...new Set(dup.map(r=>r.part))].join(', ')} — 요청 리스트에서 제외하거나 입고 후 재발주하세요.`);
+ await MESDB.newLines(REQ.map(r=>({category:'원재료',status:'발주',vendor_name:r.vendor,job_no:r.job,item_name:j.item||null,process_code:r.proc,part_no:r.part,part_name:r.name,material:r.mat,spec:r.design,order_qty:Number(r.ord)||null,unit_price:Number(r.price)||null,quote_price:Number(r.amount)||null,order_date:r.odate||null,required_date:r.rdate||null,remark:r.remark||null})));const n=REQ.length;REQ.length=0;renderReq();msg(`원재료 발주 ${n}건을 DB에 등록했습니다. 발주현황/입고등록 화면에서 확인하세요.`)}catch(e){msg('DB 등록 실패: '+e.message.slice(0,120))}}
+function printOrder(){const ids=[...reqBody.querySelectorAll('input:checked')].map(x=>Number(x.dataset.no));const rows=ids.length?REQ.filter(r=>ids.includes(r.no)):REQ.slice(0,1);if(!rows.length)return msg('출력할 행이 없습니다.');const j=jobView[jobIdx]||JOBS[0];const v=rows[0].vendor;
+docArea.innerHTML=`<h2>원재료 발주서</h2>
+<table class="info"><tr><td>발　신 : (주)일평기연</td></tr><tr><td>작성자 : ${OWNER}</td></tr><tr><td>수　신 : ${v}</td></tr><tr><td>F A X : 031-295-9047</td></tr></table>
+<table class="info"><tr><th>제 번</th><td>${rows[0].job}_${rows[0].proc}</td><th>품 명</th><td>${j.item||''}</td><th>발주일 :</th><td>${new Date().toISOString().slice(0,10)}</td></tr></table>
+<table class="items"><thead><tr><th>순번</th><th>품번</th><th>부품명</th><th>재질</th><th>발주수량</th><th>설계치수</th><th>발주치수</th><th>납기일</th><th>첨부</th></tr></thead><tbody>
+${rows.map((r,i)=>`<tr><td class="c">${i+1}</td><td class="c">${r.part}</td><td>${r.name}</td><td class="c">${r.mat}</td><td class="r">${r.ord??''}</td><td class="c">${r.design}</td><td class="c">${[r.th,r.w,r.l].every(x=>x!=null)?`${r.th}*${r.w}*${r.l}`:''}</td><td class="c">${r.rdate}</td><td class="c">${r.att}</td></tr>`).join('')}
+</tbody></table>`;
+preview.classList.add('on');msg('원재료 발주서를 미리보기로 출력했습니다.')}
+function exportCsv(){const out=[['협력업체','제번','공정','품번','부품명','재질','설계치수','두께','가로','세로','수량','발주수량','발주일','입고요구일'],...REQ.map(r=>[r.vendor,r.job,r.proc,r.part,r.name,r.mat,r.design,r.th,r.w,r.l,r.qty,r.ord,r.odate,r.rdate])];const csv='\ufeff'+out.map(a=>a.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='material_order_input.csv';a.click();URL.revokeObjectURL(a.href)}
+function msg(t){message.textContent=t}
+reqDate.value=new Date().toISOString().slice(0,10);renderJobs();renderVendors();renderBom();renderReq();
+
+/* v30: 제번 리스트는 job_pool 뷰, 자재표는 partlist_materials(PartList)에서 로드
+   — page_state 스냅샷에 갇혀 신규 수주/신규 PartList가 반영되지 않던 문제 해결 */
+const _online=()=>!!(window.MESDB&&MESDB.online);
+async function _waitDB(){for(let i=0;i<60&&!window.MESDB;i++)await new Promise(r=>setTimeout(r,50));
+ if(window.MESDB&&MESDB.ready){try{await MESDB.ready}catch(e){}}}
+async function loadJobs(){
+ await _waitDB();if(!_online())return;
+ try{
+  const rs=await MESDB.table('job_pool').select('select=*&order=row_no');
+  const seen=new Set(JOBS.map(j=>j.job));
+  rs.forEach(r=>{if(!seen.has(r.job_no))JOBS.push({job:r.job_no,item:r.item_name||'',proc:'A',procName:'1/1',bom:[]})});
+  if(typeof search==='function')search();else{jobView=[...JOBS];renderJobs()}
+  await loadBom();
+ }catch(e){}
+}
+async function loadBom(){
+ const j=jobView[jobIdx];if(!j||!_online())return;
+ try{
+  const rs=await MESDB.table('partlist_materials').select(`select=*&job_no=eq.${encodeURIComponent(j.job)}&order=row_no`);
+  if(!rs.length&&j.bom&&j.bom.length)return;      /* PartList 없으면 기존 스냅샷 유지 */
+  /* v39: PartList 의 두께/가로/세로 컬럼을 규격으로 승계한다.
+     (규격(spec) 칸이 비어 있으면 중량이 0 이 되어 원재료비가 단가×수량으로만 잡히던 문제) */
+  const dim=r=>{const a=[r.thickness_dia,r.length,r.width].map(v=>Number(v)).filter(v=>v>0);
+    return a.length===3?a.join('*'):''};
+  j.bom=rs.map(r=>({part:r.part_no,name:r.part_name,mat:r.material||'',
+    spec:(r.spec&&/\d+\s*[*xX×]\s*\d+\s*[*xX×]\s*\d+/.test(r.spec))?r.spec:(dim(r)||r.spec||''),
+    qty:r.qty??1,att:r.attachment||''}));
+  if(rs.length)j.proc=rs[0].process_code||j.proc;
+  renderBom();
+ }catch(e){}
+}
+window.MES={search,save,exportCsv,setMessage:msg,print:printOrder};loadJobs();
+</script>
+<script src="mes_sample.js?v=67"></script><script src="mes_scene.js?v=67"></script><script src="mes_demo.js?v=67"></script><script src="mes_db.js?v=67"></script>
+<script>MESDB.bind("material_order_input",()=>({REQ}));   /* v62: 제번/업체는 매번 DB 에서 */
+/* v22: 구매요청 리스트는 화면을 열 때 빈 작업공간으로 시작 (샘플 잔존분이 저장되는 것 방지) */
+REQ.length=0;/*v22*/if(typeof renderReq==='function')renderReq();
+</script>
+<script src="mes_ctx.js?v=67"></script>
+<script src="mes_lookup.js?v=67"></script>
+<script>
+/* 협력업체 목록: 하드코딩 → 마스터 직결 */
+(async function loadVendors(){
+ try{
+  VENDORS.length=0;
+  VENDORS.push(...await MESLOOK.names('vendor_material'));
+  if(typeof venView!=='undefined'){venView=[...VENDORS]}
+  if(typeof venIdx!=='undefined')venIdx=VENDORS.length?0:-1;
+  if(typeof renderVendors==='function')renderVendors();
+ }catch(e){
+  const m=document.getElementById('message');
+  if(m)m.textContent='협력업체 마스터 조회 실패: '+String(e.message||e).slice(0,100);
+ }
+})();
+window.MESLOOK_RELOAD_VENDORS=async()=>{MESLOOK.invalidate('vendor_material');
+ VENDORS.length=0;VENDORS.push(...await MESLOOK.names('vendor_material'));
+ if(typeof venView!=='undefined')venView=[...VENDORS];
+ if(typeof renderVendors==='function')renderVendors();};
+</script>
+<script src="mes_price.js?v=67"></script>
+<script src="mes_vendorcheck.js?v=67"></script>
+<script>
+function sampleFill(){
+  if(window.MESDEMO)return MESDEMO.run('material_order_input',{});
+  var e=document.getElementById('message'); if(e)e.textContent='예제 모듈을 불러오지 못했습니다.';
+}
+</script>
+</body>
+</html>

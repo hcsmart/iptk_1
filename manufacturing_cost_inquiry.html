@@ -1,0 +1,140 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>제조원가 조회</title><style>
+:root{--line:#98a6b2;--line2:#c5d0d8;--blue:#2f75b5;--ink:#344757;--head1:#e8f1f8;--head2:#c8dbe9}
+*{box-sizing:border-box}html,body{height:100%;margin:0}body{font-family:"Malgun Gothic","맑은 고딕",Arial,sans-serif;font-size:12px;color:var(--ink);background:#fff;overflow:hidden}
+button,input,select{font:inherit;color:inherit}.screen{height:100%;display:flex;flex-direction:column;background:#fff}
+.title{height:48px;padding:8px 14px 5px;border-bottom:2px solid #3978ae;display:flex;align-items:center}.title h1{margin:0;font-size:22px;font-weight:500;color:#4b5c6a}.title h1:before{content:'◯';margin-right:6px;color:#8796a1}.title small{font-size:11px;color:#9ca7af;margin-left:12px}
+.form{padding:7px 14px;background:#fafbfc;border-bottom:1px solid var(--line2)}.formrow{display:grid;grid-template-columns:78px 140px 78px 150px 90px 150px 90px minmax(160px,1fr);gap:5px;align-items:center}.formrow+.formrow{margin-top:5px}.label{font-weight:700}.field{height:27px;border:1px solid #b5c0c9;background:#fff;padding:0 6px;min-width:0}
+.entrybox,.gridbox{margin:0 14px;border:1px solid var(--line);overflow:auto;background:#fff}.entrybox{height:190px}.gridbox{flex:1;min-height:0}
+.searchline{height:39px;margin:0 14px;display:flex;align-items:center;gap:5px;border-left:1px solid var(--line);border-right:1px solid var(--line);padding:4px 8px;background:#f6f8fa}.searchline input{width:min(430px,48vw);height:27px;border:1px solid #aeb9c3;padding:0 7px}
+.btn{height:29px;min-width:62px;border:1px solid #9ba8b4;background:linear-gradient(#fff,#dfe6eb);cursor:pointer}.btn:hover{background:#fff}
+table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th,td{height:27px;border-right:1px solid var(--line2);border-bottom:1px solid var(--line2);padding:0 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}th{position:sticky;top:0;z-index:2;text-align:center;background:linear-gradient(var(--head1),var(--head2));color:#405266}tbody tr:nth-child(even) td{background:#fafcfd}tbody tr:hover td{background:#edf6fd}tbody tr.sel td{background:#2d75b7;color:#fff}.c{text-align:center}.num{text-align:right}.toolbar{height:40px;display:flex;align-items:center;gap:5px;padding:4px 14px;background:#f5f7f8;border-bottom:1px solid var(--line2)}
+.foot{height:42px;display:flex;align-items:center;padding:5px 14px;border-top:1px solid var(--line);background:#eef2f5;gap:5px}.msg{margin-left:8px;color:#687784}.right{margin-left:auto;color:#7c8993}
+.split{flex:1;min-height:0;display:grid;grid-template-rows:1fr 1fr;gap:10px;padding:0 14px 8px}.split .gridbox{margin:0}
+@media(max-width:900px){.formrow{grid-template-columns:78px 1fr 78px 1fr}.entrybox,.gridbox,.searchline{margin-left:6px;margin-right:6px}}
+
+.gtot td{background:#dfe9f2;font-weight:700}
+.grp th{background:linear-gradient(#dbe9f5,#b9d2e6)}
+
+/* v21 입력란 배치 보정: 좁은 폭에서 필드를 숨기지 않고 단계적으로 줄바꿈 */
+.field,.formrow input,.formrow select,.formgrid input,.formgrid select,.detail-grid input,.detail-grid select{min-width:0;max-width:100%}
+.lab,.label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:1400px){.formrow{grid-template-columns:78px minmax(0,1fr) 78px minmax(0,1fr)}}
+@media(max-width:880px){.formrow{grid-template-columns:78px minmax(0,1fr)}}
+.formrow>*{min-width:0}
+</style></head><body><div class="screen">
+<div class="title"><h1>제조원가 조회</h1><small>1공장 · 기준 2026-08-22</small></div>
+<section class="form">
+ <div class="formrow"><div class="label">수주유형</div><select id="otype" class="field"><option selected>전체</option><option>신작</option><option>개조</option><option>수리</option><option>유상사급</option></select><div class="label">제번</div><input id="jobq" class="field"><div class="label">모델</div><input id="modelq" class="field"><div class="label">품명</div><input id="itemq" class="field"></div>
+ <div class="formrow"><div class="label">수주일</div><input type="date" class="field"><div class="label">Try-Out 완료일</div><input type="date" class="field"><div class="label">완료일</div><input type="date" class="field"><div class="label">도번</div><input id="drawq" class="field"></div>
+</section>
+<div class="split">
+ <div class="gridbox"><table style="min-width:1320px">
+  <thead><tr><th style="width:70px">수주유형</th><th style="width:92px">완료일</th><th style="width:78px">제번</th><th style="width:90px">모델</th><th style="width:180px">품명</th><th style="width:110px">도번</th><th style="width:52px">조수</th><th style="width:72px">개발유형</th><th style="width:112px">수주가</th><th style="width:112px">목표가</th><th style="width:78px">목표가대비</th><th style="width:106px">SET외주</th><th style="width:100px">경비</th><th style="width:112px">제조원가</th><th style="width:112px">이윤</th><th style="width:68px">이익률</th></tr></thead>
+  <tbody id="obody"></tbody>
+  <tfoot><tr class="gtot"><td colspan="16" class="c" id="totline">조회 0건</td></tr></tfoot>
+ </table></div>
+ <div class="gridbox"><table style="min-width:1560px">
+  <thead>
+   <tr class="grp"><th colspan="7">기본정보</th><th colspan="6">설계비</th><th colspan="6">재료비</th></tr>
+   <tr><th style="width:78px">제번</th><th style="width:90px">모델</th><th style="width:150px">품명</th><th style="width:120px">도번</th><th style="width:52px">공정</th><th style="width:110px">제조원가</th><th style="width:78px">제조원가율</th><th style="width:100px">소계</th><th style="width:56px">(%)</th><th style="width:100px">사내</th><th style="width:56px">(%)</th><th style="width:90px">사외</th><th style="width:56px">(%)</th><th style="width:100px">소계</th><th style="width:56px">(%)</th><th style="width:100px">원재료</th><th style="width:56px">(%)</th><th style="width:100px">구매품</th><th style="width:56px">(%)</th></tr>
+  </thead>
+  <tbody id="dbody"></tbody>
+  <tfoot id="dfoot"></tfoot>
+ </table></div>
+</div>
+<footer class="foot"><button class="btn" onclick="search()">⌕ 검색</button><button class="btn" onclick="exportCsv()">▤ EXCEL</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">제번을 선택하면 공정별 원가가 표시됩니다.</span><span class="right" id="countText"></span></footer>
+</div><script>
+const orders=[{"row_no": 1, "order_type": "신작", "completion_date": null, "job_no": "K25125", "model": "틔움", "item_name": "Bed Sensor Bar_Short, Long", "drawing_no": "T-2511624", "drawing_no_truncated": true, "set_qty": 1, "development_type": "외주", "order_price":9870000, "target_price":11365300, "target_ratio_pct": 0.0, "manufacturing_cost":0, "profit":10840000, "profit_rate_pct":122, "plant_name": "1공장"}, {"row_no": 2, "order_type": "신작", "completion_date": "2024-04-17", "job_no": "K24029", "model": "V24 CK", "item_name": "PLATE, LOWER", "drawing_no": "MGJ65823", "drawing_no_truncated": true, "set_qty": 8, "development_type": "사내", "order_price":102257400, "target_price":96050000, "target_ratio_pct": 118.5, "manufacturing_cost":117064600, "profit":1235300, "profit_rate_pct":1, "plant_name": "1공장"}, {"row_no": 3, "order_type": "신작", "completion_date": null, "job_no": "K25145", "model": "SRS-B65", "item_name": "TOP, COVER", "drawing_no": "CAA102107", "drawing_no_truncated": false, "set_qty": 2, "development_type": "사내", "order_price":47394600, "target_price":43775000, "target_ratio_pct": 84.3, "manufacturing_cost":28222000, "profit":8177500, "profit_rate_pct":26, "plant_name": "1공장"}, {"row_no": 4, "order_type": "신작", "completion_date": "2023-05-31", "job_no": "K23015", "model": "RAPTOR7", "item_name": "FEINFORCE, PLATE", "drawing_no": "MGX63324", "drawing_no_truncated": true, "set_qty": 4, "development_type": "사내", "order_price":75067200, "target_price":70871700, "target_ratio_pct": 0.0, "manufacturing_cost":0, "profit":65492600, "profit_rate_pct":122, "plant_name": "1공장"}, {"row_no": 5, "order_type": "신작", "completion_date": "2024-09-04", "job_no": "K24057", "model": "M-NEXT6", "item_name": "BASE COMPRESSOR", "drawing_no": "MAM6603", "drawing_no_truncated": true, "set_qty": 4, "development_type": "외주", "order_price":96150000, "target_price":79388000, "target_ratio_pct": 0.6, "manufacturing_cost":316400, "profit":62813200, "profit_rate_pct":127, "plant_name": "1공장"}, {"row_no": 6, "order_type": "신작", "completion_date": null, "job_no": "K25123", "model": "틔움", "item_name": "BASE PLATE", "drawing_no": "T-2511575", "drawing_no_truncated": true, "set_qty": 1, "development_type": "외주", "order_price":28440000, "target_price":18796800, "target_ratio_pct": 0.0, "manufacturing_cost":0, "profit":28050000, "profit_rate_pct":122, "plant_name": "1공장"}, {"row_no": 7, "order_type": "신작", "completion_date": "2024-11-30", "job_no": "K24099", "model": "VT1", "item_name": "LEG,FRAME", "drawing_no": null, "drawing_no_truncated": false, "set_qty": 1, "development_type": "외주", "order_price":23925000, "target_price":29847000, "target_ratio_pct": 6.7, "manufacturing_cost":1535200, "profit":24009200, "profit_rate_pct":74, "plant_name": "1공장"}, {"row_no": 8, "order_type": "신작", "completion_date": "2022-06-23", "job_no": "K22063", "model": "VS6", "item_name": "TRAY,DRAIN", "drawing_no": "MJS65319", "drawing_no_truncated": true, "set_qty": 4, "development_type": "외주", "order_price":68851600, "target_price":47185200, "target_ratio_pct": 0.0, "manufacturing_cost":0, "profit":90482600, "profit_rate_pct":122, "plant_name": "1공장"}, {"row_no": 9, "order_type": "신작", "completion_date": "2024-12-13", "job_no": "K24105", "model": "VF", "item_name": "PLATE, REAR", "drawing_no": "MGJ38562", "drawing_no_truncated": true, "set_qty": 4, "development_type": "사내", "order_price":118563200, "target_price":96050000, "target_ratio_pct": 134.5, "manufacturing_cost":89946200, "profit":14217200, "profit_rate_pct":7, "plant_name": "1공장"}, {"row_no": 10, "order_type": "신작", "completion_date": "2024-01-31", "job_no": "K23109", "model": null, "item_name": "HINGE,UPPER R/L", "drawing_no": "AFH76197", "drawing_no_truncated": true, "set_qty": 1, "development_type": "외주", "order_price":32338000, "target_price":42216300, "target_ratio_pct": 6.1, "manufacturing_cost":1482000, "profit":42735000, "profit_rate_pct":95, "plant_name": "1공장"}];
+const details=[{"job_no": "K24105", "model": "VF", "item_name": "PLATE, REAR", "drawing_no": "MGJ38562247", "cost_stage": "A", "manufacturing_cost":59390600, "manufacturing_cost_rate_pct":43, "design_cost_subtotal":3663800, "design_cost_rate_pct":8, "design_cost_internal":2917500, "design_cost_internal_rate_pct":7, "design_cost_external":0, "design_cost_external_rate_pct":0, "material_cost_subtotal":12777600, "material_cost_rate_pct":24, "raw_material_cost":16485000, "raw_material_rate_pct": 29.8, "purchase_item_cost": null, "purchase_item_rate_pct": null, "machining_cost_subtotal": null, "machining_cost_rate_pct": null, "machining_cost_internal": null, "machining_cost_external": null}, {"job_no": "K24105", "model": "VF", "item_name": "PLATE, REAR", "drawing_no": "MGJ38562247", "cost_stage": "AS", "manufacturing_cost":1588100, "manufacturing_cost_rate_pct":2, "design_cost_subtotal":0, "design_cost_rate_pct":0, "design_cost_internal":0, "design_cost_internal_rate_pct":0, "design_cost_external":0, "design_cost_external_rate_pct":0, "material_cost_subtotal":1554000, "material_cost_rate_pct":92, "raw_material_cost":50500, "raw_material_rate_pct": 2.9, "purchase_item_cost":1130200, "purchase_item_rate_pct": 74.1, "machining_cost_subtotal": null, "machining_cost_rate_pct": null, "machining_cost_internal": null, "machining_cost_external": null}, {"job_no": "K24105", "model": "VF", "item_name": "PLATE, REAR", "drawing_no": "MGJ38562247", "cost_stage": "B", "manufacturing_cost":43524500, "manufacturing_cost_rate_pct":50, "design_cost_subtotal":2825200, "design_cost_rate_pct":8, "design_cost_internal":4864500, "design_cost_internal_rate_pct":9, "design_cost_external":0, "design_cost_external_rate_pct":0, "material_cost_subtotal":16164300, "material_cost_rate_pct":41, "raw_material_cost":19981700, "raw_material_rate_pct": 32.5, "purchase_item_cost":373300, "purchase_item_rate_pct": 1.1, "machining_cost_subtotal": null, "machining_cost_rate_pct": null, "machining_cost_internal": null, "machining_cost_external": null}, {"job_no": "K24105", "model": "VF", "item_name": "PLATE, REAR", "drawing_no": "MGJ38562247", "cost_stage": "BS", "manufacturing_cost":3454400, "manufacturing_cost_rate_pct":3, "design_cost_subtotal":0, "design_cost_rate_pct":0, "design_cost_internal":0, "design_cost_internal_rate_pct":0, "design_cost_external":0, "design_cost_external_rate_pct":0, "material_cost_subtotal":1437700, "material_cost_rate_pct":33, "raw_material_cost":526200, "raw_material_rate_pct": 11.2, "purchase_item_cost":875700, "purchase_item_rate_pct": 28.7, "machining_cost_subtotal": null, "machining_cost_rate_pct": null, "machining_cost_internal": null, "machining_cost_external": null}, {"job_no": "K25145", "model": "SRS-B65", "item_name": "TOP, COVER", "drawing_no": "CAA102107", "cost_stage": "A", "manufacturing_cost":20331700, "manufacturing_cost_rate_pct":82, "design_cost_subtotal":1705600, "design_cost_rate_pct":9, "design_cost_internal":1840000, "design_cost_internal_rate_pct":6, "design_cost_external":0, "design_cost_external_rate_pct":0, "material_cost_subtotal": null, "material_cost_rate_pct": null, "raw_material_cost": null, "raw_material_rate_pct": null, "purchase_item_cost": null, "purchase_item_rate_pct": null, "machining_cost_subtotal": null, "machining_cost_rate_pct": null, "machining_cost_internal": null, "machining_cost_external": null}, {"job_no": "K25145", "model": "SRS-B65", "item_name": "TOP, COVER", "drawing_no": "CAA102107", "cost_stage": "B", "manufacturing_cost":7031100, "manufacturing_cost_rate_pct":24, "design_cost_subtotal":1213300, "design_cost_rate_pct":12, "design_cost_internal":1370600, "design_cost_internal_rate_pct":11, "design_cost_external":0, "design_cost_external_rate_pct":0, "material_cost_subtotal":3261900, "material_cost_rate_pct":47, "raw_material_cost":3139300, "raw_material_rate_pct": 36.8, "purchase_item_cost": null, "purchase_item_rate_pct": null, "machining_cost_subtotal": null, "machining_cost_rate_pct": null, "machining_cost_internal": null, "machining_cost_external": null}];
+let view=[...orders];
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const n=v=>v==null?'':Number(v).toLocaleString();
+const p=v=>v==null?'':Number(v).toFixed(1)+'%';
+const dwv=r=>esc(r.drawing_no??'')+(r.drawing_no_truncated?'\u2026':'');
+
+function renderTotal(){
+  const money=v=>Number(v||0).toLocaleString('ko-KR');
+  const src=(typeof view!=='undefined'&&view)||[];
+  const sum=k=>src.reduce((a,r)=>a+(Number(r[k])||0),0);
+  const el=document.getElementById('totline'); if(!el)return;
+  el.textContent = src.length ? `조회 ${src.length}건 · ` + ['수주가 '+money(sum('order_price')),'목표가 '+money(sum('target_price')),'제조원가 '+money(sum('manufacturing_cost')),'이윤 '+money(sum('profit'))].join(' / ') : '조회된 자료가 없습니다.';
+}
+function render(){
+ obody.innerHTML=view.map((r,i)=>`<tr onclick="pick(${i},this)"><td class="c">${esc(r.order_type)}</td><td class="c">${esc(r.completion_date||'')}</td><td>${esc(r.job_no)}</td><td>${esc(r.model||'')}</td><td>${esc(r.item_name)}</td><td>${dwv(r)}</td><td class="c">${r.set_qty??''}</td><td class="c">${esc(r.development_type||'')}</td><td class="num">${n(r.order_price)}</td><td class="num">${n(r.target_price)}</td><td class="num">${p(r.target_ratio_pct)}</td><td class="num">${n(r.set_outsourcing_cost)}</td><td class="num">${n(r.expense_cost)}</td><td class="num">${n(r.manufacturing_cost)}</td><td class="num">${n(r.profit)}</td><td class="num">${p(r.profit_rate_pct)}</td></tr>`).join('');
+ countText.textContent=view.length+'건';
+}
+/* v62: 공정별 원가 내역을 실데이터에서 집계 (예전엔 사진 스냅샷 details 고정 → 실제 제번은 항상 빈 내역)
+   확정금액 = mes_confirmed_amount 와 동일 규칙, 내작 노무비 = 실적시간 × 30,000원/h (manufacturing_cost_view 와 동일) */
+const LABOR_RATE=30000;
+const confAmt=l=>{const q=Number(l.quote_price)||0,c=l.confirm_price==null?null:Number(l.confirm_price),n=Number(l.nego_rate)||0;
+ if(c!=null&&c>0)return c;return l.category==='외주설계'?q:Math.round(q*(1-n/100))};
+async function loadDetailRows(r){
+ if(!_online())return details.filter(d=>d.job_no===r.job_no);
+ const j=encodeURIComponent(r.job_no);
+ const [ls,dr]=await Promise.all([
+  MESDB.table('order_lines').select(`select=category,process_code,quote_price,confirm_price,nego_rate&job_no=eq.${j}&status=eq.입고확정`),
+  MESDB.table('design_results').select(`select=work_type,process_code,work_minutes&job_no=eq.${j}`)]);
+ const g=new Map();const at=(k)=>{if(!g.has(k))g.set(k,{job_no:r.job_no,model:r.model,item_name:r.item_name,drawing_no:r.drawing_no,cost_stage:k,
+   design_cost_internal:0,design_cost_external:0,raw_material_cost:0,purchase_item_cost:0,machining_cost_external:0,assembly_cost_internal:0,etc_cost:0});return g.get(k)};
+ for(const l of ls){const k=l.process_code||'-';const a=confAmt(l);
+  if(l.category==='원재료')at(k).raw_material_cost+=a;else if(l.category==='구매품')at(k).purchase_item_cost+=a;
+  else if(l.category==='외주가공')at(k).machining_cost_external+=a;else if(l.category==='외주설계')at(k).design_cost_external+=a}
+ for(const d of dr){const k=d.process_code||'-';const a=Math.round(Number(d.work_minutes||0)/60*LABOR_RATE);
+  if(d.work_type==='조립')at(k).assembly_cost_internal+=a;else at(k).design_cost_internal+=a}
+ const common=(Number(r.set_outsourcing_cost)||0)+(Number(r.expense_cost)||0);
+ if(common)at('공통').etc_cost+=common;
+ const total=Number(r.manufacturing_cost)||0;const pct=v=>total?+(v/total*100).toFixed(1):null;
+ return [...g.values()].sort((a,b)=>a.cost_stage==='공통'?1:b.cost_stage==='공통'?-1:a.cost_stage.localeCompare(b.cost_stage)).map(x=>{
+  x.design_cost_subtotal=x.design_cost_internal+x.design_cost_external;
+  x.material_cost_subtotal=x.raw_material_cost+x.purchase_item_cost;
+  x.manufacturing_cost=x.design_cost_subtotal+x.material_cost_subtotal+x.machining_cost_external+x.assembly_cost_internal+x.etc_cost;
+  x.manufacturing_cost_rate_pct=pct(x.manufacturing_cost);x.design_cost_rate_pct=pct(x.design_cost_subtotal);
+  x.design_cost_internal_rate_pct=pct(x.design_cost_internal);x.design_cost_external_rate_pct=pct(x.design_cost_external);
+  x.material_cost_rate_pct=pct(x.material_cost_subtotal);x.raw_material_rate_pct=pct(x.raw_material_cost);x.purchase_item_rate_pct=pct(x.purchase_item_cost);
+  return x});
+}
+async function pick(i,tr){
+ const r=view[i];
+ document.querySelectorAll('#obody tr').forEach(x=>x.classList.remove('sel'));tr.classList.add('sel');
+ let rows=[];try{rows=await loadDetailRows(r)}catch(e){message.textContent='내역 조회 실패: '+String(e.message||e).slice(0,100);return}
+ dbody.innerHTML=rows.length?rows.map(d=>`<tr><td>${esc(d.job_no)}</td><td>${esc(d.model||'')}</td><td>${esc(d.item_name)}</td><td>${esc(d.drawing_no||'')}</td><td class="c">${esc(d.cost_stage)}</td><td class="num">${n(d.manufacturing_cost)}</td><td class="num">${p(d.manufacturing_cost_rate_pct)}</td><td class="num">${n(d.design_cost_subtotal)}</td><td class="num">${p(d.design_cost_rate_pct)}</td><td class="num">${n(d.design_cost_internal)}</td><td class="num">${p(d.design_cost_internal_rate_pct)}</td><td class="num">${n(d.design_cost_external)}</td><td class="num">${p(d.design_cost_external_rate_pct)}</td><td class="num">${n(d.material_cost_subtotal)}</td><td class="num">${p(d.material_cost_rate_pct)}</td><td class="num">${n(d.raw_material_cost)}</td><td class="num">${p(d.raw_material_rate_pct)}</td><td class="num">${n(d.purchase_item_cost)}</td><td class="num">${p(d.purchase_item_rate_pct)}</td></tr>`).join(''):'<tr><td colspan="19" class="c" style="height:90px;color:#8a97a2">입고확정된 매입·실적이 없어 원가 내역이 없습니다.</td></tr>';
+ const sum=k=>rows.reduce((a,b)=>a+(b[k]||0),0);
+ dfoot.innerHTML=rows.length?`<tr class="gtot"><td colspan="5" class="c">합계</td><td class="num">${n(sum('manufacturing_cost'))}</td><td></td><td class="num">${n(sum('design_cost_subtotal'))}</td><td></td><td class="num">${n(sum('design_cost_internal'))}</td><td></td><td class="num">${n(sum('design_cost_external'))}</td><td></td><td class="num">${n(sum('material_cost_subtotal'))}</td><td></td><td class="num">${n(sum('raw_material_cost'))}</td><td></td><td class="num">${n(sum('purchase_item_cost'))}</td><td></td></tr>`:'';
+ message.textContent=`${r.job_no} / ${r.item_name} · 공정 ${rows.length}건`;
+}
+function search(){
+ const t=otype.value,j=jobq.value.trim().toUpperCase(),m=modelq.value.trim().toLowerCase(),it=itemq.value.trim().toLowerCase(),d=drawq.value.trim().toLowerCase();
+ view=orders.filter(r=>(t==='전체'||r.order_type===t)&&(!j||r.job_no.toUpperCase().includes(j))&&(!m||String(r.model??'').toLowerCase().includes(m))&&(!it||r.item_name.toLowerCase().includes(it))&&(!d||String(r.drawing_no??'').toLowerCase().includes(d)));
+ dbody.innerHTML='';dfoot.innerHTML='';render();renderTotal();message.textContent=`조회결과 ${view.length}건입니다.`;
+}
+function exportCsv(){
+ const h=['수주유형','완료일','제번','모델','품명','도번','조수','개발유형','수주가','목표가','목표가대비','SET외주','경비','제조원가','이윤','이익률'];
+ const rows=view.map(r=>[r.order_type,r.completion_date,r.job_no,r.model,r.item_name,r.drawing_no,r.set_qty,r.development_type,r.order_price,r.target_price,r.target_ratio_pct,r.set_outsourcing_cost,r.expense_cost,r.manufacturing_cost,r.profit,r.profit_rate_pct]);
+ const csv='\ufeff'+[h,...rows].map(a=>a.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n');
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='manufacturing_cost_orders.csv';a.click();
+}
+
+/* v32: 스냅샷 테이블 → manufacturing_cost_view 실집계 조회 */
+const _online=()=>!!(window.MESDB&&MESDB.online);
+async function loadLive(){
+ for(let i=0;i<60&&!window.MESDB;i++)await new Promise(r=>setTimeout(r,50));
+ if(window.MESDB&&MESDB.ready){try{await MESDB.ready}catch(e){}}
+ if(!_online())return;
+ try{
+  const rs=await MESDB.table('manufacturing_cost_view').select('select=*');
+  orders.length=0;
+  rs.forEach(r=>orders.push(r));
+  if(typeof view!=='undefined'&&Array.isArray(view))view=[...orders];
+  (window.MES&&window.MES.search||window.search||window.render||function(){})();
+  const m=document.getElementById('message');
+  if(m)m.textContent=`실데이터 ${orders.length}건을 조회했습니다.`;
+ }catch(e){const m=document.getElementById('message');
+  if(m)m.textContent='조회 실패: '+String(e.message||e).slice(0,110)}
+}
+window.MES={search,exportCsv,setMessage:t=>message.textContent=t};loadLive();
+render();renderTotal();
+</script><script src="mes_db.js?v=67"></script>
+
+<script src="mes_ctx.js?v=67"></script>
+</body></html>

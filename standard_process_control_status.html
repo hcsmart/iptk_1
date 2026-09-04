@@ -1,0 +1,76 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>기준공정 관리계획 커버리지</title><style>
+:root{--line:#9ba8b4;--line2:#c6d0d8;--blue:#2f75b5;--ink:#344757;--head1:#e8f1f8;--head2:#cbddea}
+*{box-sizing:border-box}html,body{height:100%;margin:0}body{font-family:"Malgun Gothic","맑은 고딕",Arial,sans-serif;font-size:12px;color:var(--ink);background:#fff;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}.screen{height:100%;display:flex;flex-direction:column;background:#fff}
+.title{height:48px;padding:9px 14px 5px;border-bottom:2px solid #3978ae}.title h1{margin:0;font-size:22px;font-weight:500;color:#4b5c6a}.title h1:before{content:'◯';margin-right:6px;color:#8796a1}.title small{font-size:11px;color:#9ca7af;margin-left:10px}
+.form{padding:8px 14px 7px;border-bottom:1px solid var(--line2);background:#fafbfc;max-height:40%;overflow:auto}.formgrid{display:grid;grid-template-columns:92px minmax(0,1fr) 92px minmax(0,1fr) 92px minmax(0,1fr);gap:5px;align-items:center}.formgrid+.formgrid{margin-top:5px}.label{font-weight:700}.field{height:27px;border:1px solid #b5c0c9;background:#fff;padding:0 6px;width:100%}
+.field.ro{background:#eef2f5;color:#6b7885}
+textarea.field{height:46px;padding:4px 6px;resize:vertical;font-size:12px}
+.pick{display:flex;gap:3px}.pick .field{flex:1}.pick button{width:26px;height:27px;border:1px solid #9ba8b4;background:linear-gradient(#fff,#dfe6eb)}
+.searchline{min-height:38px;margin:0 14px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;border-left:1px solid var(--line);border-right:1px solid var(--line);padding:4px 8px;background:#f6f8fa}.searchline input,.searchline select{height:27px;border:1px solid #aeb9c3;padding:0 7px}.searchline input.q{width:min(300px,36vw)}.searchline .lab{font-weight:700;color:#4a5c6c}
+.btn{height:28px;min-width:62px;border:1px solid #9ba8b4;background:linear-gradient(#fff,#dfe6eb)}.btn:hover{background:#fff}
+.gridbox{flex:1;min-height:0;margin:0 14px;border:1px solid var(--line);overflow:auto;background:#fff}table{border-collapse:collapse;min-width:900px;width:100%;table-layout:fixed}th,td{height:27px;border-right:1px solid var(--line2);border-bottom:1px solid var(--line2);padding:0 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}th{position:sticky;top:0;z-index:2;text-align:center;background:linear-gradient(var(--head1),var(--head2));color:#405266}tbody tr:nth-child(even) td{background:#fafcfd}tbody tr:hover td{background:#edf6fd}tbody tr.sel td{background:#2d75b7;color:#fff}.c{text-align:center}.num{text-align:right}
+td.w{background:#fff4d6;color:#8a6100;font-weight:700}td.b{background:#fde7e7;color:#b3261e;font-weight:700}td.g{color:#2e7d32}
+tbody tr.sel td.w,tbody tr.sel td.b,tbody tr.sel td.g{background:#2d75b7;color:#fff}
+.foot{height:43px;display:flex;align-items:center;padding:5px 14px;border-top:1px solid var(--line);background:#eef2f5;gap:5px}.msg{margin-left:10px;color:#687784;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.foot .right{margin-left:auto;color:#7c8993}
+@media(max-width:1400px){.formgrid{grid-template-columns:92px minmax(0,1fr) 92px minmax(0,1fr)}}
+@media(max-width:880px){.formgrid{grid-template-columns:88px minmax(0,1fr)}.gridbox{margin:0 6px}.searchline{margin:0 6px;padding:4px 6px}.title{height:auto;min-height:44px;padding:7px 8px 5px}.title h1{font-size:17px}.title small{display:block;margin:2px 0 0;font-size:10px}.form{max-height:50%;padding:8px 6px 7px}.field,.searchline input,.searchline select{font-size:16px;height:34px}textarea.field{height:56px}.pick button{width:34px;height:34px}.foot{height:auto;min-height:43px;flex-wrap:wrap;padding:6px}.btn{height:34px;min-width:56px}.foot .msg{margin-left:0;flex:1 0 100%;order:9}.foot .right{margin-left:auto}}
+.formgrid>*{min-width:0}
+</style></head>
+<body><div class="screen">
+<div class="title"><h1>기준공정 관리계획 커버리지 <small>기준공정 루트의 각 단계에 관리계획이 수립됐는지 점검합니다. &#x27;관리계획 없음&#x27; 공정이 심사 지적 대상입니다.</small></h1></div>
+<div class="searchline"><span class="lab">검색어</span><input id="q" class="q"><span class="lab">상태</span><select id="fa"><option></option><option>수립완료</option><option>계측기 미지정</option><option>관리계획 없음</option></select><span class="lab">공정그룹</span><select id="fg"><option></option><option>가공</option><option>설계</option><option>조립</option></select><button class="btn" onclick="search()">⌕ 검색</button><button class="btn" onclick="clearSearch()">지우기</button><button class="btn" onclick="exportCsv()">▤ EXCEL</button></div>
+<div class="gridbox"><table><thead><tr><th style="width:44px">No</th><th style="width:90px">기준공정ID</th><th style="width:150px">기준공정명</th><th style="width:60px">순서</th><th style="width:90px">공정코드</th><th style="width:180px">공정명</th><th style="width:70px">그룹</th><th style="width:90px">관리항목수</th><th style="width:80px">특별특성</th><th style="width:100px">계측기미지정</th><th style="width:120px">상태</th></tr></thead><tbody id="body"></tbody></table></div>
+<footer class="foot"><button class="btn" onclick="load()">↻ 새로고침</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">조회 조건을 입력하고 검색하세요.</span><span class="right" id="countText"></span></footer>
+</div>
+<script>
+let data=[],view=[];
+const colKeys=["standard_process_id", "standard_process_name", "sequence", "process_code", "process_name", "process_group", "plan_cnt", "special_cnt", "no_gauge_cnt", "alert"];
+const colCls={"alert": {"관리계획 없음": "b", "계측기 미지정": "w", "수립완료": "g"}};
+const FILTERS=[{"id": "q", "label": "검색어", "type": "text"}, {"id": "fa", "label": "상태", "type": "select", "key": "alert", "opts": ["수립완료", "계측기 미지정", "관리계획 없음"]}, {"id": "fg", "label": "공정그룹", "type": "select", "key": "process_group", "opts": ["가공", "설계", "조립"]}];
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function msg(t){message.textContent=t}
+function cls(k,v){const m=colCls[k];if(!m)return '';return (m[v]||'')}
+function render(){
+  body.innerHTML=view.map((r,i)=>`<tr><td class="c">${i+1}</td>`
+    +colKeys.map(k=>`<td class="${cls(k,r[k])}">${esc((r[k]))}</td>`).join('')+`</tr>`).join('');
+  countText.textContent=`${view.length}건`;
+}
+function search(){
+  view=data.filter(r=>{
+    for(const f of FILTERS){
+      if(f.type==='text'){const q=(document.getElementById(f.id)?.value||'').trim().toLowerCase();
+        if(q&&!Object.values(r).some(v=>String(v??'').toLowerCase().includes(q)))return false}
+      else if(f.type==='select'){const v=document.getElementById(f.id)?.value||'';
+        if(v&&String(r[f.key]??'')!==v)return false}
+      else if(f.type==='daterange'){
+        const a=document.getElementById(f.id+'_f')?.value||'',b=document.getElementById(f.id+'_t')?.value||'';
+        const d=String(r[f.key]??'').slice(0,10);
+        if(a&&(!d||d<a))return false; if(b&&(!d||d>b))return false}
+    }
+    return true;
+  });
+  render();msg(`조회 결과 ${view.length}건입니다.`);
+}
+function clearSearch(){FILTERS.forEach(f=>{
+    if(f.type==='daterange'){const a=document.getElementById(f.id+'_f'),b=document.getElementById(f.id+'_t');if(a)a.value='';if(b)b.value=''}
+    else{const e=document.getElementById(f.id);if(e)e.value=''}});
+  view=[...data];render();msg('조회조건을 초기화했습니다.')}
+function exportCsv(){const header=["기준공정ID", "기준공정명", "순서", "공정코드", "공정명", "그룹", "관리항목수", "특별특성", "계측기미지정", "상태"];
+  const out=[header,...view.map(r=>colKeys.map(k=>r[k]??''))];
+  const csv='\ufeff'+out.map(a=>a.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  a.download='standard_process_control_status.csv';a.click();URL.revokeObjectURL(a.href);msg('CSV 파일을 생성했습니다.')}
+async function load(){
+  try{data=await MESDB.table('standard_process_control_view').select('select=*&order=standard_process_id,sequence');
+    view=[...data];render();msg(`기준공정 관리계획 커버리지 ${data.length}건을 조회했습니다.`);}
+  catch(e){msg('조회 실패: '+String(e.message).slice(0,120))}
+  finally{window.__mesdbReady&&window.__mesdbReady()}
+}
+window.MES={search,exportCsv,setMessage:msg};
+
+</script>
+<script src="mes_db.js?v=67"></script>
+<script>MESDB.ready.then(load,load);</script>
+<script src="mes_ctx.js?v=67"></script>
+</body></html>

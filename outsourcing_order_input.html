@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>외주가공 발주</title>
+<style>
+:root{--line:#9daab6;--line2:#c5ced6;--ink:#344758}
+*{box-sizing:border-box}html,body{height:100%;margin:0}body{font-family:"Malgun Gothic","맑은 고딕",Arial,sans-serif;font-size:12px;color:var(--ink);background:#fff;overflow:hidden}button,input,select{font:inherit;color:inherit}
+.screen{height:100%;display:flex;flex-direction:column}.title{height:46px;padding:9px 14px 4px;border-bottom:2px solid #3977ad;display:flex;align-items:center;gap:14px}.title h1{margin:0;font-size:21px;font-weight:500;color:#4b5b69}.title h1:before{content:'◯';margin-right:6px;color:#8795a1}.title .plant{margin-left:auto;display:flex;align-items:center;gap:6px;color:#6b7885}
+.filters{padding:7px 14px;border-bottom:1px solid var(--line2);background:#fafbfc;display:flex;gap:6px;align-items:center;flex-wrap:wrap}.label{font-weight:700}.field{height:27px;border:1px solid #b7c2cb;background:#fff;padding:0 7px;outline:none}.field:focus{border-color:#4e88bb}
+.panes{display:grid;grid-template-columns:1.1fr .62fr 1.7fr;gap:6px;padding:7px 14px 0;height:190px}
+.box{border:1px solid var(--line);display:flex;flex-direction:column;min-height:0;background:#fff}.box-title{height:24px;display:flex;align-items:center;justify-content:center;background:linear-gradient(#deebf5,#caddea);border-bottom:1px solid var(--line);font-weight:700;color:#536677}
+.searchbar{height:26px;display:flex;gap:4px;align-items:center;padding:0 4px;border-bottom:1px solid var(--line2);background:#f6f8fa}.searchbar input{flex:1;height:21px;border:1px solid #b7c2cb;padding:0 4px;min-width:0}.searchbar button{height:21px;border:1px solid #9ca9b5;background:linear-gradient(#fff,#e2e8ed)}
+.tablewrap{flex:1;min-height:0;overflow:auto}table{border-collapse:collapse;width:100%;table-layout:fixed}th,td{height:24px;padding:0 5px;border-right:1px solid var(--line2);border-bottom:1px solid var(--line2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}th{position:sticky;top:0;z-index:2;text-align:center;background:linear-gradient(#dbe9f4,#c7d9e8);color:#405266;font-weight:700}tbody tr:hover td{background:#edf6fd}tbody tr.sel td{background:#2e78bd;color:#fff}.c{text-align:center}.r{text-align:right}
+td.route{background:#8fdc6b;text-align:center;font-weight:700;color:#20461a}
+.reqbox tbody tr td{background:#9ade79}
+.midbar{display:flex;align-items:center;gap:6px;padding:6px 14px;justify-content:flex-end}
+.reqbox{flex:1;min-height:0;margin:0 14px 6px;border:1px solid var(--line);display:flex;flex-direction:column}.reqbox table{min-width:1280px}
+.btn{height:28px;min-width:70px;border:1px solid #9ca9b5;background:linear-gradient(#fff,#dfe6eb)}.btn:hover{background:#fff}.btn.primary{background:linear-gradient(#f9ffff,#d2e7f6);color:#1e5e91}
+.foot{height:42px;display:flex;align-items:center;padding:5px 14px;border-top:1px solid var(--line);background:#eef2f5;gap:5px}.msg{margin-left:10px;color:#687784}.foot .right{margin-left:auto;color:#7c8993}
+@media(max-width:900px){.panes{grid-template-columns:1fr;height:auto}.title h1{font-size:18px}}
+</style>
+</head>
+<body>
+<div class="screen">
+  <div class="title"><h1>외주가공 발주</h1></div>
+  <section class="filters">
+    <span class="label">제번</span><input id="jobQ" class="field" style="width:190px">
+    <span class="label">품명</span><input id="itemQ" class="field" style="width:190px">
+    <span class="label">업체</span><input id="venF" class="field" style="width:190px">
+    <button class="btn" onclick="search()">⌕ 조회</button>
+  </section>
+  <section class="panes">
+    <div class="box"><div class="box-title">제번리스트</div><div class="tablewrap"><table>
+      <colgroup><col style="width:34%"><col style="width:34%"><col style="width:16%"><col style="width:16%"></colgroup>
+      <thead><tr><th>제번</th><th>품명</th><th>공정</th><th>공정명</th></tr></thead><tbody id="jobBody"></tbody></table></div></div>
+    <div class="box"><div class="box-title">협력업체리스트</div>
+      <div class="searchbar"><input id="venQ" placeholder="Enter text to s"><button onclick="findVendor()">찾기</button><button onclick="clearVendor()">지우기</button></div>
+      <div class="tablewrap"><table><thead><tr><th>협력업체</th></tr></thead><tbody id="venBody"></tbody></table></div></div>
+    <div class="box"><div class="box-title">부품별 가공공정 리스트</div><div class="tablewrap"><table style="min-width:640px">
+      <colgroup><col style="width:36px"><col style="width:80px"><col style="width:90px"><col style="width:56px"><col style="width:56px"><col style="width:56px"><col style="width:56px"><col style="width:56px"><col style="width:56px"><col style="width:56px"><col style="width:56px"><col style="width:56px"></colgroup>
+      <thead><tr><th></th><th>부품코드</th><th>부품명</th><th>공정1</th><th>공정2</th><th>공정3</th><th>공정4</th><th>공정5</th><th>공정6</th><th>공정7</th><th>공정8</th><th>공정9</th></tr></thead>
+      <tbody id="routeBody"></tbody></table></div></div>
+  </section>
+  <div class="midbar"><span class="label">입고요구일</span><input id="reqDate" class="field" type="date"><button class="btn" onclick="pushDown()">⬇ 요청추가</button><button class="btn" onclick="pullUp()">⬆ 요청삭제</button></div>
+  <div class="reqbox"><div class="box-title">구매요청 리스트</div><div class="tablewrap"><table>
+    <colgroup><col style="width:40px"><col style="width:38px"><col style="width:110px"><col style="width:110px"><col style="width:120px"><col style="width:50px"><col style="width:60px"><col style="width:70px"><col style="width:150px"><col style="width:100px"><col style="width:120px"><col style="width:92px"><col style="width:100px"><col style="width:90px"><col style="width:80px"></colgroup>
+    <thead><tr><th>No</th><th>선택</th><th>협력업체</th><th>제번</th><th>품명</th><th>공정</th><th>공정명</th><th>품번</th><th>부품명</th><th>가공공정코드</th><th>가공공정</th><th>발주월</th><th>입고요구월</th><th>비고</th><th>작성자</th></tr></thead>
+    <tbody id="reqBody"></tbody>
+  </table></div></div>
+  <footer class="foot"><button class="btn" onclick="search()">⌕ 검색</button><button class="btn primary" onclick="save()">▣ 저장</button><button class="btn" onclick="sampleFill()" title="화면 순서대로 시연하며 등록요점을 설명합니다.">▶ 등록예제</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫 기</button><span class="msg" id="message">제번·협력업체를 고르고 가공공정을 내려 외주가공 발주를 등록합니다.</span><span class="right" id="countText"></span></footer>
+</div>
+<script>
+/* v46: 작성자/담당자 기본값 = 로그인 사용자 (회사명 하드코딩 제거) */
+const OWNER=(function(){try{return (window.MES_AUTH||window.parent.MES_AUTH)?.name||'담당자'}catch(e){return '담당자'}})();
+
+const JOBS=[];
+let VENDORS=[];  /* 협력업체는 마스터에서 로드 (mes_lookup.js) */
+const PROCNAME={};   /* v39: 공정마스터에서 로드 */
+const ROUTES=[];     /* v39: 선택 제번의 가공공정(machining_plan_parts / PartList)에서 로드 */
+const REQ=[];
+let jobIdx=0,venIdx=6,jobView=[...JOBS],venView=[...VENDORS];
+function renderJobs(){jobBody.innerHTML=jobView.map((j,i)=>`<tr class="${i===jobIdx?'sel':''}" onclick="pickJob(${i})"><td>${j.job}</td><td>${j.item}</td><td class="c">${j.proc}</td><td class="c">${j.procName}</td></tr>`).join('');countText.textContent=`제번 ${jobView.length}건 / 요청 ${REQ.length}건`}
+function renderVendors(){venBody.innerHTML=venView.map((v,i)=>`<tr class="${i===venIdx?'sel':''}" onclick="pickVendor(${i})"><td>${v}</td></tr>`).join('')}
+function renderRoutes(){routeBody.innerHTML=ROUTES.map((r,i)=>`<tr><td class="c"><input type="checkbox" data-i="${i}"></td><td>${r.part}</td><td>${r.name}</td>${r.steps.map(s=>s?`<td class="route">${s}</td>`:'<td></td>').join('')}</tr>`).join('')}
+function renderReq(){reqBody.innerHTML=REQ.map((r,i)=>`<tr><td class="c">${i+1}</td><td class="c"><input type="checkbox" data-no="${r.no}"></td><td>${r.vendor}</td><td>${r.job}</td><td>${r.item}</td><td class="c">${r.proc}</td><td class="c">${r.procName}</td><td>${r.part}</td><td>${r.partName}</td><td class="c">${r.mp}</td><td>${r.mpName}</td><td class="c">${r.odate}</td><td class="c">${r.rdate}</td><td>${r.remark}</td><td class="c">${r.writer}</td></tr>`).join('');countText.textContent=`제번 ${jobView.length}건 / 요청 ${REQ.length}건`}
+function pickJob(i){jobIdx=i;renderJobs();const j=jobView[i];if(!j)return;
+ msg(`${j.job} 부품별 가공공정을 조회합니다...`);
+ if(typeof loadRoutes==='function')loadRoutes();}
+function pickVendor(i){venIdx=i;renderVendors();msg(`협력업체 ${venView[i]} 선택`)}
+function findVendor(){const q=venQ.value.trim().toLowerCase();venView=VENDORS.filter(v=>!q||v.toLowerCase().includes(q));venIdx=0;renderVendors()}
+function clearVendor(){venQ.value='';venView=[...VENDORS];venIdx=0;renderVendors()}
+function search(){const j=jobQ.value.trim().toLowerCase(),it=itemQ.value.trim().toLowerCase();jobView=JOBS.filter(x=>(!j||x.job.toLowerCase().includes(j))&&(!it||(x.item||'').toLowerCase().includes(it)));jobIdx=0;renderJobs();msg(`제번 ${jobView.length}건을 조회했습니다.`)}
+async function pushDown(){const j=jobView[jobIdx];if(!j)return;const picks=[...routeBody.querySelectorAll('input:checked')].map(x=>ROUTES[Number(x.dataset.i)]);if(!picks.length)return msg('부품별 가공공정에서 발주할 부품을 선택하세요.');const d=reqDate.value||new Date(Date.now()+12*864e5).toISOString().slice(0,10);
+picks.forEach(p=>p.steps.filter(Boolean).forEach(mp=>REQ.push({no:REQ.length?Math.max(...REQ.map(r=>r.no))+1:1,vendor:venView[venIdx],job:j.job,item:j.item,proc:j.proc,procName:j.procName,part:p.part,partName:p.name,mp,mpName:PROCNAME[mp]||'',odate:new Date().toISOString().slice(0,10),rdate:d,remark:'',writer:OWNER,price:0,amount:0})));
+/* v39: 가공공정 단가를 자동 조회해 발주금액을 채운다 (없으면 제조원가 외주가공비가 0) */
+if(window.MESPRICE){
+ for(const r of REQ){
+  if(r.amount)continue;
+  /* v40: 발주일 시점에 적용시작된 공정단가 */
+  const hit=await MESPRICE.process(r.mp,r.vendor,{asOf:r.odate});
+  r.price=hit?hit.price:0;
+  r.amount=r.price||0;
+ }
+}
+renderReq();
+const tot=REQ.reduce((a,r)=>a+(Number(r.amount)||0),0);
+const noPrice=REQ.filter(r=>!r.amount).length;
+msg(`${picks.length}개 부품의 가공공정을 구매요청 리스트에 추가했습니다. 발주금액 합계 ${tot.toLocaleString('ko-KR')}원`+
+ (noPrice?` (단가 미등록 ${noPrice}건 - 공정단가변동등록 확인)`:''));}
+function pullUp(){const ids=[...reqBody.querySelectorAll('input:checked')].map(x=>Number(x.dataset.no));if(!ids.length)return msg('삭제할 요청 행을 선택하세요.');for(let i=REQ.length-1;i>=0;i--)if(ids.includes(REQ[i].no))REQ.splice(i,1);renderReq();msg(`${ids.length}건을 삭제했습니다.`)}
+/* v62: 같은 제번·품번·업체(외주가공은 가공공정 포함)의 미입고 발주가 있으면 중복 등록 차단 */
+async function dupCheck(cat,job,rows){
+ const ex=await MESDB.table('order_lines').select(`select=part_no,vendor_name,machining_process_code&category=eq.${encodeURIComponent(cat)}&status=eq.발주&job_no=eq.${encodeURIComponent(job)}`);
+ const key=(p,v,m)=>[p||'',v||'',cat==='외주가공'?(m||''):''].join('|');
+ const have=new Set((ex||[]).map(e=>key(e.part_no,e.vendor_name,e.machining_process_code)));
+ return rows.filter(r=>have.has(key(r.part,r.vendor,r.mp)));
+}
+async function save(){if(!REQ.length)return msg('저장할 발주 자료가 없습니다.');if(!window.MESDB||!MESDB.online){msg(`외주가공 발주 ${REQ.length}건을 저장했습니다. (DB 미연결 - 로컬)`);return}try{
+ const dup=await dupCheck('외주가공',REQ[0].job,REQ);if(dup.length)return msg(`이미 발주(미입고) 된 공정이 있습니다: ${[...new Set(dup.map(r=>r.part+'/'+r.mp))].join(', ')} — 요청 리스트에서 제외하세요.`);
+ await MESDB.newLines(REQ.map(r=>({category:'외주가공',status:'발주',vendor_name:r.vendor,job_no:r.job,item_name:r.item||null,process_code:r.proc,process_name:r.procName,part_no:r.part,part_name:r.partName,machining_process_code:r.mp,machining_process_name:r.mpName||null,order_qty:1,unit_price:Number(r.price)||null,quote_price:Number(r.amount)||null,order_date:r.odate||null,required_date:r.rdate||null,owner_name:r.writer||null,remark:r.remark||null})));const n=REQ.length;REQ.length=0;renderReq();msg(`외주가공 발주 ${n}건을 DB에 등록했습니다. 입고등록 화면에서 확인하세요.`)}catch(e){msg('DB 등록 실패: '+e.message.slice(0,120))}}
+function exportCsv(){const out=[['협력업체','제번','공정','품번','부품명','가공공정코드','가공공정','발주월','입고요구월','작성자'],...REQ.map(r=>[r.vendor,r.job,r.proc,r.part,r.partName,r.mp,r.mpName,r.odate,r.rdate,r.writer])];const csv='\ufeff'+out.map(a=>a.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='outsourcing_order_input.csv';a.click();URL.revokeObjectURL(a.href)}
+function msg(t){message.textContent=t}
+reqDate.value=new Date(Date.now()+12*864e5).toISOString().slice(0,10);
+renderJobs();renderVendors();renderRoutes();renderReq();
+
+/* ── v39: 제번리스트를 job_pool 뷰에서, 가공공정을 실데이터에서 로드 ──
+   기존에는 JOBS 가 항상 빈 배열이라 신규 수주가 화면에 나타나지 않았고,
+   부품별 가공공정도 T99A/T99B 샘플 2행이 고정되어 있었다. */
+const _online=()=>!!(window.MESDB&&MESDB.online);
+async function _waitDB(){for(let i=0;i<60&&!window.MESDB;i++)await new Promise(r=>setTimeout(r,50));
+ if(window.MESDB&&MESDB.ready){try{await MESDB.ready}catch(e){}}}
+async function loadProcNames(){
+ try{const ps=await MESDB.table('processes').select('select=process_code,process_name');
+  ps.forEach(p=>{PROCNAME[p.process_code]=p.process_name||''})}catch(e){}
+}
+async function loadJobs(){
+ await _waitDB();if(!_online()){msg('DB 미연결 - 제번리스트를 불러올 수 없습니다.');return}
+ await loadProcNames();
+ try{
+  const rs=await MESDB.table('job_pool').select('select=*&order=row_no');
+  JOBS.length=0;
+  rs.forEach(r=>JOBS.push({job:r.job_no,item:r.item_name||'',proc:'A',procName:'1/1'}));
+  jobView=[...JOBS];jobIdx=JOBS.length?0:-1;renderJobs();
+  msg(JOBS.length?`제번 ${JOBS.length}건을 조회했습니다.`:'등록된 수주가 없습니다. 영업관리 > 수주등록을 먼저 하세요.');
+  await loadRoutes();
+ }catch(e){msg('제번리스트 조회 실패: '+String(e.message||e).slice(0,110))}
+}
+async function loadRoutes(){
+ const j=jobView[jobIdx];ROUTES.length=0;
+ if(!j||!_online()){renderRoutes();return}
+ try{
+  /* 1순위: 가공계획에서 확정된 부품별 공정 */
+  let rs=await MESDB.table('machining_plan_parts')
+    .select(`select=*&job_no=eq.${encodeURIComponent(j.job)}&order=row_no`);
+  if(rs.length){
+   rs.forEach(r=>ROUTES.push({part:r.part_no,name:r.part_name||'',
+     steps:(Array.isArray(r.steps)?r.steps:[]).slice(0,9)}));
+  }else{
+   /* 2순위: PartList 부품 × 기준공정(가공 기준공정관리 1번) */
+   const [pm,std]=await Promise.all([
+     MESDB.table('partlist_materials').select(`select=part_no,part_name,process_code&job_no=eq.${encodeURIComponent(j.job)}&order=row_no`),
+     MESDB.table('machining_standard_routes').select('select=*&order=standard_process_no&limit=1')]);
+   const steps=(std&&std[0]&&Array.isArray(std[0].steps))?std[0].steps:[];
+   pm.forEach(r=>ROUTES.push({part:r.part_no,name:r.part_name||'',steps:steps.slice(0,9)}));
+   if(pm.length&&!steps.length)msg('기준공정(가공 기준공정관리)이 없어 공정이 비어 있습니다.');
+  }
+  renderRoutes();
+  msg(`${j.job} 부품별 가공공정 ${ROUTES.length}건을 조회했습니다.`);
+ }catch(e){renderRoutes();msg('가공공정 조회 실패: '+String(e.message||e).slice(0,110))}
+}
+window.MES={search,save,exportCsv,setMessage:msg,reload:loadJobs};
+</script>
+<script src="mes_sample.js?v=67"></script><script src="mes_scene.js?v=67"></script><script src="mes_demo.js?v=67"></script><script src="mes_db.js?v=67"></script>
+<script>
+/* v39: JOBS/ROUTES 는 page_state 스냅샷이 아니라 실데이터에서 매번 로드한다.
+   (스냅샷에 갇혀 신규 수주가 안 뜨던 문제) */
+REQ.length=0;if(typeof renderReq==='function')renderReq();
+loadJobs();
+</script>
+<script src="mes_ctx.js?v=67"></script>
+<script src="mes_lookup.js?v=67"></script>
+<script>
+/* 협력업체 목록: 하드코딩 → 마스터 직결 */
+(async function loadVendors(){
+ try{
+  VENDORS.length=0;
+  VENDORS.push(...await MESLOOK.names('vendor_outsourcing'));
+  if(typeof venView!=='undefined'){venView=[...VENDORS]}
+  if(typeof venIdx!=='undefined')venIdx=VENDORS.length?0:-1;
+  if(typeof renderVendors==='function')renderVendors();
+ }catch(e){
+  const m=document.getElementById('message');
+  if(m)m.textContent='협력업체 마스터 조회 실패: '+String(e.message||e).slice(0,100);
+ }
+})();
+window.MESLOOK_RELOAD_VENDORS=async()=>{MESLOOK.invalidate('vendor_outsourcing');
+ VENDORS.length=0;VENDORS.push(...await MESLOOK.names('vendor_outsourcing'));
+ if(typeof venView!=='undefined')venView=[...VENDORS];
+ if(typeof renderVendors==='function')renderVendors();};
+</script>
+<script src="mes_price.js?v=67"></script>
+<script src="mes_vendorcheck.js?v=67"></script>
+<script>
+function sampleFill(){
+  if(window.MESDEMO)return MESDEMO.run('outsourcing_order_input',{});
+  var e=document.getElementById('message'); if(e)e.textContent='예제 모듈을 불러오지 못했습니다.';
+}
+</script>
+</body>
+</html>

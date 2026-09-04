@@ -1,0 +1,181 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>기한관리 알림판</title><style>
+:root{--line:#9ba8b4;--line2:#c6d0d8;--blue:#2f75b5;--ink:#344757;--head1:#e8f1f8;--head2:#cbddea}
+*{box-sizing:border-box}html,body{height:100%;margin:0}body{font-family:"Malgun Gothic","맑은 고딕",Arial,sans-serif;font-size:12px;color:var(--ink);background:#fff;overflow:hidden}
+button,input,select{font:inherit;color:inherit}.screen{height:100%;display:flex;flex-direction:column;background:#fff}
+.title{height:48px;padding:9px 14px 5px;border-bottom:2px solid #3978ae}.title h1{margin:0;font-size:22px;font-weight:500;color:#4b5c6a}.title h1:before{content:'🔔';margin-right:6px}.title small{font-size:11px;color:#9ca7af;margin-left:10px}
+.cards{display:flex;gap:8px;padding:9px 14px 6px;flex-wrap:wrap}
+.card{flex:1 1 150px;min-width:130px;border:1px solid var(--line2);background:linear-gradient(#fff,#f2f6f9);padding:7px 10px;cursor:pointer;position:relative}
+.card:hover{background:#fff;border-color:var(--blue)}
+.card.on{border:2px solid var(--blue);background:#eef6fd}
+.card .k{font-size:11px;color:#7c8993}.card .v{font-size:26px;font-weight:700;line-height:1.1;margin-top:2px}
+.card.over .v{color:#b3261e}.card.soon .v{color:#a76c00}.card.none .v{color:#5b6b79}.card.all .v{color:#2f75b5}
+.searchline{min-height:38px;margin:0 14px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;border:1px solid var(--line);padding:5px 8px;background:#f6f8fa}
+.searchline input,.searchline select{height:27px;border:1px solid #aeb9c3;padding:0 7px}
+.searchline input.q{width:min(220px,30vw)}.searchline input.n{width:62px;text-align:right}
+.searchline .lab{font-weight:700;color:#4a5c6c}
+.btn{height:28px;min-width:62px;border:1px solid #9ba8b4;background:linear-gradient(#fff,#dfe6eb)}.btn:hover{background:#fff}.btn.primary{background:linear-gradient(#f9ffff,#d2e7f6);color:#1e5e91}
+.wrap{flex:1;min-height:0;display:flex;gap:8px;margin:7px 14px 0}
+.side{width:250px;flex:0 0 250px;border:1px solid var(--line);overflow:auto;background:#fff}
+.gridbox{flex:1;min-width:0;border:1px solid var(--line);overflow:auto;background:#fff}
+table{border-collapse:collapse;width:100%;table-layout:fixed}
+th,td{height:27px;border-right:1px solid var(--line2);border-bottom:1px solid var(--line2);padding:0 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+th{position:sticky;top:0;z-index:2;text-align:center;background:linear-gradient(var(--head1),var(--head2));color:#405266}
+#gridTable{min-width:980px}
+tbody tr:nth-child(even) td{background:#fafcfd}tbody tr:hover td{background:#edf6fd;cursor:pointer}tbody tr.sel td{background:#2d75b7;color:#fff}
+.c{text-align:center}.num{text-align:right}
+td.b{background:#fde7e7;color:#b3261e;font-weight:700}td.w{background:#fff4d6;color:#8a6100;font-weight:700}td.g{color:#2e7d32}td.n{background:#eef1f4;color:#5b6b79}
+tbody tr.sel td.b,tbody tr.sel td.w,tbody tr.sel td.g,tbody tr.sel td.n{background:#2d75b7;color:#fff}
+.side tbody tr.on td{background:#dcecfa;font-weight:700}
+.foot{height:43px;display:flex;align-items:center;padding:5px 14px;border-top:1px solid var(--line);background:#eef2f5;gap:5px;margin-top:7px}
+.msg{margin-left:10px;color:#687784;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.foot .right{margin-left:auto;color:#7c8993}
+@media(max-width:900px){.wrap{flex-direction:column;margin:7px 6px 0}.side{width:auto;flex:0 0 150px}.searchline{margin:0 6px}.cards{padding:8px 6px 5px}.title{height:auto;min-height:44px;padding:7px 8px 5px}.title h1{font-size:17px}.title small{display:block;margin:2px 0 0;font-size:10px}
+.searchline input,.searchline select{font-size:16px;height:34px}.btn{height:34px}.foot{height:auto;min-height:43px;flex-wrap:wrap;padding:6px}.foot .msg{margin-left:0;flex:1 0 100%;order:9}}
+</style></head>
+<body><div class="screen">
+<div class="title"><h1>기한관리 알림판 <small>SQ 유지에 필요한 모든 기한을 한 화면에서 봅니다. 행을 더블클릭하면 해당 관리화면이 열립니다.</small></h1></div>
+
+<div class="cards">
+  <div class="card over" id="cOver" onclick="pickLevel('기한초과')"><div class="k">기한초과</div><div class="v" id="vOver">0</div></div>
+  <div class="card soon" id="cSoon" onclick="pickLevel('임박')"><div class="k">임박 (<span id="thLab">30</span>일 이내)</div><div class="v" id="vSoon">0</div></div>
+  <div class="card none" id="cNone" onclick="pickLevel('기한미등록')"><div class="k">기한 미등록</div><div class="v" id="vNone">0</div></div>
+  <div class="card all on" id="cAll" onclick="pickLevel('')"><div class="k">관리대상 전체</div><div class="v" id="vAll">0</div></div>
+</div>
+
+<div class="searchline">
+  <span class="lab">임박기준</span><input id="th" class="n" type="number" min="1" max="365" value="30" onchange="apply()"><span>일</span>
+  <span class="lab">구분</span><select id="fc" onchange="apply()"><option value="">전체</option></select>
+  <span class="lab">담당</span><input id="fo" class="q" style="width:110px" oninput="apply()">
+  <span class="lab">검색어</span><input id="fq" class="q" oninput="apply()">
+  <label style="margin-left:6px"><input type="checkbox" id="hideOk" checked onchange="apply()"> 정상건 숨김</label>
+  <button class="btn primary" onclick="load()">↻ 새로고침</button>
+  <button class="btn" onclick="clearAll()">지우기</button>
+  <button class="btn" onclick="exportCsv()">▤ EXCEL</button>
+  <button class="btn" onclick="printBoard()">🖨 인쇄</button>
+</div>
+
+<div class="wrap">
+  <div class="side"><table><thead><tr><th>구분</th><th style="width:44px">초과</th><th style="width:44px">임박</th></tr></thead><tbody id="sideBody"></tbody></table></div>
+  <div class="gridbox"><table id="gridTable"><thead><tr>
+    <th style="width:40px">No</th><th style="width:118px">구분</th><th style="width:120px">번호</th>
+    <th style="width:280px">내용</th><th style="width:80px">담당</th><th style="width:92px">기한일</th>
+    <th style="width:62px">잔여일</th><th style="width:84px">알림</th><th style="width:80px">상태</th>
+    <th style="width:220px">비고</th><th style="width:130px">관리화면</th>
+  </tr></thead><tbody id="body"></tbody></table></div>
+</div>
+
+<footer class="foot">
+  <button class="btn" onclick="openSel()">↗ 관리화면 열기</button>
+  <button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button>
+  <span class="msg" id="message">불러오는 중…</span><span class="right" id="countText"></span>
+</footer>
+</div>
+<script>
+let raw=[],view=[],sel=-1,level='';
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const msg=t=>message.textContent=t;
+const online=()=>!!(window.MESDB&&MESDB.online);
+async function waitDB(){for(let i=0;i<60&&!window.MESDB;i++)await new Promise(r=>setTimeout(r,50));
+  if(window.MESDB&&MESDB.ready){try{await MESDB.ready}catch(e){}}}
+const TH=()=>Math.max(1,Number(document.getElementById('th').value)||30);
+
+/* 알림 등급 판정: 기한초과 → 임박 → 정상, 기한 없으면 미등록 */
+function levelOf(r){
+  if(r.due_date==null||r.days_left==null)return '기한미등록';
+  const d=Number(r.days_left);
+  if(d<0)return '기한초과';
+  if(d<=TH())return '임박';
+  return '정상';
+}
+const LVCLS={'기한초과':'b','임박':'w','기한미등록':'n','정상':'g'};
+
+async function load(){
+  await waitDB();
+  if(!online()){msg('DB 미연결 — 조회할 수 없습니다.');raw=[];apply();return}
+  try{
+    raw=await MESDB.table('sq_alert_view').select('select=*&order=sort_no.asc,due_date.asc');
+    raw.forEach(r=>{r.days_left=(r.days_left==null?null:Number(r.days_left))});
+    const cats=[...new Set(raw.map(r=>r.cat))];
+    const cur=fc.value;
+    fc.innerHTML='<option value="">전체</option>'+cats.map(c=>`<option>${esc(c)}</option>`).join('');
+    fc.value=cats.includes(cur)?cur:'';
+    apply();
+    msg(`${new Date().toLocaleString('sv-SE',{hour12:false})} 기준으로 갱신했습니다.`);
+  }catch(e){msg('조회 실패: '+String(e.message||e).slice(0,120));raw=[];apply()}
+}
+
+function apply(){
+  thLab.textContent=TH();
+  raw.forEach(r=>r._lv=levelOf(r));
+  const c=fc.value,o=fo.value.trim(),q=fq.value.trim().toLowerCase();
+  view=raw.filter(r=>{
+    if(hideOk.checked && r._lv==='정상')return false;
+    if(level && r._lv!==level)return false;
+    if(c && r.cat!==c)return false;
+    if(o && !String(r.owner??'').includes(o))return false;
+    if(q && !['cat','ref_no','title','owner','stat','extra'].some(k=>String(r[k]??'').toLowerCase().includes(q)))return false;
+    return true;
+  }).sort((a,b)=>{
+    const rk=x=>({'기한초과':0,'임박':1,'기한미등록':2,'정상':3})[x._lv];
+    return rk(a)-rk(b) || (a.days_left??9999)-(b.days_left??9999) || a.sort_no-b.sort_no;
+  });
+  renderCards();renderSide();render();
+}
+
+function renderCards(){
+  const t=raw.filter(r=>r._lv!=='정상');
+  vOver.textContent=raw.filter(r=>r._lv==='기한초과').length;
+  vSoon.textContent=raw.filter(r=>r._lv==='임박').length;
+  vNone.textContent=raw.filter(r=>r._lv==='기한미등록').length;
+  vAll.textContent=raw.length;
+  [['',cAll],['기한초과',cOver],['임박',cSoon],['기한미등록',cNone]].forEach(([k,el])=>el.classList.toggle('on',level===k));
+}
+
+function renderSide(){
+  const cats=[...new Set(raw.map(r=>r.cat))];
+  sideBody.innerHTML=cats.map(c=>{
+    const rs=raw.filter(r=>r.cat===c);
+    const ov=rs.filter(r=>r._lv==='기한초과').length, sn=rs.filter(r=>r._lv==='임박').length;
+    return `<tr class="${fc.value===c?'on':''}" onclick="pickCat('${esc(c)}')"><td>${esc(c)}</td>`
+      +`<td class="c ${ov?'b':''}">${ov}</td><td class="c ${sn?'w':''}">${sn}</td></tr>`;
+  }).join('')||'<tr><td colspan="3" class="c" style="color:#8a97a2;height:60px">관리대상 없음</td></tr>';
+}
+
+function render(){
+  body.innerHTML=view.length?view.map((r,i)=>`<tr ondblclick="openRow(${i})" onclick="pick(${i},this)">
+    <td class="c">${i+1}</td><td>${esc(r.cat)}</td><td>${esc(r.ref_no)}</td>
+    <td>${esc(r.title)}</td><td class="c">${esc(r.owner)}</td>
+    <td class="c">${esc(r.due_date||'-')}</td>
+    <td class="num ${LVCLS[r._lv]||''}">${r.days_left==null?'-':r.days_left}</td>
+    <td class="c ${LVCLS[r._lv]||''}">${esc(r._lv)}</td>
+    <td class="c">${esc(r.stat||'')}</td><td>${esc(r.extra||'')}</td>
+    <td class="c" style="color:#2f75b5">${esc(r.menu)} ↗</td></tr>`).join('')
+    :'<tr><td colspan="11" class="c" style="height:180px;color:#8a97a2">해당 조건의 알림이 없습니다.</td></tr>';
+  countText.textContent=`${view.length}건`;
+  if(view.length)msg(`기한초과 ${view.filter(r=>r._lv==='기한초과').length}건 · 임박 ${view.filter(r=>r._lv==='임박').length}건 (임박기준 ${TH()}일)`);
+}
+
+function pick(i,tr){sel=i;document.querySelectorAll('#body tr').forEach(x=>x.classList.remove('sel'));tr.classList.add('sel')}
+function pickLevel(v){level=(level===v?'':v);apply()}
+function pickCat(c){fc.value=(fc.value===c?'':c);apply()}
+function openRow(i){const r=view[i];if(!r)return;
+  try{if(window.parent&&window.parent.openByName){window.parent.openByName(r.menu);msg(`${r.menu} 화면을 열었습니다.`);return}}catch(e){}
+  msg('상위 화면에서만 이동할 수 있습니다.')}
+function openSel(){sel>=0?openRow(sel):msg('먼저 행을 선택하세요.')}
+function clearAll(){fc.value='';fo.value='';fq.value='';level='';th.value=30;hideOk.checked=true;apply();msg('조회조건을 초기화했습니다.')}
+
+function exportCsv(){
+  const head=['구분','번호','내용','담당','기한일','잔여일','알림','상태','비고','관리화면'];
+  const rows=view.map(r=>[r.cat,r.ref_no,r.title,r.owner,r.due_date||'',r.days_left??'',r._lv,r.stat||'',r.extra||'',r.menu]);
+  const csv='\uFEFF'+[head,...rows].map(a=>a.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download=`기한관리알림_${new Date().toISOString().slice(0,10)}.csv`;a.click();
+  msg(`${view.length}건을 내려받았습니다.`);
+}
+function printBoard(){window.print()}
+
+window.MES={search:load,setMessage:msg};
+load();
+</script>
+<script src="mes_db.js?v=67"></script>
+<script src="mes_ctx.js?v=67"></script>
+</body></html>

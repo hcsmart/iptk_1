@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>사용자정보</title>
+<style>
+:root{--line:#9aa7b3;--line2:#c7d2db;--blue:#2c73b4;--blue2:#d7e7f2;--ink:#354858;--bg:#f6f8fa}
+*{box-sizing:border-box}html,body{height:100%;margin:0}body{font-family:"Malgun Gothic","맑은 고딕",Arial,sans-serif;font-size:12px;color:var(--ink);background:#fff;overflow:hidden}
+button,input,select{font:inherit;color:inherit}button{cursor:pointer}
+.screen{height:100%;display:flex;flex-direction:column;background:#fff}
+.title{height:50px;padding:8px 14px 5px;border-bottom:2px solid #3978ae;display:flex;align-items:center;gap:8px}
+.title h1{margin:0;font-size:22px;font-weight:500;color:#4d5d69}.title h1:before{content:'◯';margin-right:6px;color:#8c9aa5}
+.body{flex:1;min-height:0;display:grid;grid-template-columns:36% 64%;gap:8px;padding:7px 10px}
+.panel{border:1px solid var(--line);background:#fff;min-height:0;display:flex;flex-direction:column}
+.cap{height:28px;display:flex;align-items:center;padding:0 8px;background:linear-gradient(#f5f8fa,#e6edf2);border-bottom:1px solid var(--line);font-weight:700}
+.filters{display:grid;grid-template-columns:74px minmax(0,1fr) 74px minmax(0,1fr) auto;gap:3px;padding:5px;border-bottom:1px solid var(--line2);align-items:center}
+.lab{background:#eef2f5;border:1px solid #c4cdd5;display:flex;align-items:center;justify-content:center;min-height:25px}
+.field{height:25px;border:1px solid #b7c1ca;background:#fff;padding:0 6px;min-width:0}
+.userlist{flex:1;min-height:0;overflow:auto}
+.group-title{height:25px;display:flex;align-items:center;padding:0 8px;background:#edf3f7;border-bottom:1px solid #c8d3dc;color:#3b556d;font-weight:700}
+.user-row{display:grid;grid-template-columns:1fr 1.4fr 52px;min-height:26px;border-bottom:1px solid #e0e6eb}
+.user-row .use{justify-self:center;font-size:11px;color:#2e7d32}
+.user-row .use.off{color:#c62828}
+.allchk{display:flex;align-items:center;gap:4px;white-space:nowrap;font-size:12px;color:#41556b}
+.user-row span{padding:5px 8px;border-right:1px solid #e0e6eb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-row:hover{background:#eef6fc}.user-row.on{background:#2f76b7;color:#fff}
+.right{min-height:0;display:grid;grid-template-rows:auto 42px minmax(0,1fr);gap:7px}
+.detail{border:1px solid var(--line)}
+.detail-grid{display:grid;grid-template-columns:78px 1fr 78px 1fr 78px 1fr;gap:0}
+.detail-grid .lab,.detail-grid .field{border-top:0;border-left:0}
+.detail-grid .field{width:100%}
+.detail-grid .check{height:25px;border-right:1px solid #b7c1ca;border-bottom:1px solid #b7c1ca;display:flex;align-items:center;padding-left:8px}
+.actions{display:flex;align-items:center;gap:5px;padding-left:3px}
+.btn{height:29px;min-width:72px;border:1px solid #9ba8b4;background:linear-gradient(#fff,#dfe6eb)}.btn:hover{background:#fff}
+.permission{border:1px solid var(--line);min-height:0;display:flex;flex-direction:column}
+.permission-head{display:grid;grid-template-columns:1fr 250px;background:linear-gradient(#e7f0f7,#cadae7);border-bottom:1px solid var(--line);font-weight:700}
+.permission-head div{padding:6px 8px;border-right:1px solid #aebbc6}
+.permission-list{flex:1;min-height:0;overflow:auto;background:#fff}
+.btn.primary{background:linear-gradient(#f9ffff,#d2e7f6);color:#1e5e91}
+.perm-row{display:grid;grid-template-columns:1fr 300px;min-height:26px;border-bottom:1px solid #e0e6eb;align-items:center}
+.perm-row.mod{background:linear-gradient(#eef5fb,#e2edf6);font-weight:700}
+.perm-row.sec{background:#f7fafc}
+.perm-row:hover{background:#edf6fd}
+.perm-row .toggle{cursor:pointer;user-select:none;display:inline-block;width:14px;color:#5b6b7a}
+.rights{display:flex;gap:10px;justify-content:flex-start}
+.rights label{display:flex;align-items:center;gap:3px;cursor:pointer;white-space:nowrap}
+.rights input{margin:0}
+.perm-row div{padding:5px 8px;border-right:1px solid #e0e6eb}
+.path{padding-left:calc(8px + var(--depth)*15px)!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.full{color:#b03a34;font-weight:700}.none{color:#b03a34}
+.note{padding:10px;color:#7c8993}
+.foot{height:40px;display:flex;align-items:center;padding:5px 10px;border-top:1px solid var(--line);background:#edf2f5;gap:5px}
+.msg{margin-left:8px;color:#687784}
+#toast{position:fixed;left:50%;top:22px;transform:translateX(-50%) translateY(-14px);z-index:99999;padding:10px 22px;border-radius:4px;font-size:13px;color:#fff;background:#2e7d32;box-shadow:0 4px 16px rgba(0,0,0,.22);opacity:0;pointer-events:none;transition:opacity .18s ease,transform .18s ease}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.err{background:#c62828}
+#toast.warn{background:#ef6c00}.rightmsg{margin-left:auto;color:#7d8993}
+@media(max-width:1000px){.body{grid-template-columns:42% 58%}.detail-grid{grid-template-columns:74px 1fr 74px 1fr}}
+
+/* v21 입력란 배치 보정: 좁은 폭에서 필드를 숨기지 않고 단계적으로 줄바꿈 */
+.field,.formrow input,.formrow select,.formgrid input,.formgrid select,.detail-grid input,.detail-grid select{min-width:0;max-width:100%}
+.lab,.label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:1400px){.detail-grid{grid-template-columns:78px minmax(0,1fr) 78px minmax(0,1fr)}}
+@media(max-width:880px){.detail-grid{grid-template-columns:78px minmax(0,1fr)}}
+.detail-grid>*{min-width:0}
+</style>
+</head>
+<body>
+<div class="screen">
+  <div class="title"><h1>사용자정보</h1></div>
+  <div class="body">
+    <section class="panel">
+      <div class="cap">사용자 목록</div>
+      <div class="filters">
+        <div class="lab">사용자</div><input id="q" class="field" oninput="renderUsers()">
+        <label class="allchk" title="체크하면 사용여부가 해제된(미사용) 사용자까지 표시합니다"><input type="checkbox" id="d_all" onchange="renderUsers()">전체</label>
+      </div>
+      <div class="user-row" style="background:#dbe9f4;font-weight:700;color:#33506b"><span style="padding-left:8px">직급</span><span>성명</span><span class="use" style="color:#33506b">사용</span></div>
+      <div class="userlist" id="userList"></div>
+    </section>
+
+    <section class="right">
+      <div class="detail">
+        <div class="cap">사용자정보</div>
+        <div class="detail-grid">
+          <div class="lab">등록일</div><input id="d_registered" class="field" type="date">
+          
+
+          <div class="lab">아이디</div><input id="d_user_id" class="field">
+          <div class="lab">성명</div><input id="d_name" class="field">
+          <div class="lab">성명(영문)</div><input id="d_english_name" class="field">
+
+          <div class="lab">비밀번호</div><input id="d_pw" class="field" value="******" readonly title="마스터만 발급 비밀번호를 확인할 수 있습니다">
+          <div class="lab">사용자그룹</div><select id="d_user_group" class="field"><option></option><option>사용자</option></select>
+          <div class="lab">공정그룹</div><input id="d_process_group" class="field">
+
+          <div class="lab">부서</div><input id="d_department" class="field">
+          <div class="lab">사업부</div><input id="d_business_division" class="field">
+          <div class="lab">휴대폰번호</div><input id="d_mobile" class="field">
+
+          <div class="lab">직급</div><input id="d_position" class="field">
+          <div class="lab">전화번호</div><input id="d_phone" class="field">
+          <div class="lab">이메일</div><input id="d_email" class="field">
+
+          <div class="lab">사원번호</div><input id="d_employee_no" class="field">
+          <div class="lab" title="해제하면 로그인이 차단되고 목록에서 숨겨집니다">사용여부</div><div class="check"><input id="d_active" type="checkbox" title="해제 시 해당 계정은 로그인할 수 없습니다"></div>
+          <div class="lab">비고</div><input id="d_remark" class="field">
+        <div class="lab">로그인메일</div><input id="d_auth_email" class="field" placeholder="user@ipmes.demo">
+        <div class="lab">권한역할</div><select id="d_role" class="field"><option value="user">user</option><option value="admin">admin</option><option value="master">master</option></select>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn" onclick="refresh()">⟳ 새로고침</button>
+        <button class="btn" onclick="saveUser()">▣ 저장</button>
+        <button class="btn" onclick="deleteUser()">✖ 삭제</button>
+        <button class="btn primary" onclick="registerUser()">＋ 신규 사용자 등록</button>
+        <button class="btn" onclick="resetPassword()">🔑 비밀번호 재설정</button>
+        <button class="btn" id="btnShowPw" onclick="togglePasswords()" style="display:none">👁 비밀번호 보기 (마스터)</button>
+        <button class="btn" onclick="expandAll(true)">⊞ 전체펼침</button>
+        <button class="btn" onclick="expandAll(false)">⊟ 접기</button>
+        <button class="btn primary" onclick="savePermissions()">🔒 권한저장</button>
+        <button class="btn" onclick="copyPermissions()">⧉ 권한복사</button>
+      </div>
+
+      <div class="permission">
+        <div class="cap">권한</div>
+        <div class="permission-head"><div>메뉴명</div><div class="rights"><label><input type="checkbox" onclick="setAll('view',this.checked)">조회</label><label><input type="checkbox" onclick="setAll('save',this.checked)">저장</label><label><input type="checkbox" onclick="setAll('edit',this.checked)">수정</label><label><input type="checkbox" onclick="setAll('del',this.checked)">삭제</label></div></div>
+        <div class="permission-list" id="permList"></div>
+      </div>
+    </section>
+  </div>
+  <footer class="foot">
+    <button class="btn" onclick="sampleFill()" title="예시값을 순서대로 채우며 등록요점을 설명합니다.">▶ 등록예제</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button>
+    <span class="msg" id="message">사용자 데이터를 조회했습니다.</span>
+    <span class="rightmsg" id="countText"></span>
+  </footer>
+</div>
+<script>
+const users = [{"user_key": "20300_윤나윤", "user_id": null, "name": "윤나윤", "department_code": "20300", "department_name": "경영기획", "factory": "1공장", "registered_date": null, "position_code": null, "position_name": null, "user_group": null, "is_active": null}, {"user_key": "20300_류민호", "user_id": null, "name": "류민호", "department_code": "20300", "department_name": "경영기획", "factory": "1공장", "registered_date": null, "position_code": null, "position_name": null, "user_group": null, "is_active": null}, {"user_key": "20300_김민수", "user_id": null, "name": "김민수", "department_code": "20300", "department_name": "경영기획", "factory": "1공장", "registered_date": null, "position_code": null, "position_name": null, "user_group": null, "is_active": null}, {"user_key": "10000_이태윤", "user_id": "bhnru", "name": "이태윤", "department_code": "10000", "department_name": "공통", "factory": "1공장", "registered_date": "2024-01-09", "position_code": "002", "position_name": "대표이사", "user_group": "사용자", "is_active": true, "english_name": null, "business_division": null, "process_group": null, "mobile_phone": null, "email": null, "phone": null, "employee_no": null, "remark": null}, {"user_key": "10000_김지호", "user_id": null, "name": "김지호", "department_code": "10000", "department_name": "공통", "factory": "1공장", "registered_date": null, "position_code": null, "position_name": null, "user_group": null, "is_active": null}, {"user_key": "10000_민재홍", "user_id": null, "name": "민재홍", "department_code": "10000", "department_name": "공통", "factory": "1공장", "registered_date": null, "position_code": null, "position_name": null, "user_group": null, "is_active": null}, {"user_key": "10000_TIC", "user_id": null, "name": "TIC", "department_code": "10000", "department_name": "공통", "factory": "1공장", "registered_date": null, "position_code": null, "position_name": null, "user_group": null, "is_active": null}, {"user_key": "10500_한서연", "user_id": null, "name": "한서연", "department_code": "10500", "department_name": "구매/가공", "factory": "1공장", "registered_date": null, "position_code": null, "position_name": null, "user_group": null, "is_active": null}, {"user_key": "10500_안도윤", "user_id": null, "name": "안도윤", "department_code": "10500", "department_name": "구매/가공", "factory": "1공장", "registered_date": null, "position_code": null, "position_name": null, "user_group": null, "is_active": null}, {"user_key": "10500_조시우", "user_id": null, "name": "조시우", "department_code": "10500", "department_name": "구매/가공", "factory": "1공장", "registered_date": null, "position_code": null, "position_name": null, "user_group": null, "is_active": null}, {"user_key": "none_안다인", "user_id": null, "name": "안다인", "department_code": null, "department_name": "부서없음", "factory": "1공장", "registered_date": null, "position_code": null, "position_name": null, "user_group": null, "is_active": null}, {"user_key": "none_일평", "user_id": null, "name": "일평", "department_code": null, "department_name": "부서없음", "factory": "1공장", "registered_date": null, "position_code": null, "position_name": null, "user_group": null, "is_active": null}, {"user_key": "none_김지우", "user_id": null, "name": "김지우", "department_code": null, "department_name": "부서없음", "factory": "1공장", "registered_date": null, "position_code": null, "position_name": null, "user_group": null, "is_active": null}, {"user_key": "10300_안지우", "user_id": null, "name": "안지우", "department_code": "10300", "department_name": "설계", "factory": "1공장", "registered_date": null, "position_code": null, "position_name": null, "user_group": null, "is_active": null}, {"user_key": "10300_안서연", "user_id": null, "name": "안서연", "department_code": "10300", "department_name": "설계", "factory": "1공장", "registered_date": null, "position_code": null, "position_name": null, "user_group": null, "is_active": null}, {"user_key": "10300_장소율", "user_id": "user19", "name": "장소율", "department_code": "10300", "department_name": "설계", "factory": "1공장", "registered_date": "2023-08-22", "position_code": "010", "position_name": "과장", "user_group": "사용자", "is_active": true, "english_name": null, "business_division": null, "process_group": null, "mobile_phone": null, "email": null, "phone": null, "employee_no": null, "remark": null}, {"user_key": "10300_강지우", "user_id": null, "name": "강지우", "department_code": "10300", "department_name": "설계", "factory": "1공장", "registered_date": null, "position_code": null, "position_name": null, "user_group": null, "is_active": null}, {"user_key": "10300_권민준", "user_id": null, "name": "권민준", "department_code": "10300", "department_name": "설계", "factory": "1공장", "registered_date": null, "position_code": null, "position_name": null, "user_group": null, "is_active": null}, {"user_key": "40000_강대규", "user_id": null, "name": "강대규", "department_code": "40000", "department_name": "연구소", "factory": "1공장", "registered_date": null, "position_code": null, "position_name": null, "user_group": null, "is_active": null}];
+const permissions = [{"user_key": "10300_장소율", "user_id": "user19", "menu_path": ["영업관리", "수주등록"], "menu_name": "수주등록", "permission_status": "none", "can_view": false, "can_save": false, "can_edit": false, "can_delete": false}, {"user_key": "10300_장소율", "user_id": "user19", "menu_path": ["영업관리", "수주현황"], "menu_name": "수주현황", "permission_status": "none", "can_view": false, "can_save": false, "can_edit": false, "can_delete": false}, {"user_key": "10300_장소율", "user_id": "user19", "menu_path": ["설계관리", "외주설계발주", "외주설계발주", "외주설계발주등록"], "menu_name": "외주설계발주등록", "permission_status": "full", "can_view": true, "can_save": true, "can_edit": true, "can_delete": true}, {"user_key": "10300_장소율", "user_id": "user19", "menu_path": ["설계관리", "외주설계발주", "외주설계발주", "외주설계발주현황"], "menu_name": "외주설계발주현황", "permission_status": "full", "can_view": true, "can_save": true, "can_edit": true, "can_delete": true}, {"user_key": "10300_장소율", "user_id": "user19", "menu_path": ["설계관리", "외주설계발주", "외주설계발주", "외주설계발주입고"], "menu_name": "외주설계발주입고", "permission_status": "full", "can_view": true, "can_save": true, "can_edit": true, "can_delete": true}];
+let selectedKey = '10300_장소율';
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function grouped(arr){
+  /* v23: 고정 부서목록으로 필터하던 방식은 새 부서(예: 시스템) 사용자를 목록에서 누락시킴.
+     실제 데이터의 부서를 모두 그룹으로 만들되, 기존 순서를 앞에 유지한다. */
+  const order=['경영기획','공통','구매/가공','부서없음','설계','연구소'];
+  const key=u=>String(u.department_name||'').trim()||'부서없음';
+  const seen=new Map();
+  for(const u of arr){const k=key(u); if(!seen.has(k))seen.set(k,[]); seen.get(k).push(u)}
+  const out=[];
+  for(const dept of order) if(seen.has(dept)){out.push([dept,seen.get(dept)]); seen.delete(dept)}
+  for(const [dept,rows] of [...seen.entries()].sort((a,b)=>a[0].localeCompare(b[0],'ko'))) out.push([dept,rows]);
+  return out;
+}
+function renderUsers(){
+  const qv=(q.value||'').trim().toLowerCase();
+  /* [전체] 체크 시 사용여부가 해제된(미사용) 사용자까지 표시 */
+  const showAll=document.getElementById('d_all')?.checked===true;
+  const list=users.filter(u=>{
+    if(qv && ![u.name,u.user_id,u.department_name].some(v=>String(v??'').toLowerCase().includes(qv)))return false;
+    if(!showAll && u.is_active===false)return false;
+    return true;
+  });
+  userList.innerHTML=grouped(list).map(([dept,rows])=>`
+    <div class="group-title">부서명: ${esc(dept)}</div>
+    ${rows.map(u=>`<div class="user-row ${u.user_key===selectedKey?'on':''}" onclick="selectUser('${u.user_key.replaceAll("'","\\'")}')"><span>${esc(u.position_name||'')}</span><span style="${u.is_active===false?'color:#9aa5b1;text-decoration:line-through':''}">${esc(u.name)}${u.role==='master'?' <b style="color:#8e24aa">[마스터]</b>':u.role==='admin'?' <b style="color:#1e5e91">[관리자]</b>':''}</span><span class="use${u.is_active===false?' off':''}">${u.is_active===false?'미사용':'사용'}</span></div>`).join('')}
+  `).join('');
+  countText.textContent=`${list.length}명`;
+}
+function selectUser(key){
+  if(dirty && selectedKey && key!==selectedKey){
+    if(!confirm('저장하지 않은 권한 변경이 있습니다. 저장하지 않고 다른 사용자로 이동할까요?')){return}
+    dirty=false; permLoadedFor=null; markDirty();
+  }
+  selectedKey=key;
+  const u=users.find(x=>x.user_key===key);
+  if(!u)return;
+  d_registered.value=u.registered_date||'';
+  d_user_id.value=u.user_id||'';
+  d_name.value=u.name||'';
+  d_english_name.value=u.english_name||'';
+  d_user_group.value=u.user_group||'';
+  d_process_group.value=u.process_group||'';
+  d_department.value=[u.department_code,u.department_name].filter(Boolean).join('  ');
+  d_business_division.value=u.business_division||'';
+  d_mobile.value=u.mobile_phone||'';
+  d_position.value=[u.position_code,u.position_name].filter(Boolean).join('  ');
+  d_phone.value=u.phone||'';
+  d_email.value=u.email||'';
+  d_employee_no.value=u.employee_no||'';
+  d_active.checked=!!u.is_active;
+  d_remark.value=u.remark||'';if(window.d_auth_email)d_auth_email.value=u.auth_email||'';fillPassword(u);if(window.d_role)d_role.value=u.role||'user';
+  renderPermissions(u,true);
+  renderUsers();
+  message.textContent=`${u.name} 사용자정보를 표시합니다.`;
+}
+const MENU_TREE=[{"name": "영업관리", "secs": [{"name": "수주", "items": ["수주등록", "수주현황", "현황판"]}, {"name": "영업계획", "items": ["영업계획등록", "영업계획현황"]}, {"name": "금형코드매칭", "items": ["금형코드매칭"]}, {"name": "SET발주", "items": ["SET발주등록", "SET발주입고", "SET발주현황"]}, {"name": "경비", "items": ["경비등록", "경비현황"]}]}, {"name": "설계관리", "secs": [{"name": "외주설계발주", "items": ["외주설계발주등록", "외주설계발주입고", "외주설계발주현황"]}, {"name": "설계", "items": ["설계계획등록", "설계실적등록", "설계실적현황", "설계실적조회"]}, {"name": "PARTLIST", "items": ["PartList 등록(원재료)", "PartList 등록(구매품)", "PartList 현황", "PartList 복사"]}]}, {"name": "구매관리", "secs": [{"name": "원재료", "items": ["원재료 발주", "원재료 입고", "원재료 입고확정", "원재료 발주현황"]}, {"name": "구매품", "items": ["구매품 발주", "구매품 입고", "구매품 입고확정", "구매품 발주현황"]}, {"name": "가공", "items": ["가공계획등록", "공정이력카드", "외주가공 발주", "외주가공 입고", "외주가공 입고확정", "외주가공발주현황", "가공구매 진척현황"]}]}, {"name": "조립관리", "secs": [{"name": "조립", "items": ["조립실적등록", "조립실적현황", "조립실적조회"]}, {"name": "검사", "items": []}]}, {"name": "원가관리", "secs": [{"name": "원가관리", "items": ["제조원가조회(실시간)"]}, {"name": "매입매출현황", "items": ["매입현황", "매출현황", "재고조회"]}]}, {"name": "기준정보", "secs": [{"name": "생산/품질", "items": ["가공공정관리", "가공 기준공정관리", "작업지시 관리", "공정이력카드"]}, {"name": "공통", "items": ["사용자정보", "공정관리", "부품관리", "자재등록", "설비등록", "업체관리", "사업부정보", "부서정보", "아이템 관리", "경비사유", "금형타입관리", "기계사양관리", "검사구분", "검사항목", "공지사항 등록", "DB 동기화", "직급정보", "자재단가변동등록", "자재단가변동현황", "공정단가변동등록", "공정단가변동현황"]}]}];
+const RIGHTS=[['view','조회'],['save','저장'],['edit','수정'],['del','삭제']];
+const COL={view:'can_view',save:'can_save',edit:'can_edit',del:'can_delete'};
+let openSet=new Set(MENU_TREE.map(m=>m.name)), permIndex=new Map();
+
+function permKey(u,menu){return u.user_key+'\u0000'+menu}
+function getPerm(menu){
+  const u=users.find(x=>x.user_key===selectedKey); if(!u)return null;
+  let p=permIndex.get(permKey(u,menu));
+  if(!p){p={user_key:u.user_key,menu_name:menu,menu_path:null,can_view:false,can_save:false,can_edit:false,can_delete:false};permIndex.set(permKey(u,menu),p)}
+  return p;
+}
+function rightsCell(menu,path){
+  const p=getPerm(menu)||{};
+  return '<div class="rights">'+RIGHTS.map(([k,l])=>
+    `<label><input type="checkbox" data-menu="${esc(menu)}" data-right="${k}" ${p[COL[k]]?'checked':''} onchange="toggleRight(this)">${l}</label>`).join('')+'</div>';
+}
+let permLoadedFor=null, dirty=false;
+let _toastT=null;
+function toast(text,kind){
+  let el=document.getElementById('toast');
+  if(!el){el=document.createElement('div');el.id='toast';document.body.appendChild(el)}
+  el.textContent=text; el.className='show'+(kind?' '+kind:'');
+  clearTimeout(_toastT);
+  _toastT=setTimeout(()=>{el.className=''},2200);
+}
+function markDirty(){
+  const b=[...document.querySelectorAll('.actions .btn')].find(x=>/savePermissions/.test(x.getAttribute('onclick')||''));
+  if(!b)return;
+  b.textContent = dirty ? '🔒 권한저장 ●' : '🔒 권한저장';
+  b.style.background = dirty ? 'linear-gradient(#fff6d8,#ffe9a8)' : '';
+  b.title = dirty ? '저장하지 않은 권한 변경이 있습니다' : '';
+}
+function loadPermIndex(u,force){
+  if(!force && permLoadedFor===u.user_key) return;   /* 편집 중 값 보존 */
+  permIndex=new Map(); permLoadedFor=u.user_key;
+  permissions.filter(p=>p.user_key===u.user_key)
+    .forEach(p=>permIndex.set(permKey(u,p.menu_name),{...p}));
+}
+function renderPermissions(u,force){
+  if(!u){permList.innerHTML='<div class="note">사용자를 선택하세요.</div>';return}
+  loadPermIndex(u,force);
+  const html=[];
+  for(const mod of MENU_TREE){
+    const open=openSet.has(mod.name);
+    html.push(`<div class="perm-row mod"><div class="path" style="--depth:0"><span class="toggle" onclick="toggleNode('${esc(mod.name)}')">${open?'⊟':'⊞'}</span> ${esc(mod.name)}</div>${rightsCell(mod.name,[mod.name])}</div>`);
+    if(!open)continue;
+    for(const sec of mod.secs){
+      const skey=mod.name+'/'+sec.name, sopen=openSet.has(skey);
+      html.push(`<div class="perm-row sec"><div class="path" style="--depth:1"><span class="toggle" onclick="toggleNode('${esc(skey)}')">${sopen?'⊟':'⊞'}</span> ${esc(sec.name)}</div>${rightsCell(skey,[mod.name,sec.name])}</div>`);
+      if(!sopen)continue;
+      for(const it of sec.items){
+        const ikey=mod.name+'/'+sec.name+'/'+it;
+        html.push(`<div class="perm-row"><div class="path" style="--depth:2">└ ${esc(it)}</div>${rightsCell(ikey,[mod.name,sec.name,it])}</div>`);
+      }
+    }
+  }
+  permList.innerHTML=html.join('');
+}
+function toggleNode(k){openSet.has(k)?openSet.delete(k):openSet.add(k);renderPermissions(users.find(x=>x.user_key===selectedKey))}
+function expandAll(on){
+  openSet=new Set();
+  if(on)for(const m of MENU_TREE){openSet.add(m.name);for(const s of m.secs)openSet.add(m.name+'/'+s.name)}
+  renderPermissions(users.find(x=>x.user_key===selectedKey));
+}
+function toggleRight(el){
+  const menu=el.dataset.menu, r=el.dataset.right, p=getPerm(menu); if(!p)return;
+  p[COL[r]]=el.checked;
+  if(r!=='view'&&el.checked)p.can_view=true;          // 저장/수정/삭제 권한은 조회를 포함
+  if(r==='view'&&!el.checked){p.can_save=p.can_edit=p.can_delete=false}
+  // 상위 노드를 켜면 하위 전체 적용
+  const parts=menu.split('/');
+  if(parts.length<3){
+    const under=[...allMenus()].filter(m=>m.startsWith(menu+'/'));
+    under.forEach(m=>{const q=getPerm(m);q[COL[r]]=el.checked;if(r!=='view'&&el.checked)q.can_view=true;if(r==='view'&&!el.checked){q.can_save=q.can_edit=q.can_delete=false}});
+  }
+  dirty=true; renderPermissions(users.find(x=>x.user_key===selectedKey)); markDirty();
+  message.textContent=`${menu} 권한을 변경했습니다. 저장하려면 [권한저장]을 누르세요.`;
+}
+function allMenus(){
+  const out=[];
+  for(const m of MENU_TREE){out.push(m.name);for(const s of m.secs){out.push(m.name+'/'+s.name);for(const i of s.items)out.push(m.name+'/'+s.name+'/'+i)}}
+  return out;
+}
+function setAll(r,on){
+  allMenus().forEach(m=>{const p=getPerm(m);if(!p)return;p[COL[r]]=on;if(r!=='view'&&on)p.can_view=true;if(r==='view'&&!on){p.can_save=p.can_edit=p.can_delete=false}});
+  dirty=true; renderPermissions(users.find(x=>x.user_key===selectedKey)); markDirty();
+  message.textContent=`전체 메뉴의 ${RIGHTS.find(x=>x[0]===r)[1]} 권한을 ${on?'부여':'해제'}했습니다.`;
+}
+let PWMAP=null, PW_SHOWN=false;
+function myRole(){try{return (window.MES_AUTH||window.parent.MES_AUTH)?.role||null}catch(e){return null}}
+function isMaster(){return myRole()==='master'}
+function fillPassword(u){
+  const el=document.getElementById('d_pw'); if(!el)return;
+  if(!PW_SHOWN||!PWMAP){el.value='******';el.title='';return}
+  const p=PWMAP[u?.user_id];
+  if(!p){el.value='(발급 기록 없음)';el.title='이 계정은 발급 비밀번호 기록이 없습니다.';return}
+  el.value=p.temp_password;
+  el.title=p.changed_by_user?'본인이 비밀번호를 변경했습니다. 아래 값은 더 이상 유효하지 않습니다.':'발급 시각 '+String(p.issued_at).slice(0,16);
+  el.style.color=p.changed_by_user?'#c62828':'';
+}
+async function togglePasswords(){
+  if(!isMaster())return message.textContent='마스터 계정만 비밀번호를 확인할 수 있습니다.';
+  if(PW_SHOWN){PW_SHOWN=false;fillPassword(users.find(x=>x.user_key===selectedKey));
+    btnShowPw.textContent='👁 비밀번호 보기 (마스터)';return message.textContent='비밀번호를 가렸습니다.'}
+  try{
+    const rows=await MESDB.rest('rpc/master_passwords',{method:'POST',body:'{}'});
+    PWMAP={}; rows.forEach(r=>{if(r.user_id)PWMAP[r.user_id]=r});
+    PW_SHOWN=true; btnShowPw.textContent='🙈 비밀번호 가리기';
+    fillPassword(users.find(x=>x.user_key===selectedKey));
+    const stale=rows.filter(r=>r.changed_by_user).length;
+    message.textContent=`발급 비밀번호를 표시합니다. ${stale?`본인이 변경한 ${stale}건은 붉게 표시되며 현재 값이 아닙니다.`:''} 사용자가 직접 바꾼 비밀번호는 암호화되어 조회할 수 없습니다.`;
+  }catch(e){message.textContent='조회 실패: '+e.message.slice(0,140)}
+}
+async function registerUser(){
+  if(window.MES_AUTH?.role!=='admin'&&window.parent?.MES_AUTH?.role!=='admin')
+    return message.textContent='관리자만 사용자를 등록할 수 있습니다.';
+  const name=prompt('사용자 이름 (로그인 시 사용)'); if(!name)return;
+  const uid=prompt('아이디 (영문/숫자, 동명이인 구분용)'); if(!uid)return;
+  const pw=prompt('초기 비밀번호 (6자 이상)'); if(!pw)return;
+  const dept=prompt('부서명 (선택, 비워도 됨)')||'';
+  try{
+    const email=await MESDB.rest('rpc/create_mes_user',{method:'POST',
+      body:JSON.stringify({p_name:name.trim(),p_user_id:uid.trim(),p_password:pw,p_department_name:dept.trim()||null,p_role:'user'})});
+    const rows=await MESDB.table('users').select('select=*');
+    users.length=0; users.push(...rows); renderUsers();
+    const nu=users.find(x=>x.user_id===uid.trim()); if(nu)selectUser(nu.user_key);
+    message.textContent=`${name} 등록 완료. 이름 또는 아이디(${uid})와 초기 비밀번호로 로그인할 수 있습니다. 권한 영역에서 메뉴 권한을 지정한 뒤 [권한저장]을 누르세요.`;toast(`${name} 사용자가 등록되었습니다`);
+  }catch(e){message.textContent='등록 실패: '+e.message.slice(0,140);toast('사용자 등록 실패','err')}
+}
+async function resetPassword(){
+  const u=users.find(x=>x.user_key===selectedKey);
+  if(!u||!u.user_id)return message.textContent='아이디가 있는 사용자를 먼저 선택하세요.';
+  if(u.role==='master'&&!isMaster())
+    return message.textContent='마스터 계정의 비밀번호는 마스터만 변경할 수 있습니다.';
+  const pw=prompt(`${u.name}(${u.user_id})의 새 비밀번호 (6자 이상)`); if(!pw)return;
+  try{
+    await MESDB.rest('rpc/reset_user_password',{method:'POST',body:JSON.stringify({p_user_id:u.user_id,p_password:pw})});
+    message.textContent=`${u.name}의 비밀번호를 재설정했습니다.`;toast('비밀번호가 재설정되었습니다');
+  }catch(e){message.textContent='재설정 실패: '+e.message.slice(0,140);toast('비밀번호 재설정 실패','err')}
+}
+async function savePermissions(){
+  const u=users.find(x=>x.user_key===selectedKey); if(!u)return message.textContent='사용자를 선택하세요.';
+  /* v66: 권한역할 드롭다운 변경분도 함께 저장 (▣ 저장을 누르지 않아도 반영) */
+  if(window.d_role&&d_role.value&&d_role.value!==(u.role||'user')){
+    if(d_role.value==='master'&&!isMaster())return message.textContent='master 역할은 마스터만 지정할 수 있습니다.';
+    u.role=d_role.value;
+    if(window.MESDB?.syncMaster){try{await MESDB.syncMaster()}catch(e){}}
+    renderUsers();
+  }
+  const rows=[...permIndex.values()].filter(p=>p.can_view||p.can_save||p.can_edit||p.can_delete)
+    .map(p=>({user_key:p.user_key,menu_name:p.menu_name,menu_path:p.menu_name.split('/'),
+              can_view:!!p.can_view,can_save:!!p.can_save,can_edit:!!p.can_edit,can_delete:!!p.can_delete}));
+  // 화면 배열도 갱신
+  for(let i=permissions.length-1;i>=0;i--)if(permissions[i].user_key===u.user_key)permissions.splice(i,1);
+  permissions.push(...rows);
+  if(!window.MESDB||!MESDB.online){message.textContent=`${u.name} 권한 ${rows.length}건을 저장했습니다. (DB 미연결 - 로컬)`;toast('DB 미연결 - 로컬에만 저장됨','warn');return}
+  try{
+    await MESDB.rest(`user_permissions?user_key=eq.${encodeURIComponent(u.user_key)}`,{method:'DELETE',headers:{Prefer:'return=minimal'}});
+    if(rows.length)await MESDB.table('user_permissions').upsert(rows,'user_key,menu_name');
+    /* 저장 결과를 DB에서 다시 읽어 실제 반영 건수를 확인 */
+    const back=await MESDB.table('user_permissions').select(`select=*&user_key=eq.${encodeURIComponent(u.user_key)}`);
+    for(let i=permissions.length-1;i>=0;i--)if(permissions[i].user_key===u.user_key)permissions.splice(i,1);
+    permissions.push(...back);
+    permLoadedFor=null; dirty=false; markDirty();
+    let note='';
+    if(u.role==='master'||u.role==='admin')
+      note=` ※ ${u.name}은(는) ${u.role==='master'?'마스터':'관리자'}라 권한 설정과 무관하게 전체 메뉴를 사용합니다.`;
+    else note=' 해당 사용자가 다시 로그인하면 적용됩니다.';
+    message.textContent=`${u.name} 권한 ${back.length}건 저장 확인.${note}`;
+    toast(`권한이 저장되었습니다 (${back.length}건)`);
+  }catch(e){message.textContent='권한 저장 실패: '+e.message.slice(0,140);toast('권한 저장 실패','err')}
+}
+function copyPermissions(){
+  const u=users.find(x=>x.user_key===selectedKey); if(!u)return;
+  const others=users.filter(x=>x.user_key!==u.user_key).map(x=>x.name).join(', ');
+  const to=prompt(`${u.name}의 권한을 복사할 대상 사용자명을 입력하세요.\n(${others})`);
+  if(!to)return;
+  const t=users.find(x=>x.name===to.trim());
+  if(!t)return message.textContent='해당 사용자를 찾을 수 없습니다.';
+  const src=[...permIndex.values()];
+  for(let i=permissions.length-1;i>=0;i--)if(permissions[i].user_key===t.user_key)permissions.splice(i,1);
+  permissions.push(...src.filter(p=>p.can_view||p.can_save||p.can_edit||p.can_delete)
+    .map(p=>({user_key:t.user_key,menu_name:p.menu_name,menu_path:p.menu_name.split('/'),
+              can_view:p.can_view,can_save:p.can_save,can_edit:p.can_edit,can_delete:p.can_delete})));
+  message.textContent=`${u.name}의 권한을 ${t.name}에게 복사했습니다. ${t.name} 선택 후 [권한저장]을 누르세요.`;
+}
+function refresh(){selectUser(selectedKey);message.textContent='사용자 데이터를 다시 조회했습니다.'}
+function saveUser(){
+  const u=users.find(x=>x.user_key===selectedKey); if(!u)return;
+  u.user_id=d_user_id.value||null; u.name=d_name.value||u.name; u.registered_date=d_registered.value||null;
+  u.user_group=d_user_group.value||null; u.is_active=d_active.checked;
+  const wasBlocked=!d_active.checked; u.auth_email=(window.d_auth_email?d_auth_email.value:'')||null; u.role=(window.d_role?d_role.value:'user')||'user';
+  message.textContent='사용자 정보를 저장했습니다. 로그인메일을 지정하면 해당 계정으로 로그인 시 이 사용자의 권한이 적용됩니다.';
+  renderUsers();
+  if(window.MESDB?.syncMaster){MESDB.syncMaster().catch(()=>{})}
+  toast(wasBlocked?`${u.name} 저장됨 - 사용여부 해제로 로그인이 차단됩니다`:'사용자 정보가 저장되었습니다',wasBlocked?'warn':'');
+}
+async function deleteUser(){
+  const role=myRole();
+  if(role!=='master'&&role!=='admin')
+    return message.textContent='관리자 또는 마스터만 사용자를 삭제할 수 있습니다.';
+  const u=users.find(x=>x.user_key===selectedKey);
+  if(!u)return message.textContent='삭제할 사용자를 먼저 선택하세요.';
+  if(u.role==='master'&&role!=='master')
+    return message.textContent='마스터 계정은 마스터만 삭제할 수 있습니다.';
+  if(!confirm(`${u.name}${u.user_id?'('+u.user_id+')':''} 사용자를 삭제합니다.\n\n로그인 계정과 메뉴 권한도 함께 삭제되며 되돌릴 수 없습니다.\n계속하시겠습니까?`))return;
+  if(!window.MESDB||!MESDB.online){
+    const i=users.indexOf(u); if(i>=0)users.splice(i,1);
+    selectedKey=users[0]?.user_key||''; renderUsers(); selectUser(selectedKey);
+    return message.textContent=`${u.name}을(를) 목록에서 제거했습니다. (DB 미연결 - 로컬)`;
+  }
+  try{
+    const name=await MESDB.rest('rpc/delete_mes_user',{method:'POST',
+      body:JSON.stringify({p_user_key:u.user_key})});
+    const rows=await MESDB.table('users').select('select=*');
+    users.length=0; users.push(...rows);
+    selectedKey=users[0]?.user_key||''; renderUsers(); if(selectedKey)selectUser(selectedKey);
+    message.textContent=`${name} 사용자를 삭제했습니다. (로그인 계정·메뉴 권한 포함)`;toast(`${name} 사용자를 삭제했습니다`);
+  }catch(e){message.textContent='삭제 실패: '+e.message.slice(0,160);toast('삭제 실패','err')}
+}
+window.MES={search:()=>q.focus(),add:()=>{selectedKey='';},delete:deleteUser,save:saveUser,exportCsv:()=>{},setMessage:t=>message.textContent=t};
+renderUsers();selectUser(selectedKey);
+
+function sampleFill(){
+  if(window.MESDEMO)return MESDEMO.run('user_information');
+  if(!window.MESSAMPLE)return (window.MES&&MES.setMessage?MES.setMessage:console.warn)('예제 모듈을 불러오지 못했습니다.');
+  const r=MESSAMPLE.fill('user_information'); if(window.MES&&MES.setMessage)MES.setMessage(r.msg);
+}
+window.sampleFill=sampleFill;
+</script>
+<script src="mes_scene.js?v=67"></script><script src="mes_sample.js?v=67"></script><script src="mes_demo.js?v=67"></script>
+<script src="mes_db.js?v=67"></script>
+<script src="mes_paste.js?v=67"></script>
+<script>
+MESDB.master({page:"user_information:users",table:"users",pk:"user_key",map:{"user_key":"user_key","user_id":"user_id","name":"name","department_code":"department_code","department_name":"department_name","factory":"factory","registered_date":{"col":"registered_date","type":"date"},"position_code":"position_code","position_name":"position_name","user_group":"user_group","is_active":{"col":"is_active","type":"bool"},"english_name":"english_name","business_division":"business_division","process_group":"process_group","mobile_phone":"mobile_phone","email":"email","phone":"phone","employee_no":"employee_no","remark":"remark","auth_email":"auth_email","role":"role"},get:()=>users,render:()=>{renderUsers();selectUser(selectedKey||users[0]?.user_key)}});
+MESDB.table("user_permissions").select("select=*").then(rs=>{permissions.length=0;permissions.push(...rs);renderPermissions(users.find(x=>x.user_key===selectedKey),true)}).catch(()=>{});
+
+/* 마스터 계정일 때만 비밀번호 보기 버튼 노출 */
+function refreshMasterUI(){try{const r0=myRole(),canAdmin=(r0==='master'||r0==='admin');[...document.querySelectorAll('.actions .btn')].forEach(b=>{const oc=b.getAttribute('onclick')||'';  if(/deleteUser|registerUser|resetPassword/.test(oc)){b.disabled=!canAdmin;b.style.opacity=canAdmin?'':'.45';    b.title=canAdmin?'':'관리자 권한이 필요합니다'}});const b=document.getElementById('btnShowPw');if(b)b.style.display=isMaster()?'':'none';const r=document.getElementById('d_role');if(r){const opt=[...r.options].find(o=>o.value==='master');if(opt)opt.disabled=!isMaster()}}catch(e){}}
+refreshMasterUI();
+[200,800,2000].forEach(t=>setTimeout(refreshMasterUI,t));
+try{window.parent.addEventListener('mes-auth-ready',refreshMasterUI)}catch(e){}
+</script>
+<div id="toast"></div>
+<script src="mes_ctx.js?v=67"></script>
+</body>
+</html>

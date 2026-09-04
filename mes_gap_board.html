@@ -1,0 +1,174 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>입력누락 점검판</title><style>
+:root{--line:#9ba8b4;--line2:#c6d0d8;--blue:#2f75b5;--ink:#344757;--head1:#e8f1f8;--head2:#cbddea}
+*{box-sizing:border-box}html,body{height:100%;margin:0}body{font-family:"Malgun Gothic","맑은 고딕",Arial,sans-serif;font-size:12px;color:var(--ink);background:#fff;overflow:hidden}
+button,input,select{font:inherit;color:inherit}.screen{height:100%;display:flex;flex-direction:column;background:#fff}
+.title{height:48px;padding:9px 14px 5px;border-bottom:2px solid #3978ae}.title h1{margin:0;font-size:22px;font-weight:500;color:#4b5c6a}.title h1:before{content:'⚠';margin-right:6px;color:#c08a00}.title small{font-size:11px;color:#9ca7af;margin-left:10px}
+.cards{display:flex;gap:8px;padding:9px 14px 6px;flex-wrap:wrap}
+.card{flex:1 1 140px;min-width:120px;border:1px solid var(--line2);background:linear-gradient(#fff,#f2f6f9);padding:7px 10px;cursor:pointer}
+.card:hover{background:#fff;border-color:var(--blue)}.card.on{border:2px solid var(--blue);background:#eef6fd}
+.card .k{font-size:11px;color:#7c8993}.card .v{font-size:24px;font-weight:700;line-height:1.1;margin-top:2px}
+.card.c1 .v{color:#b3261e}.card.c2 .v{color:#a76c00}.card.c3 .v{color:#6b4fa0}.card.c4 .v{color:#1b6b4a}.card.c5 .v{color:#2f75b5}
+.searchline{min-height:38px;margin:0 14px;display:flex;align-items:center;gap:5px;flex-wrap:wrap;border:1px solid var(--line);padding:5px 8px;background:#f6f8fa}
+.searchline input,.searchline select{height:27px;border:1px solid #aeb9c3;padding:0 7px}
+.searchline input.q{width:min(200px,28vw)}.searchline input.n{width:58px;text-align:right}
+.searchline .lab{font-weight:700;color:#4a5c6c}
+.btn{height:28px;min-width:62px;border:1px solid #9ba8b4;background:linear-gradient(#fff,#dfe6eb)}.btn:hover{background:#fff}.btn.primary{background:linear-gradient(#f9ffff,#d2e7f6);color:#1e5e91}
+.wrap{flex:1;min-height:0;display:flex;gap:8px;margin:7px 14px 0}
+.side{width:260px;flex:0 0 260px;border:1px solid var(--line);overflow:auto;background:#fff}
+.gridbox{flex:1;min-width:0;border:1px solid var(--line);overflow:auto;background:#fff}
+table{border-collapse:collapse;width:100%;table-layout:fixed}
+th,td{height:27px;border-right:1px solid var(--line2);border-bottom:1px solid var(--line2);padding:0 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+th{position:sticky;top:0;z-index:2;text-align:center;background:linear-gradient(var(--head1),var(--head2));color:#405266}
+#gridTable{min-width:1020px}
+tbody tr:nth-child(even) td{background:#fafcfd}tbody tr:hover td{background:#edf6fd;cursor:pointer}tbody tr.sel td{background:#2d75b7;color:#fff}
+.c{text-align:center}.num{text-align:right}
+td.b{background:#fde7e7;color:#b3261e;font-weight:700}td.w{background:#fff4d6;color:#8a6100;font-weight:700}td.g{color:#5b6b79}
+tbody tr.sel td.b,tbody tr.sel td.w,tbody tr.sel td.g{background:#2d75b7;color:#fff}
+.side tbody tr.on td{background:#dcecfa;font-weight:700}
+.foot{height:43px;display:flex;align-items:center;padding:5px 14px;border-top:1px solid var(--line);background:#eef2f5;gap:5px;margin-top:7px}
+.msg{margin-left:10px;color:#687784;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.foot .right{margin-left:auto;color:#7c8993}
+@media(max-width:900px){.wrap{flex-direction:column;margin:7px 6px 0}.side{width:auto;flex:0 0 150px}.searchline{margin:0 6px}.cards{padding:8px 6px 5px}
+.title{height:auto;min-height:44px;padding:7px 8px 5px}.title h1{font-size:17px}.title small{display:block;margin:2px 0 0;font-size:10px}
+.searchline input,.searchline select{font-size:16px;height:34px}.btn{height:34px}.foot{height:auto;min-height:43px;flex-wrap:wrap;padding:6px}.foot .msg{margin-left:0;flex:1 0 100%;order:9}}
+</style></head>
+<body><div class="screen">
+<div class="title"><h1>입력누락 점검판 <small>원가·KPI·품질기록이 조용히 틀어지는 지점을 찾아냅니다. 행을 더블클릭하면 해당 입력화면이 열립니다.</small></h1></div>
+
+<div class="cards">
+  <div class="card c1" onclick="pickImpact('원가 누락')"><div class="k">원가 누락</div><div class="v" id="v1">0</div></div>
+  <div class="card c2" onclick="pickImpact('노무비 누락')"><div class="k">노무비 누락</div><div class="v" id="v2">0</div></div>
+  <div class="card c3" onclick="pickImpact('품질기록 누락')"><div class="k">품질기록 누락</div><div class="v" id="v3">0</div></div>
+  <div class="card c4" onclick="pickImpact('납기 지연')"><div class="k">납기 지연</div><div class="v" id="v4">0</div></div>
+  <div class="card c5 on" onclick="pickImpact('')"><div class="k">점검대상 전체</div><div class="v" id="v5">0</div></div>
+</div>
+
+<div class="searchline">
+  <span class="lab">경과일</span><input id="mind" class="n" type="number" min="0" max="999" value="0" onchange="apply()"><span>일 이상</span>
+  <span class="lab">점검항목</span><select id="fc" onchange="apply()"><option value="">전체</option></select>
+  <span class="lab">제번</span><input id="fj" class="q" style="width:110px" oninput="apply()">
+  <span class="lab">담당</span><input id="fo" class="q" style="width:90px" oninput="apply()">
+  <span class="lab">검색어</span><input id="fq" class="q" oninput="apply()">
+  <button class="btn primary" onclick="load()">↻ 새로고침</button>
+  <button class="btn" onclick="clearAll()">지우기</button>
+  <button class="btn" onclick="exportCsv()">▤ EXCEL</button>
+  <button class="btn" onclick="window.print()">🖨 인쇄</button>
+</div>
+
+<div class="wrap">
+  <div class="side"><table><thead><tr><th>점검항목</th><th style="width:52px">건수</th><th style="width:60px">최장경과</th></tr></thead><tbody id="sideBody"></tbody></table></div>
+  <div class="gridbox"><table id="gridTable"><thead><tr>
+    <th style="width:40px">No</th><th style="width:130px">점검항목</th><th style="width:110px">영향</th>
+    <th style="width:100px">제번</th><th style="width:100px">번호/코드</th><th style="width:240px">내용</th>
+    <th style="width:80px">담당</th><th style="width:92px">기준일</th><th style="width:66px">경과일</th>
+    <th style="width:210px">비고</th><th style="width:130px">입력화면</th>
+  </tr></thead><tbody id="body"></tbody></table></div>
+</div>
+
+<footer class="foot">
+  <button class="btn" onclick="openSel()">↗ 입력화면 열기</button>
+  <button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button>
+  <span class="msg" id="message">불러오는 중…</span><span class="right" id="countText"></span>
+</footer>
+</div>
+<script>
+let raw=[],view=[],sel=-1,impact='';
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const msg=t=>message.textContent=t;
+const online=()=>!!(window.MESDB&&MESDB.online);
+async function waitDB(){for(let i=0;i<60&&!window.MESDB;i++)await new Promise(r=>setTimeout(r,50));
+  if(window.MESDB&&MESDB.ready){try{await MESDB.ready}catch(e){}}}
+const MIN=()=>Math.max(0,Number(document.getElementById('mind').value)||0);
+
+/* 경과일 심각도: 30일 이상 적색, 7일 이상 황색 */
+function sev(n){if(n==null)return '';return n>=30?'b':(n>=7?'w':'g')}
+
+async function load(){
+  await waitDB();
+  if(!online()){msg('DB 미연결 — 조회할 수 없습니다.');raw=[];apply();return}
+  try{
+    raw=await MESDB.table('mes_gap_view').select('select=*&order=sort_no.asc,base_date.asc');
+    raw.forEach(r=>{r.days_over=(r.days_over==null?null:Number(r.days_over))});
+    const cats=[...new Set(raw.map(r=>r.cat))];
+    const cur=fc.value;
+    fc.innerHTML='<option value="">전체</option>'+cats.map(c=>`<option>${esc(c)}</option>`).join('');
+    fc.value=cats.includes(cur)?cur:'';
+    apply();
+    msg(`${new Date().toLocaleString('sv-SE',{hour12:false})} 기준으로 갱신했습니다.`);
+  }catch(e){msg('조회 실패: '+String(e.message||e).slice(0,120));raw=[];apply()}
+}
+
+function apply(){
+  const c=fc.value,j=fj.value.trim(),o=fo.value.trim(),q=fq.value.trim().toLowerCase(),mn=MIN();
+  view=raw.filter(r=>{
+    if(mn>0 && (r.days_over==null || r.days_over<mn))return false;
+    if(impact && r.impact!==impact)return false;
+    if(c && r.cat!==c)return false;
+    if(j && !String(r.job_no??'').includes(j))return false;
+    if(o && !String(r.owner??'').includes(o))return false;
+    if(q && !['cat','impact','job_no','ref_no','title','owner','extra'].some(k=>String(r[k]??'').toLowerCase().includes(q)))return false;
+    return true;
+  }).sort((a,b)=>(b.days_over??-1)-(a.days_over??-1) || a.sort_no-b.sort_no);
+  renderCards();renderSide();render();
+}
+
+function renderCards(){
+  const n=k=>raw.filter(r=>r.impact===k).length;
+  v1.textContent=n('원가 누락');v2.textContent=n('노무비 누락');
+  v3.textContent=n('품질기록 누락');v4.textContent=n('납기 지연');v5.textContent=raw.length;
+  document.querySelectorAll('.card').forEach((el,i)=>{
+    const key=['원가 누락','노무비 누락','품질기록 누락','납기 지연',''][i];
+    el.classList.toggle('on',impact===key);
+  });
+}
+
+function renderSide(){
+  const cats=[...new Set(raw.map(r=>r.cat))];
+  sideBody.innerHTML=cats.map(c=>{
+    const rs=raw.filter(r=>r.cat===c);
+    const mx=rs.reduce((a,r)=>Math.max(a,r.days_over??0),0);
+    return `<tr class="${fc.value===c?'on':''}" onclick="pickCat('${esc(c)}')">`
+      +`<td>${esc(c)}</td><td class="c">${rs.length}</td><td class="num ${sev(mx)}">${mx}</td></tr>`;
+  }).join('')||'<tr><td colspan="3" class="c" style="color:#8a97a2;height:60px">점검대상 없음</td></tr>';
+}
+
+function render(){
+  body.innerHTML=view.length?view.map((r,i)=>`<tr ondblclick="openRow(${i})" onclick="pick(${i},this)">
+    <td class="c">${i+1}</td><td>${esc(r.cat)}</td><td class="c">${esc(r.impact)}</td>
+    <td class="c">${esc(r.job_no||'')}</td><td class="c">${esc(r.ref_no||'')}</td>
+    <td>${esc(r.title||'')}</td><td class="c">${esc(r.owner||'')}</td>
+    <td class="c">${esc(r.base_date||'-')}</td>
+    <td class="num ${sev(r.days_over)}">${r.days_over==null?'-':r.days_over}</td>
+    <td>${esc(r.extra||'')}</td>
+    <td class="c" style="color:#2f75b5">${esc(r.menu)} ↗</td></tr>`).join('')
+    :'<tr><td colspan="11" class="c" style="height:180px;color:#8a97a2">해당 조건의 누락 건이 없습니다.</td></tr>';
+  countText.textContent=`${view.length}건`;
+  if(view.length){
+    const over30=view.filter(r=>(r.days_over??0)>=30).length;
+    msg(`점검대상 ${view.length}건 · 30일 이상 방치 ${over30}건`);
+  }
+}
+
+function pick(i,tr){sel=i;document.querySelectorAll('#body tr').forEach(x=>x.classList.remove('sel'));tr.classList.add('sel')}
+function pickImpact(v){impact=(impact===v?'':v);apply()}
+function pickCat(c){fc.value=(fc.value===c?'':c);apply()}
+function openRow(i){const r=view[i];if(!r)return;
+  try{if(window.parent&&window.parent.openByName){window.parent.openByName(r.menu);msg(`${r.menu} 화면을 열었습니다. 제번 ${r.job_no||''}`);return}}catch(e){}
+  msg('상위 화면에서만 이동할 수 있습니다.')}
+function openSel(){sel>=0?openRow(sel):msg('먼저 행을 선택하세요.')}
+function clearAll(){fc.value='';fj.value='';fo.value='';fq.value='';mind.value=0;impact='';apply();msg('조회조건을 초기화했습니다.')}
+
+function exportCsv(){
+  const head=['점검항목','영향','제번','번호/코드','내용','담당','기준일','경과일','비고','입력화면'];
+  const rows=view.map(r=>[r.cat,r.impact,r.job_no||'',r.ref_no||'',r.title||'',r.owner||'',r.base_date||'',r.days_over??'',r.extra||'',r.menu]);
+  const csv='\uFEFF'+[head,...rows].map(a=>a.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download=`입력누락점검_${new Date().toISOString().slice(0,10)}.csv`;a.click();
+  msg(`${view.length}건을 내려받았습니다.`);
+}
+
+window.MES={search:load,setMessage:msg};
+load();
+</script>
+<script src="mes_db.js?v=67"></script>
+<script src="mes_ctx.js?v=67"></script>
+</body></html>

@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>외주설계발주등록</title>
+<style>
+:root{--line:#9daab6;--line2:#c5ced6;--ink:#344758}
+*{box-sizing:border-box}html,body{height:100%;margin:0}body{font-family:"Malgun Gothic","맑은 고딕",Arial,sans-serif;font-size:12px;color:var(--ink);background:#fff;overflow:hidden}button,input,select{font:inherit;color:inherit}
+.screen{height:100%;display:flex;flex-direction:column}.title{height:46px;padding:9px 14px 4px;border-bottom:2px solid #3977ad;display:flex;align-items:center;gap:14px}.title h1{margin:0;font-size:21px;font-weight:500;color:#4b5b69}.title h1:before{content:'◯';margin-right:6px;color:#8795a1}.title .plant{margin-left:auto;display:flex;align-items:center;gap:6px;color:#6b7885}
+.filters{padding:7px 14px;border-bottom:1px solid var(--line2);background:#fafbfc;display:flex;gap:6px;align-items:center}.label{font-weight:700}.field{height:27px;border:1px solid #b7c2cb;background:#fff;padding:0 7px;outline:none}.field:focus{border-color:#4e88bb}
+.top{display:grid;grid-template-columns:1.9fr .9fr;gap:6px;padding:7px 14px 0;height:190px}
+.bottom{flex:1;min-height:0;display:grid;grid-template-columns:.72fr 2.1fr;gap:6px;padding:6px 14px}
+.box{border:1px solid var(--line);display:flex;flex-direction:column;min-height:0;background:#fff}.box-title{height:24px;display:flex;align-items:center;justify-content:center;background:linear-gradient(#deebf5,#caddea);border-bottom:1px solid var(--line);font-weight:700;color:#536677}
+.searchbar{height:26px;display:flex;gap:4px;align-items:center;padding:0 4px;border-bottom:1px solid var(--line2);background:#f6f8fa}.searchbar input{flex:1;height:21px;border:1px solid #b7c2cb;padding:0 4px}.searchbar button{height:21px;border:1px solid #9ca9b5;background:linear-gradient(#fff,#e2e8ed)}
+.tablewrap{flex:1;min-height:0;overflow:auto}table{border-collapse:collapse;width:100%;table-layout:fixed}th,td{height:24px;padding:0 5px;border-right:1px solid var(--line2);border-bottom:1px solid var(--line2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}th{position:sticky;top:0;z-index:2;text-align:center;background:linear-gradient(#dbe9f4,#c7d9e8);color:#405266;font-weight:700}tbody tr:hover td{background:#edf6fd}tbody tr.sel td{background:#2e78bd;color:#fff}.c{text-align:center}.r{text-align:right}
+.movebar{display:flex;justify-content:flex-end;gap:6px;padding:0 14px}
+.btn{height:28px;min-width:70px;border:1px solid #9ca9b5;background:linear-gradient(#fff,#dfe6eb)}.btn:hover{background:#fff}.btn.primary{background:linear-gradient(#f9ffff,#d2e7f6);color:#1e5e91}
+.foot{height:42px;display:flex;align-items:center;padding:5px 14px;border-top:1px solid var(--line);background:#eef2f5;gap:5px}.msg{margin-left:10px;color:#687784}.foot .right{margin-left:auto;color:#7c8993}
+input.cell{width:100%;height:20px;border:1px solid #cbd4dc;padding:0 3px;text-align:right}
+@media(max-width:900px){.top,.bottom{grid-template-columns:1fr;height:auto}.title h1{font-size:18px}}
+</style>
+</head>
+<body>
+<div class="screen">
+  <div class="title"><h1>외주설계발주등록</h1></div>
+  <section class="filters">
+    <span class="label">제 번</span><input id="jobQ" class="field" style="width:260px" placeholder="제번">
+    <span class="label">품 명</span><input id="itemQ" class="field" style="width:260px" placeholder="품명">
+    <button class="btn" onclick="search()">⌕ 조회</button>
+  </section>
+  <section class="top">
+    <div class="box"><div class="box-title">제번리스트</div><div class="tablewrap"><table>
+      <colgroup><col style="width:38px"><col style="width:22%"><col style="width:24%"><col style="width:18%"><col style="width:18%"><col style="width:18%"></colgroup>
+      <thead><tr><th></th><th>제번</th><th>품명</th><th>완료예정일</th><th>Try-Out 예정일</th><th>고객요구일</th></tr></thead><tbody id="jobBody"></tbody></table></div></div>
+    <div class="box"><div class="box-title">조수 공정 대기 리스트</div><div class="tablewrap"><table>
+      <colgroup><col style="width:38px"><col style="width:50%"><col style="width:45%"></colgroup>
+      <thead><tr><th></th><th>공정코드</th><th>공정명</th></tr></thead><tbody id="poolBody"></tbody></table></div></div>
+  </section>
+  <div class="movebar"><button class="btn" onclick="addRow()">⬇ 발주추가</button><button class="btn" onclick="delRow()">⬆ 발주삭제</button></div>
+  <section class="bottom">
+    <div class="box"><div class="box-title">협력업체리스트</div>
+      <div class="searchbar"><input id="venQ" placeholder="Enter text to search"><button onclick="findVendor()">찾기</button><button onclick="clearVendor()">지우기</button></div>
+      <div class="tablewrap"><table><thead><tr><th>협력업체</th></tr></thead><tbody id="venBody"></tbody></table></div></div>
+    <div class="box"><div class="box-title">조수공정 리스트</div><div class="tablewrap"><table>
+      <colgroup><col style="width:38px"><col style="width:36px"><col style="width:16%"><col style="width:8%"><col style="width:10%"><col style="width:13%"><col style="width:13%"><col style="width:13%"><col style="width:13%"><col style="width:10%"></colgroup>
+      <thead><tr><th>No</th><th></th><th>협력업체</th><th>공정</th><th>공정명</th><th>발주일</th><th>입고예정일</th><th>견적가</th><th>네고가</th><th>작성자</th></tr></thead>
+      <tbody id="ordBody"></tbody></table></div></div>
+  </section>
+  <footer class="foot"><button class="btn" onclick="search()">⌕ 검색</button><button class="btn primary" onclick="save()">▣ 발주등록</button><button class="btn" onclick="sampleFill()" title="화면 순서대로 시연하며 등록요점을 설명합니다.">▶ 등록예제</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">제번과 공정, 협력업체를 선택해 외주설계 발주를 등록합니다.</span><span class="right" id="countText"></span></footer>
+</div>
+<script>
+/* v46: 작성자/담당자 기본값 = 로그인 사용자 (회사명 하드코딩 제거) */
+const OWNER=(function(){try{return (window.MES_AUTH||window.parent.MES_AUTH)?.name||'담당자'}catch(e){return '담당자'}})();
+
+const JOBS=[];
+const POOL=[];
+let VENDORS=[];  /* 협력업체는 마스터에서 로드 (mes_lookup.js) */
+const ORD=[];
+let jobIdx=0,venIdx=0,jobView=[...JOBS],venView=[...VENDORS];
+const money=v=>Number(v||0).toLocaleString('ko-KR');
+function renderJobs(){jobBody.innerHTML=jobView.map((j,i)=>`<tr class="${i===jobIdx?'sel':''}" onclick="pickJob(${i})"><td class="c">${i===jobIdx?'▶':''}</td><td>${j.job}</td><td>${j.item}</td><td class="c">${j.due}</td><td class="c">${j.s1}</td><td class="c">${j.cust}</td></tr>`).join('');countText.textContent=`제번 ${jobView.length}건 / 발주 ${ORD.length}건`}
+function renderPool(){poolBody.innerHTML=POOL.map((p,i)=>`<tr><td class="c"><input type="checkbox" data-i="${i}" ${i===0?'checked':''}></td><td class="c">${p.proc}</td><td class="c">${p.procName}</td></tr>`).join('')}
+function renderVendors(){venBody.innerHTML=venView.map((v,i)=>`<tr class="${i===venIdx?'sel':''}" onclick="pickVendor(${i})"><td>${v}</td></tr>`).join('')}
+function renderOrd(){ordBody.innerHTML=ORD.map((r,i)=>`<tr><td class="c">${i+1}</td><td class="c"><input type="checkbox" data-no="${r.no}"></td><td>${r.vendor}</td><td class="c">${r.proc}</td><td class="c">${r.procName}</td><td class="c">${r.odate}</td><td class="c"><input class="cell" type="date" value="${r.edate}" onchange="setVal(${r.no},'edate',this.value)"></td><td><input class="cell" value="${r.quote}" onchange="setVal(${r.no},'quote',Number(this.value)||0)"></td><td><input class="cell" value="${r.nego}" onchange="setVal(${r.no},'nego',Number(this.value)||0)"></td><td class="c">${r.writer}</td></tr>`).join('');countText.textContent=`제번 ${jobView.length}건 / 발주 ${ORD.length}건`}
+function setVal(no,k,v){const r=ORD.find(x=>x.no===no);if(r){r[k]=v;msg(`${r.vendor} ${r.proc} 항목을 수정했습니다.`)}}
+function pickJob(i){jobIdx=i;renderJobs();if(typeof loadPool==='function')loadPool();msg(`${jobView[i].job} 선택 (완료예정일 ${jobView[i].due||'-'})`)}
+function pickVendor(i){venIdx=i;renderVendors();msg(`협력업체 ${venView[i]} 선택`)}
+function findVendor(){const q=venQ.value.trim().toLowerCase();venView=VENDORS.filter(v=>!q||v.toLowerCase().includes(q));venIdx=0;renderVendors()}
+function clearVendor(){venQ.value='';venView=[...VENDORS];venIdx=0;renderVendors()}
+function search(){const j=jobQ.value.trim().toLowerCase(),it=itemQ.value.trim().toLowerCase();jobView=JOBS.filter(x=>(!j||x.job.toLowerCase().includes(j))&&(!it||(x.item||'').toLowerCase().includes(it)));jobIdx=0;renderJobs();msg(`제번 ${jobView.length}건을 조회했습니다.`)}
+async function addRow(){const picks=[...poolBody.querySelectorAll('input:checked')].map(x=>POOL[Number(x.dataset.i)]);if(!picks.length)return msg('대기 리스트에서 공정을 선택하세요.');
+ picks.forEach(p=>ORD.push({no:ORD.length?Math.max(...ORD.map(r=>r.no))+1:1,vendor:venView[venIdx],proc:p.proc,procName:p.procName,odate:new Date().toISOString().slice(0,10),edate:'',quote:0,nego:0,writer:OWNER}));
+ /* v39: 설계 공정단가를 자동 조회해 견적가를 채운다 (0이면 제조원가 외주설계비가 0) */
+ if(window.MESPRICE){
+  for(const r of ORD){
+   if(Number(r.quote))continue;
+   /* v40: 발주일 시점에 적용시작된 공정단가 */
+   const hit=await MESPRICE.process(r.proc,r.vendor,{asOf:r.odate});
+   if(hit&&hit.price){r.quote=hit.price;r.nego=hit.price}
+  }
+ }
+ renderOrd();
+ const tot=ORD.reduce((a,r)=>a+(Number(r.nego)||Number(r.quote)||0),0);
+ const noPrice=ORD.filter(r=>!Number(r.quote)).length;
+ msg(`${picks.length}건을 조수공정 리스트에 추가했습니다. 발주금액 합계 ${tot.toLocaleString('ko-KR')}원`+
+  (noPrice?` (단가 미등록 ${noPrice}건 - 공정단가변동등록 확인)`:''));}
+function delRow(){const ids=[...ordBody.querySelectorAll('input:checked')].map(x=>Number(x.dataset.no));if(!ids.length)return msg('삭제할 발주 행을 선택하세요.');for(let i=ORD.length-1;i>=0;i--)if(ids.includes(ORD[i].no))ORD.splice(i,1);renderOrd();msg(`${ids.length}건을 삭제했습니다.`)}
+/* v30: 프로토타입 스텁 → order_lines(외주설계) 실제 기록 */
+const online=()=>!!(window.MESDB&&MESDB.online);
+async function save(){
+ const job=jobView[jobIdx]?.job||'';
+ if(!job){msg('제번을 선택하세요.');return}
+ if(!ORD.length){msg('조수공정 리스트에 발주할 공정을 추가하세요.');return}
+ if(!online()){msg(`${job} 외주설계발주 ${ORD.length}건을 저장했습니다. (DB 미연결 - 로컬)`);return}
+ const bad=ORD.filter(r=>Number(r.nego||0)>Number(r.quote||0)&&Number(r.quote||0)>0);
+ if(bad.length){msg('네고가는 견적가를 넘을 수 없습니다.');return}
+ try{
+  const ex=await MESDB.table('order_lines')
+    .select(`select=line_id,process_code,vendor_name&category=eq.외주설계&job_no=eq.${encodeURIComponent(job)}`);
+  const dup=ORD.filter(r=>ex.some(e=>e.process_code===r.proc&&e.vendor_name===r.vendor));
+  if(dup.length){msg(`이미 발주된 공정이 있습니다: ${dup.map(r=>r.proc).join(', ')}`);return}
+  const item=jobView[jobIdx]?.item||null;
+  const payload=ORD.map(r=>({
+    category:'외주설계',status:'발주',job_no:job,item_name:item,
+    vendor_name:r.vendor,process_code:r.proc,process_name:r.procName,
+    order_date:r.odate||null,required_date:r.edate||null,
+    quote_price:Number(r.quote)||0,confirm_price:Number(r.nego)||Number(r.quote)||0,
+    order_qty:1,owner_name:r.writer||null,updated_at:new Date().toISOString()}));
+  if(MESDB.ensureRefs)await MESDB.ensureRefs(payload);
+  await MESDB.table('order_lines').upsert(payload);
+  const n=ORD.length;ORD.length=0;renderOrd();
+  msg(`${job} 외주설계발주 ${n}건을 DB에 등록했습니다. 외주설계발주입고/현황에서 확인하세요.`);
+ }catch(e){
+  const m=String(e.message||e);
+  msg(/무결성|foreign key/i.test(m)?'등록 실패: 마스터에 없는 제번 또는 업체입니다.':'등록 실패: '+m.slice(0,120));
+ }
+}
+/* v30: 제번 리스트를 job_pool 뷰에서 로드 (page_state 스냅샷에 갇혀 신규 수주가 안 뜨던 문제) */
+async function loadJobs(){
+ for(let i=0;i<60&&!window.MESDB;i++)await new Promise(r=>setTimeout(r,50));
+ if(window.MESDB&&MESDB.ready){try{await MESDB.ready}catch(e){}}
+ if(!online())return;
+ try{
+  const rs=await MESDB.table('job_pool').select('select=*&order=row_no');
+  const seen=new Set(JOBS.map(j=>j.job));
+  rs.forEach(r=>{if(!seen.has(r.job_no))JOBS.push({job:r.job_no,item:r.item_name||'',
+    due:r.completion_date||'',s1:r.s1_date||'',cust:r.customer_name||''})});
+  jobView=[...JOBS];jobIdx=JOBS.length?0:-1;renderJobs();
+  await loadPool();
+ }catch(e){}
+}
+/* 대기 공정 리스트: 설계계획 세부공정 → 없으면 표준공정 A/1/1 */
+async function loadPool(){
+ const job=jobView[jobIdx]?.job;if(!job||!online())return;
+ try{
+  const st=await MESDB.table('design_plan_steps').select(`select=*&job_no=eq.${encodeURIComponent(job)}&order=row_no`);
+  POOL.length=0;
+  if(st&&st.length)st.forEach(s=>POOL.push({proc:s.process_code,procName:s.process_name}));
+  else POOL.push({proc:'A',procName:'1/1'});
+  renderPool();
+ }catch(e){}
+}
+function exportCsv(){const out=[['제번','협력업체','공정','공정명','발주일','입고예정일','견적가','네고가','작성자'],...ORD.map(r=>[jobView[jobIdx]?.job||'',r.vendor,r.proc,r.procName,r.odate,r.edate,r.quote,r.nego,r.writer])];const csv='\ufeff'+out.map(a=>a.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='outsourced_design_order_input.csv';a.click();URL.revokeObjectURL(a.href)}
+function msg(t){message.textContent=t}
+renderJobs();renderPool();renderVendors();renderOrd();window.MES={search,save,exportCsv,setMessage:msg,reload:loadJobs};loadJobs();
+</script>
+<script src="mes_sample.js?v=67"></script><script src="mes_scene.js?v=67"></script><script src="mes_demo.js?v=67"></script><script src="mes_db.js?v=67"></script>
+<script>MESDB.bind("outsourced_design_order_input",()=>({ORD}));   /* v62: 제번/공정/업체는 매번 DB 에서 (스냅샷 복원 시 취소 수주 잔존) */</script>
+<script src="mes_ctx.js?v=67"></script>
+<script src="mes_lookup.js?v=67"></script>
+<script>
+/* 협력업체 목록: 하드코딩 → 마스터 직결 */
+(async function loadVendors(){
+ try{
+  VENDORS.length=0;
+  VENDORS.push(...await MESLOOK.names('design_partner'));
+  if(typeof venView!=='undefined'){venView=[...VENDORS]}
+  if(typeof venIdx!=='undefined')venIdx=VENDORS.length?0:-1;
+  if(typeof renderVendors==='function')renderVendors();
+ }catch(e){
+  const m=document.getElementById('message');
+  if(m)m.textContent='협력업체 마스터 조회 실패: '+String(e.message||e).slice(0,100);
+ }
+})();
+window.MESLOOK_RELOAD_VENDORS=async()=>{MESLOOK.invalidate('design_partner');
+ VENDORS.length=0;VENDORS.push(...await MESLOOK.names('design_partner'));
+ if(typeof venView!=='undefined')venView=[...VENDORS];
+ if(typeof renderVendors==='function')renderVendors();};
+</script>
+<script src="mes_price.js?v=67"></script>
+<script src="mes_vendorcheck.js?v=67"></script>
+<script>
+function sampleFill(){
+  if(window.MESDEMO)return MESDEMO.run('outsourced_design_order_input',{});
+  var e=document.getElementById('message'); if(e)e.textContent='예제 모듈을 불러오지 못했습니다.';
+}
+</script>
+</body>
+</html>

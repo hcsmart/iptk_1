@@ -1,0 +1,154 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PartList 등록(구매품)</title><style>
+:root{--line:#98a6b2;--line2:#c5d0d8;--blue:#2f75b5;--ink:#344757;--head1:#e8f1f8;--head2:#c8dbe9}
+*{box-sizing:border-box}html,body{height:100%;margin:0}body{font-family:"Malgun Gothic","맑은 고딕",Arial,sans-serif;font-size:12px;color:var(--ink);background:#fff;overflow:hidden}
+button,input,select{font:inherit;color:inherit}.screen{height:100%;display:flex;flex-direction:column;background:#fff}
+.title{height:48px;padding:8px 14px 5px;border-bottom:2px solid #3978ae;display:flex;align-items:center}.title h1{margin:0;font-size:22px;font-weight:500;color:#4b5c6a}.title h1:before{content:'◯';margin-right:6px;color:#8796a1}.title small{font-size:11px;color:#9ca7af;margin-left:12px}
+.form{padding:7px 14px;background:#fafbfc;border-bottom:1px solid var(--line2)}.formrow{display:grid;grid-template-columns:78px 140px 78px 150px 90px 150px 90px minmax(160px,1fr);gap:5px;align-items:center}.formrow+.formrow{margin-top:5px}.label{font-weight:700}.field{height:27px;border:1px solid #b5c0c9;background:#fff;padding:0 6px;min-width:0}
+.entrybox,.gridbox{margin:0 14px;border:1px solid var(--line);overflow:auto;background:#fff}.entrybox{height:190px}.gridbox{flex:1;min-height:0}
+.searchline{height:39px;margin:0 14px;display:flex;align-items:center;gap:5px;border-left:1px solid var(--line);border-right:1px solid var(--line);padding:4px 8px;background:#f6f8fa}.searchline input{width:min(430px,48vw);height:27px;border:1px solid #aeb9c3;padding:0 7px}
+.btn{height:29px;min-width:62px;border:1px solid #9ba8b4;background:linear-gradient(#fff,#dfe6eb);cursor:pointer}.btn:hover{background:#fff}
+table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th,td{height:27px;border-right:1px solid var(--line2);border-bottom:1px solid var(--line2);padding:0 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}th{position:sticky;top:0;z-index:2;text-align:center;background:linear-gradient(var(--head1),var(--head2));color:#405266}tbody tr:nth-child(even) td{background:#fafcfd}tbody tr:hover td{background:#edf6fd}tbody tr.sel td{background:#2d75b7;color:#fff}.c{text-align:center}.num{text-align:right}.toolbar{height:40px;display:flex;align-items:center;gap:5px;padding:4px 14px;background:#f5f7f8;border-bottom:1px solid var(--line2)}
+.foot{height:42px;display:flex;align-items:center;padding:5px 14px;border-top:1px solid var(--line);background:#eef2f5;gap:5px}.msg{margin-left:8px;color:#687784}.right{margin-left:auto;color:#7c8993}
+.split{flex:1;min-height:0;display:grid;grid-template-rows:1fr 1fr;gap:10px;padding:0 14px 8px}.split .gridbox{margin:0}
+@media(max-width:900px){.formrow{grid-template-columns:78px 1fr 78px 1fr}.entrybox,.gridbox,.searchline{margin-left:6px;margin-right:6px}}
+
+.filt{padding:7px 14px;background:#fafbfc;border-bottom:1px solid var(--line2)}
+.fr{display:grid;gap:5px;align-items:center}
+.lb{font-weight:700;text-align:right;padding-right:3px}
+.opts{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.opts label{display:flex;align-items:center;gap:3px;cursor:pointer}
+.gtot td{background:#dfe9f2;font-weight:700}
+.grp th{background:linear-gradient(#dbe9f5,#b9d2e6)}
+.panes{flex:1;min-height:0;display:grid;gap:8px;padding:0 14px 8px}
+.pane{border:1px solid var(--line);background:#fff;display:flex;flex-direction:column;min-height:0}
+.ph{padding:5px 9px;font-weight:700;background:linear-gradient(var(--head1),var(--head2));color:#405266;border-bottom:1px solid var(--line2)}
+.pb{flex:1;min-height:0;overflow:auto}
+.f2{display:grid;grid-template-columns:repeat(4,72px minmax(110px,1fr));gap:5px;align-items:center}
+.mask{position:fixed;inset:0;background:rgba(40,50,60,.3);display:none;align-items:flex-start;justify-content:center;z-index:50}
+.mask.on{display:flex}
+.dlg{margin-top:40px;width:min(1000px,96vw);background:#f3f6f8;border:1px solid #7d8d99;box-shadow:0 8px 26px rgba(0,0,0,.25)}
+.dh{display:flex;align-items:center;height:30px;padding:0 6px 0 10px;background:linear-gradient(#eef4f9,#dbe6ef);border-bottom:1px solid #b9c6d0;font-weight:700}
+.dh button{margin-left:auto;width:26px;height:20px;border:1px solid #b04a4a;background:#c9484a;color:#fff;cursor:pointer}
+.db{padding:10px}
+.kv{display:grid;grid-template-columns:repeat(4,84px minmax(90px,1fr));gap:4px;align-items:center;margin-bottom:8px}
+.kv .lb{text-align:right}
+.kv .v{border:1px solid #c3ccd4;background:#fff;height:26px;line-height:24px;padding:0 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar{height:14px;background:#3f7fbf;border-radius:2px}
+
+/* v21 입력란 배치 보정: 좁은 폭에서 필드를 숨기지 않고 단계적으로 줄바꿈 */
+.field,.formrow input,.formrow select,.formgrid input,.formgrid select,.detail-grid input,.detail-grid select{min-width:0;max-width:100%}
+.lab,.label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:1400px){.formrow{grid-template-columns:78px minmax(0,1fr) 78px minmax(0,1fr)}}
+@media(max-width:880px){.formrow{grid-template-columns:78px minmax(0,1fr)}}
+.formrow>*{min-width:0}
+
+.xmask{position:fixed;inset:0;background:rgba(40,50,60,.32);display:none;align-items:flex-start;justify-content:center;z-index:60}
+.xmask.on{display:flex}
+.xdlg{margin-top:56px;width:min(680px,94vw);background:#f3f6f8;border:1px solid #7d8d99;box-shadow:0 8px 26px rgba(0,0,0,.25)}
+.xhead{display:flex;align-items:center;height:30px;padding:0 6px 0 10px;background:linear-gradient(#eef4f9,#dbe6ef);border-bottom:1px solid #b9c6d0;font-weight:700}
+.xhead button{margin-left:auto;width:26px;height:20px;border:1px solid #b04a4a;background:#c9484a;color:#fff;cursor:pointer;line-height:1}
+</style></head><body><div class="screen"><div class="title"><h1>PartList 등록(구매품)</h1><small>설계관리 · PARTLIST</small></div><section class="filt"><div class="f2"><div class="lb">제 번</div><div><input id="q_job" class="field"></div><div class="lb">품 명</div><div><input id="q_item" class="field"></div><div></div><div></div></div></section><div class="pane" style="margin:0 14px 8px;height:120px"><div class="ph">제번 / 공정</div><div class="pb"><table style="min-width:520px"><thead><tr><th style="width:180px">제번</th><th style="width:110px">공정코드</th><th>공정명</th></tr></thead><tbody id="pbody"></tbody></table></div></div><div class="gridbox"><table style="min-width:1180px"><thead><tr><th style="width:44px">NO</th><th style="width:36px"></th><th style="width:110px">품번</th><th style="width:200px">품명</th><th style="width:80px">Type</th><th style="width:60px">수량</th><th style="width:190px">규격</th><th style="width:84px">등록자</th><th style="width:100px">등록일자</th><th style="width:70px">첨부</th><th>비고</th></tr></thead><tbody id="body"></tbody></table></div><div style="display:flex;gap:4px;padding:6px;align-items:center;flex-wrap:wrap;border-top:1px solid #c3ccd4;background:#f4f8fb"><span class="lb">공정</span><input id="fProc" class="field" style="width:50px" value="A"><span class="lb">품번</span><input id="fPart" class="field" style="width:80px"><span class="lb">품명</span><input id="fName" class="field" style="width:140px"><span class="lb">TYPE</span><input id="fMat" class="field" style="width:80px"><span class="lb">수량</span><input id="fQty" class="field" style="width:56px"><span class="lb">규격</span><input id="fSpec" class="field" style="width:130px"><span class="lb">등록자</span><input id="fBy" class="field" style="width:70px"></div><footer class="foot"><button class="btn" onclick="search()">⌕ 검색</button><button class="btn" onclick="save()">▤ 저장</button><button class="btn" onclick="sampleFill()" title="화면 순서대로 시연하며 등록요점을 설명합니다.">▶ 등록예제</button><button class="btn" onclick="del_()">✕ 삭제</button><button class="btn" onclick="xls()">▤ 엑셀불러오기</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">공정을 선택하면 해당 공정의 품목이 표시됩니다.</span><span class="right" id="countText"></span></footer><div class="xmask" id="xMask" onclick="if(event.target===xMask)xlsClose()"><div class="xdlg"><div class="xhead"><span>엑셀 불러오기 - 제번 <b id="xJob"></b></span><button onclick="xlsClose()">×</button></div><div style="padding:8px"><div style="color:#5a6a78;margin-bottom:5px">엑셀에서 행을 복사(Ctrl+C)한 뒤 아래에 붙여넣기(Ctrl+V) 하세요. <b>공정·품번·품명·TYPE·수량·규격·첨부</b> 순서(탭 구분), 첫 행이 제목이면 자동으로 건너뜁니다.</div><textarea id="xText" style="width:100%;height:220px;border:1px solid #aeb9c3;font:12px Consolas,monospace;padding:6px;box-sizing:border-box"></textarea><div style="display:flex;justify-content:center;gap:8px;margin-top:8px"><button class="btn" onclick="xlsApply()">▤ 등록</button><button class="btn" onclick="xlsClose()">⊠ 취소</button></div></div></div></div></div><script>const data=[];const procs=[];const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const n=v=>v==null?'':Number(v).toLocaleString();const p=v=>v==null?'':Number(v).toFixed(2)+'%';
+const msg=t=>message.textContent=t;
+let pc='A';
+function render(){
+ pbody.innerHTML=procs.map(p=>`<tr class="${p.process_code===pc?'sel':''}" onclick="pick('${p.process_code}')"><td>${esc(p.job_no)}</td><td>${esc(p.process_code)}</td><td>${esc(p.process_name)}</td></tr>`).join('');
+ const rs=data.filter(r=>r.process_code===pc);
+ body.innerHTML=rs.length?rs.map(r=>`<tr><td class="c">${r.row_no}</td><td class="c"><input type="checkbox" data-row="${r.row_no}"></td><td>${esc(r.part_no)}</td><td>${esc(r.part_name)}</td><td class="c">${esc(r.type||'')}</td><td class="num">${r.qty??''}</td><td>${esc(r.spec||'')}</td><td class="c">${esc(r.registered_by||'')}</td><td class="c">${esc(r.registered_date||'')}</td><td class="c">${esc(r.attachment||'')}</td><td></td></tr>`).join('')
+  :'<tr><td colspan="11" class="c" style="height:120px;color:#8a97a2">해당 공정의 품목이 없습니다.</td></tr>';
+ countText.textContent=rs.length+'건';
+}
+function pick(c){pc=c;render();msg(`공정 ${c} · ${data.filter(r=>r.process_code===c).length}건`)}
+function search(){const j=(q_job.value||'').trim();if(j&&online())return loadJob(j);render();msg(`조회결과 ${data.length}건`)}
+/* v30: 스텁 → partlist_purchases 실제 저장 (행추가/수정/삭제) */
+const online=()=>!!(window.MESDB&&MESDB.online);
+const numv=v=>{const x=Number(String(v??'').replace(/[^0-9.-]/g,''));return Number.isNaN(x)?null:x};
+async function waitDB(){for(let i=0;i<60&&!window.MESDB;i++)await new Promise(r=>setTimeout(r,50));
+ if(window.MESDB&&MESDB.ready){try{await MESDB.ready}catch(e){}}}
+let curJob=null;
+async function loadJob(job){
+ await waitDB();if(!online())return;
+ curJob=job||curJob;if(!curJob)return;
+ try{
+  const rs=await MESDB.table('partlist_purchases').select(`select=*&job_no=eq.${encodeURIComponent(curJob)}&order=row_no`);
+  data.length=0;data.push(...rs);
+  const ps=[...new Set(rs.map(r=>r.process_code))];
+  procs.length=0;ps.forEach(c=>procs.push({job_no:curJob,process_code:c,process_name:c}));
+  if(!procs.some(p=>p.process_code===pc))pc=procs[0]?.process_code||pc;
+  render();msg(`${curJob} 구매품 PartList ${rs.length}건`);
+ }catch(e){msg('조회 실패: '+String(e.message||e).slice(0,120))}
+}
+async function save(){
+ const job=(q_job.value||curJob||'').trim();
+ if(!job){msg('제번을 입력하세요.');return}
+ if(!fPart.value.trim()){msg('품번을 입력하세요.');return}
+ if(!online()){msg('DB 미연결 상태에서는 저장할 수 없습니다.');return}
+ try{
+  /* v39: row_no 는 DB identity 가 채운다 (PK 는 job_no+process_code+part_no) */
+  const row={job_no:job,
+   process_code:(fProc.value||pc||'A').trim(),part_no:(fPart.value||'').trim(),part_name:(fName.value||'').trim(),type:fMat.value||null,qty:numv(fQty.value)||null,spec:fSpec.value||null,
+   registered_by:(fBy.value||'').trim()||null,registered_date:new Date().toISOString().slice(0,10)};
+  if(MESDB.ensureRefs)await MESDB.ensureRefs([{part_no:row.part_no,part_name:row.part_name}]);
+  await MESDB.table('partlist_purchases').upsert(row,'job_no,process_code,part_no');   /* v62: 같은 품번 재저장 = 수정 */
+  await loadJob(job);
+  msg(`${job} / ${row.part_no} 을(를) 등록했습니다.`);
+ }catch(e){const m=String(e.message||e);
+  msg(/무결성|foreign key/i.test(m)?'저장 실패: 등록되지 않은 제번입니다.':'저장 실패: '+m.slice(0,120))}
+}
+async function del_(){
+ const ids=[...body.querySelectorAll('input[type=checkbox]:checked')].map(c=>Number(c.dataset.row)).filter(n=>!Number.isNaN(n));
+ if(!ids.length){msg('삭제할 행을 선택하세요.');return}
+ if(!online()){msg('DB 미연결 상태에서는 삭제할 수 없습니다.');return}
+ if(!confirm(`${ids.length}건을 삭제하시겠습니까?`))return;
+ try{for(const id of ids)await MESDB.table('partlist_purchases').delete({row_no:id});
+  await loadJob();msg(`${ids.length}건을 삭제했습니다.`);
+ }catch(e){msg('삭제 실패: '+String(e.message||e).slice(0,120))}
+}
+
+/* ── v46 엑셀 불러오기: 엑셀에서 복사한 행을 붙여넣어 일괄 등록 ──
+ * 열 순서: 공정 | 품번 | 품명 | TYPE | 수량 | 규격 | 첨부 | 비고  (탭 구분) */
+function xls(){
+ const job=(q_job.value||curJob||'').trim();
+ if(!job)return msg('제번을 먼저 입력하세요.');
+ if(!online())return msg('DB 미연결 상태에서는 불러올 수 없습니다.');
+ xJob.textContent=job;xText.value='';xMask.classList.add('on');setTimeout(()=>xText.focus(),50);
+}
+function xlsClose(){xMask.classList.remove('on')}
+async function xlsApply(){
+ const job=(q_job.value||curJob||'').trim();
+ const lines=xText.value.split(/\r?\n/).map(l=>l.replace(/\u00a0/g,' ')).filter(l=>l.trim());
+ if(!lines.length)return msg('붙여넣은 내용이 없습니다.');
+ const nv=v=>{const x=Number(String(v??'').replace(/[^0-9.-]/g,''));return Number.isNaN(x)?null:x};
+ const rows=[];const bad=[];
+ for(const [i,l] of lines.entries()){
+  const c=l.split('\t').map(x=>x.trim());
+  if(i===0&&/품번|부품/.test(l))continue;      /* 헤더행 자동 건너뜀 */
+  if(!c[1]){bad.push(i+1);continue}
+  rows.push({job_no:job,process_code:(c[0]||pc||'A'),part_no:c[1],part_name:c[2]||'',type:c[3]||null,qty:nv(c[4]),spec:c[5]||null,attachment:c[6]||null,
+   registered_by:(fBy.value||'').trim()||null,registered_date:new Date().toISOString().slice(0,10)});
+ }
+ if(!rows.length)return msg('등록할 행이 없습니다. (열 순서: 공정,품번,품명,TYPE,수량,규격,첨부)');
+ try{
+  if(MESDB.ensureRefs)await MESDB.ensureRefs(rows.map(r=>({part_no:r.part_no,part_name:r.part_name})));
+  await MESDB.table('partlist_purchases').upsert(rows,'job_no,process_code,part_no');   /* v62: 일괄 upsert, 재붙여넣기는 갱신 */
+  xlsClose();await loadJob(job);
+  msg(`${job} 구매품 PartList ${rows.length}건을 불러왔습니다.`+(bad.length?` (품번 없는 ${bad.length}행 제외)`:''));
+ }catch(e){msg('불러오기 실패: '+String(e.message||e).slice(0,140))}
+}
+
+window.MES={search,save,setMessage:msg,reload:loadJob};render();(async()=>{await waitDB();const j=(q_job.value||data[0]?.job_no||'').trim();if(j)loadJob(j)})();</script><script src="mes_sample.js?v=67"></script><script src="mes_scene.js?v=67"></script><script src="mes_demo.js?v=67"></script><script src="mes_db.js?v=67"></script>
+<script>
+MESDB.master({page:"partlist_purchase_input:data",table:"partlist_purchases",pk:"row_no",map:{"row_no": {"col": "row_no", "type": "num"}, "job_no": "job_no", "process_code": "process_code", "part_no": "part_no", "part_name": "part_name", "type": "type", "qty": {"col": "qty", "type": "num"}, "spec": "spec", "registered_by": "registered_by", "registered_date": {"col": "registered_date", "type": "date"}, "attachment": "attachment", "plant_name": "plant_name"},get:()=>data,render:()=>{if(typeof view!=="undefined")view=[...data];(window.render||window.search||function(){})()}});
+</script>
+<script src="mes_ctx.js?v=67"></script>
+<script src="mes_jobpick.js?v=67"></script>
+<script>/* v39: 제번 직접 타이핑 → 등록된 수주 목록에서 선택 */
+MESJOB.attach("q_job",{onPick:j=>{if(typeof loadJob==="function")loadJob(j)}});</script>
+
+<script>
+function sampleFill(){
+  if(window.MESDEMO)return MESDEMO.run('partlist_purchase_input',{});
+  var e=document.getElementById('message'); if(e)e.textContent='예제 모듈을 불러오지 못했습니다.';
+}
+</script>
+</body></html>
