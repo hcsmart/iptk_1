@@ -486,3 +486,119 @@ window.MESCTX={confirm:dlgConfirm};
  document.addEventListener('mousedown',e=>{if(cur&&!e.target.closest('.mescb,.mescb-pop'))close()},true);
  window.MESCOMBO={scan:run,build};
 })();
+
+/* ── v68: 제작계획 연동 — 외주업체 자동선택 · 세트외주 표시 (발주 화면 3종) ──
+ * 제작계획등록에서 고른 단계별 외주업체/세트 체크를 발주 화면으로 흘려보낸다.
+ *   외주설계발주등록  : 제번 선택 → 제작계획의 설계 외주업체를 협력업체 목록에서 자동 선택
+ *   외주가공 발주     : 제번 선택 → 가공 외주업체 자동 선택
+ *   SET외주제작등록   : 세트 체크된 제번에 [SET외주] 표시, 계획 업체가 SET 협력업체면 자동 선택
+ * 화면 파일은 그대로 두고 pickJob/pick 을 감싼다. 계획이 없거나 사내 계획이면 안내만 한다. */
+(function(){
+ const f=(location.pathname||'').split('/').pop();
+ const PAGE={'outsourced_design_order_input.html':{phase:'design',label:'설계'},
+             'outsourcing_order_input.html':{phase:'machining',label:'가공'},
+             'set_order_registration.html':{set:true}}[f];
+ if(!PAGE)return;
+ const st=document.createElement('style');
+ st.textContent=`.mes-pl{display:inline-block;margin-left:6px;padding:0 5px;border-radius:3px;font-size:10px;line-height:15px;border:1px solid;vertical-align:middle;white-space:nowrap}
+ .mes-pl.out{background:#fdefe2;border-color:#e0a86a;color:#9a5410;font-weight:700}
+ .mes-pl.in{background:#eef3f7;border-color:#b9c8d5;color:#4a5c6b}
+ .mes-pl.set{background:#e8f0fb;border-color:#7fa6cf;color:#1e4f86;font-weight:700}
+ tr.sel .mes-pl{background:transparent;border-color:#cfe2f4;color:#fff}`;
+ (document.head||document.documentElement).appendChild(st);
+ const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+ const say=t=>{try{if(window.MES&&MES.setMessage)return MES.setMessage(t)}catch(e){}const m=document.getElementById('message');if(m)m.textContent=t};
+ let PLAN=null,loading=null;
+ async function plans(){
+  if(PLAN)return PLAN;if(loading)return loading;
+  loading=(async()=>{
+   for(let i=0;i<80&&!window.MESDB;i++)await new Promise(r=>setTimeout(r,50));
+   if(window.MESDB&&MESDB.ready){try{await MESDB.ready}catch(e){}}
+   if(!(window.MESDB&&MESDB.online))return {};
+   try{const rs=await MESDB.table('sales_plans').select('select=job_no,design_outsourced,design_vendor,design_set_outsourced,machining_outsourced,machining_vendor,machining_set_outsourced,assembly_outsourced,assembly_vendor,assembly_set_outsourced');
+    PLAN={};rs.forEach(r=>PLAN[r.job_no]=r);return PLAN}catch(e){return {}}
+  })();
+  return loading;
+ }
+ try{if(window.MESDB&&MESDB.onChange)MESDB.onChange(['sales_plans'],()=>{PLAN=null;loading=null;plans().then(decorate)})}catch(e){}
+ setTimeout(()=>{try{if(window.MESDB&&MESDB.onChange&&!window.__mesPlHook){window.__mesPlHook=1;MESDB.onChange(['sales_plans'],()=>{PLAN=null;loading=null;plans().then(decorate)})}}catch(e){}},1500);
+
+ const setLabel=p=>['design','machining','assembly'].filter(k=>p[k+'_set_outsourced']===true).map(k=>({design:'설계',machining:'가공',assembly:'조립'})[k]).join('·');
+
+ /* 제번 표 행 장식 */
+ function decorate(){
+  if(!PLAN)return;
+  if(PAGE.phase){
+   document.querySelectorAll('#jobBody tr').forEach(tr=>{
+    const tds=tr.cells;if(tds.length<3)return;
+    const job=(tds[1].textContent||'').trim(),p=PLAN[job];
+    let b=tds[2].querySelector('.mes-pl');if(!b){b=document.createElement('span');b.className='mes-pl';tds[2].appendChild(b)}
+    if(!p){b.style.display='none';return}
+    const out=p[PAGE.phase+'_outsourced']===true;
+    b.style.display='';b.className='mes-pl '+(out?'out':'in');
+    b.textContent=out?(PAGE.label+'외주'+(p[PAGE.phase+'_vendor']?' · '+p[PAGE.phase+'_vendor']:'')):(PAGE.label+'사내');
+    b.title=out?'제작계획에서 외주로 계획됨':'제작계획에서 사내로 계획됨 — 외주 발주 전 계획을 확인하세요';
+   });
+  }else{
+   document.querySelectorAll('#hbody tr').forEach(tr=>{
+    const tds=tr.cells;if(tds.length<6)return;
+    const job=(tds[0].textContent||'').trim(),p=PLAN[job];
+    const cell=tds[5];let b=cell.querySelector('.mes-pl');
+    if(!b){b=document.createElement('span');b.className='mes-pl set';b.style.marginLeft='0';cell.appendChild(b)}
+    const lab=p?setLabel(p):'';
+    b.style.display=lab?'':'none';b.textContent=lab?'SET외주 '+lab:'';
+    const v=p&&(p.design_vendor||p.machining_vendor||p.assembly_vendor);
+    b.title=lab?('제작계획 세트 체크: '+lab+(v?' / 업체 '+v:'')):'';
+   });
+  }
+ }
+ /* 표 본문의 행 교체(childList)만 감시한다. 장식이 셀 안을 바꾸는 것은 subtree 라 다시 울리지 않는다 */
+ const body=PAGE.phase?'#jobBody':'#hbody';
+ let busy=false;const dec=()=>{if(busy||!PLAN)return;busy=true;try{decorate()}finally{busy=false}};
+ (function watch(n){const tb=document.querySelector(body);
+  if(tb){new MutationObserver(dec).observe(tb,{childList:true});dec()}else if(n<40)setTimeout(()=>watch(n+1),250)})(0);
+ plans().then(dec);
+
+ /* 외주업체 자동 선택 (외주설계 / 외주가공) */
+ async function linkVendor(){
+  await plans();
+  let j=null;try{j=(typeof jobView!=='undefined'&&typeof jobIdx!=='undefined')?jobView[jobIdx]:null}catch(e){}
+  if(!j)return;const p=PLAN&&PLAN[j.job];if(!p)return;
+  const out=p[PAGE.phase+'_outsourced']===true,vd=p[PAGE.phase+'_vendor'];
+  if(!out){say(`${j.job} 은(는) 제작계획에서 ${PAGE.label} '사내' 로 계획된 제번입니다. 외주 발주가 맞는지 확인하세요.`);return}
+  if(!vd){say(`${j.job} ${PAGE.label}외주 계획 (업체 미지정) — 협력업체를 선택하세요.`);return}
+  try{
+   if(typeof VENDORS==='undefined')return;
+   if(!VENDORS.includes(vd)){say(`제작계획 업체 '${vd}' 가 협력업체 목록에 없습니다. 업체관리에서 ${PAGE.label==='설계'?'외주설계':'외주가공'} 업체로 등록하세요.`);return}
+   if(typeof venQ!=='undefined'&&venQ)venQ.value='';
+   venView=[...VENDORS];venIdx=venView.indexOf(vd);
+   if(typeof renderVendors==='function')renderVendors();
+   say(`${j.job} 제작계획의 ${PAGE.label} 외주업체 '${vd}' 를 자동 선택했습니다.`);
+  }catch(e){}
+ }
+ /* SET외주제작등록: 계획 업체가 SET 협력업체 목록에 있으면 자동 선택 */
+ async function linkSet(){
+  await plans();
+  let s=null;try{s=(typeof sel!=='undefined')?sel:null}catch(e){}
+  if(!s)return;const p=PLAN&&PLAN[s.job_no];if(!p)return;
+  const lab=setLabel(p);
+  const v=p.design_vendor||p.machining_vendor||p.assembly_vendor;
+  if(!lab){return}
+  try{
+   const hit=(typeof partners!=='undefined')&&partners.find(x=>x.partner_vendor_name===v);
+   if(hit&&typeof pickP==='function'){pickP(v);say(`${s.job_no} 세트외주(${lab}) 계획 — 업체 '${v}' 자동 선택`)}
+   else say(`${s.job_no} 세트외주(${lab}) 계획된 제번입니다.`+(v?` 계획 업체 '${v}' 는 SET 협력업체 목록에 없습니다.`:''));
+  }catch(e){}
+ }
+ function hook(){
+  if(PAGE.phase&&typeof window.pickJob==='function'&&!window.pickJob.__pl){
+   const o=window.pickJob;const w=function(){const r=o.apply(this,arguments);setTimeout(linkVendor,0);return r};w.__pl=1;window.pickJob=w;
+   /* 첫 진입: 목록·업체가 채워진 뒤 한 번 */
+   let n=0;const iv=setInterval(()=>{try{if(typeof jobView!=='undefined'&&jobView.length&&typeof VENDORS!=='undefined'&&VENDORS.length){clearInterval(iv);linkVendor()}else if(++n>60)clearInterval(iv)}catch(e){if(++n>60)clearInterval(iv)}},250);
+  }
+  if(PAGE.set&&typeof window.pick==='function'&&!window.pick.__pl){
+   const o=window.pick;const w=async function(){const r=await o.apply(this,arguments);setTimeout(linkSet,0);return r};w.__pl=1;window.pick=w;
+  }
+ }
+ hook();setTimeout(hook,300);setTimeout(hook,1500);
+})();
