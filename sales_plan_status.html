@@ -26,13 +26,20 @@ table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th
 .f2{display:grid;grid-template-columns:repeat(4,72px minmax(110px,1fr));gap:5px;align-items:center}
 .mask{position:fixed;inset:0;background:rgba(40,50,60,.3);display:none;align-items:flex-start;justify-content:center;z-index:50}
 .mask.on{display:flex}
-.dlg{margin-top:40px;width:min(1000px,96vw);background:#f3f6f8;border:1px solid #7d8d99;box-shadow:0 8px 26px rgba(0,0,0,.25)}
+.dlg{margin-top:40px;width:min(1000px,96vw);max-height:90vh;overflow:auto;background:#f3f6f8;border:1px solid #7d8d99;box-shadow:0 8px 26px rgba(0,0,0,.25)}
 .dh{display:flex;align-items:center;height:30px;padding:0 6px 0 10px;background:linear-gradient(#eef4f9,#dbe6ef);border-bottom:1px solid #b9c6d0;font-weight:700}
 .dh button{margin-left:auto;width:26px;height:20px;border:1px solid #b04a4a;background:#c9484a;color:#fff;cursor:pointer}
 .db{padding:10px}
-.kv{display:grid;grid-template-columns:repeat(4,84px minmax(90px,1fr));gap:4px;align-items:center;margin-bottom:8px}
-.kv .lb{text-align:right}
-.kv .v{border:1px solid #c3ccd4;background:#fff;height:26px;line-height:24px;padding:0 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* v68 상세 팝업: 라벨은 .k (mes_ctx 의 .lb 자동정렬 대상에서 제외), 표 형태로 고정 */
+.sec{margin-bottom:8px;border:1px solid #c3ccd4;background:#fff}
+.sec .st{padding:4px 8px;font-weight:700;background:linear-gradient(var(--head1),var(--head2));color:#405266;border-bottom:1px solid var(--line2)}
+.kv{display:grid;grid-template-columns:repeat(4,92px minmax(0,1fr));gap:4px 6px;align-items:center;padding:8px}
+.kv .k{font-weight:700;text-align:right;white-space:nowrap;color:#4d5c69}
+.kv .v{border:1px solid #c3ccd4;background:#fafcfd;height:26px;line-height:24px;padding:0 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.kv .v.num{text-align:right}.kv .v.neg{color:#c62828;font-weight:700}
+.sec table{min-width:0}.sec th{position:static}
+.sec td.pct{font-size:11px;color:#5d6d7b}
+@media(max-width:820px){.kv{grid-template-columns:repeat(2,92px minmax(0,1fr))}}
 .bar{height:14px;background:#3f7fbf;border-radius:2px}
 
 /* v21 입력란 배치 보정: 좁은 폭에서 필드를 숨기지 않고 단계적으로 줄바꿈 */
@@ -41,8 +48,11 @@ table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th
 @media(max-width:1400px){.formrow{grid-template-columns:78px minmax(0,1fr) 78px minmax(0,1fr)}}
 @media(max-width:880px){.formrow{grid-template-columns:78px minmax(0,1fr)}}
 .formrow>*{min-width:0}
-</style></head><body><div class="screen"><div class="title"><h1>제작계획현황</h1><small>영업관리</small></div><section class="filt"><div class="f2"><div class="lb">제 번</div><div><input id="q_job" class="field" oninput="search()" placeholder="제번 일부 입력"></div><div class="lb">품 명</div><div><input id="q_item" class="field" oninput="search()"></div><div></div><div></div></div></section><div class="gridbox"><table style="min-width:1420px"><thead><tr><th style="width:56px">NO</th><th style="width:140px">제번</th><th style="width:200px">품명</th><th style="width:120px">수주가</th><th style="width:120px">목표가</th><th style="width:80px">이익률</th><th style="width:110px">설계시작</th><th style="width:110px">설계종료</th><th style="width:56px">일수</th><th style="width:110px">설계담당</th><th style="width:110px">가공</th><th style="width:110px">조립</th><th style="width:110px">기타</th><th style="width:120px">납기예정일</th></tr></thead><tbody id="body"></tbody><tfoot><tr class="gtot"><td colspan="14" class="c" id="totline">조회 0건</td></tr></tfoot></table></div><footer class="foot"><button class="btn" onclick="detail()">⌕ 상세보기</button><button class="btn" onclick="search()">⌕ 검색</button><button class="btn" onclick="csv()">▤ EXCEL</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">행을 선택하고 상세보기를 누르면 계획등록 창이 열립니다.</span><span class="right" id="countText"></span></footer><div class="mask" id="mask" onclick="if(event.target===mask)closePlan()"><div class="dlg"><div class="dh"><span id="planTitle">제작계획등록</span><button onclick="closePlan()">×</button></div><div class="db" id="planBody"></div><div style="display:flex;justify-content:center;gap:10px;padding:8px"><button class="btn" onclick="editPlan()">▤ 수정</button><button class="btn" onclick="delPlan()">✕ 삭제</button><button class="btn" onclick="closePlan()">⊠ 닫기</button></div></div></div></div><script>const data=[{"row_no": 138, "job_no": "G15012-S110", "item_name": "BASE INDOOR", "order_price":771000, "target_price":701300, "profit_rate_pct":8, "design_start_date": "2024-04-08", "design_end_date": "2024-04-09", "design_days": 2, "design_manager": "임채원", "machining_amount":0, "assembly_amount":0, "etc_amount":0, "delivery_planned_date": "2024-05-06"}, {"row_no": 139, "job_no": "G15012-S111", "item_name": "개조및 수리", "order_price":216400, "target_price":0, "profit_rate_pct":0, "design_start_date": "2024-05-04", "design_end_date": "2024-05-05", "design_days": 2, "design_manager": "안지우", "machining_amount":0, "assembly_amount":0, "etc_amount":0, "delivery_planned_date": "2024-06-01"}, {"row_no": 140, "job_no": "G15012-S112", "item_name": "BARRIER OUT DOOR", "order_price":1057400, "target_price": null, "profit_rate_pct": null, "design_start_date": null, "design_end_date": null, "design_days": null, "design_manager": null, "machining_amount": null, "assembly_amount": null, "etc_amount": null, "delivery_planned_date": null}];const plans=[{"row_no": 1, "job_no": null, "plant_name": "1공장", "product_name": null, "customer_name": null, "process_set_qty": null, "item_name": null, "order_date": null, "mold_type_name": null, "s1_planned_date": null, "model": null, "delivery_planned_date": null, "design_start_date": "2026-08-19", "design_end_date": "2026-08-20", "design_days": 2, "design_outsourced": false, "design_manager": null, "machining_start_date": null, "machining_end_date": null, "machining_outsourced": false, "machining_manager": null, "assembly_start_date": null, "assembly_end_date": null, "assembly_outsourced": false, "assembly_manager": null, "order_price": null, "target_price":508100, "profit_rate_pct": null, "design_internal_amount":58400, "design_internal_pct": 8.0, "design_external_amount": null, "design_external_pct": 0.0, "raw_material_amount":48500, "raw_material_pct": 10.0, "purchase_amount": null, "purchase_pct": 0.0, "machining_internal_amount":479500, "machining_internal_pct": 82.0, "machining_external_amount": null, "machining_external_pct": 0.0, "assembly_internal_amount": null, "assembly_internal_pct": 0.0, "assembly_external_amount": null, "assembly_external_pct": 0.0}, {"row_no": 2, "job_no": "G14191-S013", "plant_name": "1공장", "product_name": "CHANNEL, TUBE", "customer_name": null, "process_set_qty": "1/1", "item_name": "에어컨", "order_date": "2024-05-23", "mold_type_name": null, "s1_planned_date": "2024-05-27", "model": "SA", "delivery_planned_date": "2024-05-27", "design_start_date": "2024-05-24", "design_end_date": "2024-05-25", "design_days": 2, "design_outsourced": false, "design_manager": "안지우", "design_manager_code": "user21", "machining_start_date": "2024-05-26", "machining_end_date": "2024-05-27", "machining_days": 2, "machining_outsourced": false, "machining_manager": "안도윤", "machining_manager_code": "user10", "assembly_start_date": "2024-05-27", "assembly_end_date": "2024-05-27", "assembly_days": 1, "assembly_outsourced": false, "assembly_manager": "한나윤", "assembly_manager_code": "user09", "order_price":395800, "target_price":71700, "profit_rate_pct":71, "design_internal_amount":5500, "design_internal_pct": 6.0, "design_external_amount":0, "design_external_pct": 0.0, "raw_material_amount":21500, "raw_material_pct": 24.0, "purchase_amount":12500, "purchase_pct": 12.0, "machining_internal_amount":31500, "machining_internal_pct": 41.0, "machining_external_amount":0, "machining_external_pct": 0.0, "assembly_internal_amount":19300, "assembly_internal_pct": 18.0, "assembly_external_amount":0, "assembly_external_pct": 0.0}];const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const n=v=>v==null?'':Number(v).toLocaleString();const p=v=>v==null?'':Number(v).toFixed(2)+'%';
+</style></head><body><div class="screen"><div class="title"><h1>제작계획현황</h1><small>영업관리</small></div><section class="filt"><div class="f2"><div class="lb">제 번</div><div><input id="q_job" class="field" oninput="search()" placeholder="제번 일부 입력"></div><div class="lb">품 명</div><div><input id="q_item" class="field" oninput="search()"></div><div></div><div></div></div></section><div class="gridbox"><table style="min-width:1420px"><thead><tr><th style="width:56px">NO</th><th style="width:140px">제번</th><th style="width:200px">품명</th><th style="width:120px">수주가</th><th style="width:120px">목표가</th><th style="width:80px">이익률</th><th style="width:110px">설계시작</th><th style="width:110px">설계종료</th><th style="width:56px">일수</th><th style="width:110px">설계담당</th><th style="width:110px">가공</th><th style="width:110px">조립</th><th style="width:110px">기타</th><th style="width:120px">납기예정일</th></tr></thead><tbody id="body"></tbody><tfoot><tr class="gtot"><td colspan="14" class="c" id="totline">조회 0건</td></tr></tfoot></table></div><footer class="foot"><button class="btn" onclick="detail()">⌕ 상세보기</button><button class="btn" onclick="search()">⌕ 검색</button><button class="btn" onclick="csv()">▤ EXCEL</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">행을 선택하고 상세보기를 누르면 계획등록 창이 열립니다.</span><span class="right" id="countText"></span></footer><div class="mask" id="mask" onclick="if(event.target===mask)closePlan()"><div class="dlg"><div class="dh"><span id="planTitle">제작계획</span><button onclick="closePlan()">×</button></div><div class="db" id="planBody"></div><div style="display:flex;justify-content:center;gap:10px;padding:8px"><button class="btn" onclick="editPlan()">▤ 수정</button><button class="btn" onclick="delPlan()">✕ 삭제</button><button class="btn" onclick="closePlan()">⊠ 닫기</button></div></div></div></div><script>
+/* v68: 화면 하드코딩 초기 데이터 제거 — 전부 DB(sales_plan_status_rows / sales_plans) 에서 */
+const data=[];const plans=[];
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const n=v=>v==null||v===''?'':Number(v).toLocaleString();const p=v=>v==null?'':Number(v).toFixed(2)+'%';
 const msg=t=>message.textContent=t;
 let view=[...data],sel=-1;
 
@@ -53,7 +63,8 @@ function renderTotal(){
   const el=document.getElementById('totline'); if(!el)return;
   el.textContent = src.length ? `조회 ${src.length}건 · ` + ['수주가 '+money(sum('order_price')),'목표가 '+money(sum('target_price')),'가공 '+money(sum('machining_amount')),'조립 '+money(sum('assembly_amount')),'기타 '+money(sum('etc_amount'))].join(' / ') : '조회된 자료가 없습니다.';
 }
-function render(){body.innerHTML=view.map((r,i)=>`<tr onclick="pick(${i},this)" ondblclick="pick(${i},this);detail()"><td class="c">${r.row_no}</td><td>${esc(r.job_no)}</td><td>${esc(r.item_name||'')}</td><td class="num">${n(r.order_price)}</td><td class="num">${n(r.target_price)}</td><td class="num">${r.profit_rate_pct==null||r.profit_rate_pct===''?'':Number(r.profit_rate_pct).toFixed(2)}</td><td class="c">${esc(r.design_start_date||'')}</td><td class="c">${esc(r.design_end_date||'')}</td><td class="c">${r.design_days??''}</td><td class="c">${esc(r.design_manager||'')}</td><td class="num">${n(r.machining_amount)}</td><td class="num">${n(r.assembly_amount)}</td><td class="num">${n(r.etc_amount)}</td><td class="c">${esc(r.delivery_planned_date||'')}</td></tr>`).join('');countText.textContent=view.length+'건';sel=-1;}
+function render(){body.innerHTML=view.length?view.map((r,i)=>`<tr onclick="pick(${i},this)" ondblclick="pick(${i},this);detail()"><td class="c">${i+1}</td><td>${esc(r.job_no)}</td><td>${esc(r.item_name||'')}</td><td class="num">${n(r.order_price)}</td><td class="num">${n(r.target_price)}</td><td class="num">${r.profit_rate_pct==null||r.profit_rate_pct===''?'':Number(r.profit_rate_pct).toFixed(2)}</td><td class="c">${esc(r.design_start_date||'')}</td><td class="c">${esc(r.design_end_date||'')}</td><td class="c">${r.design_days??''}</td><td class="c">${esc(r.design_manager||'')}</td><td class="num">${n(r.machining_amount)}</td><td class="num">${n(r.assembly_amount)}</td><td class="num">${n(r.etc_amount)}</td><td class="c">${esc(r.delivery_planned_date||'')}</td></tr>`).join('')
+ :'<tr><td colspan="14" class="c" style="height:100px;color:#8a97a2">등록된 제작계획이 없습니다.</td></tr>';countText.textContent=view.length+'건';sel=-1;}
 function pick(i,tr){sel=i;document.querySelectorAll('#body tr').forEach(x=>x.classList.remove('sel'));tr.classList.add('sel');}
 function search(){const j=(q_job.value||'').trim().toLowerCase(),it=(q_item.value||'').trim().toLowerCase();
  view=data.filter(r=>(!j||String(r.job_no??'').toLowerCase().includes(j))&&(!it||String(r.item_name??'').toLowerCase().includes(it)));
@@ -62,26 +73,40 @@ function detail(){
  if(sel<0){msg('목록에서 행을 선택하세요.');return}
  const r=view[sel];const pl=plans.find(x=>x.job_no===r.job_no)||null;   /* v62: 다른 제번 폴백 제거 */
  openPlan(pl,r);}
-function fld(l,v){return `<div class="lb">${l}</div><div class="v">${esc(v??'')}</div>`}
+function fld(l,v,cls){return `<div class="k">${l}</div><div class="v${cls?' '+cls:''}">${esc(v??'')}</div>`}
+/* v68 상세 팝업 재작성: 기본정보 / 금액(이익금 포함) / 기간 / 구성비 4개 섹션 */
 function openPlan(pl,r){
  curJob=(pl&&pl.job_no)||(r&&r.job_no)||null;
- planTitle.textContent=`제작계획등록 - ${pl?pl.job_no:r.job_no}`;
+ planTitle.textContent=`제작계획 - ${pl?pl.job_no:r.job_no}`;
  if(!pl){planBody.innerHTML='<div style="padding:24px;color:#8a97a2">해당 제번의 제작계획 상세가 없습니다. 제작계획등록에서 제번을 조회해 등록하세요.</div>';mask.classList.add('on');return}
  const A=[['설계 사내','design_internal_amount','design_internal_pct'],['설계 사외','design_external_amount','design_external_pct'],
   ['원재료','raw_material_amount','raw_material_pct'],['구매','purchase_amount','purchase_pct'],
   ['가공 사내','machining_internal_amount','machining_internal_pct'],['가공 사외','machining_external_amount','machining_external_pct'],
   ['조립 사내','assembly_internal_amount','assembly_internal_pct'],['조립 사외','assembly_external_amount','assembly_external_pct']];
- planBody.innerHTML='<div class="kv">'
-  +fld('제 번',pl.job_no)+fld('품 명',pl.product_name)+fld('고객사',pl.customer_name)+fld('공정/조수',pl.process_set_qty)
-  +fld('아이템',pl.item_name)+fld('수주일',pl.order_date)+fld('금형타입',pl.mold_type_name)+fld('모 델',pl.model)
-  +fld('Try-Out 예정일',pl.s1_planned_date)+fld('납기 예정일',pl.delivery_planned_date)+fld('수주가',n(pl.order_price))+fld('목표가',n(pl.target_price))
-  +fld('이익률(%)',pl.profit_rate_pct)+'<div></div><div></div><div></div><div></div><div></div></div>'
-  +'<div class="kv" style="grid-template-columns:60px repeat(3,1fr 78px 1fr 108px)">'
-  +`<div class="lb">기 간</div><div class="lb">설계</div><div class="v">${esc(pl.design_start_date||'')} ~ ${esc(pl.design_end_date||'')}</div><div class="v c">${pl.design_days??''}일</div><div class="v">${esc(pl.design_manager||'')}</div>`
-  +`<div class="lb">가공</div><div class="v">${esc(pl.machining_start_date||'')} ~ ${esc(pl.machining_end_date||'')}</div><div class="v c">${pl.machining_days??''}일</div><div class="v">${esc(pl.machining_manager||'')}</div>`
-  +`<div class="lb">조립</div><div class="v">${esc(pl.assembly_start_date||'')} ~ ${esc(pl.assembly_end_date||'')}</div><div class="v c">${pl.assembly_days??''}일</div><div class="v">${esc(pl.assembly_manager||'')}</div></div>`
-  +'<table style="min-width:0"><thead><tr><th style="width:70px">금액</th>'+A.map(a=>`<th>${a[0]}</th>`).join('')+'</tr></thead><tbody><tr><td class="c">금액</td>'
-  +A.map(a=>`<td class="num">${n(pl[a[1]])}<div style="font-size:11px;color:#5d6d7b">${pl[a[2]]==null?'':pl[a[2]]+'%'}</div></td>`).join('')+'</tr></tbody></table>';
+ const N=v=>Number(v)||0;
+ const sumA=A.reduce((a,x)=>a+N(pl[x[1]]),0);
+ const target=N(pl.target_price)||sumA;            /* 목표가 = 구성비 합계 */
+ const op=N(pl.order_price);
+ const profit=op-target, rate=op?profit/op*100:null;
+ const days=(s,e,d)=>d!=null&&d!==''?d:(s&&e?Math.round((new Date(e)-new Date(s))/86400000)+1:'');
+ const per=(lab,s,e,d,o,m)=>`<tr><td class="c">${lab}</td><td class="c">${esc(s||'')}</td><td class="c">${esc(e||'')}</td><td class="c">${days(s,e,d)}${days(s,e,d)!==''?'일':''}</td><td class="c">${o===true?'외주':''}</td><td>${esc(m||'')}</td></tr>`;
+ planBody.innerHTML=
+  `<div class="sec"><div class="st">기본정보</div><div class="kv mes-grid-fit">`
+  +fld('제 번',pl.job_no)+fld('품 명',pl.product_name)+fld('고객사',pl.customer_name)+fld('아이템',pl.item_name)
+  +fld('금형타입',pl.mold_type_name)+fld('모 델',pl.model)+fld('공정/조수',pl.process_set_qty)+fld('수주일',pl.order_date)
+  +fld('Try-Out 예정일',pl.s1_planned_date)+fld('납기 예정일',pl.delivery_planned_date)+`<div></div><div></div><div></div><div></div></div></div>`
+  +`<div class="sec"><div class="st">금액</div><div class="kv mes-grid-fit">`
+  +fld('수주가',n(op),'num')+fld('목표가',n(target),'num')+fld('이익금',n(profit),'num'+(profit<0?' neg':''))+fld('이익률(%)',rate==null?'':rate.toFixed(1),'num'+(profit<0?' neg':''))
+  +`</div></div>`
+  +`<div class="sec"><div class="st">기간</div><table><thead><tr><th style="width:70px">구분</th><th>시작일</th><th>종료일</th><th style="width:70px">일수</th><th style="width:60px">외주</th><th>담당자</th></tr></thead><tbody>`
+  +per('설계',pl.design_start_date,pl.design_end_date,pl.design_days,pl.design_outsourced,pl.design_manager)
+  +per('가공',pl.machining_start_date,pl.machining_end_date,pl.machining_days,pl.machining_outsourced,pl.machining_manager)
+  +per('조립',pl.assembly_start_date,pl.assembly_end_date,pl.assembly_days,pl.assembly_outsourced,pl.assembly_manager)
+  +`</tbody></table></div>`
+  +`<div class="sec"><div class="st">구성비 (목표가 ${n(target)})</div><table><thead><tr><th style="width:60px"></th>`+A.map(a=>`<th>${a[0]}</th>`).join('')+`</tr></thead><tbody>`
+  +`<tr><td class="c">금액</td>`+A.map(a=>`<td class="num">${n(pl[a[1]])}</td>`).join('')+`</tr>`
+  +`<tr><td class="c">구성비</td>`+A.map(a=>`<td class="num pct">${target?(N(pl[a[1]])/target*100).toFixed(1)+'%':''}</td>`).join('')+`</tr>`
+  +`</tbody></table></div>`;
  mask.classList.add('on');}
 function closePlan(){mask.classList.remove('on')}
 /* ── v46 수정/삭제 실동작 ────────────────────────────────
@@ -95,12 +120,12 @@ function editPlan(){
  try{
   const P=window.parent;
   if(P&&P.openByName){P.openByName('제작계획등록');
-   /* v62: 제작계획등록의 실제 입력 id 는 job_no. 화면이 뜰 때까지 재시도 */
+   /* v68: 제작계획등록의 loadJob(job) 에 제번을 직접 넘긴다. 화면이 뜰 때까지 재시도 */
    let n=0;const iv=setInterval(()=>{try{
     const f=[...P.document.querySelectorAll('iframe')].find(x=>String(x.src||'').includes('sales_plan_input.html'));
     const w=f&&f.contentWindow,d=f&&f.contentDocument;
     const el=d&&d.getElementById('job_no');
-    if(el&&w&&typeof w.loadJob==='function'){clearInterval(iv);el.value=job;w.loadJob()}
+    if(el&&w&&typeof w.loadJob==='function'){clearInterval(iv);w.loadJob(job)}
     else if(++n>30)clearInterval(iv);
    }catch(e){if(++n>30)clearInterval(iv)}},300);
    msg(`${job} 제작계획등록 화면을 열었습니다.`);return;
@@ -118,18 +143,19 @@ async function delPlan(){
   const rows=data.filter(r=>r.job_no===job);
   for(const r of rows)await MESDB.table('sales_plan_status_rows').delete({row_no:Number(r.row_no)});
   for(let i=data.length-1;i>=0;i--)if(data[i].job_no===job)data.splice(i,1);
+  for(let i=plans.length-1;i>=0;i--)if(plans[i].job_no===job)plans.splice(i,1);
   closePlan();search();msg(`${job} 제작계획을 삭제했습니다.`);
  }catch(e){msg('삭제 실패: '+String(e.message||e).slice(0,140))}
 }
 
 function csv(){
  const h=['NO','제번','품명','수주가','목표가','이익률','설계시작','설계종료','일수','설계담당','가공','조립','기타','납기예정일'];
- const rows=view.map(r=>[r.row_no,r.job_no,r.item_name,r.order_price,r.target_price,r.profit_rate_pct,
+ const rows=view.map((r,i)=>[i+1,r.job_no,r.item_name,r.order_price,r.target_price,r.profit_rate_pct,
   r.design_start_date,r.design_end_date,r.design_days,r.design_manager,r.machining_amount,r.assembly_amount,r.etc_amount,r.delivery_planned_date]);
  const t='\ufeff'+[h,...rows].map(a=>a.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n');
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/csv;charset=utf-8'}));
  a.download='sales_plan_status.csv';a.click();URL.revokeObjectURL(a.href);msg(`${view.length}건을 엑셀로 내보냈습니다.`)}
-window.MES={search,csv,editPlan,delPlan,setMessage:msg};render();</script><script src="mes_db.js?v=67"></script>
+window.MES={search,csv,editPlan,delPlan,setMessage:msg};render();</script><script src="mes_db.js?v=68"></script>
 <script>
 
 /* v60: 제작계획등록에서 저장하면 자동으로 다시 불러온다 */
@@ -157,5 +183,5 @@ MESDB.master({page:"sales_plan_status:plans",table:"sales_plans",pk:"row_no",map
 /* 표가 다시 그려질 때마다 합계 갱신 */
 (function(){const tb=document.querySelector('tbody');if(!tb||typeof renderTotal!=='function')return;new MutationObserver(()=>renderTotal()).observe(tb,{childList:true});renderTotal()})();
 </script>
-<script src="mes_ctx.js?v=67"></script>
+<script src="mes_ctx.js?v=68"></script>
 </body></html>
