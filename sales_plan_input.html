@@ -55,8 +55,8 @@ table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th
  <div class="lb">조 립</div><input id="assembly_start_date" type="date" class="field"><div class="c">~</div><input id="assembly_end_date" type="date" class="field"><input id="assembly_days" class="field c" placeholder="일수" title="소요일수 (자동 계산)"><div class="chk"><input type="checkbox" id="assembly_outsourced">외주</div><div class="chk"><span class="lb" style="width:52px">담당자</span><select id="assembly_manager" class="field" style="width:160px"><option value=""></option></select></div>
 </div></div>
 <div class="blk"><div class="bt">금액</div>
- <div class="gg" style="grid-template-columns:56px 1fr 64px 1fr 72px 1fr">
-  <div class="lb">수주가</div><input id="order_price" class="field num"><div class="lb">목표가</div><input id="target_price" class="field num"><div class="lb">이익률(%)</div><input id="profit_rate_pct" class="field num" readonly>
+ <div class="gg" style="grid-template-columns:56px 1fr 64px 1fr 64px 1fr 72px 1fr">
+  <div class="lb">수주가</div><input id="order_price" class="field num" oninput="recalc()"><div class="lb">목표가</div><input id="target_price" class="field num" readonly title="아래 8개 금액의 합계 (자동)"><div class="lb">이익금</div><input id="profit_amount" class="field num" readonly title="수주가 − 목표가 (자동)"><div class="lb">이익률(%)</div><input id="profit_rate_pct" class="field num" readonly title="이익금 ÷ 수주가 (자동)">
  </div>
  <div class="amt">
   <div></div><div class="hd">설계 사내</div><div class="hd">설계 사외</div><div class="hd">원재료</div><div class="hd">구매</div><div class="hd">가공 사내</div><div class="hd">가공 사외</div><div class="hd">조립 사내</div><div class="hd">조립 사외</div>
@@ -89,14 +89,19 @@ function setSel(id,v){
 /* 제작계획현황 [수정] 은 job_no.value=제번 으로 넘겨준다 → 목록에 없어도 값이 살아있도록 setter 를 감싼다 */
 (function(){const el=document.getElementById('job_no');
  Object.defineProperty(el,'value',{get(){return SELSET.get.call(el)},set(v){setSel(el,v)}})})();
+/* 목표가 = 구성비 8개 합계, 이익금 = 수주가 − 목표가, 이익률 = 이익금 ÷ 수주가 (모두 자동) */
+const fmt=v=>v==null||v===''?'':Number(v).toLocaleString('ko-KR');
 function recalc(){
- const t=num(target_price.value);
  let s=0;for(let i=1;i<=8;i++)s+=num(document.getElementById('a'+i).value);
+ target_price.value=s?fmt(s):'';
  for(let i=1;i<=8;i++){const a=num(document.getElementById('a'+i).value);
-  document.getElementById('p'+i).textContent=(t?(a/t*100):0).toFixed(0)+'%';}
+  document.getElementById('p'+i).textContent=(s?(a/s*100):0).toFixed(0)+'%';}
  const op=num(order_price.value);
+ profit_amount.value=op||s?fmt(op-s):'';
  profit_rate_pct.value=op?((op-s)/op*100).toFixed(1):'';
+ profit_amount.style.color=profit_rate_pct.style.color=(op&&op-s<0)?'#c62828':'';
 }
+order_price.addEventListener('blur',()=>{const v=num(order_price.value);order_price.value=v?fmt(v):''});
 /* 일수 = 종료일 − 시작일 + 1 */
 function calcDays(p){
  const s=document.getElementById(p+'_start_date').value,e=document.getElementById(p+'_end_date').value,d=document.getElementById(p+'_days');
@@ -111,6 +116,7 @@ function load(o){
  design_outsourced.checked=!!o.design_outsourced;machining_outsourced.checked=!!o.machining_outsourced;assembly_outsourced.checked=!!o.assembly_outsourced;
  AK.forEach((k,i)=>{const n=document.getElementById('a'+(i+1));if(n)n.value=o[k]??''});
  ['design','machining','assembly'].forEach(p=>{if(!document.getElementById(p+'_days').value)calcDays(p)});
+ order_price.value=num(order_price.value)?fmt(num(order_price.value)):'';
  recalc();
 }
 function clearForm(quiet){
@@ -143,9 +149,10 @@ function collect(){
  o.design_outsourced=!!design_outsourced.checked;
  o.machining_outsourced=!!machining_outsourced.checked;
  o.assembly_outsourced=!!assembly_outsourced.checked;
- const t=num(target_price.value);let s=0;
+ let s=0;AK.forEach((k,i)=>s+=num(document.getElementById('a'+(i+1)).value));
  AK.forEach((k,i)=>{const a=num(document.getElementById('a'+(i+1)).value);
-  o[k]=a||null;o[PCT[k]]=t?Math.round(a/t*1000)/10:0;s+=a});
+  o[k]=a||null;o[PCT[k]]=s?Math.round(a/s*1000)/10:0});
+ o.target_price=s||null;
  const op=num(order_price.value);
  o.profit_rate_pct=op?Math.round((op-s)/op*1000)/10:null;
  return o;
