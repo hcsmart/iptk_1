@@ -563,9 +563,9 @@ function openByName(name){
   const loc=locate(name);if(loc){p.menu=name;p.mod=loc.mod;p.sec=loc.sec;if(loc.mod!==activeModule){activeModule=loc.mod;buildTop()}}
   openPage(p);
 }
-function openPage(p){if(!openTabs.has(p.id))openTabs.set(p.id,p);if(activeId!==p.id)prevId=activeId;activeId=p.id;renderTabs();renderStage();buildTop();renderCrumb();
+function openPage(p){if(!openTabs.has(p.id))openTabs.set(p.id,p);if(activeId!==p.id)prevId=activeId;activeId=p.id;renderTabs();renderStage();buildTop();renderCrumb();saveTabs();
   statusMsg.textContent=p.home?'홈':p.file?`${p.title} 화면을 열었습니다.`:`${p.title} 화면은 준비 중입니다.`}
-function activate(id){if(activeId!==id)prevId=activeId;activeId=id;const p=openTabs.get(id);if(p&&p.mod)activeModule=p.mod;buildTop();renderTabs();renderStage();renderCrumb()}
+function activate(id){if(activeId!==id)prevId=activeId;activeId=id;const p=openTabs.get(id);if(p&&p.mod)activeModule=p.mod;buildTop();renderTabs();renderStage();renderCrumb();saveTabs()}
 function renderCrumb(){
   const p=openTabs.get(activeId);const c=$('#crumb');
   if(!p){c.innerHTML='<span>IPTK MES</span>';return}
@@ -588,7 +588,7 @@ function closeTab(id,e){e?.stopPropagation();if(pinned.has(id))return;
   const ids=[...openTabs.keys()],idx=ids.indexOf(id);if(idx<0)return;
   openTabs.delete(id);VREADY.delete(id);document.getElementById('view_'+id)?.remove();
   if(activeId===id){activeId=ids[idx+1]||ids[idx-1]||'';if(!openTabs.has(activeId))activeId=[...openTabs.keys()][0]||''}
-  renderTabs();renderStage();buildTop();renderCrumb()}
+  renderTabs();renderStage();buildTop();renderCrumb();saveTabs()}
 const ctx=$('#tabCtx');let ctxTab=null;
 function showCtx(e,id){ctxTab=id;ctx.style.left=e.clientX+'px';ctx.style.top=e.clientY+'px';ctx.classList.add('open')}
 ctx.querySelectorAll('button').forEach(b=>b.onclick=()=>{
@@ -721,7 +721,12 @@ function prefetch(url){if(!url||_pf.has(url))return;_pf.add(url);
 
 function tick(){now.textContent=new Date().toLocaleString('ko-KR',{dateStyle:'medium',timeStyle:'medium'})}
 verTxt.textContent='APP v'+APP_VER;
-buildTop();renderFav();syncUser();openPage(HOME);tick();setInterval(tick,1000);
+/* 새로고침 시 열린 탭·현재 화면 복원 */
+const TABKEY='ipmes.tabs';
+const keyOf=p=>Object.keys(pageRegistry).find(k=>pageRegistry[k]===p);
+function saveTabs(){try{const names=[...openTabs.values()].filter(p=>!p.home&&p.file).map(keyOf).filter(Boolean);const a=openTabs.get(activeId);sessionStorage.setItem(TABKEY,JSON.stringify({names,active:a&&!a.home?keyOf(a):''}))}catch(e){}}
+function restoreTabs(raw){try{const st=JSON.parse(raw||'null');if(!st||!st.names||!st.names.length)return;st.names.forEach(n=>{if(pageRegistry[n]&&pageRegistry[n].file)openByName(n)});if(st.active&&pageRegistry[st.active])openByName(st.active);else openPage(HOME)}catch(e){}}
+const _tabs=(()=>{try{return sessionStorage.getItem('ipmes.tabs')}catch(e){return null}})();buildTop();renderFav();syncUser();openPage(HOME);restoreTabs(_tabs);tick();setInterval(tick,1000);
 </script>
 <script>document.write('<script src="mes_auth.js?v='+APP_VER+'"><\/script>')</script>
 <script>window.addEventListener("mes-auth-ready",()=>{try{VREADY.clear();buildTop();renderFav();syncUser();const h=document.getElementById('view_home');if(h)h.innerHTML=homeHTML();renderStage()}catch(e){}});</script>
