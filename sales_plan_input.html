@@ -244,12 +244,48 @@ async function save(){
   try{if(srNo!=null)await MESDB.table('sales_plan_status_rows').upsert({row_no:srNo,...r},'row_no');
       else await MESDB.table('sales_plan_status_rows').insertOne(r)}
   catch(e){msg(`${o.job_no} 계획은 저장됐으나 제작계획현황 반영 실패: `+String(e.message||e).slice(0,100));return}
-  try{MESDB.notify&&MESDB.notify(['sales_plans','sales_plan_status_rows'])}catch(e){}
-  msg(`${o.job_no} 제작계획을 저장했습니다. (목표원가 ${Number(o.target_price||0).toLocaleString()}원 / 이익률 ${o.profit_rate_pct ?? '-'}%)`);
+  /* v68: 설계=외주 + 외주업체 지정이면 외주설계 발주(order_lines)를 여기서 바로 만든다.
+     설계관리의 외주설계발주등록 화면을 대신한다. 견적가 = 설계 사외 금액, 입고예정일 = 설계 종료일 */
+  let odMsg='';
+  try{odMsg=await syncDesignOrder(o)}catch(e){odMsg=' / 외주설계 발주 반영 실패: '+String(e.message||e).slice(0,80)}
+  try{MESDB.notify&&MESDB.notify(['sales_plans','sales_plan_status_rows','order_lines'])}catch(e){}
+  msg(`${o.job_no} 제작계획을 저장했습니다. (목표원가 ${Number(o.target_price||0).toLocaleString()}원 / 이익률 ${o.profit_rate_pct ?? '-'}%)`+odMsg);
  }catch(e){
   const m=String(e.message||e);
   msg(/무결성|foreign key/i.test(m)?'저장 실패: 등록되지 않은 제번입니다.':'저장 실패: '+m.slice(0,120));
  }
+}
+/* 외주설계 발주 동기화 — 미입고(status=발주) 라인만 만들거나 고친다. 입고가 시작된 라인은 건드리지 않는다 */
+async function syncDesignOrder(o){
+ const job=o.job_no;
+ const ex=await MESDB.table('order_lines').select(`select=line_id,vendor_name,status,quote_price,nego_rate,receipt_amount&category=eq.외주설계&job_no=eq.${encodeURIComponent(job)}&order=line_id`);
+ /* 외주설계는 nego_rate 를 진척률(%)로 쓴다 — 진척이 시작된 라인은 손대지 않는다 */
+ const open=(ex||[]).filter(r=>r.status==='발주'&&!(Number(r.nego_rate)>0)&&!(Number(r.receipt_amount)>0));
+ const started=(ex||[]).filter(r=>!open.includes(r));
+ if(!o.design_outsourced||!o.design_vendor){
+  if(open.length)return ` / 주의: 사내설계로 바뀌었지만 외주설계 발주 ${open.length}건(${[...new Set(open.map(r=>r.vendor_name))].join(',')})이 남아 있습니다. 외주설계발주입고에서 발주취소 하세요.`;
+  return '';
+ }
+ if(started.length&&!open.length)return ` / 외주설계 발주는 이미 입고 진행 중(${started[0].vendor_name})이라 변경하지 않았습니다.`;
+ const owner=(function(){try{return (window.MES_AUTH||window.parent.MES_AUTH)?.name||null}catch(e){return null}})();
+ const quote=Number(o.design_external_amount)||0;
+ let proc='A',procName='1/1';
+ try{const st=await MESDB.table('design_plan_steps').select(`select=process_code,process_name&job_no=eq.${encodeURIComponent(job)}&order=row_no&limit=1`);
+  if(st&&st[0]){proc=st[0].process_code||proc;procName=st[0].process_name||procName}}catch(e){}
+ const row={category:'외주설계',status:'발주',job_no:job,item_name:o.item_name||null,
+  vendor_name:o.design_vendor,process_code:proc,process_name:procName,
+  order_date:new Date().toISOString().slice(0,10),required_date:o.design_end_date||o.design_tryout_date||null,
+  quote_price:quote,confirm_price:quote,order_qty:1,owner_name:owner,updated_at:new Date().toISOString()};
+ if(open.length){
+  const t=open[0];
+  await MESDB.table('order_lines').upsert({line_id:t.line_id,vendor_name:row.vendor_name,process_code:proc,process_name:procName,
+   required_date:row.required_date,quote_price:quote,confirm_price:quote,updated_at:row.updated_at},'line_id');
+  for(const d of open.slice(1))try{await MESDB.table('order_lines').delete({line_id:d.line_id})}catch(e){}
+  return ` / 외주설계 발주 갱신: ${row.vendor_name} ${quote.toLocaleString()}원`;
+ }
+ if(MESDB.ensureRefs)await MESDB.ensureRefs([row]);
+ await MESDB.table('order_lines').upsert([row]);
+ return ` / 외주설계 발주 생성: ${row.vendor_name} ${quote.toLocaleString()}원 (외주설계발주입고에서 진척 처리)`;
 }
 window.MES={save,clearForm,setMessage:t=>message.textContent=t,search:loadJob,load,loadJob};
 job_no.addEventListener('change',()=>loadJob());
