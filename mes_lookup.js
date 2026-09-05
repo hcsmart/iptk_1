@@ -84,14 +84,15 @@ const KINDS={
  design_partner:{title:'협력업체(외주설계)', table:'outsourced_design_partners', order:'seq',
             cols:['No','업체명'], map:r=>[r.seq,r.partner_name], code:r=>r.partner_name, name:r=>r.partner_name},
  /* v68: 기준정보 '사용자정보'(users) 에서 조회한다.
-    코드 = 아이디(user_id), 아이디가 없는 사용자는 user_key. 시스템 계정(hcsmart) 제외.
+    코드 = 아이디(user_id). 시스템 계정(hcsmart) 제외.
     사용여부 해제(is_active=false) 는 '사용중만' 체크로 숨긴다. */
  employee: {title:'담당자 조회',    table:'users', order:'name',
             cols:['아이디','성명','부서'],
             map:r=>[r.user_id||r.user_key||'', r.name||'', r.department_name||''],
             code:r=>r.user_id||r.user_key||'', name:r=>r.name||'',
-            filter:r=>!!(r.name&&String(r.name).trim())&&String(r.user_id||'')!=='hcsmart',
-            activeKey:r=>r.is_active!==false},
+            /* 사용자정보에서 사용여부 ✔ 인 실제 계정만. 아이디 없는 행·사용여부 미설정 행(데모 잔재) 은 제외 */
+            filter:r=>!!(r.name&&String(r.name).trim())&&!!r.user_id&&r.is_active===true&&String(r.user_id)!=='hcsmart',
+            activeKey:r=>r.is_active===true},
  material: {title:'자재 조회',      table:'materials', order:'material_code',
             cols:['자재코드','자재명','그룹'], map:r=>[r.material_code,r.material_name||'',r.material_group||'']},
  part:     {title:'부품 조회',      table:'parts', order:'part_code',
