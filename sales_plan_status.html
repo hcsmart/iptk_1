@@ -19,6 +19,11 @@ table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th
 .opts label{display:flex;align-items:center;gap:3px;cursor:pointer}
 .gtot td{background:#dfe9f2;font-weight:700}
 .grp th{background:linear-gradient(#dbe9f5,#b9d2e6)}
+/* v68 사내/외주 구분 뱃지 */
+.tag{display:inline-block;min-width:34px;padding:0 5px;margin-right:3px;border-radius:3px;font-size:11px;line-height:17px;text-align:center;border:1px solid}
+.tag.in{background:#eef3f7;border-color:#b9c8d5;color:#4a5c6b}
+.tag.out{background:#fdefe2;border-color:#e0a86a;color:#9a5410;font-weight:700}
+tbody tr.sel .tag{background:transparent;border-color:#cfe2f4;color:#fff}
 .panes{flex:1;min-height:0;display:grid;gap:8px;padding:0 14px 8px}
 .pane{border:1px solid var(--line);background:#fff;display:flex;flex-direction:column;min-height:0}
 .ph{padding:5px 9px;font-weight:700;background:linear-gradient(var(--head1),var(--head2));color:#405266;border-bottom:1px solid var(--line2)}
@@ -48,7 +53,7 @@ table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th
 @media(max-width:1400px){.formrow{grid-template-columns:78px minmax(0,1fr) 78px minmax(0,1fr)}}
 @media(max-width:880px){.formrow{grid-template-columns:78px minmax(0,1fr)}}
 .formrow>*{min-width:0}
-</style></head><body><div class="screen"><div class="title"><h1>제작계획현황</h1><small>영업관리</small></div><section class="filt"><div class="f2"><div class="lb">제 번</div><div><input id="q_job" class="field" oninput="search()" placeholder="제번 일부 입력"></div><div class="lb">품 명</div><div><input id="q_item" class="field" oninput="search()"></div><div></div><div></div></div></section><div class="gridbox"><table style="min-width:1420px"><thead><tr><th style="width:56px">NO</th><th style="width:140px">제번</th><th style="width:200px">품명</th><th style="width:120px">수주가</th><th style="width:120px">목표가</th><th style="width:80px">이익률</th><th style="width:110px">설계시작</th><th style="width:110px">설계종료</th><th style="width:56px">일수</th><th style="width:110px">설계담당</th><th style="width:110px">가공</th><th style="width:110px">조립</th><th style="width:110px">기타</th><th style="width:120px">납기예정일</th></tr></thead><tbody id="body"></tbody><tfoot><tr class="gtot"><td colspan="14" class="c" id="totline">조회 0건</td></tr></tfoot></table></div><footer class="foot"><button class="btn" onclick="detail()">⌕ 상세보기</button><button class="btn" onclick="search()">⌕ 검색</button><button class="btn" onclick="csv()">▤ EXCEL</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">행을 선택하고 상세보기를 누르면 계획등록 창이 열립니다.</span><span class="right" id="countText"></span></footer><div class="mask" id="mask" onclick="if(event.target===mask)closePlan()"><div class="dlg"><div class="dh"><span id="planTitle">제작계획</span><button onclick="closePlan()">×</button></div><div class="db" id="planBody"></div><div style="display:flex;justify-content:center;gap:10px;padding:8px"><button class="btn" onclick="editPlan()">▤ 수정</button><button class="btn" onclick="delPlan()">✕ 삭제</button><button class="btn" onclick="closePlan()">⊠ 닫기</button></div></div></div></div><script>
+</style></head><body><div class="screen"><div class="title"><h1>제작계획현황</h1><small>영업관리</small></div><section class="filt"><div class="f2"><div class="lb">제 번</div><div><input id="q_job" class="field" oninput="search()" placeholder="제번 일부 입력"></div><div class="lb">품 명</div><div><input id="q_item" class="field" oninput="search()"></div><div></div><div></div></div></section><div class="gridbox"><table style="min-width:1570px"><thead><tr><th style="width:56px">NO</th><th style="width:140px">제번</th><th style="width:200px">품명</th><th style="width:150px">구분(설계/가공/조립)</th><th style="width:120px">수주가</th><th style="width:120px">목표가</th><th style="width:80px">이익률</th><th style="width:110px">설계시작</th><th style="width:110px">설계종료</th><th style="width:56px">일수</th><th style="width:110px">설계담당</th><th style="width:110px">가공</th><th style="width:110px">조립</th><th style="width:110px">기타</th><th style="width:120px">납기예정일</th></tr></thead><tbody id="body"></tbody><tfoot><tr class="gtot"><td colspan="15" class="c" id="totline">조회 0건</td></tr></tfoot></table></div><footer class="foot"><button class="btn" onclick="detail()">⌕ 상세보기</button><button class="btn" onclick="search()">⌕ 검색</button><button class="btn" onclick="csv()">▤ EXCEL</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">행을 선택하고 상세보기를 누르면 계획등록 창이 열립니다.</span><span class="right" id="countText"></span></footer><div class="mask" id="mask" onclick="if(event.target===mask)closePlan()"><div class="dlg"><div class="dh"><span id="planTitle">제작계획</span><button onclick="closePlan()">×</button></div><div class="db" id="planBody"></div><div style="display:flex;justify-content:center;gap:10px;padding:8px"><button class="btn" onclick="editPlan()">▤ 수정</button><button class="btn" onclick="delPlan()">✕ 삭제</button><button class="btn" onclick="closePlan()">⊠ 닫기</button></div></div></div></div><script>
 /* v68: 화면 하드코딩 초기 데이터 제거 — 전부 DB(sales_plan_status_rows / sales_plans) 에서 */
 const data=[];const plans=[];
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -63,8 +68,15 @@ function renderTotal(){
   const el=document.getElementById('totline'); if(!el)return;
   el.textContent = src.length ? `조회 ${src.length}건 · ` + ['수주가 '+money(sum('order_price')),'목표가 '+money(sum('target_price')),'가공 '+money(sum('machining_amount')),'조립 '+money(sum('assembly_amount')),'기타 '+money(sum('etc_amount'))].join(' / ') : '조회된 자료가 없습니다.';
 }
-function render(){body.innerHTML=view.length?view.map((r,i)=>`<tr onclick="pick(${i},this)" ondblclick="pick(${i},this);detail()"><td class="c">${i+1}</td><td>${esc(r.job_no)}</td><td>${esc(r.item_name||'')}</td><td class="num">${n(r.order_price)}</td><td class="num">${n(r.target_price)}</td><td class="num">${r.profit_rate_pct==null||r.profit_rate_pct===''?'':Number(r.profit_rate_pct).toFixed(2)}</td><td class="c">${esc(r.design_start_date||'')}</td><td class="c">${esc(r.design_end_date||'')}</td><td class="c">${r.design_days??''}</td><td class="c">${esc(r.design_manager||'')}</td><td class="num">${n(r.machining_amount)}</td><td class="num">${n(r.assembly_amount)}</td><td class="num">${n(r.etc_amount)}</td><td class="c">${esc(r.delivery_planned_date||'')}</td></tr>`).join('')
- :'<tr><td colspan="14" class="c" style="height:100px;color:#8a97a2">등록된 제작계획이 없습니다.</td></tr>';countText.textContent=view.length+'건';sel=-1;}
+/* v68: 계획의 외주 체크(sales_plans)를 제번으로 찾아 사내/외주를 표시한다 */
+function planOf(job){return plans.find(x=>x.job_no===job)||null}
+function tags(job){
+ const pl=planOf(job);if(!pl)return '<span style="color:#9aa7b1">-</span>';
+ const t=(lab,v)=>`<span class="tag ${v===true?'out':'in'}" title="${lab} ${v===true?'외주':'사내'}">${lab}${v===true?'외':'사'}</span>`;
+ return t('설',pl.design_outsourced)+t('가',pl.machining_outsourced)+t('조',pl.assembly_outsourced);
+}
+function render(){body.innerHTML=view.length?view.map((r,i)=>`<tr onclick="pick(${i},this)" ondblclick="pick(${i},this);detail()"><td class="c">${i+1}</td><td>${esc(r.job_no)}</td><td>${esc(r.item_name||'')}</td><td class="c">${tags(r.job_no)}</td><td class="num">${n(r.order_price)}</td><td class="num">${n(r.target_price)}</td><td class="num">${r.profit_rate_pct==null||r.profit_rate_pct===''?'':Number(r.profit_rate_pct).toFixed(2)}</td><td class="c">${esc(r.design_start_date||'')}</td><td class="c">${esc(r.design_end_date||'')}</td><td class="c">${r.design_days??''}</td><td class="c">${esc(r.design_manager||'')}</td><td class="num">${n(r.machining_amount)}</td><td class="num">${n(r.assembly_amount)}</td><td class="num">${n(r.etc_amount)}</td><td class="c">${esc(r.delivery_planned_date||'')}</td></tr>`).join('')
+ :'<tr><td colspan="15" class="c" style="height:100px;color:#8a97a2">등록된 제작계획이 없습니다.</td></tr>';countText.textContent=view.length+'건';sel=-1;}
 function pick(i,tr){sel=i;document.querySelectorAll('#body tr').forEach(x=>x.classList.remove('sel'));tr.classList.add('sel');}
 function search(){const j=(q_job.value||'').trim().toLowerCase(),it=(q_item.value||'').trim().toLowerCase();
  view=data.filter(r=>(!j||String(r.job_no??'').toLowerCase().includes(j))&&(!it||String(r.item_name??'').toLowerCase().includes(it)));
@@ -89,7 +101,7 @@ function openPlan(pl,r){
  const op=N(pl.order_price);
  const profit=op-target, rate=op?profit/op*100:null;
  const days=(s,e,d)=>d!=null&&d!==''?d:(s&&e?Math.round((new Date(e)-new Date(s))/86400000)+1:'');
- const per=(lab,s,e,d,o,m)=>`<tr><td class="c">${lab}</td><td class="c">${esc(s||'')}</td><td class="c">${esc(e||'')}</td><td class="c">${days(s,e,d)}${days(s,e,d)!==''?'일':''}</td><td class="c">${o===true?'외주':''}</td><td>${esc(m||'')}</td></tr>`;
+ const per=(lab,s,e,d,o,m)=>`<tr><td class="c">${lab}</td><td class="c">${esc(s||'')}</td><td class="c">${esc(e||'')}</td><td class="c">${days(s,e,d)}${days(s,e,d)!==''?'일':''}</td><td class="c"><span class="tag ${o===true?'out':'in'}">${o===true?'외주':'사내'}</span></td><td>${esc(m||'')}</td></tr>`;
  planBody.innerHTML=
   `<div class="sec"><div class="st">기본정보</div><div class="kv mes-grid-fit">`
   +fld('제 번',pl.job_no)+fld('품 명',pl.product_name)+fld('고객사',pl.customer_name)+fld('아이템',pl.item_name)
@@ -98,7 +110,7 @@ function openPlan(pl,r){
   +`<div class="sec"><div class="st">금액</div><div class="kv mes-grid-fit">`
   +fld('수주가',n(op),'num')+fld('목표가',n(target),'num')+fld('이익금',n(profit),'num'+(profit<0?' neg':''))+fld('이익률(%)',rate==null?'':rate.toFixed(1),'num'+(profit<0?' neg':''))
   +`</div></div>`
-  +`<div class="sec"><div class="st">기간</div><table><thead><tr><th style="width:70px">구분</th><th>시작일</th><th>종료일</th><th style="width:70px">일수</th><th style="width:60px">외주</th><th>담당자</th></tr></thead><tbody>`
+  +`<div class="sec"><div class="st">기간</div><table><thead><tr><th style="width:70px">구분</th><th>시작일</th><th>종료일</th><th style="width:70px">일수</th><th style="width:64px">구분</th><th>담당자</th></tr></thead><tbody>`
   +per('설계',pl.design_start_date,pl.design_end_date,pl.design_days,pl.design_outsourced,pl.design_manager)
   +per('가공',pl.machining_start_date,pl.machining_end_date,pl.machining_days,pl.machining_outsourced,pl.machining_manager)
   +per('조립',pl.assembly_start_date,pl.assembly_end_date,pl.assembly_days,pl.assembly_outsourced,pl.assembly_manager)
@@ -149,8 +161,11 @@ async function delPlan(){
 }
 
 function csv(){
- const h=['NO','제번','품명','수주가','목표가','이익률','설계시작','설계종료','일수','설계담당','가공','조립','기타','납기예정일'];
- const rows=view.map((r,i)=>[i+1,r.job_no,r.item_name,r.order_price,r.target_price,r.profit_rate_pct,
+ const h=['NO','제번','품명','설계구분','가공구분','조립구분','수주가','목표가','이익률','설계시작','설계종료','일수','설계담당','가공','조립','기타','납기예정일'];
+ const ox=(job,k)=>{const pl=planOf(job);return pl?(pl[k]===true?'외주':'사내'):''};
+ const rows=view.map((r,i)=>[i+1,r.job_no,r.item_name,
+  ox(r.job_no,'design_outsourced'),ox(r.job_no,'machining_outsourced'),ox(r.job_no,'assembly_outsourced'),
+  r.order_price,r.target_price,r.profit_rate_pct,
   r.design_start_date,r.design_end_date,r.design_days,r.design_manager,r.machining_amount,r.assembly_amount,r.etc_amount,r.delivery_planned_date]);
  const t='\ufeff'+[h,...rows].map(a=>a.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n');
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/csv;charset=utf-8'}));
