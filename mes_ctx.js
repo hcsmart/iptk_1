@@ -228,34 +228,86 @@ window.MESCTX={confirm:dlgConfirm};
  },true);
 })();
 
-/* ── v68: 현황·조회 표 가시성 — 첫 열 고정 + 행 줄무늬 (전 화면 공용) ──
- * 가로 스크롤이 생기는 넓은 표는 첫 열(NO/제번)을 왼쪽에 고정해 스크롤해도
- * 어느 행인지 알 수 있게 하고, 짝수 행은 색을 넣어 행 구분이 또렷하게 한다.
- * 선택(.sel/.selected)·마우스 오버 색은 화면 규칙을 그대로 둔다. */
+/* ── v68: 현황·조회 표 가시성 — 앞 2열 고정 + 글자폭 맞춤 + 행 줄무늬 (전 화면 공용) ──
+ * · 넓은 표는 앞 2열(NO/제번 등)을 왼쪽에 고정해 가로 스크롤해도 어느 행인지 보인다.
+ * · 열폭을 머리글·내용의 실제 글자폭에 맞춰 다시 잡는다(빈 열은 좁게, 긴 값은 넓게).
+ * · 짝수 행에 색을 넣어 행 구분을 또렷하게 한다. 선택·마우스오버 색은 화면 규칙 유지. */
 (function(){
  const st=document.createElement('style');
  st.textContent=`
  table.mes-zebra tbody tr:nth-child(even):not(.sel):not(.selected):not(:hover) td{background:#e8eff6!important}
  table.mes-zebra tbody tr:nth-child(odd):not(.sel):not(.selected):not(:hover) td{background:#fff!important}
  table.mes-zebra tbody tr:not(.sel):not(.selected):hover td{background:#d9ecfb!important}
- table.mes-freeze th:first-child,table.mes-freeze td:first-child{position:sticky;left:0;z-index:1;
+ /* 앞 2열 고정 — 두 번째 열의 left 는 첫 열 폭(--c1) 으로 잡는다 */
+ table.mes-freeze th:nth-child(-n+2),table.mes-freeze td:nth-child(-n+2){position:sticky;z-index:1}
+ table.mes-freeze th:first-child,table.mes-freeze td:first-child{left:0}
+ table.mes-freeze th:nth-child(2),table.mes-freeze td:nth-child(2){left:var(--c1,0px);
   box-shadow:inset -1px 0 0 #b8c4ce}
- table.mes-freeze thead th:first-child{z-index:3}
- table.mes-freeze tbody tr:nth-child(odd):not(.sel):not(.selected):not(:hover) td:first-child{background:#f6f8fa!important}
- table.mes-freeze tbody tr:nth-child(even):not(.sel):not(.selected):not(:hover) td:first-child{background:#dfe8f1!important}
- table.mes-freeze tfoot td:first-child{z-index:2}`;
+ table.mes-freeze thead th:nth-child(-n+2){z-index:3}
+ table.mes-freeze tfoot td:first-child{z-index:2}
+ table.mes-freeze tbody tr:nth-child(odd):not(.sel):not(.selected):not(:hover) td:nth-child(-n+2){background:#f6f8fa!important}
+ table.mes-freeze tbody tr:nth-child(even):not(.sel):not(.selected):not(:hover) td:nth-child(-n+2){background:#dfe8f1!important}`;
  (document.head||document.documentElement).appendChild(st);
+
  const WRAP='.gridbox,.tablewrap,.pb,.entrybox,.grid,.list';
+ const PAD=18, MIN=40, MAX=300, SAMPLE=150;
+ let mctx=null;
+ function textPx(t,font){
+  t=String(t??'');if(!t)return 0;
+  if(mctx===null){try{mctx=document.createElement('canvas').getContext('2d')||false}catch(e){mctx=false}}
+  if(mctx){mctx.font=font;const m=mctx.measureText(t);if(m&&m.width)return m.width}
+  let u=0;for(const ch of t)u+=/[\u1100-\u11FF\u3130-\u318F\uAC00-\uD7AF\u4E00-\u9FFF\uFF00-\uFFEF]/.test(ch)?2:1;
+  return u*6.4;
+ }
+ function cellText(td){
+  const f=td.querySelector('input,select,textarea');
+  if(f){
+   if(f.type==='checkbox'||f.type==='radio')return '■';
+   if(f.tagName==='SELECT')return (f.options[f.selectedIndex]||{}).text||'';
+   return f.value||f.placeholder||'';
+  }
+  return (td.textContent||'').replace(/\s+/g,' ').trim();
+ }
+ /* 열폭을 글자 기준으로 다시 잡는다. 표가 넓으면 가로 스크롤, 좁으면 남는 폭을 넓은 열에 나눠준다. */
+ function fit(tb,wrap){
+  const head=tb.tHead&&tb.tHead.rows.length===1?tb.tHead.rows[0]:null;   /* 2단 머리글은 대상 제외 */
+  if(!head)return null;
+  const hs=[...head.cells];
+  if(!hs.length||hs.some(c=>c.colSpan>1))return null;
+  const n=hs.length;
+  let font='12px "Malgun Gothic",sans-serif',bold=font;
+  try{const cs=getComputedStyle(hs[0]);font=`${cs.fontSize} ${cs.fontFamily}`;bold=`700 ${font}`}catch(e){}
+  const w=hs.map(h=>textPx((h.textContent||'').replace(/\s+/g,' ').trim(),bold)+PAD);
+  const rows=tb.tBodies[0]?tb.tBodies[0].rows:[];
+  const lim=Math.min(rows.length,SAMPLE);
+  for(let i=0;i<lim;i++){
+   const cs=rows[i].cells;if(cs.length!==n)continue;
+   for(let c=0;c<n;c++){const p=textPx(cellText(cs[c]),font)+PAD;if(p>w[c])w[c]=p}
+  }
+  for(let c=0;c<n;c++)w[c]=Math.round(Math.max(MIN,Math.min(MAX,w[c])));
+  let sum=w.reduce((a,b)=>a+b,0);
+  const avail=(wrap.clientWidth||0)-2;
+  if(avail>0&&sum<avail){                       /* 남는 폭은 넓은 열에 비례 배분 */
+   const extra=avail-sum;
+   for(let c=0;c<n;c++)w[c]=Math.round(w[c]+extra*(w[c]/sum));
+   sum=w.reduce((a,b)=>a+b,0);
+  }
+  hs.forEach((h,c)=>{h.style.width=w[c]+'px'});
+  tb.style.width=sum+'px';tb.style.minWidth=sum+'px';tb.style.tableLayout='fixed';
+  tb.style.setProperty('--c1',w[0]+'px');
+  return {w,sum,avail};
+ }
  function apply(){
   document.querySelectorAll('table').forEach(tb=>{
    if(!tb.tHead||!tb.tBodies.length)return;
    if(tb.closest('#meslk,#mesdlg,.dlg,.sheet,.doc'))return;      /* 팝업·인쇄용은 제외 */
    const wrap=tb.closest(WRAP);if(!wrap)return;
    tb.classList.add('mes-zebra');
-   const cols=(tb.tHead.rows[0]||{cells:[]}).cells.length;
-   /* 열이 6개 이상이고 실제로 가로 스크롤이 생길 때만 첫 열 고정 */
-   const wide=cols>=6&&(tb.scrollWidth>wrap.clientWidth+4||tb.offsetWidth>wrap.clientWidth+4);
-   tb.classList.toggle('mes-freeze',wide);
+   const r=fit(tb,wrap);
+   const cols=tb.tHead.rows[0].cells.length;
+   /* 열이 5개 이상이고 실제로 가로 스크롤이 생길 때만 앞 2열 고정 */
+   const wide=cols>=5&&r&&r.avail>0&&r.sum>r.avail+4;
+   tb.classList.toggle('mes-freeze',!!wide);
   });
  }
  const run=()=>{try{apply()}catch(e){}};
