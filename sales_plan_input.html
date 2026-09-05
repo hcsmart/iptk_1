@@ -5,6 +5,7 @@
 button,input,select{font:inherit;color:inherit}.screen{height:100%;display:flex;flex-direction:column;background:#fff}
 .title{height:48px;padding:8px 14px 5px;border-bottom:2px solid #3978ae;display:flex;align-items:center}.title h1{margin:0;font-size:22px;font-weight:500;color:#4b5c6a}.title h1:before{content:'◯';margin-right:6px;color:#8796a1}.title small{font-size:11px;color:#9ca7af;margin-left:12px}
 .form{padding:7px 14px;background:#fafbfc;border-bottom:1px solid var(--line2)}.formrow{display:grid;grid-template-columns:78px 140px 78px 150px 90px 150px 90px minmax(160px,1fr);gap:5px;align-items:center}.formrow+.formrow{margin-top:5px}.label{font-weight:700}.field{height:27px;border:1px solid #b5c0c9;background:#fff;padding:0 6px;min-width:0}
+select.field{padding:0 2px}
 .entrybox,.gridbox{margin:0 14px;border:1px solid var(--line);overflow:auto;background:#fff}.entrybox{height:190px}.gridbox{flex:1;min-height:0}
 .searchline{height:39px;margin:0 14px;display:flex;align-items:center;gap:5px;border-left:1px solid var(--line);border-right:1px solid var(--line);padding:4px 8px;background:#f6f8fa}.searchline input{width:min(430px,48vw);height:27px;border:1px solid #aeb9c3;padding:0 7px}
 .btn{height:29px;min-width:62px;border:1px solid #9ba8b4;background:linear-gradient(#fff,#dfe6eb);cursor:pointer}.btn:hover{background:#fff}
@@ -35,10 +36,10 @@ table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th
 </style></head><body><div class="screen">
 <div class="title"><h1>제작계획등록</h1><small>제작계획</small></div>
 <div class="blk"><div class="bt">기본정보</div><div class="gg g4">
- <div class="lb">제 번</div><div><input id="job_no" class="field"></div>
- <div class="lb">고객사</div><div><input id="customer_name" class="field"></div>
- <div class="lb">아이템</div><div><input id="item_name" class="field"></div>
- <div class="lb">금형타입</div><div><input id="mold_type_name" class="field"></div>
+ <div class="lb">제 번</div><div><select id="job_no" class="field" style="width:100%"><option value=""></option></select></div>
+ <div class="lb">고객사</div><div><select id="customer_name" class="field" style="width:100%"><option value=""></option></select></div>
+ <div class="lb">아이템</div><div><select id="item_name" class="field" style="width:100%"><option value=""></option></select></div>
+ <div class="lb">금형타입</div><div><select id="mold_type_name" class="field" style="width:100%"><option value=""></option></select></div>
  <div class="lb">품 명</div><div><input id="product_name" class="field"></div>
  <div class="lb">공정/조수</div><div><input id="process_set_qty" class="field"></div>
  <div class="lb">수주일</div><div><input id="order_date" type="date" class="field"></div>
@@ -49,9 +50,9 @@ table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th
 </div></div>
 <div class="blk"><div class="bt">기간</div><div class="gg" style="grid-template-columns:56px 132px 12px 132px 54px 88px 1fr">
  <div></div><div class="hd">시작일</div><div></div><div class="hd">종료일</div><div class="hd">일수</div><div class="hd">외주</div><div class="hd">담당자</div>
- <div class="lb">설 계</div><input id="design_start_date" type="date" class="field"><div class="c">~</div><input id="design_end_date" type="date" class="field"><input id="design_days" class="field c" placeholder="일수" title="소요일수 (종료일-시작일+1, 자동 계산)"><div class="chk"><input type="checkbox" id="design_outsourced">외주</div><div class="chk"><span class="lb" style="width:52px">담당자</span><input id="design_manager" class="field"></div>
- <div class="lb">가 공</div><input id="machining_start_date" type="date" class="field"><div class="c">~</div><input id="machining_end_date" type="date" class="field"><input id="machining_days" class="field c" placeholder="일수" title="소요일수 (자동 계산)"><div class="chk"><input type="checkbox" id="machining_outsourced">외주</div><div class="chk"><span class="lb" style="width:52px">담당자</span><input id="machining_manager" class="field"></div>
- <div class="lb">조 립</div><input id="assembly_start_date" type="date" class="field"><div class="c">~</div><input id="assembly_end_date" type="date" class="field"><input id="assembly_days" class="field c" placeholder="일수" title="소요일수 (자동 계산)"><div class="chk"><input type="checkbox" id="assembly_outsourced">외주</div><div class="chk"><span class="lb" style="width:52px">담당자</span><input id="assembly_manager" class="field"></div>
+ <div class="lb">설 계</div><input id="design_start_date" type="date" class="field"><div class="c">~</div><input id="design_end_date" type="date" class="field"><input id="design_days" class="field c" placeholder="일수" title="소요일수 (종료일-시작일+1, 자동 계산)"><div class="chk"><input type="checkbox" id="design_outsourced">외주</div><div class="chk"><span class="lb" style="width:52px">담당자</span><select id="design_manager" class="field" style="width:160px"><option value=""></option></select></div>
+ <div class="lb">가 공</div><input id="machining_start_date" type="date" class="field"><div class="c">~</div><input id="machining_end_date" type="date" class="field"><input id="machining_days" class="field c" placeholder="일수" title="소요일수 (자동 계산)"><div class="chk"><input type="checkbox" id="machining_outsourced">외주</div><div class="chk"><span class="lb" style="width:52px">담당자</span><select id="machining_manager" class="field" style="width:160px"><option value=""></option></select></div>
+ <div class="lb">조 립</div><input id="assembly_start_date" type="date" class="field"><div class="c">~</div><input id="assembly_end_date" type="date" class="field"><input id="assembly_days" class="field c" placeholder="일수" title="소요일수 (자동 계산)"><div class="chk"><input type="checkbox" id="assembly_outsourced">외주</div><div class="chk"><span class="lb" style="width:52px">담당자</span><select id="assembly_manager" class="field" style="width:160px"><option value=""></option></select></div>
 </div></div>
 <div class="blk"><div class="bt">금액</div>
  <div class="gg" style="grid-template-columns:56px 1fr 64px 1fr 72px 1fr">
@@ -70,11 +71,24 @@ table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th
   <div><input id="a8" oninput="recalc()"><div class="pct" id="p8">0%</div></div>
  </div>
 </div>
-<footer class="foot"><button class="btn" onclick="save()">▤ 저장</button><button class="btn" onclick="sampleFill()" title="예시값을 순서대로 채우며 등록요점을 설명합니다.">▶ 등록예제</button><button class="btn" onclick="clearForm()">✕ 삭제</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">사진 기준 초기값을 표시했습니다.</span></footer>
-</div><script>
-const seed={"row_no": 1, "job_no": null, "plant_name": "1공장", "product_name": null, "customer_name": null, "process_set_qty": null, "item_name": null, "order_date": null, "mold_type_name": null, "s1_planned_date": null, "model": null, "delivery_planned_date": null, "design_start_date": "2026-08-19", "design_end_date": "2026-08-20", "design_days": 2, "design_outsourced": false, "design_manager": null, "machining_start_date": null, "machining_end_date": null, "machining_outsourced": false, "machining_manager": null, "assembly_start_date": null, "assembly_end_date": null, "assembly_outsourced": false, "assembly_manager": null, "order_price": null, "target_price":508100, "profit_rate_pct": null, "design_internal_amount":58400, "design_internal_pct": 8.0, "design_external_amount": null, "design_external_pct": 0.0, "raw_material_amount":48500, "raw_material_pct": 10.0, "purchase_amount": null, "purchase_pct": 0.0, "machining_internal_amount":479500, "machining_internal_pct": 82.0, "machining_external_amount": null, "machining_external_pct": 0.0, "assembly_internal_amount": null, "assembly_internal_pct": 0.0, "assembly_external_amount": null, "assembly_external_pct": 0.0};
+<footer class="foot"><button class="btn" onclick="save()">▤ 저장</button><button class="btn" onclick="sampleFill()" title="예시값을 순서대로 채우며 등록요점을 설명합니다.">▶ 등록예제</button><button class="btn" onclick="clearForm()">✕ 삭제</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">제번을 선택하면 수주정보가 자동으로 채워집니다.</span></footer>
+</div><script src="mes_lookup.js?v=68"></script><script>
+/* v68: 제번·고객사·아이템·금형타입·담당자를 기준정보 드롭다운으로 (하드코딩 seed 제거) */
 const AK=['design_internal_amount','design_external_amount','raw_material_amount','purchase_amount','machining_internal_amount','machining_external_amount','assembly_internal_amount','assembly_external_amount'];
 const num=v=>Number(String(v??'').replace(/[^0-9.-]/g,''))||0;
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+/* select 에 값을 넣는다. 목록에 없는 값(옛 자료·수주정보 텍스트)이면 옵션을 추가해 유지한다 */
+const SELSET=Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value');
+function setSel(id,v){
+ const el=typeof id==='string'?document.getElementById(id):id;if(!el)return;
+ v=v==null?'':String(v);
+ if(el.tagName!=='SELECT'){el.value=v;return}
+ if(v&&![...el.options].some(o=>o.value===v)){const o=document.createElement('option');o.value=v;o.textContent=v;el.appendChild(o)}
+ SELSET.set.call(el,v);
+}
+/* 제작계획현황 [수정] 은 job_no.value=제번 으로 넘겨준다 → 목록에 없어도 값이 살아있도록 setter 를 감싼다 */
+(function(){const el=document.getElementById('job_no');
+ Object.defineProperty(el,'value',{get(){return SELSET.get.call(el)},set(v){setSel(el,v)}})})();
 function recalc(){
  const t=num(target_price.value);
  let s=0;for(let i=1;i<=8;i++)s+=num(document.getElementById('a'+i).value);
@@ -82,18 +96,28 @@ function recalc(){
   document.getElementById('p'+i).textContent=(t?(a/t*100):0).toFixed(0)+'%';}
  const op=num(order_price.value);
  profit_rate_pct.value=op?((op-s)/op*100).toFixed(1):'';
- sumLabel();
 }
-function sumLabel(){}
+/* 일수 = 종료일 − 시작일 + 1 */
+function calcDays(p){
+ const s=document.getElementById(p+'_start_date').value,e=document.getElementById(p+'_end_date').value,d=document.getElementById(p+'_days');
+ if(s&&e){const n=Math.round((new Date(e)-new Date(s))/86400000)+1;d.value=n>0?n:''}else d.value='';
+}
+['design','machining','assembly'].forEach(p=>['_start_date','_end_date'].forEach(k=>document.getElementById(p+k).addEventListener('change',()=>calcDays(p))));
+
 function load(o){
  for(const k of ['job_no','customer_name','item_name','mold_type_name','product_name','process_set_qty','order_date','model','s1_planned_date','delivery_planned_date','design_start_date','design_end_date','design_days','design_manager','machining_start_date','machining_end_date','machining_manager','assembly_start_date','assembly_end_date','assembly_manager','order_price','target_price']){
-  const n=document.getElementById(k);if(n)n.value=o[k]??'';
+  setSel(k,o[k]);
  }
  design_outsourced.checked=!!o.design_outsourced;machining_outsourced.checked=!!o.machining_outsourced;assembly_outsourced.checked=!!o.assembly_outsourced;
  AK.forEach((k,i)=>{const n=document.getElementById('a'+(i+1));if(n)n.value=o[k]??''});
+ ['design','machining','assembly'].forEach(p=>{if(!document.getElementById(p+'_days').value)calcDays(p)});
  recalc();
 }
-function clearForm(){document.querySelectorAll('input').forEach(n=>{if(n.type==='checkbox')n.checked=false;else n.value=''});recalc();message.textContent='입력값을 비웠습니다.'}
+function clearForm(quiet){
+ document.querySelectorAll('input').forEach(n=>{if(n.type==='checkbox')n.checked=false;else n.value=''});
+ document.querySelectorAll('select').forEach(n=>n.value='');
+ recalc();if(!quiet)message.textContent='입력값을 비웠습니다.';
+}
 /* v28: 영업계획을 sales_plans 테이블에 실제 저장 + 수주정보 연동 */
 const PCT={design_internal_amount:'design_internal_pct',design_external_amount:'design_external_pct',
  raw_material_amount:'raw_material_pct',purchase_amount:'purchase_pct',
@@ -108,6 +132,8 @@ const DATEK=['order_date','s1_planned_date','delivery_planned_date','design_star
 const NUMK=['process_set_qty','design_days','order_price','target_price'];
 const online=()=>!!(window.MESDB&&MESDB.online);
 const msg=t=>message.textContent=t;
+async function waitDB(){for(let i=0;i<60&&!window.MESDB;i++)await new Promise(r=>setTimeout(r,50));
+ if(window.MESDB&&MESDB.ready){try{await MESDB.ready}catch(e){}}}
 
 function collect(){
  const o={};
@@ -125,9 +151,33 @@ function collect(){
  return o;
 }
 
-/* 제번 입력 → 기존 계획 우선, 없으면 수주정보(sale_orders)로 헤더 채움 */
-async function loadJob(){
- const job=(job_no.value||'').trim();if(!job)return;
+/* ── v68 기준정보 드롭다운 ──────────────────────────────
+ * 제번: job_pool(취소 제외 수주) / 고객사: 업체관리 고객사 / 아이템·금형타입: 기준정보 / 담당자: 사용자정보 */
+async function loadMasters(){
+ await waitDB();if(!online()){msg('DB 미연결 - 기준정보를 불러올 수 없습니다.');return}
+ const keepJob=job_no.value;
+ try{
+  const rs=await MESDB.table('job_pool').select('select=job_no,item_name,customer_name,order_date&order=row_no');
+  job_no.innerHTML='<option value=""></option>'+rs.map(r=>`<option value="${esc(r.job_no)}">${esc(r.job_no)}${r.item_name?' · '+esc(r.item_name):''}${r.customer_name?' · '+esc(r.customer_name):''}</option>`).join('');
+  if(keepJob)setSel('job_no',keepJob);
+ }catch(e){}
+ const K=window.MESLOOK;if(!K)return;
+ const opt=(nameOf)=>({keep:[''],value:nameOf,label:nameOf});
+ try{await K.fillSelect('customer_name','customer',opt(r=>r.vendor_name||''))}catch(e){}
+ try{await K.fillSelect('item_name','item',opt(r=>r.item_name||''))}catch(e){}
+ try{await K.fillSelect('mold_type_name','mold',opt(r=>r.mold_type_name||''))}catch(e){}
+ for(const id of ['design_manager','machining_manager','assembly_manager']){
+  try{await K.fillSelect(id,'employee',{keep:[''],value:r=>r.name||'',label:r=>(r.name||'')+(r.department_name?' · '+r.department_name:'')})}catch(e){}
+ }
+}
+/* 기준정보·수주가 바뀌면 드롭다운 갱신 */
+(function(){const bind=()=>{if(window.MESDB&&MESDB.onChange){MESDB.onChange(['sale_orders','jobs','vendors','item_categories','mold_types','users'],()=>{const cur=collect();loadMasters().then(()=>load({...cur,design_outsourced:cur.design_outsourced,machining_outsourced:cur.machining_outsourced,assembly_outsourced:cur.assembly_outsourced}))});return true}return false};
+ if(!bind()){let n=0;const iv=setInterval(()=>{if(bind()||++n>40)clearInterval(iv)},100)}})();
+
+/* 제번 선택 → 기존 계획 우선, 없으면 수주정보(sale_orders)로 헤더 채움 */
+async function loadJob(j){
+ if(typeof j==='string'&&j)setSel('job_no',j);
+ const job=(job_no.value||'').trim();if(!job){clearForm(true);msg('제번을 선택하세요.');return}
  if(!online()){msg('DB 미연결 - 수주정보를 불러올 수 없습니다.');return}
  try{
   const ex=await MESDB.table('sales_plans').select(`select=*&job_no=eq.${encodeURIComponent(job)}&limit=1`);
@@ -135,11 +185,11 @@ async function loadJob(){
   const so=await MESDB.table('sale_orders').select(`select=*&job_no=eq.${encodeURIComponent(job)}&limit=1`);
   if(!so||!so[0]){msg(`${job} 수주정보가 없습니다. 수주등록을 먼저 진행하세요.`);return}
   const s=so[0];
-  const set=(k,v)=>{const n=document.getElementById(k);if(n)n.value=v??''};
-  set('item_name',s.item_name);set('product_name',s.product_name);set('customer_name',s.customer_name);
-  set('model',s.model);set('order_date',s.order_date);set('s1_planned_date',s.s1_planned_date);
-  set('delivery_planned_date',s.delivery_planned_date);set('mold_type_name',s.mold_type_name);
-  set('process_set_qty',s.process_set_qty);set('order_price',s.order_price);
+  clearForm(true);setSel('job_no',job);
+  setSel('item_name',s.item_name);setSel('product_name',s.product_name);setSel('customer_name',s.customer_name);
+  setSel('model',s.model);setSel('order_date',s.order_date);setSel('s1_planned_date',s.s1_planned_date);
+  setSel('delivery_planned_date',s.delivery_planned_date);setSel('mold_type_name',s.mold_type_name);
+  setSel('process_set_qty',s.process_set_qty);setSel('order_price',s.order_price);
   recalc();msg(`${job} 수주정보를 불러왔습니다. (신규 제작계획)`);
  }catch(e){msg('조회 실패: '+String(e.message||e).slice(0,120))}
 }
@@ -177,12 +227,12 @@ async function save(){
   msg(/무결성|foreign key/i.test(m)?'저장 실패: 등록되지 않은 제번입니다.':'저장 실패: '+m.slice(0,120));
  }
 }
-window.MES={save,clearForm,setMessage:t=>message.textContent=t,search:loadJob};
-job_no.addEventListener('change',loadJob);
-load(seed);
-</script><script src="mes_sample.js?v=67"></script><script src="mes_demo.js?v=67"></script><script src="mes_db.js?v=67"></script>
-
-<script src="mes_ctx.js?v=67"></script>
+window.MES={save,clearForm,setMessage:t=>message.textContent=t,search:loadJob,load,loadJob};
+job_no.addEventListener('change',()=>loadJob());
+clearForm(true);
+</script><script src="mes_sample.js?v=68"></script><script src="mes_demo.js?v=68"></script><script src="mes_db.js?v=68"></script>
+<script>loadMasters();</script>
+<script src="mes_ctx.js?v=68"></script>
 
 <script>
 function sampleFill(){
