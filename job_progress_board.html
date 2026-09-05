@@ -28,37 +28,45 @@ button,input,select{font:inherit;color:inherit}
 .board{flex:1;min-height:0;overflow:auto;padding:8px 14px 10px;background:#f7f9fa}
 .card{border:1px solid var(--line2);background:#fff;margin-bottom:7px}
 .card.late{border-left:4px solid var(--late)}
-.chead{display:flex;align-items:center;gap:9px;padding:7px 10px;border-bottom:1px solid #e6ecef;cursor:pointer}
+.chead{display:flex;align-items:center;gap:11px;padding:9px 12px;border-bottom:1px solid #e6ecef;cursor:pointer}
 .chead:hover{background:#f4f9fd}
-.jno{font-size:14px;font-weight:700;color:#20456b;min-width:118px}
-.item{color:#4a5b68;max-width:270px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cust{color:#7d8b96;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.jno{font-size:18px;font-weight:700;color:#20456b;min-width:130px}
+.item{color:#34434f;font-size:14px;font-weight:600;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cust{color:#6e7c87;font-size:13px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tag{font-size:11px;border:1px solid var(--line2);padding:1px 6px;color:#5c6b76;background:#f4f7f9}
 .tag.out{border-color:#b9cfe2;background:#eaf3fa;color:#2a6191}
 .dday{margin-left:auto;display:flex;align-items:center;gap:8px}
-.dday .d{font-weight:700}
+.dday .d{font-weight:700;font-size:14px}
 .dday .d.warn{color:var(--run)}.dday .d.bad{color:var(--late)}
-.bar{width:96px;height:9px;border:1px solid var(--line2);background:#eef2f4;position:relative}
+.bar{width:130px;height:12px;border:1px solid var(--line2);background:#eef2f4;position:relative}
 .bar i{display:block;height:100%;background:linear-gradient(#5aa0d8,#2f75b5)}
-.pctxt{width:34px;text-align:right;font-variant-numeric:tabular-nums;color:#5c6b76}
+.pctxt{width:44px;text-align:right;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;color:#5c6b76}
 
 /* 파이프라인 */
-.pipe{display:flex;flex-wrap:wrap;gap:0;padding:9px 10px 4px}
-.stp{position:relative;flex:1 1 92px;min-width:82px;border:1px solid var(--line2);border-right:none;padding:4px 6px 5px;text-align:center;background:var(--waitb);color:var(--wait)}
-.stp:last-child{border-right:1px solid var(--line2)}
-.stp b{display:block;font-size:11.5px;font-weight:700}
-.stp span{display:block;font-size:10.5px;margin-top:1px;opacity:.9}
-.stp.done{background:var(--doneb);border-color:#bcdcc9;color:var(--done)}
-.stp.run{background:var(--runb);border-color:#e8cf9c;color:var(--run);box-shadow:inset 0 -3px 0 #d99b1c}
-.stp.here{outline:2px solid #2d75b7;outline-offset:-2px;z-index:1}
+.pipe{display:flex;flex-wrap:nowrap;gap:0;padding:12px 10px 6px;overflow-x:auto}
+.stp{position:relative;flex:1 1 0;min-width:96px;padding:11px 6px 10px 18px;text-align:center;background:#e3e8ec;color:#7a8791;
+ clip-path:polygon(0 0,calc(100% - 16px) 0,100% 50%,calc(100% - 16px) 100%,0 100%,16px 50%);margin-left:-12px}
+.stp:first-child{margin-left:0;clip-path:polygon(0 0,calc(100% - 16px) 0,100% 50%,calc(100% - 16px) 100%,0 100%);padding-left:8px}
+.stp b{display:block;font-size:16px;font-weight:700;letter-spacing:-.01em;line-height:1.2}
+.stp span{display:block;font-size:13px;margin-top:4px;font-weight:600}
+.stp.done{background:#3f8f5f;color:#fff}
+.stp.done span{color:#dcf3e4}
+.stp.run{background:#f0a521;color:#3a2a00}
+.stp.run span{color:#5a3f00}
+.stp.here{background:#e08a00;color:#fff;transform:scaleY(1.12);z-index:2;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.stp.here span{color:#fff5dd}
+.stp.here b:after{content:' ◀ 진행중';font-size:11px;font-weight:700;color:#fff;background:#b8321f;padding:1px 6px;border-radius:9px;margin-left:5px;vertical-align:2px}
+.stp.wait.here{background:#2d75b7;color:#fff}
+.stp.wait.here span{color:#dbe9f7}
+.stp.wait.here b:after{content:' ◀ 다음';background:#0f4d85}
 
 /* 다음 조치 */
-.next{display:flex;align-items:center;gap:8px;padding:6px 10px 9px;flex-wrap:wrap}
-.owner{font-weight:700;color:#fff;background:#5b6e7d;padding:2px 9px;font-size:11.5px}
+.next{display:flex;align-items:center;gap:10px;padding:8px 12px 12px;flex-wrap:wrap;background:#f9fbfc;border-top:1px solid #edf1f4}
+.owner{font-weight:700;color:#fff;background:#5b6e7d;padding:4px 12px;font-size:14px;border-radius:3px}
 .owner.영업{background:#2f6ea5}.owner.설계{background:#7a4fa3}.owner.구매{background:#1f7a63}
 .owner.가공{background:#a8621b}.owner.조립{background:#39627f}.owner.품질{background:#9c3b52}
-.ntxt{color:#3d4d5a}
-.go{margin-left:auto}
+.ntxt{color:#25333f;font-size:14.5px;font-weight:600}
+.go{margin-left:auto;height:32px;font-size:13px;font-weight:700;padding:0 14px}
 
 /* 상세 */
 .det{border-top:1px dashed var(--line2);padding:8px 10px 10px;background:#fbfcfd}
@@ -70,7 +78,7 @@ button,input,select{font:inherit;color:inherit}
 .empty{padding:60px;text-align:center;color:#8a97a2}
 .foot{height:42px;display:flex;align-items:center;padding:5px 14px;border-top:1px solid var(--line);background:#eef2f5;gap:5px}
 .msg{margin-left:8px;color:#687784}.right{margin-left:auto;color:#7c8993}
-@media(max-width:980px){.item,.cust{display:none}.stp{flex:1 1 70px;min-width:70px}}
+@media(max-width:980px){.item,.cust{display:none}.stp{min-width:84px}.stp b{font-size:14px}.stp span{font-size:12px}}
 </style></head><body>
 <div class="screen">
  <div class="title"><h1>금형진척현황</h1><small>제번별 제작 진행 단계와 다음 할 일</small></div>
@@ -135,6 +143,7 @@ const online=()=>!!(window.MESDB&&MESDB.online);
 
 /* ── 조회 ────────────────────────────────── */
 async function load(){
+ if(!online()&&window.MESDB&&MESDB.ready){try{await MESDB.ready}catch(e){}}
  if(!online()){apply();return msg('DB 미연결 - 예시 데이터를 표시합니다.')}
  try{
   const rs=await MESDB.table('job_progress_view').select('select=*&order=job_no');
@@ -283,6 +292,6 @@ window.MES=Object.assign(window.MES||{},{search:load,reload:load,exportCsv,setMe
 setTimeout(load,300);
 setInterval(()=>{if(online())load()},300000);
 </script>
-<script src="mes_db.js?v=69"></script>
-<script src="mes_ctx.js?v=69"></script>
+<script src="mes_db.js?v=70"></script>
+<script src="mes_ctx.js?v=70"></script>
 </body></html>
