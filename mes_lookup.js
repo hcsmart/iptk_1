@@ -12,10 +12,11 @@
  * v60: 팝업 안에서 마스터를 직접 등록/수정/삭제한다(KINDS[kind].crud 가 있을 때).
  *      거래처(vendors) 계열은 기준정보 '업체 관리'와 같은 테이블을 보므로,
  *      팝업에서 바꾼 내용이 기준정보 화면에도 그대로 반영된다.
+ * v68: 담당자(employee) 조회를 기준정보 '사용자정보'(users) 로 통일. employees(옛 샘플) 는 더 이상 보지 않는다.
  */
 (function(){
 if(window.MESLOOK)return;
-const VER='60';   /* 팝업 제목 옆에 표시된다. 화면에 v60 이 안 보이면 옛 파일이 캐시된 것 */
+const VER='68';   /* 팝업 제목 옆에 표시된다. 화면에 v68 이 안 보이면 옛 파일이 캐시된 것 */
 
 /* ── v60 마스터 인라인 CRUD 정의 ───────────────────────────────────
  * crud 가 있는 kind 는 조회 팝업 하단에 [등록][수정][삭제][기준정보] 가 붙는다.
@@ -79,9 +80,15 @@ const KINDS={
             fallback:r=>r.vendor_type==='협력업체', crud:VENDOR_CRUD},
  design_partner:{title:'협력업체(외주설계)', table:'outsourced_design_partners', order:'seq',
             cols:['No','업체명'], map:r=>[r.seq,r.partner_name], code:r=>r.partner_name, name:r=>r.partner_name},
- employee: {title:'사원 조회',      table:'employees', order:'employee_name',
-            cols:['사원코드','사원명'], map:r=>[r.employee_code,r.employee_name||''],
-            filter:r=>!!(r.employee_name&&String(r.employee_name).trim())},
+ /* v68: 기준정보 '사용자정보'(users) 에서 조회한다.
+    코드 = 아이디(user_id), 아이디가 없는 사용자는 user_key. 시스템 계정(hcsmart) 제외.
+    사용여부 해제(is_active=false) 는 '사용중만' 체크로 숨긴다. */
+ employee: {title:'담당자 조회',    table:'users', order:'name',
+            cols:['아이디','성명','부서'],
+            map:r=>[r.user_id||r.user_key||'', r.name||'', r.department_name||''],
+            code:r=>r.user_id||r.user_key||'', name:r=>r.name||'',
+            filter:r=>!!(r.name&&String(r.name).trim())&&String(r.user_id||'')!=='hcsmart',
+            activeKey:r=>r.is_active!==false},
  material: {title:'자재 조회',      table:'materials', order:'material_code',
             cols:['자재코드','자재명','그룹'], map:r=>[r.material_code,r.material_name||'',r.material_group||'']},
  part:     {title:'부품 조회',      table:'parts', order:'part_code',
