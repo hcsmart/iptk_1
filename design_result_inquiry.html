@@ -32,13 +32,24 @@ tbody tr.sel .tag{background:transparent;border-color:#cfe2f4;color:#fff}
 @media(max-width:880px){.formrow{grid-template-columns:78px minmax(0,1fr)}}
 .formrow>*{min-width:0}
 </style></head><body><div class="screen"><div class="title"><h1>설계/조립실적조회</h1><small>설계관리</small></div><section class="filt"><div class="opts"><span class="lb" style="width:44px">구 분</span><label><input type="radio" name="k" value="전체" checked>전체</label><label><input type="radio" name="k" value="설계">설계</label><label><input type="radio" name="k" value="조립">조립</label><span id="srcWrap"><span class="lb" style="width:56px">설계구분</span><label><input type="radio" name="src" value="전체" checked>전체</label><label><input type="radio" name="src" value="사내">사내</label><label><input type="radio" name="src" value="외주">외주</label></span><span class="lb" style="width:44px">제 번</span><input id="q_job" class="field" style="width:150px"><span class="lb" style="width:56px">작업자</span><input id="q_w" class="field" style="width:110px"><span class="lb" style="width:44px">공 정</span><input id="q_p" class="field" style="width:110px"><span class="lb" style="width:70px">작업일자</span><input id="d1" type="date" class="field" style="width:130px"><span>~</span><input id="d2" type="date" class="field" style="width:130px"></div></section><div class="gridbox"><table style="min-width:1180px"><thead><tr><th style="width:70px">NO</th><th style="width:64px">구분</th><th style="width:80px">사내/외주</th><th style="width:90px">작업자</th><th style="width:150px">제번</th><th style="width:60px">공정</th><th style="width:110px">가공공정코드</th><th style="width:140px">가공공정명</th><th style="width:110px">작업일자</th><th style="width:100px">작업시간(분)</th></tr></thead><tbody id="body"></tbody><tfoot><tr class="gtot"><td colspan="10" class="c" id="totline">조회 0건</td></tr></tfoot></table></div><footer class="foot"><button class="btn" onclick="search()">⌕ 검색</button><button class="btn" onclick="csv()">▤ EXCEL</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">설계실적등록에서 등록한 실적이 조회됩니다.</span><span class="right" id="countText"></span></footer></div><script>/* v60: 진입 메뉴에 따라 제목·기본 구분을 분기 (설계관리→설계, 조립관리→조립) */
-(function(){const m=new URLSearchParams(location.search).get('mode');
- const cfg=m==='design'?{t:'설계실적조회',s:'설계관리',k:'설계'}:m==='assembly'?{t:'조립실적조회',s:'조립관리',k:'조립'}:null;
+/* v68: ?src=외주 → '외주설계실적조회' (설계관리 › 외주설계발주 메뉴). 설계구분이 외주로 고정된다 */
+(function(){const q=new URLSearchParams(location.search),m=q.get('mode'),src=q.get('src');
+ let cfg=m==='design'?{t:'설계실적조회',s:'설계관리',k:'설계'}:m==='assembly'?{t:'조립실적조회',s:'조립관리',k:'조립'}:null;
+ if(cfg&&cfg.k==='설계'&&(src==='외주'||src==='사내'))cfg={...cfg,t:src+'설계실적조회',s:'설계관리 · '+(src==='외주'?'외주설계발주':'사내설계'),src};
  if(!cfg)return; document.title=cfg.t;
  const h=document.querySelector('.title h1'),sm=document.querySelector('.title small');
  if(h)h.textContent=cfg.t; if(sm)sm.textContent=cfg.s;
  const r=document.querySelector('input[name=k][value="'+cfg.k+'"]'); if(r)r.checked=true;
  document.querySelectorAll('input[name=k]').forEach(x=>{if(x.value==='전체')x.closest('label').style.display='none'});
+ if(cfg.src){
+  const sr=document.querySelector('input[name=src][value="'+cfg.src+'"]');if(sr)sr.checked=true;
+  /* 구분·설계구분은 메뉴로 정해졌으니 바꿀 수 없게 숨긴다 */
+  document.querySelectorAll('input[name=k],input[name=src]').forEach(x=>x.closest('label').style.display='none');
+  const lb=[...document.querySelectorAll('.filt .lb')].find(e=>/구 분|설계구분/.test(e.textContent));
+  document.querySelectorAll('.filt .lb').forEach(e=>{if(/^(구 분|설계구분)$/.test(e.textContent.trim()))e.style.display='none'});
+  const w=document.getElementById('srcWrap');if(w)w.style.display='none';
+  const m2=document.getElementById('message');if(m2)m2.textContent=cfg.src+'설계 실적만 조회됩니다. (제작계획에서 설계구분='+cfg.src+' 인 제번)';
+ }
 })();
 /* v68: 사내/외주 구분 — design_results.design_source (실적등록 시 제작계획의 설계구분을 따라 기록됨) */
 const data=[];const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -48,7 +59,8 @@ let view=[...data];
 const PLAN={};   /* job_no → '사내'|'외주' (옛 실적에 design_source 가 없을 때 대체) */
 const srcOf=r=>r.work_type!=='설계'?'':(r.design_source||PLAN[r.job_no]||'사내');
 const tag=v=>v?`<span class="tag ${v==='외주'?'out':'in'}">${v}</span>`:'';
-function toggleSrc(){const k=document.querySelector('input[name="k"]:checked').value;srcWrap.style.display=k==='조립'?'none':'flex'}
+const FIXED_SRC=new URLSearchParams(location.search).get('src');
+function toggleSrc(){if(FIXED_SRC)return;const k=document.querySelector('input[name="k"]:checked').value;srcWrap.style.display=k==='조립'?'none':'flex'}
 
 function renderTotal(){
   const money=v=>Number(v||0).toLocaleString('ko-KR');
