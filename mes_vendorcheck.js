@@ -9,6 +9,14 @@
  * 화면 수정 없이 동작한다. 이 파일을 화면 스크립트 뒤에 붙이면
  * 전역 save() 를 감싸 저장 직전에 gate() 를 먼저 태운다.
  * 대상 행은 화면의 REQ / ORD 배열이며 각 행의 r.vendor 를 업체명으로 본다.
+ *
+ * v68 알림전용(notifyOnly) 모드
+ *   평가 미달이어도 발주 자체는 막지 않고 알림창만 띄운다.
+ *   · 외주설계 발주등록(outsourced_design_order_input.html) 은 기본이 알림전용이다.
+ *     외주설계 업체는 SQ 정기평가 대상이 아니어서 대부분 '미평가'로 잡히고,
+ *     설계 일정이 발주 차단으로 밀리면 안 되기 때문이다.
+ *   · 다른 화면에서 쓰려면 이 파일보다 먼저 window.MES_VCHK_OPT={notifyOnly:true} 를 둔다.
+ *   · 반대로 외주설계에서도 확인창을 받으려면 {notifyOnly:false} 로 끈다.
  */
 (function () {
   if (window.MESVCHK) return;
@@ -27,6 +35,15 @@
   function warned(a) {
     if (mode() === 'lite' && (a === '미평가' || a === '인증임박')) return false;
     return !!WARN[a];
+  }
+
+  /* v68: 알림전용 여부 */
+  var NOTIFY_FILES = /outsourced_design_order_input/i;
+  function opt() { try { return window.MES_VCHK_OPT || {}; } catch (e) { return {}; } }
+  function notifyOnly() {
+    var o = opt();
+    if (o.notifyOnly !== undefined && o.notifyOnly !== null) return !!o.notifyOnly;
+    try { return NOTIFY_FILES.test(location.pathname || ''); } catch (e) { return false; }
   }
 
   var TTL = 60000;
@@ -82,7 +99,7 @@
 
   function line(n, r, a, act) {
     var d = [];
-    if (r.grade) d.push('등급 ' + r.grade + (r.total_score ? ' (' + r.total_score + '점)' : ''));
+    if (r.grade) d.push('등급 ' + r.grade + (r.total_score ? '(' + r.total_score + '점)' : ''));
     if (a === '미평가') d.push('평가이력 없음');
     if (a === '평가만료') d.push('최근평가 ' + norm(r.eval_date) + ' (1년 경과)');
     if (a === '인증만료') d.push('인증 만료 ' + (Number(r.cert_expired) || 0) + '건');
@@ -106,7 +123,8 @@
     var m = document.getElementById('message'); if (m) m.textContent = t;
   }
 
-  /* 발주 게이트 : 차단이면 false, 경고는 확인 후 진행 */
+  /* 발주 게이트 : 차단이면 false, 경고는 확인 후 진행
+   * 알림전용 모드에서는 무엇이든 알림창만 띄우고 그대로 진행한다. */
   async function gate(names) {
     if (mode() === 'off') return true;
     var list = names && names.length ? names : pickNames();
@@ -114,7 +132,17 @@
     try { p = await problems(list); } catch (e) { return true; }
     if (!p.length) return true;
 
+    var all = p.map(function (x) { return x.text; }).join('\n');
     var blocked = p.filter(function (x) { return x.block; });
+
+    if (notifyOnly()) {
+      alert('[알림] 아래 협력업체는 적격성 확인이 필요합니다.\n\n' + all +
+        '\n\n발주는 그대로 진행됩니다. 이 내용은 발주 이력에 남으므로\n' +
+        '[SQ → 협력업체 → 협력업체 등급현황]에서 평가·인증을 정리해 주세요.');
+      say('협력업체 적격성 알림 ' + p.length + '건 — 발주는 진행합니다.');
+      return true;
+    }
+
     if (blocked.length) {
       var bt = blocked.map(function (x) { return x.text; }).join('\n');
       alert('거래중지 검토 대상 업체가 포함되어 발주할 수 없습니다.\n\n' + bt +
@@ -123,8 +151,7 @@
       return false;
     }
 
-    var wt = p.map(function (x) { return x.text; }).join('\n');
-    var ok = confirm('아래 협력업체는 적격성 확인이 필요합니다.\n\n' + wt +
+    var ok = confirm('아래 협력업체는 적격성 확인이 필요합니다.\n\n' + all +
       '\n\n그래도 발주를 진행하시겠습니까?\n(진행 시 발주 이력에 그대로 남습니다)');
     if (!ok) { say('협력업체 적격성 확인이 필요해 발주를 취소했습니다.'); return false; }
     say('적격성 경고를 확인하고 발주를 진행합니다.');
@@ -145,7 +172,10 @@
     window.save = wrapped;
   }
 
-  window.MESVCHK = { rows: rows, of: of, problems: problems, gate: gate, hook: hook, BLOCK: BLOCK };
+  window.MESVCHK = {
+    rows: rows, of: of, problems: problems, gate: gate, hook: hook,
+    BLOCK: BLOCK, notifyOnly: notifyOnly
+  };
 
   hook();
   if (document.readyState === 'loading')
