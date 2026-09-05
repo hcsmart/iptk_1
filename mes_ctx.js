@@ -317,3 +317,172 @@ window.MESCTX={confirm:dlgConfirm};
  let t=null;
  new MutationObserver(()=>{clearTimeout(t);t=setTimeout(run,200)}).observe(document.documentElement,{childList:true,subtree:true});
 })();
+
+/* ── v68: 공용 콤보 — 모든 드롭박스를 같은 모양으로, 입력하면 목록이 걸러진다 ──
+ * 대상: <select>(옵션이 여러 개인 것)와 <input list="…">(datalist).
+ *   · 원래 요소는 그대로 두고(값·이벤트·기존 코드 그대로 동작) 위에 입력칸을 얹는다.
+ *   · 글자를 치면 코드·명칭 어디든 포함되는 항목만 남는다. ▼ 를 누르면 전체 목록.
+ *   · ↑↓ 이동, Enter 선택, Esc 닫기. datalist 형은 목록에 없는 값도 그대로 입력된다.
+ * 제외: [data-nocombo], 옵션 4개 이하의 짧은 선택(진행/보류/완료 등)은 모양만 통일. */
+(function(){
+ if(window.MESCOMBO)return;
+ const MINOPT=5;                       /* 옵션이 이보다 적으면 검색 없이 기본 select 유지 */
+ const st=document.createElement('style');
+ st.textContent=`
+ /* 기본 select 도 콤보와 같은 높이·테두리로 통일 */
+ select.field,select.mes-fit{height:27px;border:1px solid #b5c0c9;background:#fff;padding:0 4px}
+ .mescb{position:relative;display:inline-block;vertical-align:middle;min-width:0}
+ .mescb>select,.mescb>input.mescb-src{display:none!important}
+ .mescb-in{width:100%;height:27px;box-sizing:border-box;border:1px solid #b5c0c9;background:#fff;
+  padding:0 20px 0 6px;font:inherit;color:inherit;min-width:0}
+ .mescb-in:focus{border-color:#4e88bb;outline:none}
+ .mescb-in::placeholder{color:#a8b4bd}
+ .mescb-ar{position:absolute;right:1px;top:1px;width:18px;height:25px;border:0;background:transparent;
+  cursor:pointer;color:#6d7b88;font-size:9px;line-height:25px;padding:0}
+ .mescb-ar:hover{color:#2f6fb5}
+ .mescb-pop{position:fixed;z-index:100001;background:#fff;border:1px solid #7f8f9c;
+  box-shadow:0 6px 20px rgba(0,0,0,.22);max-height:260px;overflow:auto;display:none;
+  font:12px 'Malgun Gothic',맑은 고딕,sans-serif}
+ .mescb-pop.on{display:block}
+ .mescb-pop .it{padding:4px 8px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .mescb-pop .it .sub{color:#7d8b96;margin-left:8px;font-size:11px}
+ .mescb-pop .it:hover,.mescb-pop .it.on{background:#2d75b7;color:#fff}
+ .mescb-pop .it.on .sub,.mescb-pop .it:hover .sub{color:#dbe9f5}
+ .mescb-pop .no{padding:8px;color:#8a97a2;text-align:center}`;
+ (document.head||document.documentElement).appendChild(st);
+
+ const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+ let pop=null,cur=null,hi=-1,items=[];
+ const BOXES=[];                       /* 화면 코드가 값을 직접 바꾸는 경우까지 맞추기 위한 목록 */
+ setInterval(()=>{for(const b of BOXES){try{b.sync()}catch(e){}}},800);
+ function ensurePop(){
+  if(pop)return pop;
+  pop=document.createElement('div');pop.className='mescb-pop';
+  document.body.appendChild(pop);
+  pop.addEventListener('mousedown',e=>{
+   const it=e.target.closest('.it');if(!it)return;
+   e.preventDefault();choose(Number(it.dataset.i));
+  });
+  return pop;
+ }
+ /* 대상 요소에서 목록을 뽑는다 → [{v:값, l:표시, s:부가설명}] */
+ function optionsOf(box){
+  const el=box.src;
+  if(el.tagName==='SELECT')
+   return [...el.options].map(o=>({v:o.value,l:(o.textContent||o.value||'').trim(),s:''}))
+     .filter(o=>o.v!==''||o.l!=='');
+  const dl=box.dl||document.getElementById(el.getAttribute('data-list')||'');
+  if(!dl)return [];
+  return [...dl.options].map(o=>({v:o.value,l:o.value,s:(o.textContent||'').trim()}));
+ }
+ function labelOf(box,val){
+  const o=optionsOf(box).find(x=>String(x.v)===String(val));
+  return o?o.l:(val==null?'':String(val));
+ }
+ function open(box,all){
+  cur=box;const p=ensurePop();
+  const q=all?'':String(box.inp.value||'').trim().toLowerCase();
+  items=optionsOf(box).filter(o=>!q||(o.l+' '+o.v+' '+o.s).toLowerCase().includes(q));
+  p.innerHTML=items.length
+   ? items.map((o,i)=>`<div class="it" data-i="${i}">${esc(o.l||'(비움)')}${o.s?`<span class="sub">${esc(o.s)}</span>`:''}</div>`).join('')
+   : '<div class="no">검색결과가 없습니다.</div>';
+  const r=box.wrap.getBoundingClientRect();
+  const h=Math.min(260,items.length?items.length*24+6:40);
+  const down=window.innerHeight-r.bottom>h+8||r.top<h+8;
+  p.style.left=Math.max(4,Math.min(r.left,window.innerWidth-r.width-6))+'px';
+  p.style.width=Math.max(r.width,150)+'px';
+  p.style.top=(down?r.bottom+1:r.top-h-1)+'px';
+  p.classList.add('on');
+  hi=items.findIndex(o=>String(o.v)===String(box.src.value));
+  mark();
+ }
+ function close(){if(pop)pop.classList.remove('on');cur=null;hi=-1;items=[]}
+ function mark(){
+  if(!pop)return;
+  [...pop.querySelectorAll('.it')].forEach((el,i)=>el.classList.toggle('on',i===hi));
+  const on=pop.querySelector('.it.on');if(on)try{on.scrollIntoView({block:'nearest'})}catch(e){}
+ }
+ function setVal(box,v,label){
+  const el=box.src;
+  el.value=v;
+  box.inp.value=label!=null?label:labelOf(box,v);
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+  el.dispatchEvent(new Event('change',{bubbles:true}));
+ }
+ function choose(i){
+  const box=cur,o=items[i];if(!box||!o)return;
+  close();setVal(box,o.v,o.l);box.inp.focus();
+ }
+ /* 포커스를 잃을 때: select 형은 목록에 없는 글자를 되돌리고, datalist 형은 그대로 둔다 */
+ function commit(box){
+  const t=String(box.inp.value||'').trim();
+  if(box.src.tagName==='SELECT'){
+   const o=optionsOf(box).find(x=>x.l===t)||optionsOf(box).find(x=>String(x.v)===t);
+   if(o)setVal(box,o.v,o.l); else box.inp.value=labelOf(box,box.src.value);
+  }else if(t!==box.src.value)setVal(box,t,t);
+ }
+ function build(el){
+  if(el.__mescb||el.hasAttribute('data-nocombo'))return;
+  const isSel=el.tagName==='SELECT';
+  const dl=isSel?null:document.getElementById(el.getAttribute('list')||'');
+  if(!isSel&&!dl)return;
+  if(isSel&&el.options.length<MINOPT&&!el.hasAttribute('data-combo'))return;   /* 짧은 선택은 그대로 */
+  el.__mescb=1;
+  const wrap=document.createElement('span');wrap.className='mescb';
+  /* 원래 폭 규칙을 이어받는다 (인라인 폭 지정 → 그대로, 아니면 칸 전체) */
+  wrap.style.width=el.style.width||'100%';
+  if(el.classList.contains('mes-fit'))wrap.classList.add('mes-fit');
+  const inp=document.createElement('input');
+  inp.type='text';inp.className='mescb-in';inp.autocomplete='off';
+  inp.placeholder=el.getAttribute('placeholder')||'입력 또는 선택';
+  if(el.disabled||el.readOnly)inp.disabled=true;
+  const ar=document.createElement('button');ar.type='button';ar.className='mescb-ar';ar.textContent='▼';
+  ar.tabIndex=-1;
+  el.parentNode.insertBefore(wrap,el);
+  wrap.appendChild(el);wrap.appendChild(inp);wrap.appendChild(ar);
+  const box={src:el,inp,wrap,dl};
+  el.__mescbBox=box;
+  if(!isSel){el.setAttribute('data-list',el.getAttribute('list')||'');el.removeAttribute('list');el.classList.add('mescb-src')}
+  inp.value=isSel?labelOf(box,el.value):(el.value||'');
+
+  ar.addEventListener('mousedown',e=>{e.preventDefault();
+   if(cur===box&&pop&&pop.classList.contains('on'))close();else{inp.focus();open(box,true)}});
+  inp.addEventListener('focus',()=>open(box,true));
+  inp.addEventListener('input',()=>{open(box,false);
+   if(!isSel){el.value=inp.value;el.dispatchEvent(new Event('input',{bubbles:true}))}});
+  inp.addEventListener('blur',()=>{setTimeout(()=>{if(cur===box)close();commit(box)},120)});
+  inp.addEventListener('keydown',e=>{
+   if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+    e.preventDefault();
+    if(!pop||!pop.classList.contains('on')||cur!==box)return open(box,false);
+    hi=Math.max(0,Math.min(items.length-1,hi+(e.key==='ArrowDown'?1:-1)));mark();
+   }else if(e.key==='Enter'){
+    if(cur===box&&pop&&pop.classList.contains('on')&&hi>=0){e.preventDefault();choose(hi)}
+   }else if(e.key==='Escape'){
+    if(cur===box){e.preventDefault();e.stopPropagation();close();inp.value=isSel?labelOf(box,el.value):el.value}
+   }
+  });
+  /* 화면 코드가 값을 바꾸거나 옵션을 다시 채우면 표시도 따라간다 */
+  const sync=()=>{const t=isSel?labelOf(box,el.value):(el.value||'');if(document.activeElement!==inp&&inp.value!==t)inp.value=t};
+  el.addEventListener('change',sync);
+  new MutationObserver(sync).observe(el,{childList:true,attributes:true,attributeFilter:['value']});
+  if(dl)new MutationObserver(sync).observe(dl,{childList:true});
+  box.sync=sync;BOXES.push(box);
+ }
+ function scan(root){
+  const q='select,input[list]';
+  (root&&root.querySelectorAll?root:document).querySelectorAll(q).forEach(el=>{
+   if(el.closest('#meslk,#mesdlg,.mescb-pop'))return;
+   try{build(el)}catch(e){}
+  });
+ }
+ const run=()=>{try{scan(document)}catch(e){}};
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);else run();
+ setTimeout(run,400);setTimeout(run,1500);
+ let t=null;
+ new MutationObserver(()=>{clearTimeout(t);t=setTimeout(run,250)}).observe(document.documentElement,{childList:true,subtree:true});
+ window.addEventListener('scroll',()=>{if(cur)close()},true);
+ window.addEventListener('resize',()=>{if(cur)close()});
+ document.addEventListener('mousedown',e=>{if(cur&&!e.target.closest('.mescb,.mescb-pop'))close()},true);
+ window.MESCOMBO={scan:run,build};
+})();
