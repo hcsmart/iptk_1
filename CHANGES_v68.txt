@@ -1,0 +1,26 @@
+IPMES v68 변경파일 (웹루트에 그대로 덮어쓰기)
+  mes_lookup.js             담당자=사용자정보(users) / 양산처=업체관리 구분=양산처
+  mes_ctx.js                말줄임 툴팁 / 현황표 앞2열고정+글자폭 열맞춤+줄무늬 / 공용 검색콤보 / 제작계획→발주화면 연동
+  mes_vendorcheck.js        외주설계발주: 평가미달이어도 알림만, 발주 진행
+  sales_plan_input.html     제번·고객사·아이템·금형타입·담당자 콤보 / 사내·외주 라디오 / 세트·외주업체·Try-Out / 목표가·이익금·이익률 자동 / 저장시 외주설계 발주 자동생성
+  sales_plan_status.html    상세팝업 재구성(이익금, 기간표, 세트/외주업체/Try-Out) / 목록 사내·외주 뱃지
+  design_result_input.html  설계구분(사내/외주) 필터·뱃지 / 실적에 design_source 기록 / 작업자 콤보
+  design_result_inquiry.html 설계구분 필터·열 / ?src=외주 → 외주설계실적조회
+
+index.html 직접 수정 2곳
+  1) const APP_VER='67';  →  '68'
+  2) '설계관리' 블록 교체:
+     secondary:[{name:'외주설계',icon:'✎'},{name:'사내설계',icon:'▤'},{name:'PARTLIST',icon:'▦'}],
+     menus:{
+       '외주설계':[{name:'외주설계',items:['외주설계발주입고','외주설계발주현황','외주설계실적조회']}],
+       '사내설계':[{name:'사내설계',items:['설계계획등록','설계실적등록','설계실적현황','설계실적조회']}],
+       'PARTLIST':[{name:'PARTLIST',items:['PartList 등록(원재료)','PartList 등록(구매품)','PartList 현황','PartList 복사']}]
+     }
+  3) 화면 목록('설계실적조회' 줄 아래)에 추가:
+     '외주설계실적조회':{id:'design_result_inquiry_outsourced',file:'design_result_inquiry.html?mode=design&src=외주',title:'외주설계실적조회'},
+
+mes_db.js : MES_VER 을 v55 로 올릴 것 (파일 내용 변경 없음)
+
+DB (Supabase, 이미 적용됨)
+  design_results.design_source + 트리거 trg_design_results_source
+  sales_plans.*_set_outsourced / *_vendor / *_tryout_date (9컬럼)
