@@ -602,3 +602,38 @@ window.MESCTX={confirm:dlgConfirm};
  }
  hook();setTimeout(hook,300);setTimeout(hook,1500);
 })();
+
+/* ── v68: 외주설계발주입고 — [조회] 시 DB 재조회 ──────────────────────
+ * 이 화면은 열릴 때 한 번만 order_lines 를 읽고, [조회] 는 메모리 목록만 걸러낸다.
+ * 그래서 탭을 열어 둔 채 제작계획등록에서 외주설계 발주가 생기면 조회해도 안 보였다.
+ * → [조회] 를 누르거나 order_lines 변경 알림이 오면 DB 를 다시 읽어 ORD 를 채운 뒤 걸러낸다. */
+(function(){
+ const f=(location.pathname||'').split('/').pop();
+ if(f!=='outsourced_design_receipt_input.html')return;
+ const D=v=>v?String(v).slice(0,10):'';
+ const Nn=v=>(v===null||v===undefined?'':Number(v));
+ async function refetch(){
+  if(!(window.MESDB&&MESDB.online))return false;
+  try{
+   const rows=await MESDB.table('order_lines').select('select=*&order=line_id&category=eq.'+encodeURIComponent('외주설계'));
+   if(typeof ORD==='undefined')return false;
+   ORD.length=0;
+   rows.forEach(r=>ORD.push({_id:r.line_id,seq:Nn(r.line_id),job_no:r.job_no||'',item_name:r.item_name||'',partner_name:r.vendor_name||'',
+    process_code:r.process_code||'',order_date:D(r.order_date),expected_date:D(r.required_date),
+    nego_price:Nn(r.confirm_price),progress_rate:Nn(r.nego_rate),receipt_date:D(r.receipt_date)}));
+   try{RCP=await MESDB.table('outsourced_design_receipts').select('select=*&order=receipt_no')}catch(e){}
+   if(typeof fillVen==='function')fillVen();
+   return true;
+  }catch(e){return false}
+ }
+ function hook(){
+  if(typeof window.search!=='function'||window.search.__rf)return;
+  const o=window.search;
+  const w=async function(){const ok=await refetch();o.apply(this,arguments);
+   if(ok){const m=document.getElementById('message');if(m)m.textContent=m.textContent.replace(/\.$/,'')+' (DB 재조회)'}};
+  w.__rf=1;window.search=w;
+  const bind=()=>{if(window.MESDB&&MESDB.onChange){MESDB.onChange(['order_lines'],()=>{window.search()});return true}return false};
+  if(!bind()){let n=0;const iv=setInterval(()=>{if(bind()||++n>40)clearInterval(iv)},200)}
+ }
+ hook();setTimeout(hook,300);setTimeout(hook,1500);
+})();
