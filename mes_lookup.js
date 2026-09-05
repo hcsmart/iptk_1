@@ -13,6 +13,7 @@
  *      거래처(vendors) 계열은 기준정보 '업체 관리'와 같은 테이블을 보므로,
  *      팝업에서 바꾼 내용이 기준정보 화면에도 그대로 반영된다.
  * v68: 담당자(employee) 조회를 기준정보 '사용자정보'(users) 로 통일. employees(옛 샘플) 는 더 이상 보지 않는다.
+ *      양산처(mass_production) 는 업체 관리에서 구분=양산처 로 등록한 업체만 조회.
  */
 (function(){
 if(window.MESLOOK)return;
@@ -41,7 +42,7 @@ const VENDOR_FIELDS=[
 const VENDOR_DEFAULTS={
  vendor:            {vendor_type:'협력업체'},
  customer:          {vendor_type:'고객사'},
- mass_production:   {vendor_type:'고객사'},
+ mass_production:   {vendor_type:'양산처'},
  vendor_purchase:   {vendor_type:'협력업체', purchase_item_flag:true},
  vendor_material:   {vendor_type:'협력업체', raw_material_flag:true},
  vendor_outsourcing:{vendor_type:'협력업체', outsourcing_flag:true},
@@ -65,10 +66,12 @@ const KINDS={
             filter:r=>r.vendor_type==='고객사',
             /* v60: 구분이 비어 있는 업체만 있으면 0건이 되어 고객사를 못 고른다 → 전체 표시로 대체 */
             fallback:r=>true, crud:VENDOR_CRUD},
+ /* v68: 기준정보 '업체 관리' 에서 구분=양산처 로 등록한 업체만 나온다.
+    아직 양산처가 한 곳도 없으면 고객사 목록으로 대체 (0건 방지). */
  mass_production:{title:'양산처 조회', table:'vendors', order:'vendor_code',
             cols:['코드','양산처명','구분'], map:r=>[r.vendor_code,r.vendor_name,r.vendor_type||''],
-            filter:r=>r.vendor_type==='고객사'||r.vendor_type==='협력업체',
-            fallback:r=>true, crud:VENDOR_CRUD},
+            filter:r=>r.vendor_type==='양산처',
+            fallback:r=>r.vendor_type==='고객사', crud:VENDOR_CRUD},
  vendor_purchase:{title:'협력업체(구매품)', table:'vendors', order:'vendor_name',
             cols:['코드','업체명'], map:r=>[r.vendor_code,r.vendor_name], filter:r=>r.vendor_type==='협력업체'&&r.purchase_item_flag===true,
             fallback:r=>r.vendor_type==='협력업체', crud:VENDOR_CRUD},
@@ -266,8 +269,11 @@ function done(v){const cb=curCb;close();cb&&cb(v)}
 function filtered(){
  const K=KINDS[curKind],q=ui.querySelector('#meslk-q').value.trim().toLowerCase();
  const onlyA=K.activeKey&&ui.querySelector('#meslk-a').checked;
- return (CACHE[curKind]||[]).filter(r=>(!K.filter||K.filter(r))
-  &&(!onlyA||K.activeKey(r))
+ /* v68: 팝업도 rows() 와 같은 규칙 — 구분 필터 결과가 0건이면 fallback 기준으로 표시 */
+ const all=CACHE[curKind]||[];
+ let base=K.filter?all.filter(K.filter):all;
+ if(K.filter&&!base.length&&K.fallback)base=all.filter(K.fallback);
+ return base.filter(r=>(!onlyA||K.activeKey(r))
   &&(!q||K.map(r).some(v=>String(v).toLowerCase().includes(q))));
 }
 /* ── v40: 글자 기준 열폭 자동 산출 ──────────────────────
