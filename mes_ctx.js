@@ -209,3 +209,59 @@ window.MESCTX={confirm:dlgConfirm};
  new MutationObserver(ms=>{for(const m of ms)for(const n of m.addedNodes)if(n.nodeType===1)align(n.parentNode||document)})
   .observe(document.documentElement,{childList:true,subtree:true});
 })();
+
+/* ── v68: 말줄임(…) 된 글자에 마우스를 올리면 전체 내용 툴팁 (전 화면 공용) ──
+ * 항목명(.label/.lab/.lb)·표 머리글·표 셀·읽기전용 입력칸이 잘려 '…' 로 보일 때
+ * title 을 붙여 브라우저 툴팁으로 전체 내용을 보여준다. 화면을 훑지 않고
+ * 마우스가 올라간 요소만 검사하므로 부담이 없다. */
+(function(){
+ const SEL='.label,.lab,.lb,.k,th,td,input[readonly],.v';
+ document.addEventListener('mouseover',e=>{
+  const el=e.target&&e.target.closest?e.target.closest(SEL):null;
+  if(!el||el.__mesTipChk)return;
+  el.__mesTipChk=1;setTimeout(()=>{el.__mesTipChk=0},1500);
+  if(el.getAttribute('title'))return;
+  const cut=el.tagName==='INPUT'?(el.scrollWidth>el.clientWidth+1):(el.scrollWidth>el.clientWidth+1||el.scrollHeight>el.clientHeight+2);
+  if(!cut)return;
+  const t=el.tagName==='INPUT'?el.value:(el.textContent||'').replace(/\s+/g,' ').trim();
+  if(t)el.setAttribute('title',t);
+ },true);
+})();
+
+/* ── v68: 현황·조회 표 가시성 — 첫 열 고정 + 행 줄무늬 (전 화면 공용) ──
+ * 가로 스크롤이 생기는 넓은 표는 첫 열(NO/제번)을 왼쪽에 고정해 스크롤해도
+ * 어느 행인지 알 수 있게 하고, 짝수 행은 색을 넣어 행 구분이 또렷하게 한다.
+ * 선택(.sel/.selected)·마우스 오버 색은 화면 규칙을 그대로 둔다. */
+(function(){
+ const st=document.createElement('style');
+ st.textContent=`
+ table.mes-zebra tbody tr:nth-child(even):not(.sel):not(.selected):not(:hover) td{background:#e8eff6!important}
+ table.mes-zebra tbody tr:nth-child(odd):not(.sel):not(.selected):not(:hover) td{background:#fff!important}
+ table.mes-zebra tbody tr:not(.sel):not(.selected):hover td{background:#d9ecfb!important}
+ table.mes-freeze th:first-child,table.mes-freeze td:first-child{position:sticky;left:0;z-index:1;
+  box-shadow:inset -1px 0 0 #b8c4ce}
+ table.mes-freeze thead th:first-child{z-index:3}
+ table.mes-freeze tbody tr:nth-child(odd):not(.sel):not(.selected):not(:hover) td:first-child{background:#f6f8fa!important}
+ table.mes-freeze tbody tr:nth-child(even):not(.sel):not(.selected):not(:hover) td:first-child{background:#dfe8f1!important}
+ table.mes-freeze tfoot td:first-child{z-index:2}`;
+ (document.head||document.documentElement).appendChild(st);
+ const WRAP='.gridbox,.tablewrap,.pb,.entrybox,.grid,.list';
+ function apply(){
+  document.querySelectorAll('table').forEach(tb=>{
+   if(!tb.tHead||!tb.tBodies.length)return;
+   if(tb.closest('#meslk,#mesdlg,.dlg,.sheet,.doc'))return;      /* 팝업·인쇄용은 제외 */
+   const wrap=tb.closest(WRAP);if(!wrap)return;
+   tb.classList.add('mes-zebra');
+   const cols=(tb.tHead.rows[0]||{cells:[]}).cells.length;
+   /* 열이 6개 이상이고 실제로 가로 스크롤이 생길 때만 첫 열 고정 */
+   const wide=cols>=6&&(tb.scrollWidth>wrap.clientWidth+4||tb.offsetWidth>wrap.clientWidth+4);
+   tb.classList.toggle('mes-freeze',wide);
+  });
+ }
+ const run=()=>{try{apply()}catch(e){}};
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);else run();
+ setTimeout(run,700);setTimeout(run,2000);
+ window.addEventListener('resize',()=>{clearTimeout(window.__mesFzT);window.__mesFzT=setTimeout(run,150)});
+ let t=null;
+ new MutationObserver(()=>{clearTimeout(t);t=setTimeout(run,200)}).observe(document.documentElement,{childList:true,subtree:true});
+})();
