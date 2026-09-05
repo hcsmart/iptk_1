@@ -1,0 +1,727 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IPTK MES</title>
+<link rel="preconnect" href="https://ipggvrzxfcryzryileuv.supabase.co" crossorigin>
+<link rel="dns-prefetch" href="https://ipggvrzxfcryzryileuv.supabase.co">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root{
+  --side-w:260px; --side-min:56px; --top-h:48px; --tab-h:40px;
+  --ink:#1c2430; --ink-2:#4a5568; --ink-3:#8a94a6;
+  --steel:#1f2733; --steel-2:#28323f; --steel-3:#343f50;
+  --paper:#f1f3f6; --white:#fff; --line:#dfe3ea; --line-2:#303b4c;
+  --amber:#f2a93b; --green:#2fb27c; --red:#e05a4a; --blue:#3b82f6; --gray:#9aa4b5;
+  --r:6px; --shadow:0 8px 24px rgba(20,28,40,.18);
+  font-size:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:Pretendard,-apple-system,"Malgun Gothic","맑은 고딕",sans-serif;color:var(--ink);background:var(--paper);overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,select{font:inherit}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:#c2c9d4;border-radius:4px}
+
+.app{display:grid;grid-template-columns:1fr;grid-template-rows:var(--top-h) 1fr;height:100vh}
+.top{grid-column:1/-1;display:flex;align-items:center;background:var(--steel);color:#dfe5ee;padding:0 12px 0 0;border-bottom:1px solid var(--line-2);position:relative;z-index:50}
+.main{display:flex;flex-direction:column;min-width:0;min-height:0}
+
+/* top */
+.brand{height:100%;display:flex;align-items:center;gap:10px;padding:0 16px 0 14px;flex-shrink:0;cursor:pointer;border-right:1px solid var(--line-2)}
+.brand .mark{width:28px;height:28px;flex-shrink:0;display:grid;place-items:center;background:var(--amber);color:var(--steel);font-weight:800;border-radius:6px}
+.brand .name{font-weight:700;letter-spacing:.3px;white-space:nowrap;color:#fff;display:flex;align-items:center;gap:8px}
+.brand .name .home-lbl{font-size:14px;color:#fff}
+.brand:hover .name .home-lbl{color:var(--amber)}
+.brand .name small{font-weight:400;color:#8f9bb0}
+
+.top-menu{display:flex;gap:2px;margin-left:8px;height:100%}
+.top-menu>li{position:relative;list-style:none;height:100%;display:flex}
+.top-menu>li>button{padding:0 16px;height:100%;color:#c7cfdb;font-weight:600;font-size:15px;border-bottom:2px solid transparent;white-space:nowrap}
+.top-menu>li:hover>button{color:#fff;border-bottom-color:var(--amber)}
+.top-menu>li.on>button{color:#fff;border-bottom-color:var(--amber)}
+.top-menu>li.pin>button{color:#fff;border-bottom-color:var(--amber);background:var(--steel-2)}
+.top-menu>li.pin .mega{display:flex}
+.mega{position:absolute;top:100%;left:0;display:none;background:var(--white);color:var(--ink);border:1px solid var(--line);border-radius:0 0 var(--r) var(--r);box-shadow:var(--shadow);padding:14px 4px;z-index:60;flex-wrap:wrap;width:max-content;max-width:calc(100vw - 24px);max-height:calc(100vh - var(--top-h) - 12px);overflow-y:auto;overscroll-behavior:contain}
+.top-menu>li:hover .mega{display:flex}
+.mega .col{padding:0 16px 8px;border-right:1px solid var(--line);min-width:150px;align-self:start}
+.mega .col:last-child{border-right:0}
+.mega h4{font-size:14px;color:var(--ink-3);font-weight:600;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--line);white-space:nowrap}
+.mega h5{font-size:12.5px;color:var(--ink-3);font-weight:500;margin:8px 0 2px}
+.mega h5:first-of-type{margin-top:0}
+.mega a{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:14px;color:var(--ink);text-decoration:none;white-space:nowrap}
+.mega a:hover{color:var(--blue)}
+.mega a.active{color:var(--blue);font-weight:600}
+.mega a .star{margin-left:auto;padding-left:14px;color:#c9d0da;opacity:0;font-size:12px}
+.mega a:hover .star{opacity:1}
+.mega a .star.on{opacity:1;color:var(--amber)}
+
+.search{margin-left:auto;position:relative;width:280px}
+.search input{width:100%;height:32px;background:var(--steel-2);border:1px solid var(--line-2);border-radius:var(--r);color:#fff;padding:0 32px 0 34px;outline:0}
+.search input:focus{border-color:var(--amber)}
+.search input::placeholder{color:#7f8aa0}
+.search .ico{position:absolute;left:11px;top:9px;color:#7f8aa0}
+.search kbd{position:absolute;right:8px;top:8px;font:11px Pretendard;color:#7f8aa0;border:1px solid #4a5568;border-radius:4px;padding:1px 5px}
+.search-res{position:absolute;top:36px;left:0;right:0;background:var(--white);color:var(--ink);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);display:none;max-height:360px;overflow:auto;z-index:80}
+.search-res.open{display:block}
+.search-res button{display:flex;justify-content:space-between;width:100%;text-align:left;padding:9px 12px;font-size:14px}
+.search-res button:hover,.search-res button.sel{background:#eef2f8}
+.search-res small{color:var(--ink-3)}
+
+.top-actions{display:flex;align-items:center;gap:4px;margin-left:12px}
+.icon-btn{width:34px;height:34px;border-radius:var(--r);display:grid;place-items:center;color:#c7cfdb;position:relative}
+.icon-btn:hover{background:var(--steel-3);color:#fff}
+.icon-btn.txt{width:auto;padding:0 10px;display:flex;gap:6px;align-items:center;font-size:13px;color:var(--amber);border:1px solid var(--line-2)}
+.icon-btn.txt:hover{color:#fff;border-color:var(--amber)}
+@media (max-width:900px){.icon-btn.txt span{display:none}}
+.ubtn{display:flex;align-items:center;gap:8px;padding:4px 8px 4px 4px;border-radius:var(--r);margin-left:6px}
+.ubtn:hover{background:var(--steel-3)}
+.avatar{width:26px;height:26px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;font-weight:700;font-size:12px}
+.ubtn .txt{text-align:left;line-height:1.15;white-space:nowrap}
+.ubtn .txt b{display:block;color:#fff;font-weight:600}
+.ubtn .txt span{font-size:11px;color:#8f9bb0}
+.user{display:none} /* mes_auth.js 가 채우는 숨김 영역 */
+
+.dd{position:relative}
+.dd-menu{position:absolute;top:calc(100% + 6px);right:0;min-width:200px;background:var(--white);color:var(--ink);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:6px;display:none;z-index:90}
+.dd.open .dd-menu{display:block}
+.dd-menu button,.dd-menu a{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border-radius:4px;text-align:left;text-decoration:none;color:var(--ink)}
+.dd-menu button:hover,.dd-menu a:hover{background:#eef2f8}
+.dd-menu hr{border:0;border-top:1px solid var(--line);margin:6px 0}
+.dd-menu .hd{padding:6px 10px;font-size:11px;color:var(--ink-3)}
+
+/* tabs */
+.tabs{display:flex;align-items:flex-end;height:var(--tab-h);background:#e4e8ee;border-bottom:1px solid var(--line);padding:0 8px;gap:2px;overflow:hidden;flex-shrink:0}
+.tabs-scroll{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0}
+.tabs-scroll::-webkit-scrollbar{display:none}
+.tab{display:flex;align-items:center;gap:8px;height:34px;padding:0 10px 0 12px;background:#d6dce5;border-radius:6px 6px 0 0;color:var(--ink-2);white-space:nowrap;cursor:pointer;border:1px solid transparent;border-bottom:0;font-size:14px;user-select:none}
+.tab:hover{background:#e9edf3}
+.tab.active{background:var(--white);color:var(--ink);border-color:var(--line);font-weight:600;position:relative}
+.tab.active::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;background:var(--white)}
+.tab .x{width:16px;height:16px;border-radius:4px;display:grid;place-items:center;color:var(--ink-3);font-size:14px;line-height:1}
+.tab .x:hover{background:#c8cfda;color:var(--ink)}
+.tabs-act{display:flex;gap:2px;padding-bottom:3px}
+.tabs-act button{width:28px;height:28px;border-radius:4px;color:var(--ink-3);display:grid;place-items:center}
+.tabs-act button:hover{background:#d6dce5;color:var(--ink)}
+.ctx{position:fixed;display:none;background:var(--white);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:5px;min-width:170px;z-index:200}
+.ctx.open{display:block}
+.ctx button{display:block;width:100%;text-align:left;padding:7px 10px;border-radius:4px}
+.ctx button:hover{background:#eef2f8}
+
+/* content */
+.crumb{display:flex;align-items:center;gap:6px;padding:8px 18px;color:var(--ink-3);font-size:13px;background:var(--white);border-bottom:1px solid var(--line)}
+.crumb b{color:var(--ink);font-weight:600}
+.crumb .right{margin-left:auto;display:flex;gap:14px;font-family:ui-monospace,Consolas,monospace;font-size:11px}
+.stage{flex:1;min-height:0;position:relative;background:var(--white)}
+.stage iframe{display:none;width:100%;height:100%;border:0;background:var(--white)}
+.stage iframe.on{display:block}
+.stage .vwait{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(255,255,255,.72);color:var(--ink-2);font-size:13px;z-index:5}
+.stage .vwait.on{display:flex}
+.placeholder{display:none;height:100%;padding:26px 28px}
+.placeholder.on{display:block}
+.ph h1{font-size:20px;font-weight:700;margin-bottom:4px}
+.ph p{color:var(--ink-3);margin-bottom:22px}
+.ph code{background:#e9edf3;padding:2px 6px;border-radius:4px;font-family:ui-monospace,Consolas,monospace;font-size:12px}
+.card{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px}
+
+/* home */
+.home{padding:18px 22px;display:grid;gap:14px;grid-template-columns:repeat(12,1fr);height:100%;overflow:auto;align-content:start}
+.home .card h3{font-size:14px;font-weight:600;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+.home .card h3 span{font-size:12px;color:var(--ink-3);font-weight:400}
+.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.quick button{border:1px solid var(--line);border-radius:var(--r);padding:12px 8px;display:grid;gap:6px;justify-items:center;font-size:12px;color:var(--ink-2);text-align:center}
+.quick button:hover{border-color:var(--blue);color:var(--blue);background:#f4f8ff}
+.modcard{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.modcard button{border:1px solid var(--line);border-radius:var(--r);padding:14px 12px;text-align:left;display:grid;gap:4px}
+.modcard button b{font-size:14px}
+.modcard button small{color:var(--ink-3);font-size:11px;line-height:1.4;white-space:normal}
+.modcard button:hover{border-color:var(--blue);background:#f4f8ff}
+.favlist{display:grid;gap:4px}
+.favlist button{display:flex;justify-content:space-between;padding:7px 10px;border-radius:4px;border:1px solid var(--line)}
+.favlist button:hover{border-color:var(--blue);color:var(--blue)}
+.favlist small{color:var(--ink-3)}
+
+.status{height:24px;background:var(--steel);color:#8f9bb0;font-size:11px;display:flex;align-items:center;gap:18px;padding:0 14px;flex-shrink:0}
+.status .dot{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;margin-right:5px}
+.status .r{margin-left:auto}
+
+@media (max-width:1100px){.modcard{grid-template-columns:repeat(2,1fr)}.home>.card{grid-column:span 12!important}}
+@media (max-width:900px){.top-menu,.ubtn .txt{display:none}.search{width:170px}}
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <header class="top">
+    <div class="brand" id="brand" title="홈">
+      <div class="mark">I</div>
+      <div class="name"><span class="home-lbl">⌂ 홈</span><small>IPTK MES</small></div>
+    </div>
+
+    <ul class="top-menu" id="topMenu"></ul>
+
+    <div class="search">
+      <span class="ico">⌕</span>
+      <input id="menuSearch" placeholder="메뉴 검색" autocomplete="off">
+      <kbd>Ctrl K</kbd>
+      <div class="search-res" id="searchRes"></div>
+    </div>
+
+    <div class="top-actions">
+      <button class="icon-btn txt" id="btnReq" title="수정요청게시판">✎<span>수정요청</span></button>
+      <div class="dd" id="ddFav">
+        <button class="icon-btn" title="즐겨찾기">★</button>
+        <div class="dd-menu" id="favMenu"></div>
+      </div>
+      <div class="dd" id="ddUser">
+        <button class="ubtn">
+          <span class="avatar" id="uAv">?</span>
+          <span class="txt"><b id="uName">-</b><span id="uRole">-</span></span>
+        </button>
+        <div class="dd-menu">
+          <div class="hd" id="uHd">IPTK MES</div>
+          <button id="btnPw">비밀번호 변경</button>
+          <hr>
+          <button id="btnLogout">로그아웃</button>
+        </div>
+      </div>
+      <div class="user"></div>
+    </div>
+  </header>
+
+  <section class="main">
+    <div class="tabs">
+      <div class="tabs-scroll" id="tabs"></div>
+      <div class="tabs-act">
+        <button id="tabPrev" title="이전 탭">‹</button>
+        <button id="tabNext" title="다음 탭">›</button>
+        <button id="tabCloseAll" title="모두 닫기">×</button>
+      </div>
+    </div>
+    <div class="ctx" id="tabCtx">
+      <button data-act="refresh">새로고침</button>
+      <button data-act="pin">고정 / 해제</button>
+      <button data-act="others">다른 탭 닫기</button>
+      <button data-act="right">오른쪽 탭 닫기</button>
+      <button data-act="close">닫기</button>
+    </div>
+    <div class="crumb" id="crumb"><span>IPTK MES</span></div>
+    <div class="stage" id="stage"><div class="vwait" id="vwait">화면을 여는 중…</div></div>
+    <div class="status">
+      <span><span class="dot"></span><span id="statusMsg">준비</span></span>
+      <span id="verTxt"></span>
+      <span class="r" id="now"></span>
+    </div>
+  </section>
+</div>
+
+<script>
+const APP_VER='67';
+const APP={
+  '영업관리':{
+    secondary:[
+      {name:'수주',icon:'▣'},
+      {name:'제작계획',icon:'◴'},
+      {name:'SET발주',icon:'◆'},
+      {name:'경비',icon:'▤'}
+    ],
+    menus:{
+      '수주':[{name:'수주',items:['수주등록','수주현황','현황판']}],
+      '제작계획':[{name:'제작계획',items:['제작계획등록','제작계획현황']}],
+      'SET발주':[{name:'SET발주',items:['SET외주제작등록','SET발주입고','SET발주현황']}],
+      '경비':[{name:'경비',items:['경비등록','경비현황']}]
+    }
+  },
+  '설계관리':{
+    secondary:[
+      {name:'외주설계발주',icon:'✎'},
+      {name:'사내설계',icon:'▤'},
+      {name:'PARTLIST',icon:'▦'}
+    ],
+    menus:{
+      '외주설계발주':[{name:'외주설계발주',items:['외주설계발주등록','외주설계발주입고','외주설계발주현황']}],
+      '사내설계':[{name:'사내설계',items:['설계계획등록','설계실적등록','설계실적현황','설계실적조회']}],
+      'PARTLIST':[{name:'PARTLIST',items:['PartList 등록(원재료)','PartList 등록(구매품)','PartList 현황','PartList 복사']}]
+    }
+  },
+  '구매관리':{
+    secondary:[
+      {name:'원재료',icon:'▣'},
+      {name:'구매품',icon:'◆'},
+      {name:'가공',icon:'⚒'}
+    ],
+    menus:{
+      '원재료':[
+        {name:'원재료',items:['원재료 발주','원재료 입고','원재료 입고확정']},
+        {name:'현황',items:['원재료 발주현황']}
+      ],
+      '구매품':[
+        {name:'구매품',items:['구매품 발주','구매품 입고','구매품 입고확정']},
+        {name:'현황',items:['구매품 발주현황']}
+      ],
+      '가공':[
+        {name:'가공',items:['가공계획등록','공정이력카드']},
+        {name:'외주가공',items:['외주가공 발주','외주가공 입고','외주가공 입고확정']},
+        {name:'현황',items:['외주가공발주현황','가공구매 진척현황']}
+      ]
+    }
+  },
+  '조립관리':{
+    secondary:[
+      {name:'조립',icon:'⚙'},
+      {name:'검사',icon:'⌕'}
+    ],
+    menus:{
+      '조립':[{name:'조립',items:['조립실적등록','조립실적현황','조립실적조회']}],
+      '검사':[{name:'검사',items:['검사실적등록']}]
+    }
+  },
+  '원가관리':{
+    secondary:[
+      {name:'원가관리',icon:'◴'},
+      {name:'매입매출현황',icon:'▥'}
+    ],
+    menus:{
+      '원가관리':[{name:'제조원가',items:['제조원가조회(실시간)']}],
+      '매입매출현황':[{name:'매입매출현황',items:['매입현황','매출현황','재고조회']}]
+    }
+  },
+  'SQ':{
+    secondary:[
+      {name:'알림판',icon:'🔔'},
+      {name:'품질목표',icon:'◎'},
+      {name:'심사',icon:'☑'},
+      {name:'부적합',icon:'⚠'},
+      {name:'변경관리',icon:'⇄'},
+      {name:'계측기',icon:'⌗'},
+      {name:'문서/도면',icon:'▤'},
+      {name:'추적성',icon:'⌕'},
+      {name:'관리계획서',icon:'⊞'},
+      {name:'교육/자격',icon:'⚇'},
+      {name:'협력업체',icon:'⚑'}
+    ],
+    menus:{
+      '알림판':[{name:'점검',items:['기한관리 알림판','입력누락 점검판']}],
+      '품질목표':[{name:'품질목표',items:['품질목표 등록','품질목표 달성현황','품질목표 월별추이']}],
+      '심사':[
+        {name:'심사',items:['심사등록','지적사항등록','심사현황','지적사항 조치현황']},
+        {name:'고객 요구사항',items:['고객 요구사항 등록','고객 요구사항 현황']}
+      ],
+      '부적합':[{name:'부적합',items:['부적합등록','시정조치등록','부적합현황']}],
+      '변경관리':[{name:'4M변경',items:['4M변경신청','4M변경현황']}],
+      '계측기':[{name:'계측기',items:['계측기대장','교정이력등록','계측기 교정현황']}],
+      '문서/도면':[
+        {name:'도면',items:['도면등록','도면개정등록','도면개정현황']},
+        {name:'문서',items:['문서관리대장','문서 제·개정등록','문서 유효현황']}
+      ],
+      '추적성':[{name:'추적성',items:['소재LOT등록','성적서등록','추적성조회']}],
+      '관리계획서':[{name:'관리계획서',items:['관리계획서 등록','관리계획서 현황','기준공정 관리계획 커버리지']}],
+      '교육/자격':[
+        {name:'자격',items:['자격종류 등록','사원 자격등록','자격 유효현황']},
+        {name:'교육',items:['교육훈련 등록','사원별 역량현황']}
+      ],
+      '협력업체':[{name:'협력업체',items:['협력업체 평가등록','협력업체 인증서등록','협력업체 등급현황','협력업체 인증현황']}]
+    }
+  },
+  '사용메뉴얼':{
+    secondary:[
+      {name:'사용메뉴얼',icon:'📖'}
+    ],
+    menus:{
+      '사용메뉴얼':[{name:'사용메뉴얼',items:['사용메뉴얼']},{name:'게시판',items:['수정요청게시판']},{name:'조직',items:['조직도']}]
+    }
+  },
+  '기준정보':{
+    secondary:[
+      {name:'생산/품질',icon:'👥'},
+      {name:'공통',icon:'⚙'}
+    ],
+    menus:{
+      '생산/품질':[
+        {name:'공정관리',items:['가공공정관리','가공 기준공정관리']},
+        {name:'작업지시',items:['작업지시 관리','공정이력카드']}
+      ],
+      '공통':[
+        {name:'사용자',items:['사용자정보']},
+        {name:'공통',items:['공정관리','부품관리','자재등록','설비등록','업체관리','사업부정보','아이템 관리','경비사유','금형타입관리','금형코드 매칭','기계사양관리']},
+        {name:'검사',items:['검사구분','검사항목']},
+        {name:'공지사항',items:['공지사항 등록']},
+        {name:'시스템',items:['DB 동기화','에러로그']},
+        {name:'인사',items:['부서정보','직급정보']},
+        {name:'단가관리',items:['자재단가변동등록','자재단가변동현황','공정단가변동등록','공정단가변동현황']}
+      ]
+    }
+  }
+};
+const MODULES=['영업관리','설계관리','구매관리','조립관리','원가관리','SQ','기준정보','사용메뉴얼'];
+const pageRegistry={
+'가공공정관리':{id:'machining_process_management',file:'machining_process_management.html',title:'가공공정관리'},
+'공정관리':{id:'machining_process_management',file:'machining_process_management.html',title:'가공공정관리'},
+'가공 기준공정관리':{id:'machining_standard_process',file:'machining_standard_process.html',title:'가공 기준공정관리'},
+'작업지시 관리':{id:'work_order_input',file:'work_order_input.html',title:'작업지시 관리'},
+'공정이력카드':{id:'process_history_card',file:'process_history_card.html',title:'공정이력카드'},
+'구매품 입고확정':{id:'purchase_receipt_confirmation',file:'purchase_receipt_confirmation.html',title:'구매품 입고확정'},
+'업체관리':{id:'vendor_management',file:'vendor_management.html',title:'업체 관리'},
+'설비등록':{id:'equipment_registration',file:'equipment_registration.html',title:'설비등록'},
+'자재등록':{id:'material_management',file:'material_management.html',title:'자재등록'},
+'부품관리':{id:'part_management',file:'part_management.html',title:'부품 관리'},
+'사업부정보':{id:'business_division_info',file:'business_division_info.html',title:'사업부 정보'},
+'아이템 관리':{id:'item_management',file:'item_management.html',title:'아이템 관리'},
+'경비사유':{id:'expense_reason_registration',file:'expense_reason_registration.html',title:'경비사유 등록'},
+'금형타입관리':{id:'mold_type_management',file:'mold_type_management.html',title:'금형타입 관리'},
+'기계사양관리':{id:'machine_spec_management',file:'machine_spec_management.html',title:'기계사양 관리'},
+'부서정보':{id:'department_registration',file:'department_registration.html',title:'부서등록'},
+'금형코드 매칭':{id:'mold_code_matching',file:'mold_code_matching.html',title:'금형코드 매칭'},
+'직급정보':{id:'position_info',file:'position_info.html',title:'직급정보'},
+'검사구분':{id:'inspection_category',file:'inspection_category.html',title:'검사구분'},
+'검사실적등록':{id:'inspection_result_input',file:'inspection_result_input.html',title:'검사실적등록'},
+'검사항목':{id:'inspection_item_management',file:'inspection_item_management.html',title:'검사항목'},
+'공지사항 등록':{id:'notice_registration',file:'notice_registration.html',title:'공지사항 등록'},
+'DB 동기화':{id:'db_sync',file:'db_sync.html',title:'DB 동기화'},
+'에러로그':{id:'error_log_inquiry',file:'error_log_inquiry.html',title:'에러로그'},
+'사용자정보':{id:'user_information',file:'user_information.html',title:'사용자정보'},
+'자재단가변동등록':{id:'material_price_change_registration',file:'material_price_change_registration.html',title:'자재단가변동 등록'},
+'자재단가변동현황':{id:'material_price_change_status',file:'material_price_change_status.html',title:'자재단가변동 현황'},
+'공정단가변동등록':{id:'process_price_change_registration',file:'process_price_change_registration.html',title:'공정단가변동 등록'},
+'공정단가변동현황':{id:'process_price_change_status',file:'process_price_change_status.html',title:'가공공정단가변동 현황'},
+'제조원가조회(실시간)':{id:'manufacturing_cost_inquiry',file:'manufacturing_cost_inquiry.html',title:'제조원가 조회'},
+'수주등록':{id:'sale_order_input',file:'sale_order_input.html',title:'수주정보 등록'},
+'수주현황':{id:'sale_order_status',file:'sale_order_status.html',title:'수주현황'},
+'제작계획등록':{id:'sales_plan_input',file:'sales_plan_input.html',title:'제작계획등록'},
+'현황판':{id:'status_board',file:'status_board.html',title:'일평기연 현황판'},
+'제작계획현황':{id:'sales_plan_status',file:'sales_plan_status.html',title:'제작계획현황'},
+'SET발주현황':{id:'set_order_status',file:'set_order_status.html',title:'SET 발주현황'},
+'SET발주입고':{id:'set_order_receipt',file:'set_order_receipt.html',title:'SET발주입고'},
+'경비등록':{id:'expense_registration',file:'expense_registration.html',title:'경비 등록'},
+'경비현황':{id:'expense_status',file:'expense_status.html',title:'경비현황'},
+'설계계획등록':{id:'design_plan_input',file:'design_plan_input.html',title:'설계계획등록'},
+'설계실적등록':{id:'design_result_input',file:'design_result_input.html',title:'설계실적등록'},
+'설계실적현황':{id:'design_result_status_design',file:'design_result_status.html?mode=design',title:'설계실적현황'},
+'설계실적조회':{id:'design_result_inquiry_design',file:'design_result_inquiry.html?mode=design',title:'설계실적조회'},
+'PartList 등록(원재료)':{id:'partlist_material_input',file:'partlist_material_input.html',title:'PartList 등록(원재료)'},
+'PartList 등록(구매품)':{id:'partlist_purchase_input',file:'partlist_purchase_input.html',title:'PartList 등록(구매품)'},
+'PartList 현황':{id:'partlist_status',file:'partlist_status.html',title:'PartList 현황'},
+'SET외주제작등록':{id:'set_order_registration',file:'set_order_registration.html',title:'SET외주제작등록'},
+'가공계획등록':{id:'machining_plan_input',file:'machining_plan_input.html',title:'가공계획등록'},
+'매입현황':{id:'purchase_status',file:'purchase_status.html',title:'매입현황'},
+'조립실적조회':{id:'design_result_inquiry_assembly',file:'design_result_inquiry.html?mode=assembly',title:'조립실적조회'},
+'조립실적현황':{id:'design_result_status_assembly',file:'design_result_status.html?mode=assembly',title:'조립실적현황'},
+'원재료 발주':{id:'material_order_input',file:'material_order_input.html',title:'원재료 발주'},
+'원재료 입고':{id:'material_receipt_input',file:'material_receipt_input.html',title:'원재료 입고'},
+'원재료 입고확정':{id:'material_receipt_confirmation',file:'material_receipt_confirmation.html',title:'원재료 입고확정'},
+'원재료 발주현황':{id:'material_order_status',file:'material_order_status.html',title:'원재료 발주현황'},
+'구매품 발주':{id:'purchase_order_input',file:'purchase_order_input.html',title:'구매품 발주'},
+'구매품 입고':{id:'purchase_receipt_input',file:'purchase_receipt_input.html',title:'구매품 입고'},
+'외주설계발주등록':{id:'outsourced_design_order_input',file:'outsourced_design_order_input.html',title:'외주설계발주등록'},
+'외주설계발주입고':{id:'outsourced_design_receipt_input',file:'outsourced_design_receipt_input.html',title:'외주설계발주입고'},
+'외주설계발주현황':{id:'outsourced_design_order_status',file:'outsourced_design_order_status.html',title:'외주설계발주현황'},
+'PartList 복사':{id:'partlist_copy',file:'partlist_copy.html',title:'PartList 복사'},
+'재고조회':{id:'stock_inquiry',file:'stock_inquiry.html',title:'재고조회'},
+'구매품 발주현황':{id:'purchase_order_status',file:'purchase_order_status.html',title:'구매품 발주현황'},
+'외주가공 발주':{id:'outsourcing_order_input',file:'outsourcing_order_input.html',title:'외주가공 발주'},
+'외주가공 입고':{id:'outsourcing_receipt_input',file:'outsourcing_receipt_input.html',title:'외주가공 입고'},
+'외주가공 입고확정':{id:'outsourcing_receipt_confirmation',file:'outsourcing_receipt_confirmation.html',title:'외주가공입고확정'},
+'외주가공발주현황':{id:'outsourcing_order_status',file:'outsourcing_order_status.html',title:'외주가공 발주현황'},
+'가공구매 진척현황':{id:'machining_purchase_progress',file:'machining_purchase_progress.html',title:'가공구매 진척현황'},
+'조립실적등록':{id:'assembly_result_input',file:'assembly_result_input.html',title:'조립실적등록'},
+'매출현황':{id:'sales_status',file:'sales_status.html',title:'매출현황'},
+'기한관리 알림판':{id:'sq_alert_board',file:'sq_alert_board.html',title:'기한관리 알림판'},
+'입력누락 점검판':{id:'mes_gap_board',file:'mes_gap_board.html',title:'입력누락 점검판'},
+'품질목표 등록':{id:'quality_kpi_target_input',file:'quality_kpi_target_input.html',title:'품질목표 등록'},
+'품질목표 달성현황':{id:'quality_kpi_status',file:'quality_kpi_status.html',title:'품질목표 달성현황'},
+'품질목표 월별추이':{id:'quality_kpi_monthly',file:'quality_kpi_monthly.html',title:'품질목표 월별추이'},
+'문서관리대장':{id:'document_management',file:'document_management.html',title:'문서관리대장'},
+'문서 제·개정등록':{id:'document_revision_input',file:'document_revision_input.html',title:'문서 제·개정등록'},
+'문서 유효현황':{id:'document_status',file:'document_status.html',title:'문서 유효현황'},
+'고객 요구사항 등록':{id:'customer_requirement_input',file:'customer_requirement_input.html',title:'고객 요구사항 등록'},
+'고객 요구사항 현황':{id:'customer_requirement_status',file:'customer_requirement_status.html',title:'고객 요구사항 현황'},
+'심사등록':{id:'quality_audit_input',file:'quality_audit_input.html',title:'심사등록'},
+'지적사항등록':{id:'audit_finding_input',file:'audit_finding_input.html',title:'지적사항등록'},
+'심사현황':{id:'quality_audit_status',file:'quality_audit_status.html',title:'심사현황'},
+'지적사항 조치현황':{id:'audit_finding_status',file:'audit_finding_status.html',title:'지적사항 조치현황'},
+'부적합등록':{id:'nonconformance_input',file:'nonconformance_input.html',title:'부적합등록'},
+'시정조치등록':{id:'corrective_action_input',file:'corrective_action_input.html',title:'시정조치등록'},
+'부적합현황':{id:'nonconformance_status',file:'nonconformance_status.html',title:'부적합현황'},
+'4M변경신청':{id:'change_request_input',file:'change_request_input.html',title:'4M변경신청'},
+'4M변경현황':{id:'change_request_status',file:'change_request_status.html',title:'4M변경현황'},
+'계측기대장':{id:'gauge_management',file:'gauge_management.html',title:'계측기대장'},
+'교정이력등록':{id:'gauge_calibration_input',file:'gauge_calibration_input.html',title:'교정이력등록'},
+'계측기 교정현황':{id:'gauge_calibration_status',file:'gauge_calibration_status.html',title:'계측기 교정현황'},
+'도면등록':{id:'drawing_management',file:'drawing_management.html',title:'도면등록'},
+'도면개정등록':{id:'drawing_revision_input',file:'drawing_revision_input.html',title:'도면개정등록'},
+'도면개정현황':{id:'drawing_revision_status',file:'drawing_revision_status.html',title:'도면개정현황'},
+'소재LOT등록':{id:'material_lot_input',file:'material_lot_input.html',title:'소재LOT등록'},
+'성적서등록':{id:'certificate_input',file:'certificate_input.html',title:'성적서등록'},
+'추적성조회':{id:'traceability_inquiry',file:'traceability_inquiry.html',title:'추적성조회'},
+'관리계획서 등록':{id:'control_plan_input',file:'control_plan_input.html',title:'관리계획서 등록'},
+'관리계획서 현황':{id:'control_plan_status',file:'control_plan_status.html',title:'관리계획서 현황'},
+'기준공정 관리계획 커버리지':{id:'standard_process_control_status',file:'standard_process_control_status.html',title:'기준공정 관리계획 커버리지'},
+'자격종류 등록':{id:'qualification_type_input',file:'qualification_type_input.html',title:'자격종류 등록'},
+'사원 자격등록':{id:'employee_qualification_input',file:'employee_qualification_input.html',title:'사원 자격등록'},
+'자격 유효현황':{id:'qualification_status',file:'qualification_status.html',title:'자격 유효현황'},
+'교육훈련 등록':{id:'training_input',file:'training_input.html',title:'교육훈련 등록'},
+'사원별 역량현황':{id:'employee_competency_status',file:'employee_competency_status.html',title:'사원별 역량현황'},
+'협력업체 평가등록':{id:'vendor_evaluation_input',file:'vendor_evaluation_input.html',title:'협력업체 평가등록'},
+'협력업체 인증서등록':{id:'vendor_certificate_input',file:'vendor_certificate_input.html',title:'협력업체 인증서등록'},
+'협력업체 등급현황':{id:'vendor_grade_status',file:'vendor_grade_status.html',title:'협력업체 등급현황'},
+'협력업체 인증현황':{id:'vendor_certificate_status',file:'vendor_certificate_status.html',title:'협력업체 인증현황'},
+'사용메뉴얼':{id:'user_manual',file:'user_manual.html',title:'사용메뉴얼'},
+'수정요청게시판':{id:'mod_request_board',file:'mod_request_board.html',title:'수정요청게시판'},
+'조직도':{id:'org_chart',file:'org_chart.html',title:'조직도'}
+};
+const MOD_ICON={'영업관리':'▣','설계관리':'✎','구매관리':'▤','조립관리':'⚙','원가관리':'◴','조직도':'⛶','SQ':'◈','기준정보':'▦','사용메뉴얼':'📖'};
+const MOD_DESC={'영업관리':'수주 · 제작계획 · SET발주 · 경비','설계관리':'외주설계 · 사내설계 · PARTLIST','구매관리':'원재료 · 구매품 · 가공/외주가공','조립관리':'조립실적 · 검사실적','원가관리':'제조원가 · 매입/매출 · 재고','SQ':'품질목표 · 심사 · 부적합 · 4M · 계측기 · 문서/도면 · 추적성','기준정보':'공정 · 부품 · 자재 · 설비 · 업체 · 사용자 · 단가','사용메뉴얼':'시스템 사용 안내'};
+const HOME={id:'home',title:'홈',file:null,home:true};
+
+let activeModule='', activeId='', prevId='';
+const openTabs=new Map();  /* id -> page */
+const pinned=new Set(['home']);
+let favs=JSON.parse(localStorage.getItem('ipmes.favs')||'[]');
+const $=s=>document.querySelector(s);
+const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+/* ---------- 권한 ---------- */
+function canView(path){if((path||'').includes('사용메뉴얼'))return true;const a=window.MES_AUTH;return !a||!a.session?true:a.can(path,'view')}
+function visibleModules(){return MODULES.filter(m=>{if(m==='사용메뉴얼')return true;const a=window.MES_AUTH;if(!a||!a.session||a.role==='admin'||a.role==='master')return true;
+  return Object.entries(APP[m]?.menus||{}).some(([sec,gs])=>gs.some(g=>g.items.some(n=>a.can(m+'/'+sec+'/'+n,'view'))))})}
+function groupsOf(mod,sec){return (APP[mod]?.menus?.[sec]||[]).map(g=>({name:g.name,items:g.items.filter(n=>canView(mod+'/'+sec+'/'+n))})).filter(g=>g.items.length)}
+/* 화면파일 → 메뉴경로 (iframe의 mes_db.js가 권한 판단에 사용) */
+window.MES_MENU_OF=function(file){
+  for(const [mod,cfg] of Object.entries(APP))
+    for(const [sec,groups] of Object.entries(cfg.menus||{}))
+      for(const g of groups)for(const n of g.items)
+        if(pageRegistry[n]?.file===file)return mod+'/'+sec+'/'+n;
+  return null;
+};
+/* 메뉴명 → {mod,sec,group} */
+function locate(name){
+  for(const mod of MODULES)for(const [sec,gs] of Object.entries(APP[mod]?.menus||{}))for(const g of gs)if(g.items.includes(name))return{mod,sec,group:g.name};
+  return null;
+}
+function flatMenu(){const out=[];for(const mod of visibleModules())for(const sec of (APP[mod]?.secondary||[]))for(const g of groupsOf(mod,sec.name))for(const n of g.items)out.push({name:n,mod,sec:sec.name,group:g.name});return out}
+
+/* ---------- 상단 모듈 메뉴 (메가) ---------- */
+function buildTop(){
+  const ul=$('#topMenu');ul.innerHTML='';
+  visibleModules().forEach(mod=>{
+    const li=el('li',mod===activeModule?'on':'');
+    const b=el('button','',mod);b.onclick=()=>{const was=li.classList.contains('pin');if(was)setModule(mod);else pinModule(mod)};li.appendChild(b);
+    const mega=el('div','mega');let any=false;
+    (APP[mod]?.secondary||[]).forEach(sec=>{
+      const gs=groupsOf(mod,sec.name);if(!gs.length)return;any=true;
+      const col=el('div','col',`<h4>${sec.icon||''} ${esc(sec.name)}</h4>`);
+      gs.forEach(g=>{if(gs.length>1||g.name!==sec.name)col.appendChild(el('h5','',esc(g.name)));
+        g.items.forEach(n=>col.appendChild(menuLink(n)))});
+      mega.appendChild(col);
+    });
+    if(any){li.appendChild(mega);li.onmouseenter=()=>placeMega(li,mega);li.onmouseleave=()=>li.classList.remove('pin')}
+    ul.appendChild(li);
+    if(mod==='원가관리'){const o=el('li',activeId==='org_chart'?'on':'');const ob=el('button','','조직도');ob.onclick=()=>openByName('조직도');o.appendChild(ob);ul.appendChild(o)}
+  });
+}
+
+/* 메가메뉴가 화면 오른쪽을 넘지 않게 위치 보정 */
+function placeMega(li,mega){
+  if(!mega)return;mega.style.left='0px';mega.style.display='flex';
+  const r=mega.getBoundingClientRect(),vw=window.innerWidth-12;
+  if(r.right>vw)mega.style.left=(vw-r.right)+'px';
+  const lr=li.getBoundingClientRect();if(lr.left+parseFloat(mega.style.left)<12)mega.style.left=(12-lr.left)+'px';
+  mega.style.display='';
+}
+/* ---------- 메뉴 링크 ---------- */
+function buildSide(){}
+function menuLink(n){
+  const p=pageRegistry[n];const on=p&&p.id===activeId;
+  const a=el('a',on?'active':'',`<span>${esc(n)}</span><span class="star ${favs.includes(n)?'on':''}" title="즐겨찾기">★</span>`);
+  a.href='#';a.dataset.name=n;a.onclick=e=>{e.preventDefault();openByName(n);document.querySelectorAll('.top-menu>li.pin').forEach(x=>x.classList.remove('pin'))};
+  a.querySelector('.star').onclick=e=>{e.stopPropagation();e.preventDefault();toggleFav(n)};
+  a.onmouseover=()=>{if(p&&p.file)prefetch(p.file+(p.file.includes('?')?'&':'?')+'v='+APP_VER)};
+  return a;
+}
+function setModule(m){activeModule=m;buildTop();statusMsg.textContent=`${m} 메뉴를 선택했습니다.`}
+function pinModule(m){setModule(m);const li=[...document.querySelectorAll('#topMenu>li')].find(x=>x.querySelector('button').textContent===m);if(li){li.classList.add('pin');placeMega(li,li.querySelector('.mega'))}}
+
+/* ---------- 즐겨찾기 ---------- */
+function toggleFav(n){
+  favs=favs.includes(n)?favs.filter(x=>x!==n):[...favs,n];localStorage.setItem('ipmes.favs',JSON.stringify(favs));
+  document.querySelectorAll(`.mega a[data-name="${n}"] .star`).forEach(s=>s.classList.toggle('on',favs.includes(n)));
+  renderFav();const h=document.getElementById('view_home');if(h)h.innerHTML=homeHTML();
+}
+function renderFav(){
+  const m=$('#favMenu');m.innerHTML='<div class="hd">즐겨찾기</div>'+(favs.length?'':'<div class="hd">상단 메뉴 항목의 ★ 를 눌러 추가</div>');
+  favs.forEach(n=>{const loc=locate(n);const b=el('button','',`<span>${esc(n)}</span><small style="margin-left:auto;color:var(--ink-3)">${loc?esc(loc.mod+' › '+loc.sec):''}</small>`);b.onclick=()=>{openByName(n);closeDd()};m.appendChild(b)});
+}
+
+/* ---------- 페이지 열기 ---------- */
+function slugify(name){return 'pending_'+Math.abs([...name].reduce((a,c)=>((a<<5)-a+c.charCodeAt(0))|0,0))}
+function openByName(name){
+  let p=pageRegistry[name];if(!p){p={id:slugify(name),title:name,file:null};pageRegistry[name]=p}
+  const loc=locate(name);if(loc){p.menu=name;p.mod=loc.mod;p.sec=loc.sec;if(loc.mod!==activeModule){activeModule=loc.mod;buildTop()}}
+  openPage(p);
+}
+function openPage(p){if(!openTabs.has(p.id))openTabs.set(p.id,p);if(activeId!==p.id)prevId=activeId;activeId=p.id;renderTabs();renderStage();buildTop();renderCrumb();
+  statusMsg.textContent=p.home?'홈':p.file?`${p.title} 화면을 열었습니다.`:`${p.title} 화면은 준비 중입니다.`}
+function activate(id){if(activeId!==id)prevId=activeId;activeId=id;const p=openTabs.get(id);if(p&&p.mod)activeModule=p.mod;buildTop();renderTabs();renderStage();renderCrumb()}
+function renderCrumb(){
+  const p=openTabs.get(activeId);const c=$('#crumb');
+  if(!p){c.innerHTML='<span>IPTK MES</span>';return}
+  c.innerHTML=`<span>IPTK MES</span>${p.mod?`<span>›</span><span>${esc(p.mod)}</span><span>›</span><span>${esc(p.sec)}</span>`:''}<span>›</span><b>${esc(p.title)}</b><span class="right"><span>${p.file?esc(p.file):''}</span></span>`;
+}
+
+/* ---------- 탭 ---------- */
+function renderTabs(){
+  const bar=$('#tabs');bar.innerHTML='';
+  openTabs.forEach(p=>{
+    const pin=pinned.has(p.id);
+    const d=el('div','tab'+(p.id===activeId?' active':''),`<span>${pin?'📌 ':''}${esc(p.title)}</span>${pin?'':'<span class="x" title="닫기">×</span>'}`);
+    d.onclick=()=>activate(p.id);d.onauxclick=e=>{if(e.button===1)closeTab(p.id)};
+    d.oncontextmenu=e=>{e.preventDefault();showCtx(e,p.id)};
+    const x=d.querySelector('.x');if(x)x.onclick=e=>{e.stopPropagation();closeTab(p.id)};
+    bar.appendChild(d);if(p.id===activeId)requestAnimationFrame(()=>d.scrollIntoView&&d.scrollIntoView({inline:'nearest',block:'nearest'}));
+  });
+}
+function closeTab(id,e){e?.stopPropagation();if(pinned.has(id))return;
+  const ids=[...openTabs.keys()],idx=ids.indexOf(id);if(idx<0)return;
+  openTabs.delete(id);VREADY.delete(id);document.getElementById('view_'+id)?.remove();
+  if(activeId===id){activeId=ids[idx+1]||ids[idx-1]||'';if(!openTabs.has(activeId))activeId=[...openTabs.keys()][0]||''}
+  renderTabs();renderStage();buildTop();renderCrumb()}
+const ctx=$('#tabCtx');let ctxTab=null;
+function showCtx(e,id){ctxTab=id;ctx.style.left=e.clientX+'px';ctx.style.top=e.clientY+'px';ctx.classList.add('open')}
+ctx.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+  const ids=[...openTabs.keys()],i=ids.indexOf(ctxTab),p=openTabs.get(ctxTab);ctx.classList.remove('open');if(!p)return;
+  switch(b.dataset.act){
+    case'refresh':{const v=document.getElementById('view_'+p.id);if(v&&v.tagName==='IFRAME'){VREADY.delete(p.id);v.contentWindow.location.reload()}else if(v&&p.home)v.innerHTML=homeHTML();break}
+    case'pin':if(p.id!=='home'){pinned.has(p.id)?pinned.delete(p.id):pinned.add(p.id)}renderTabs();break;
+    case'others':ids.forEach(x=>{if(x!==p.id)closeTab(x)});break;
+    case'right':ids.slice(i+1).forEach(x=>closeTab(x));break;
+    case'close':closeTab(p.id);break;
+  }
+});
+$('#tabCloseAll').onclick=()=>[...openTabs.keys()].forEach(x=>closeTab(x));
+$('#tabPrev').onclick=()=>{const ids=[...openTabs.keys()],i=ids.indexOf(activeId);if(i>0)activate(ids[i-1])};
+$('#tabNext').onclick=()=>{const ids=[...openTabs.keys()],i=ids.indexOf(activeId);if(i<ids.length-1)activate(ids[i+1])};
+
+/* ---------- 스테이지 (iframe) ---------- */
+function injectCtx(f){
+ try{
+  const doc=f.contentDocument;
+  if(!doc||!doc.body)return;
+  if(doc.__mesCtxInjected||doc.querySelector('script[src*="mes_ctx.js"]'))return;
+  doc.__mesCtxInjected=1;
+  const s=doc.createElement('script');s.src='mes_ctx.js?v='+APP_VER;doc.body.appendChild(s);
+ }catch(e){}
+}
+const VREADY=new Set();let vwaitTimer=null,pendingId=null;
+function badgeOff(){try{return localStorage.getItem('mes_badge')==='off'}catch(e){return false}}
+function viewReady(f){
+  if(!f||f.tagName!=='IFRAME')return true;
+  try{
+    const d=f.contentDocument,w=f.contentWindow;
+    if(!d||d.readyState!=='complete')return false;
+    if(d.documentElement.classList.contains('mesdb-loading'))return false;
+    if(w.__mesdbBound&&!badgeOff()&&!d.getElementById('mesdb-badge')&&!(w.MESDB&&w.MESDB.syncMaster))return false;
+    return true;
+  }catch(e){return true}
+}
+function makeView(p){
+  if(document.getElementById('view_'+p.id))return;
+  if(p.home){const d=el('div','placeholder',homeHTML());d.id='view_home';stage.appendChild(d);return}
+  if(p.file){
+    const f=document.createElement('iframe');f.id='view_'+p.id;
+    f.src=p.file+(p.file.includes('?')?'&':'?')+'v='+APP_VER;
+    f.addEventListener('load',()=>injectCtx(f));
+    stage.appendChild(f);
+  }else{
+    const d=el('div','placeholder',`<div class="ph"><h1>${esc(p.title)}</h1><p>${esc(p.mod||'')} ${p.sec?'› '+esc(p.sec):''}</p><div class="card" style="max-width:520px">이 화면은 아직 만들어지지 않았습니다.<br><br><code>${esc(p.id)}.html</code> 파일을 만들면 이 자리에 표시됩니다.</div></div>`);
+    d.id='view_'+p.id;stage.appendChild(d);
+  }
+}
+function swapTo(id){
+  clearTimeout(vwaitTimer);pendingId=null;VREADY.add(id);vwait.classList.remove('on');
+  stage.querySelectorAll('iframe,.placeholder').forEach(x=>x.classList.toggle('on',x.id==='view_'+id));
+}
+function renderStage(){
+  for(const p of openTabs.values())makeView(p);
+  const v=document.getElementById('view_'+activeId);
+  if(!v){vwait.classList.remove('on');stage.querySelectorAll('iframe,.placeholder').forEach(x=>x.classList.remove('on'));return}
+  if(VREADY.has(activeId)||viewReady(v)){swapTo(activeId);return}
+  pendingId=activeId;vwait.classList.add('on');const t0=Date.now();clearTimeout(vwaitTimer);
+  (function poll(){if(pendingId!==activeId)return;const f=document.getElementById('view_'+activeId);
+    if(!f||viewReady(f)||Date.now()-t0>3000){swapTo(activeId);return}vwaitTimer=setTimeout(poll,60)})();
+}
+
+/* ---------- 홈 ---------- */
+function homeHTML(){
+  const mods=visibleModules().filter(m=>m!=='사용메뉴얼');
+  const quick=['수주등록','수주현황','현황판','제작계획등록','설계계획등록','가공계획등록','구매품 발주','조립실적등록'];
+  return `<div class="home">
+  <div class="card" style="grid-column:span 8"><h3>업무 모듈 <span>상단 메뉴에 마우스를 올리면 세부 메뉴가 열립니다</span></h3>
+   <div class="modcard">${mods.map(m=>`<button onclick="pinModule('${m}')"><b>${MOD_ICON[m]||'▪'} ${esc(m)}</b><small>${esc(MOD_DESC[m]||'')}</small></button>`).join('')}</div></div>
+  <div class="card" style="grid-column:span 4"><h3>즐겨찾기 <span>★ ${favs.length}</span></h3>
+   <div class="favlist">${favs.length?favs.map(n=>{const l=locate(n);return `<button onclick="openByName('${esc(n)}')"><span>${esc(n)}</span><small>${l?esc(l.mod):''}</small></button>`}).join(''):'<small style="color:var(--ink-3)">상단 메뉴 항목의 ★ 를 눌러 추가</small>'}</div></div>
+  <div class="card" style="grid-column:span 8"><h3>바로가기</h3>
+   <div class="quick">${quick.filter(n=>{const l=locate(n);return l&&canView(l.mod+'/'+l.sec+'/'+n)}).map(n=>`<button onclick="openByName('${esc(n)}')"><span style="font-size:18px">${MOD_ICON[locate(n).mod]}</span>${esc(n)}</button>`).join('')}</div></div>
+  <div class="card" style="grid-column:span 4"><h3>안내</h3>
+   <div style="color:var(--ink-2);line-height:1.7">· <b>Ctrl+K</b> 메뉴 검색<br>· 좌측 상단 <b>⌂ 홈</b> 클릭: 이 홈 화면으로 이동<br>· 상단 메뉴(영업관리 등)에 마우스를 올리면 세부 메뉴가 펼쳐지고, <b>클릭</b>하면 마우스를 떼도 펼쳐진 채로 고정됩니다 (다시 클릭하면 해제)<br>· 열린 화면은 상단에 <b>탭</b>으로 쌓입니다. 탭을 <b>마우스 오른쪽 클릭</b>하면 고정(실수로 닫히지 않게) · 새로고침 · 닫기 메뉴가 나옵니다<br>· 탭을 <b>마우스 휠 버튼</b>으로 누르면 바로 닫힙니다<br>· <button onclick="openByName('사용메뉴얼')" style="color:var(--blue)">사용메뉴얼 열기</button><br>· <button onclick="openByName('수정요청게시판')" style="color:var(--blue)">수정요청게시판 열기</button></div></div>
+  </div>`;
+}
+
+/* ---------- 메뉴 검색 ---------- */
+const sIn=$('#menuSearch'),sRes=$('#searchRes');let sel=0;
+sIn.oninput=()=>{
+  const q=sIn.value.trim().toLowerCase();if(!q){sRes.classList.remove('open');return}
+  const hits=flatMenu().filter(m=>m.name.toLowerCase().includes(q)||m.sec.toLowerCase().includes(q)||m.mod.toLowerCase().includes(q)).slice(0,14);sel=0;
+  sRes.innerHTML=hits.length?hits.map((m,i)=>`<button data-name="${esc(m.name)}" class="${i===0?'sel':''}"><span>${esc(m.name)}</span><small>${esc(m.mod+' › '+m.sec)}</small></button>`).join(''):'<button disabled><small>검색 결과 없음</small></button>';
+  sRes.querySelectorAll('button[data-name]').forEach(b=>b.onclick=()=>pick(b.dataset.name));sRes.classList.add('open');
+};
+function pick(n){openByName(n);sIn.value='';sRes.classList.remove('open');sIn.blur()}
+sIn.onkeydown=e=>{
+  const items=[...sRes.querySelectorAll('button[data-name]')];if(!items.length)return;
+  if(e.key==='ArrowDown')sel=(sel+1)%items.length;else if(e.key==='ArrowUp')sel=(sel-1+items.length)%items.length;
+  else if(e.key==='Enter'){pick(items[sel].dataset.name);return}else if(e.key==='Escape'){sRes.classList.remove('open');sIn.blur();return}else return;
+  e.preventDefault();items.forEach((b,i)=>b.classList.toggle('sel',i===sel));
+};
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();sIn.focus();sIn.select()}
+  if(e.key==='Escape'){closeDd();ctx.classList.remove('open');document.querySelectorAll('.top-menu>li.pin').forEach(x=>x.classList.remove('pin'))}
+});
+
+/* ---------- 드롭다운 ---------- */
+function closeDd(){document.querySelectorAll('.dd.open').forEach(d=>d.classList.remove('open'))}
+document.querySelectorAll('.dd>button').forEach(b=>b.onclick=e=>{e.stopPropagation();const d=b.parentElement;const was=d.classList.contains('open');closeDd();if(!was)d.classList.add('open')});
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.dd'))closeDd();if(!e.target.closest('.ctx'))ctx.classList.remove('open');if(!e.target.closest('.search'))sRes.classList.remove('open');if(e.target.isConnected&&!e.target.closest('.top-menu'))document.querySelectorAll('.top-menu>li.pin').forEach(x=>x.classList.remove('pin'));
+});
+$('#brand').onclick=()=>openPage(HOME);
+$('#btnReq').onclick=()=>openByName('수정요청게시판');
+/* 화면(iframe)에서 참조: 메뉴구조 · 현재 탭 */
+window.IPMES={APP,pageRegistry,get active(){return openTabs.get(activeId)||null},get prev(){return openTabs.get(prevId)||null}};
+
+/* ---------- 사용자 (mes_auth.js 연동) ---------- */
+function syncUser(){
+  const a=window.MES_AUTH;const name=a?.name||'게스트';const role=a?.role==='master'?'마스터':a?.role==='admin'?'관리자':a?.session?'사용자':'미로그인';
+  $('#uName').textContent=name;$('#uRole').textContent=role;$('#uAv').textContent=String(name)[0].toUpperCase();$('#uHd').textContent=a?.session?.user?.email||'IPTK MES';
+}
+$('#btnPw').onclick=()=>{closeDd();document.getElementById('pwchg')?.click()};
+$('#btnLogout').onclick=()=>{closeDd();const b=document.getElementById('lgout');if(b)b.click();else{try{localStorage.removeItem('ipmes.session')}catch(e){}location.reload()}};
+
+/* ---------- 선반입 ---------- */
+const _pf=new Set();
+function prefetch(url){if(!url||_pf.has(url))return;_pf.add(url);
+  try{const l=document.createElement('link');l.rel='prefetch';l.href=url;l.as='document';document.head.appendChild(l)}catch(e){}
+  try{fetch(url,{cache:'force-cache'}).catch(()=>{})}catch(e){}}
+(window.requestIdleCallback||(f=>setTimeout(f,1200)))(()=>{
+  ['mes_db.js?v='+APP_VER,'mes_ctx.js?v='+APP_VER,'mes_lookup.js?v='+APP_VER,'mes_paste.js?v='+APP_VER,'mes_auth.js?v='+APP_VER].forEach(prefetch);
+  let i=0;const hot=['sale_order_status.html','purchase_order_input.html','purchase_order_status.html','material_order_input.html','outsourcing_order_input.html','vendor_management.html','status_board.html'];
+  const step=()=>{if(i>=hot.length)return;prefetch(hot[i++]+'?v='+APP_VER);setTimeout(step,600)};step()});
+
+function tick(){now.textContent=new Date().toLocaleString('ko-KR',{dateStyle:'medium',timeStyle:'medium'})}
+verTxt.textContent='APP v'+APP_VER;
+buildTop();renderFav();syncUser();openPage(HOME);tick();setInterval(tick,1000);
+</script>
+<script>document.write('<script src="mes_auth.js?v='+APP_VER+'"><\/script>')</script>
+<script>window.addEventListener("mes-auth-ready",()=>{try{VREADY.clear();buildTop();renderFav();syncUser();const h=document.getElementById('view_home');if(h)h.innerHTML=homeHTML();renderStage()}catch(e){}});</script>
+</body>
+</html>
