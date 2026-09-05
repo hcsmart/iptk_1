@@ -101,7 +101,8 @@ function openPlan(pl,r){
  const op=N(pl.order_price);
  const profit=op-target, rate=op?profit/op*100:null;
  const days=(s,e,d)=>d!=null&&d!==''?d:(s&&e?Math.round((new Date(e)-new Date(s))/86400000)+1:'');
- const per=(lab,s,e,d,o,m)=>`<tr><td class="c">${lab}</td><td class="c">${esc(s||'')}</td><td class="c">${esc(e||'')}</td><td class="c">${days(s,e,d)}${days(s,e,d)!==''?'일':''}</td><td class="c"><span class="tag ${o===true?'out':'in'}">${o===true?'외주':'사내'}</span></td><td>${esc(m||'')}</td></tr>`;
+ const per=(lab,k)=>{const s=pl[k+'_start_date'],e=pl[k+'_end_date'],d=pl[k+'_days'],o=pl[k+'_outsourced'],m=pl[k+'_manager'];
+  return `<tr><td class="c">${lab}</td><td class="c">${esc(s||'')}</td><td class="c">${esc(e||'')}</td><td class="c">${days(s,e,d)}${days(s,e,d)!==''?'일':''}</td><td class="c"><span class="tag ${o===true?'out':'in'}">${o===true?'외주':'사내'}</span></td><td>${esc(m||'')}</td><td class="c">${pl[k+'_set_outsourced']===true?'●':''}</td><td>${esc(o===true?(pl[k+'_vendor']||''):'')}</td><td class="c">${esc(pl[k+'_tryout_date']||'')}</td></tr>`};
  planBody.innerHTML=
   `<div class="sec"><div class="st">기본정보</div><div class="kv mes-grid-fit">`
   +fld('제 번',pl.job_no)+fld('품 명',pl.product_name)+fld('고객사',pl.customer_name)+fld('아이템',pl.item_name)
@@ -110,10 +111,8 @@ function openPlan(pl,r){
   +`<div class="sec"><div class="st">금액</div><div class="kv mes-grid-fit">`
   +fld('수주가',n(op),'num')+fld('목표가',n(target),'num')+fld('이익금',n(profit),'num'+(profit<0?' neg':''))+fld('이익률(%)',rate==null?'':rate.toFixed(1),'num'+(profit<0?' neg':''))
   +`</div></div>`
-  +`<div class="sec"><div class="st">기간</div><table><thead><tr><th style="width:70px">구분</th><th>시작일</th><th>종료일</th><th style="width:70px">일수</th><th style="width:64px">구분</th><th>담당자</th></tr></thead><tbody>`
-  +per('설계',pl.design_start_date,pl.design_end_date,pl.design_days,pl.design_outsourced,pl.design_manager)
-  +per('가공',pl.machining_start_date,pl.machining_end_date,pl.machining_days,pl.machining_outsourced,pl.machining_manager)
-  +per('조립',pl.assembly_start_date,pl.assembly_end_date,pl.assembly_days,pl.assembly_outsourced,pl.assembly_manager)
+  +`<div class="sec"><div class="st">기간</div><table><thead><tr><th style="width:70px">구분</th><th>시작일</th><th>종료일</th><th style="width:70px">일수</th><th style="width:64px">구분</th><th>담당자</th><th style="width:44px" title="세트(조수 전체) 외주">세트</th><th>외주업체</th><th style="width:110px">Try-Out 예정일</th></tr></thead><tbody>`
+  +per('설계','design')+per('가공','machining')+per('조립','assembly')
   +`</tbody></table></div>`
   +`<div class="sec"><div class="st">구성비 (목표가 ${n(target)})</div><table><thead><tr><th style="width:60px"></th>`+A.map(a=>`<th>${a[0]}</th>`).join('')+`</tr></thead><tbody>`
   +`<tr><td class="c">금액</td>`+A.map(a=>`<td class="num">${n(pl[a[1]])}</td>`).join('')+`</tr>`
