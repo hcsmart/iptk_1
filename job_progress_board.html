@@ -219,7 +219,7 @@ function render(){
     <span class="jno">${esc(r.job_no)}</span>
     <span class="item">${esc(r.product_name||r.item_name||'')}</span>
     <span class="cust">${esc(r.customer_name||'')}</span>
-    ${r.design_outsourced?'<span class="tag out">설계 외주</span>':'<span class="tag">설계 사내</span>'}
+    ${!r.has_plan?'<span class="tag" style="color:#9aa5ad">계획 미등록</span>':r.design_outsourced?'<span class="tag out">설계 외주</span>':'<span class="tag">설계 사내</span>'}
     ${r.s1_overdue?'<span class="tag" style="border-color:#e2b3ae;background:#fbeceb;color:#c0392b">T/O 지연</span>':''}
     <span class="dday">${dueTxt(r)}
      <span class="bar"><i style="width:${p}%"></i></span><span class="pctxt">${p}%</span></span>
@@ -263,11 +263,11 @@ function detail(r){
 }
 function toggle(job){open.has(job)?open.delete(job):open.add(job);render()}
 function expandAll(on){open=on?new Set(view.map(r=>r.job_no)):new Set();render()}
-/* 진행삭제: 수주는 남기고 그 제번의 계획·발주·설계·PartList·가공·조립·검사·경비 기록을 모두 지운다 (관리자만) */
+/* 진행삭제: 수주정보(제번)까지 포함해 그 제번의 모든 기록을 지운다 (관리자만) */
 function canReset(){try{const a=MESDB.auth&&MESDB.auth();const r=a&&a.role;return r==='master'||r==='admin'}catch(e){return false}}
 async function resetJob(job){
  if(!online())return msg('DB 미연결 - 진행삭제를 사용할 수 없습니다.');
- const ok=confirm(`[${job}] 진행내용을 전체 삭제합니다.\n\n삭제 대상: 제작계획, 외주설계·원재료·구매품·외주가공 발주/입고, 설계계획·실적, PartList, 가공계획·작업지시·이력카드, 조립실적, 검사실적, SET발주, 경비, Try-Out·납품 완료일\n\n수주정보(제번)는 남습니다. 되돌릴 수 없습니다. 계속할까요?`);
+ const ok=confirm(`[${job}] 을(를) 완전히 삭제합니다.\n\n삭제 대상: 수주정보(제번), 제작계획, 외주설계·원재료·구매품·외주가공 발주/입고, 설계계획·실적, PartList, 가공계획·작업지시·이력카드, 조립실적, 검사실적, SET발주, 경비\n\n되돌릴 수 없습니다. 계속할까요?`);
  if(!ok)return;
  const typed=prompt(`확인을 위해 제번을 그대로 입력하세요:\n${job}`);
  if(typed===null)return;
@@ -276,10 +276,10 @@ async function resetJob(job){
   msg(`${job} 진행내용 삭제 중...`);
   const r=await MESDB.rpc('mes_reset_job_progress',{p_job:job});
   const tabs=r&&r.tables?Object.entries(r.tables).map(([k,v])=>`${k} ${v}`).join(', '):'';
-  try{MESDB.notify&&MESDB.notify(['sales_plans','sales_plan_status_rows','order_lines','design_plans','design_plan_steps','design_results','partlist_materials','partlist_purchases','assembly_jobs','assembly_steps','work_order_details','inspection_results','set_order_lines','expenses','sale_orders'])}catch(e){}
+  try{MESDB.notify&&MESDB.notify(['jobs','sale_orders','sale_order_status_rows','sales_plans','sales_plan_status_rows','order_lines','design_plans','design_plan_steps','design_results','partlist_materials','partlist_purchases','assembly_jobs','assembly_steps','work_order_details','inspection_results','set_order_lines','expenses','sale_orders'])}catch(e){}
   open.delete(job);
   await load();
-  msg(`${job} 진행내용 ${r&&r.deleted!=null?r.deleted:''}건을 삭제했습니다.`+(tabs?` (${tabs})`:''));
+  msg(`${job} 을(를) 삭제했습니다. ${r&&r.deleted!=null?r.deleted+'건':''}`+(tabs?` (${tabs})`:''));
  }catch(e){msg('진행삭제 실패: '+String(e.message||e).slice(0,140))}
 }
 function goScreen(name){
