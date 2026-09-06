@@ -53,7 +53,13 @@ let view=[...heads],sel=null,pv=null;
 let dets=[];                 /* set_order_lines (선택 제번의 발주라인) */
 const TBL='set_order_lines';
 const today=()=>new Date().toISOString().slice(0,10);
-const me=()=>{try{const a=window.MES_AUTH||window.parent.MES_AUTH;return a&&(a.name||a.user_name)||'DG'}catch(e){return 'DG'}};
+/* v77: 작성자 = 로그인한 사용자. 이름이 아직 안 왔으면 로그인 이메일 아이디로 대체한다 */
+const me=()=>{try{
+  const a=window.MES_AUTH||window.parent.MES_AUTH;
+  if(!a)return '';
+  const em=a.session&&a.session.user&&a.session.user.email;
+  return a.name||a.user_name||(em?String(em).split('@')[0]:'')||'';
+ }catch(e){return ''}};
 const online=()=>!!(window.MESDB&&MESDB.online);
 
 function render(){hbody.innerHTML=view.map((r,i)=>`<tr onclick="pick(${i},this)"><td>${esc(r.job_no)}</td><td>${esc(r.item_name||'')}</td><td class="c">${esc(r.completion_planned_date||'')}</td><td class="c">${esc(r.s1_date||'')}</td><td class="c">${esc(r.customer_request_date||'')}</td><td></td></tr>`).join('');countText.textContent=view.length+'건';renderP();}
@@ -185,7 +191,7 @@ async function save(){
   await MESDB.table(TBL).upsert(REQ.map(r=>({job_no:r.job_no,partner_vendor_name:r.partner_vendor_name,
    set_seq:r.set_seq,process_name:r.process_name,status:'발주',
    order_date:r.order_date||today(),receipt_planned_date:r.receipt_planned_date||null,
-   quote_price:r.quote_price,nego_price:r.nego_price,unit_price:r.nego_price,writer:r.writer})));
+   quote_price:r.quote_price,nego_price:r.nego_price,unit_price:r.nego_price,writer:r.writer||me()})));
   const cnt=REQ.length;REQ.length=0;
   await loadDets();
   msg(`${sel.job_no} SET외주 발주 ${cnt}건을 등록했습니다. (네고가 합계 ${sum.toLocaleString()}원)`);

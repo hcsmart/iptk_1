@@ -51,7 +51,14 @@ input.cell{width:100%;height:20px;border:1px solid #cbd4dc;padding:0 3px;text-al
 </div>
 <script>
 /* v46: 작성자/담당자 기본값 = 로그인 사용자 (회사명 하드코딩 제거) */
-const OWNER=(function(){try{return (window.MES_AUTH||window.parent.MES_AUTH)?.name||'담당자'}catch(e){return '담당자'}})();
+/* v77: 작성자 = 로그인한 사용자. 권한 조회가 비동기라 화면 로드 시점에 값을 굳히면
+   '담당자' 같은 기본값으로 남는다. 쓸 때마다 다시 읽는다. */
+const OWNER=()=>{try{
+  const a=window.MES_AUTH||window.parent.MES_AUTH;
+  if(!a)return '';
+  const em=a.session&&a.session.user&&a.session.user.email;
+  return a.name||(em?String(em).split('@')[0]:'')||'';
+ }catch(e){return ''}};
 
 const JOBS=[];
 const POOL=[];
@@ -94,7 +101,7 @@ async function addRow(){const picks=[...poolBody.querySelectorAll('input:checked
  for(const v of vens)for(const p of picks){
   if(ORD.some(r=>r.vendor===v&&r.proc===p.proc)){dup++;continue}
   ORD.push({no:ORD.length?Math.max(...ORD.map(r=>r.no))+1:1,vendor:v,proc:p.proc,procName:p.procName,
-   odate:new Date().toISOString().slice(0,10),edate:'',quote:0,nego:0,writer:OWNER});
+   odate:new Date().toISOString().slice(0,10),edate:'',quote:0,nego:0,writer:OWNER()});
  }
  if(dup)msg(`이미 담긴 업체·공정 ${dup}건은 제외했습니다.`);
  /* v39: 설계 공정단가를 자동 조회해 견적가를 채운다 (0이면 제조원가 외주설계비가 0) */
@@ -136,7 +143,7 @@ async function save(){
     vendor_name:r.vendor,process_code:r.proc,process_name:r.procName,
     order_date:r.odate||null,required_date:r.edate||null,
     quote_price:Number(r.quote)||0,confirm_price:Number(r.nego)||Number(r.quote)||0,
-    order_qty:1,owner_name:r.writer||null,updated_at:new Date().toISOString()}));
+    order_qty:1,owner_name:r.writer||OWNER()||null,updated_at:new Date().toISOString()}));
   if(MESDB.ensureRefs)await MESDB.ensureRefs(payload);
   await MESDB.table('order_lines').upsert(payload);
   const n=ORD.length;ORD.length=0;renderOrd();
