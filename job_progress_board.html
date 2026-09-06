@@ -92,7 +92,7 @@ button,input,select{font:inherit;color:inherit}
    <option value="pctd">진척 높은순</option>
    <option value="job">제번순</option>
   </select>
-  <label style="margin-left:8px"><input type="checkbox" id="qOpen" checked onchange="apply()"> 진행중만</label>
+  <label style="margin-left:8px"><input type="checkbox" id="qOpen" checked onchange="apply()"> 납품미완료</label>
   <button class="btn" onclick="load()">⟳ 새로고침</button>
   <button class="btn" onclick="expandAll(true)">▼ 전체펼침</button>
   <button class="btn" onclick="expandAll(false)">▲ 접기</button>
@@ -196,13 +196,13 @@ function stageCell(r,st,here){
  else if(st.k==='machining')sub=(n0(r.mac_ord)+n0(r.wo_cnt))?`${n0(r.mac_cfm)+n0(r.wo_done)}/${n0(r.mac_ord)+n0(r.wo_cnt)}`:'';
  else if(st.k==='assembly')sub=n0(r.asm_steps)?`${n0(r.asm_done_steps)}/${n0(r.asm_steps)}`:(n0(r.set_ord)?'SET외주':'');
  else if(st.k==='inspect')sub=n0(r.insp_cnt)?(n0(r.insp_ng)?`부적합 ${n0(r.insp_ng)}`:`${n0(r.insp_cnt)}건`):'';
- else if(st.k==='tryout')sub=r.s1_completed_date?String(r.s1_completed_date).slice(5):'';
- else if(st.k==='delivery')sub=r.delivery_completed_date?String(r.delivery_completed_date).slice(5):'';
+ else if(st.k==='tryout')sub=(v==='done'&&r.s1_completed_date)?String(r.s1_completed_date).slice(5):'';
+ else if(st.k==='delivery')sub=(v==='done'&&r.delivery_completed_date)?String(r.delivery_completed_date).slice(5):'';
  if(!sub)sub=v==='done'?'완료':v==='run'?'진행':'대기';
  return `<div class="stp ${v}${here?' here':''}"><b>${st.n}</b><span>${esc(sub)}</span></div>`;
 }
 function dueTxt(r){
- if(r.delivery_completed_date)return '<span class="d" style="color:#2f7d4f">납품완료</span>';
+ if(r.st_delivery==='done')return '<span class="d" style="color:#2f7d4f">납품완료</span>';
  const d=r.delivery_days_left;
  if(d==null)return '<span class="d" style="color:#93a1ab">납기 미지정</span>';
  const k=Number(d);
