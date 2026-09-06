@@ -904,3 +904,85 @@ window.MESCTX={confirm:dlgConfirm};
   .observe(document.documentElement,{childList:true,subtree:true});
  window.MESMONEY={fmt,raw,scan:run,isMoney};
 })();
+
+/* ── v78: 제번 입력칸을 드롭다운+직접입력 콤보로 (전 화면 공용) ─────────
+ * 구매·조립·원가 등 화면마다 제번을 손으로 치던 칸에 job_pool 목록을 붙인다.
+ * 글자를 치면 걸러지고, 고르면 그 화면의 조회가 자동으로 실행된다.
+ * 화면이 이미 list= 를 가진 콤보면 건드리지 않는다. data-nojoblist 로 제외 가능. */
+(function(){
+ const DLID='mes_dl_job';
+ const IDPAT=/^(q_?job|jobq|job_no|qjob|job)$/i;
+ const isLab=n=>!!n&&n.nodeType===1&&/(^|\s)(label|lab|lb)(\s|$)/.test(n.className);
+ function labelText(el){
+  let n=el.previousElementSibling;if(isLab(n))return n.textContent.trim();
+  const p=el.parentElement;if(p){n=p.previousElementSibling;if(isLab(n))return n.textContent.trim()}
+  return '';
+ }
+ function isJobBox(el){
+  if(!el||el.tagName!=='INPUT')return false;
+  const t=(el.getAttribute('type')||'text').toLowerCase();
+  if(t!=='text'&&t!=='search')return false;
+  if(el.readOnly||el.disabled||el.hasAttribute('list')||el.hasAttribute('data-nojoblist'))return false;
+  if(el.closest('#meslk,#mesdlg,.mescb-pop'))return false;
+  const id=(el.id||el.name||'');
+  if(IDPAT.test(id))return true;
+  return /^제\s*번$/.test(labelText(el).replace(/\s+/g,' ').trim());
+ }
+ let JOBS=null,loading=null;
+ async function jobs(){
+  if(JOBS)return JOBS;if(loading)return loading;
+  loading=(async()=>{
+   for(let i=0;i<80&&!window.MESDB;i++)await new Promise(r=>setTimeout(r,50));
+   if(window.MESDB&&MESDB.ready){try{await MESDB.ready}catch(e){}}
+   if(!(window.MESDB&&MESDB.online))return (JOBS=[]);
+   try{
+    const [pool,so]=await Promise.all([
+     MESDB.table('job_pool').select('select=job_no,item_name,customer_name,order_date&order=order_date.desc.nullslast'),
+     MESDB.table('sale_orders').select('select=job_no,completion_date')]);
+    const done=new Set();(so||[]).forEach(r=>{if(r.completion_date)done.add(r.job_no)});
+    JOBS=(pool||[]).map(r=>({job:r.job_no,
+      sub:[r.item_name,r.customer_name].filter(Boolean).join(' · ')+(done.has(r.job_no)?' · 정산완료':'')}));
+   }catch(e){JOBS=[]}
+   return JOBS;
+  })();
+  return loading;
+ }
+ function ensureDL(list){
+  let dl=document.getElementById(DLID);
+  if(!dl){dl=document.createElement('datalist');dl.id=DLID;document.body.appendChild(dl)}
+  const e=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  dl.innerHTML=list.map(r=>`<option value="${e(r.job)}">${e(r.sub)}</option>`).join('');
+  return dl;
+ }
+ /* 제번을 고르면 그 화면의 조회를 실행한다 */
+ function fire(el){
+  try{if(window.MES&&typeof MES.search==='function')return MES.search()}catch(e){}
+  const btn=[...document.querySelectorAll('button')].find(b=>/조\s*회|검\s*색/.test((b.textContent||'').trim()));
+  if(btn)btn.click();
+ }
+ function attach(el,list){
+  if(el.__mesJob)return;el.__mesJob=1;
+  ensureDL(list);
+  el.setAttribute('list',DLID);el.setAttribute('autocomplete','off');
+  if(!el.getAttribute('placeholder')||/^제번$/.test(el.getAttribute('placeholder')))
+   el.setAttribute('placeholder',list.length?`제번 입력/선택 (${list.length}건)`:'제번 입력');
+  if(!el.title)el.title='등록된 제번 목록입니다. 글자를 입력하면 걸러집니다.';
+  el.addEventListener('change',()=>{const v=(el.value||'').trim();if(v&&list.some(r=>r.job===v))fire(el)});
+ }
+ async function scan(root){
+  const els=[...((root&&root.querySelectorAll?root:document).querySelectorAll('input'))].filter(el=>{
+   try{return isJobBox(el)}catch(e){return false}});
+  if(!els.length)return;
+  const list=await jobs();if(!list.length)return;
+  els.forEach(el=>{try{attach(el,list)}catch(e){}});
+  try{window.MESCOMBO&&MESCOMBO.scan()}catch(e){}   /* 목록형 콤보 UI 로 승격 */
+ }
+ const run=()=>{scan(document)};
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);else run();
+ setTimeout(run,700);setTimeout(run,2000);
+ try{if(window.MESDB&&MESDB.onChange)MESDB.onChange(['sale_orders','jobs'],()=>{JOBS=null;loading=null;
+   document.querySelectorAll('input[list="'+DLID+'"]').forEach(el=>{el.__mesJob=0});run()})}catch(e){}
+ new MutationObserver(ms=>{for(const m of ms)for(const n of m.addedNodes)if(n.nodeType===1)scan(n.parentNode||document)})
+  .observe(document.documentElement,{childList:true,subtree:true});
+ window.MESJOBLIST={scan:run,jobs,isJobBox};
+})();
