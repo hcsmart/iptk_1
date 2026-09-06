@@ -27,6 +27,7 @@ table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th
 .amt .hd{text-align:center;font-weight:700;font-size:11px;color:#4b5c6a;padding-bottom:2px}
 .amt input{width:100%;height:26px;border:1px solid #b5c0c9;text-align:right;padding:0 5px}
 .pct{font-size:11px;color:#5d6d7b;text-align:right}
+.note{font-size:11px;color:#6b7a87;line-height:1.5}.note b{color:#3d5163}
 .chk{display:flex;align-items:center;gap:3px;white-space:nowrap}
 .chk.src{gap:8px}.chk.src label{display:flex;align-items:center;gap:2px;cursor:pointer}
 
@@ -61,6 +62,9 @@ table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th
 <div class="blk"><div class="bt">금액</div>
  <div class="gg g4">
   <div class="lb">수주가</div><input id="order_price" class="field num" oninput="recalc()"><div class="lb">목표가</div><input id="target_price" class="field num" readonly title="아래 8개 금액의 합계 (자동)"><div class="lb">이익금</div><input id="profit_amount" class="field num" readonly title="수주가 − 목표가 (자동)"><div class="lb">이익률(%)</div><input id="profit_rate_pct" class="field num" readonly title="이익금 ÷ 수주가 (자동)">
+ </div>
+ <div class="gg" style="grid-template-columns:74px 1fr;padding-top:0">
+  <div class="lb">비 고</div><div class="note">목표가 = 아래 8개 구성비 금액의 합계(자동). 수주가 안에서 어디에 얼마를 쓸지 미리 잡아두는 <b>목표원가</b>이며, 나중에 실제 발생원가와 비교하는 기준이 됩니다. 이익금·이익률도 이 값으로 계산됩니다.</div>
  </div>
  <div class="amt">
   <div></div><div class="hd">설계 사내</div><div class="hd">설계 사외</div><div class="hd">원재료</div><div class="hd">구매</div><div class="hd">가공 사내</div><div class="hd">가공 사외</div><div class="hd">조립 사내</div><div class="hd">조립 사외</div>
@@ -106,6 +110,9 @@ function recalc(){
  profit_amount.style.color=profit_rate_pct.style.color=(op&&op-s<0)?'#c62828':'';
 }
 order_price.addEventListener('blur',()=>{const v=num(order_price.value);order_price.value=v?fmt(v):''});
+for(let i=1;i<=8;i++){const n=document.getElementById('a'+i);
+ n.addEventListener('blur',()=>{const v=num(n.value);n.value=v?fmt(v):''});
+ n.addEventListener('focus',()=>{const v=num(n.value);n.value=v?String(v):''})}
 /* 일수 = 종료일 − 시작일 + 1 */
 function calcDays(p){
  const s=document.getElementById(p+'_start_date').value,e=document.getElementById(p+'_end_date').value,d=document.getElementById(p+'_days');
@@ -121,7 +128,7 @@ function load(o){
  ['design','machining','assembly'].forEach(k=>{const c=document.getElementById(k+'_set_outsourced');if(c)c.checked=!!o[k+'_set_outsourced']});
  setOut('design',o.design_outsourced);setOut('machining',o.machining_outsourced);setOut('assembly',o.assembly_outsourced);
  ['design','machining','assembly'].forEach(k=>{const v=document.getElementById(k+'_vendor');if(v&&o[k+'_vendor'])v.value=o[k+'_vendor']});
- AK.forEach((k,i)=>{const n=document.getElementById('a'+(i+1));if(n)n.value=o[k]??''});
+ AK.forEach((k,i)=>{const n=document.getElementById('a'+(i+1));if(n)n.value=num(o[k])?fmt(num(o[k])):''});
  ['design','machining','assembly'].forEach(p=>{if(!document.getElementById(p+'_days').value)calcDays(p)});
  order_price.value=num(order_price.value)?fmt(num(order_price.value)):'';
  recalc();
@@ -214,7 +221,8 @@ async function loadJob(j){
   setSel('item_name',s.item_name);setSel('product_name',s.product_name);setSel('customer_name',s.customer_name);
   setSel('model',s.model);setSel('order_date',s.order_date);setSel('s1_planned_date',s.s1_planned_date);
   setSel('delivery_planned_date',s.delivery_planned_date);setSel('mold_type_name',s.mold_type_name);
-  setSel('process_set_qty',s.process_set_qty);setSel('order_price',s.order_price);
+  setSel('process_set_qty',s.process_set_qty);
+  order_price.value=num(s.order_price)?fmt(num(s.order_price)):'';
   recalc();msg(`${job} 수주정보를 불러왔습니다. (신규 제작계획)`);
  }catch(e){msg('조회 실패: '+String(e.message||e).slice(0,120))}
 }

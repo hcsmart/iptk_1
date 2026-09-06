@@ -689,8 +689,15 @@ window.MESCTX={confirm:dlgConfirm};
  function gridOf(el){let c=visual(el);while(c&&c.parentElement){const p=c.parentElement;if(isGrid(p))return{grid:p,cell:c};c=p}return null}
  const isLab=n=>!!n&&n.nodeType===1&&/(^|\s)(label|lab|lb)(\s|$)/.test(n.className);
  const pairOf=cell=>isLab(cell.previousElementSibling)?[cell.previousElementSibling,cell]:[cell];
- function tracks(grid){const s=getComputedStyle(grid).gridTemplateColumns||'';const o=[];let d=0,c='';
-  for(const ch of s){if(ch==='(')d++;if(ch===')')d--;if(ch===' '&&!d){if(c)o.push(c);c=''}else c+=ch}if(c)o.push(c);return o}
+ function tracks(grid){
+  let s='';try{s=getComputedStyle(grid).gridTemplateColumns||''}catch(e){return []}
+  if(!s||s==='none')return [];
+  /* 레이아웃 전이면 computed 값에 repeat() 가 그대로 남는다 → 펴서 실제 열 수를 맞춘다 */
+  s=s.replace(/repeat\((\d+),([^()]*(?:\([^()]*\)[^()]*)*)\)/g,(m,n,inner)=>Array(+n).fill(inner.trim()).join(' '));
+  if(/repeat\(|auto-fill|auto-fit|\[/.test(s))return [];
+  const o=[];let d=0,c='';
+  for(const ch of s){if(ch==='(')d++;if(ch===')')d--;if(ch===' '&&!d){if(c)o.push(c);c=''}else c+=ch}if(c)o.push(c);
+  return o.length>1?o:[]}
  function colOf(grid,cell){const t=tracks(grid);if(!t.length)return-1;return[...grid.children].indexOf(cell)%t.length}
  /* 그리드 안의 필드(id 있는 것) → 셀 단위로 중복 제거 */
  function fields(grid){const out=[],seen=new Set();grid.querySelectorAll(FQ).forEach(el=>{if(!el.id)return;
