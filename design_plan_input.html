@@ -105,9 +105,15 @@ function pick(i,tr){const r=view[i];sel=r;document.querySelectorAll('#hbody tr')
  sbody.innerHTML=seqs.map((x,k)=>`<tr onclick="pickSeq('${x.code}','${x.name}')" title="클릭하면 공정 칸에 들어갑니다"><td>${esc(x.code)}</td><td>${esc(x.name)}</td><td>${esc(mgrOf(x.code))}</td></tr>`).join('');
  const dl=document.getElementById('dl_proc');if(dl)dl.innerHTML=optHtml(seqs,x=>x.code,x=>x.name);
  fProc.value=seqs[0]?seqs[0].code:'A';fProcName.value=seqs[0]?seqs[0].name:'1/1';
- dbody.innerHTML=rs.length?rs.map(s=>`<tr><td>${esc(s.process_code)}</td><td>${esc(s.process_name||'')}</td><td>${esc(s.machining_process_code||'')}</td><td>${esc(s.machining_process_name||'')}</td><td class="c">${esc(s.completion_planned_date||'')}</td></tr>`).join('')
+ dbody.innerHTML=rs.length?rs.map(s=>`<tr onclick="pickStep('${esc(s.process_code)}','${esc(s.machining_process_code||'')}','${esc(s.machining_process_name||'')}')" title="클릭하면 아래 입력칸에 들어갑니다"><td>${esc(s.process_code)}</td><td>${esc(s.process_name||'')}</td><td>${esc(s.machining_process_code||'')}</td><td>${esc(s.machining_process_name||'')}</td><td class="c">${esc(s.completion_planned_date||'')}</td></tr>`).join('')
   :'<tr><td colspan="5" class="c" style="height:60px;color:#8a97a2">등록된 세부공정이 없습니다.</td></tr>';
  msg(`${r.job_no} · 세부공정 ${rs.length}건`);}
+function pickStep(proc,mach,machName){
+ const x=(sel?seqList(sel.job_no):[]).find(y=>y.code===proc);
+ fProc.value=proc;fProcName.value=x?x.name:'';fMach.value=mach||'';fMachName.value=machName||'';
+ document.querySelectorAll('#dbody tr').forEach(t=>t.classList.remove('sel'));
+ msg(`세부공정 ${proc}${mach?' - '+mach:''} 선택 — [－ 세부공정] 으로 삭제할 수 있습니다.`);
+}
 function pickSeq(code,name){fProc.value=code;fProcName.value=name;document.querySelectorAll('#sbody tr').forEach(t=>t.classList.toggle('sel',t.cells[0].textContent===code))}
 fProc.addEventListener('change',()=>{const x=(sel?seqList(sel.job_no):[]).find(y=>y.code===fProc.value.trim());fProcName.value=x?x.name:''});
 fMach.addEventListener('change',()=>{const x=MACH.find(y=>y.process_code===fMach.value.trim());fMachName.value=x?x.process_name:''});
@@ -185,8 +191,9 @@ async function save(){
 }
 async function addStep(){
  if(!sel){msg('제번을 선택하세요.');return}
- if(sel._new){msg('먼저 「저장」으로 설계계획을 등록하세요.');return}
  if(!online()){msg('DB 미연결 상태에서는 세부공정을 추가할 수 없습니다.');return}
+ /* v78: 계획 헤더가 없으면 자동으로 먼저 만든다 (예전엔 '먼저 저장하세요' 로 막았다) */
+ if(sel._new){await save();if(sel._new){msg('설계계획 등록에 실패해 세부공정을 추가하지 못했습니다.');return}}
  const proc=(fProc.value||'').trim();if(!proc){msg('공정코드를 입력하세요.');return}
  /* v62: 같은 공정/가공공정 중복 추가 방지 */
  const mach=(fMach.value||'').trim()||null;
@@ -205,9 +212,13 @@ async function addStep(){
 }
 async function delStep(){
  if(!sel){msg('제번을 선택하세요.');return}
- const rs=steps.filter(s=>s.job_no===sel.job_no&&s.process_code===(fProc.value||'').trim());
- if(!rs.length){msg('삭제할 세부공정이 없습니다. (공정코드 확인)');return}
- if(!confirm(`${sel.job_no} / ${fProc.value} 세부공정 ${rs.length}건을 삭제하시겠습니까?`))return;
+ if(!online()){msg('DB 미연결 상태에서는 세부공정을 삭제할 수 없습니다.');return}
+ const proc=(fProc.value||'').trim(),mach=(fMach.value||'').trim();
+ /* 세부공정 리스트에서 선택한 행이 있으면 그 행, 없으면 공정코드(+가공공정) 일치 행 */
+ let rs=steps.filter(s=>s.job_no===sel.job_no&&s.process_code===proc&&(!mach||(s.machining_process_code||'')===mach));
+ if(!rs.length)rs=steps.filter(s=>s.job_no===sel.job_no&&s.process_code===proc);
+ if(!rs.length){msg(`삭제할 세부공정이 없습니다. (공정 ${proc||'-'}${mach?' / '+mach:''})`);return}
+ if(!confirm(`${sel.job_no} / ${proc}${mach?' - '+mach:''} 세부공정 ${rs.length}건을 삭제하시겠습니까?`))return;
  try{for(const r of rs)await MESDB.table('design_plan_steps').delete({row_no:r.row_no});
   await reloadSteps(sel.job_no);msg(`세부공정 ${rs.length}건을 삭제했습니다.`);
  }catch(e){msg('삭제 실패: '+String(e.message||e).slice(0,120))}
