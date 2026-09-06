@@ -565,9 +565,9 @@ window.MESCTX={confirm:dlgConfirm};
    });
   }else{
    document.querySelectorAll('#hbody tr').forEach(tr=>{
-    const tds=tr.cells;if(tds.length<6)return;
+    const tds=tr.cells;if(tds.length<3)return;
     const job=(tds[0].textContent||'').trim(),p=PLAN[job];
-    const cell=tds[5];let b=cell.querySelector('.mes-pl');
+    const cell=tds[tds.length-1];let b=cell.querySelector('.mes-pl');   /* v78: 열 수가 바뀌어도 마지막 칸에 표시 */
     if(!b){b=document.createElement('span');b.className='mes-pl set';b.style.marginLeft='0';cell.appendChild(b)}
     const lab=p?setLabel(p):'';
     b.style.display=lab?'':'none';b.textContent=lab?'SET외주 '+lab:'';
