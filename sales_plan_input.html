@@ -94,8 +94,10 @@ const isOut=k=>(document.querySelector(`input[name="${k}_src"]:checked`)||{}).va
 const setOut=(k,v)=>{const r=document.querySelector(`input[name="${k}_src"][value="${v===true?'외주':'사내'}"]`);if(r)r.checked=true;vendorGate(k)};
 /* 외주일 때만 외주업체 입력 가능. 사내로 바꾸면 업체는 비운다 */
 function vendorGate(k){const out=isOut(k),v=document.getElementById(k+'_vendor');if(!v)return;
- v.disabled=!out;if(!out)v.value='';v.placeholder=out?'입력 또는 선택':'외주 선택 시';
- const box=v.__mescbBox;if(box){box.inp.disabled=!out;box.inp.placeholder=v.placeholder;if(!out)box.inp.value=''}}
+ v.disabled=!out;if(!out)v.value='';v.setAttribute('placeholder',out?'입력 또는 선택':'외주 선택 시');
+ const box=v.__mescbBox;
+ if(box){box.inp.disabled=!out;box.inp.placeholder=v.getAttribute('placeholder');if(!out)box.inp.value=''}
+ else setTimeout(()=>{const b=v.__mescbBox;if(b){b.inp.disabled=!isOut(k);b.inp.placeholder=v.getAttribute('placeholder');if(!isOut(k))b.inp.value=''}},600);}
 ['design','machining','assembly'].forEach(k=>document.querySelectorAll(`input[name="${k}_src"]`).forEach(r=>r.addEventListener('change',()=>vendorGate(k))));
 /* 모든 입력칸이 input(+datalist) 이라 목록에 없는 값도 그대로 유지된다 */
 function setSel(id,v){const el=typeof id==='string'?document.getElementById(id):id;if(el)el.value=v==null?'':String(v)}
@@ -127,7 +129,9 @@ function load(o){
  }
  ['design','machining','assembly'].forEach(k=>{const c=document.getElementById(k+'_set_outsourced');if(c)c.checked=!!o[k+'_set_outsourced']});
  setOut('design',o.design_outsourced);setOut('machining',o.machining_outsourced);setOut('assembly',o.assembly_outsourced);
- ['design','machining','assembly'].forEach(k=>{const v=document.getElementById(k+'_vendor');if(v&&o[k+'_vendor'])v.value=o[k+'_vendor']});
+ /* 외주업체는 '외주'인 단계에만 채운다. 사내면 vendorGate 가 이미 비웠으므로 손대지 않는다 */
+ ['design','machining','assembly'].forEach(k=>{const v=document.getElementById(k+'_vendor');
+  if(v)v.value=(isOut(k)&&o[k+'_vendor'])?o[k+'_vendor']:'';vendorGate(k)});
  AK.forEach((k,i)=>{const n=document.getElementById('a'+(i+1));if(n)n.value=num(o[k])?fmt(num(o[k])):''});
  ['design','machining','assembly'].forEach(p=>{if(!document.getElementById(p+'_days').value)calcDays(p)});
  order_price.value=num(order_price.value)?fmt(num(order_price.value)):'';

@@ -337,6 +337,11 @@ window.MESCTX={confirm:dlgConfirm};
   padding:0 20px 0 6px;font:inherit;color:inherit;min-width:0}
  .mescb-in:focus{border-color:#4e88bb;outline:none}
  .mescb-in::placeholder{color:#a8b4bd}
+ /* v72: 잠긴 칸(비활성·읽기전용·자동계산)은 연회색으로 채워 입력칸과 구분한다 */
+ input:disabled,select:disabled,textarea:disabled,input[readonly],textarea[readonly],
+ .mescb-in:disabled,.mescb:has(.mescb-in:disabled){background-color:#eef1f4!important;color:#78868f!important;cursor:default}
+ input:disabled::placeholder,.mescb-in:disabled::placeholder{color:#9aa7b1}
+ input[type=checkbox]:disabled,input[type=radio]:disabled{background-color:transparent!important}
  .mescb-ar{position:absolute;right:1px;top:1px;width:18px;height:25px;border:0;background:transparent;
   cursor:pointer;color:#6d7b88;font-size:9px;line-height:25px;padding:0}
  .mescb-ar:hover{color:#2f6fb5}
@@ -469,9 +474,14 @@ window.MESCTX={confirm:dlgConfirm};
    }
   });
   /* 화면 코드가 값을 바꾸거나 옵션을 다시 채우면 표시도 따라간다 */
-  const sync=(force)=>{const t=isSel?labelOf(box,el.value):(el.value||'');if((force||document.activeElement!==inp)&&inp.value!==t)inp.value=t};
+  const sync=(force)=>{const t=isSel?labelOf(box,el.value):(el.value||'');
+   if((force||document.activeElement!==inp)&&inp.value!==t)inp.value=t;
+   /* v72: 원본이 잠기면 표시칸도 같이 잠근다 (콤보가 뒤늦게 만들어져도 상태가 어긋나지 않음) */
+   const dis=!!(el.disabled||el.readOnly);if(inp.disabled!==dis)inp.disabled=dis;
+   const ph=el.getAttribute('placeholder');if(ph!=null&&inp.placeholder!==ph)inp.placeholder=ph;
+   if(dis&&inp.value){const keep=isSel?labelOf(box,el.value):(el.value||'');if(!keep)inp.value=''}};
   el.addEventListener('change',()=>sync());
-  new MutationObserver(()=>sync()).observe(el,{childList:true,attributes:true,attributeFilter:['value']});
+  new MutationObserver(()=>sync()).observe(el,{childList:true,attributes:true,attributeFilter:['value','disabled','readonly','placeholder']});
   if(dl)new MutationObserver(()=>sync()).observe(dl,{childList:true});
   /* v72: 화면 코드가 el.value 로 직접 값을 넣으면 보이는 칸이 '즉시' 따라온다.
    * (800ms 폴링만 믿으면 그 사이 blur 가 나면서 빈 글자로 commit 되어 값이 지워졌다) */
