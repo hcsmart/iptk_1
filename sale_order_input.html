@@ -43,23 +43,25 @@ table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th
  * 기존: 라벨 72px + 필드 min 96px 짜리 6쌍 고정 → 화면이 좁으면 오른쪽
  *       3~6번째 쌍의 입력칸이 화면 밖으로 밀려 라벨만 보였다.
  * 변경: 라벨 폭을 넓히고 쌍 수를 화면 폭에 따라 4→3→2→1로 단계 축소. */
-.formgrid{grid-template-columns:repeat(4,86px minmax(132px,1fr));gap:5px 6px;padding:9px 14px}
+.formgrid{grid-template-columns:repeat(4,84px minmax(0,1fr));gap:5px 10px;padding:9px 14px;max-width:100%;box-sizing:border-box;overflow-x:hidden}
 .formgrid>*{min-width:0}
+.formgrid input,.formgrid select{width:100%;box-sizing:border-box;min-width:0}
+.formgrid input[type=date]{padding-right:2px}
 .field{height:27px}
 .field.r{text-align:right}
 /* v24.1 입력란 크기 통일: span 해제 */
 .span3{grid-column:auto}
 /* 코드+명칭+돋보기 조합: 코드칸을 고정폭으로, 명칭칸이 남는 폭을 차지 */
-.lk{display:grid;grid-template-columns:62px minmax(0,1fr) 26px;gap:3px;align-items:center}
+.lk{display:grid;grid-template-columns:minmax(46px,62px) minmax(0,1fr) 26px;gap:3px;align-items:center}
 .lk input{width:100%;min-width:0;height:27px;border:1px solid #b5c0c9;padding:0 6px;box-sizing:border-box}
 .lk input[readonly]{background:#f4f7f9}
 .lk button{width:26px;height:27px}
 /* 코드가 2~3자리인 항목은 코드칸을 더 좁게 */
 #proc_cnt{max-width:56px}
-@media(min-width:1750px){.formgrid{grid-template-columns:repeat(5,86px minmax(132px,1fr))}}
-@media(max-width:1400px){.formgrid{grid-template-columns:repeat(3,86px minmax(120px,1fr))}}
-@media(max-width:1080px){.formgrid{grid-template-columns:repeat(2,86px minmax(120px,1fr))}}
-@media(max-width:760px){.formgrid{grid-template-columns:86px minmax(0,1fr)}}
+@media(min-width:1800px){.formgrid{grid-template-columns:repeat(5,84px minmax(0,1fr))}}
+@media(max-width:1240px){.formgrid{grid-template-columns:repeat(3,84px minmax(0,1fr))}}
+@media(max-width:940px){.formgrid{grid-template-columns:repeat(2,84px minmax(0,1fr))}}
+@media(max-width:680px){.formgrid{grid-template-columns:84px minmax(0,1fr)}}
 /* 첨부파일: 비어 있을 때 과도한 여백 축소 */
 .filearea .empty,#fileEmpty{height:64px!important}
 </style></head><body><div class="screen">
@@ -67,7 +69,7 @@ table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th
 <section class="formgrid">
  <div class="label">제 번</div><div class="span3"><input id="job_no" class="field"></div>
  <div class="label">수주일</div><div><input id="order_date" type="date" class="field"></div>
- <div class="label">Try-Out 예정일</div><div><input id="s1p" type="date" class="field"></div>
+ <div class="label">T/O 예정일</div><div><input id="s1p" type="date" class="field"></div>
 
  <div class="label">수주상태</div><div><select id="status" class="field"><option>진행</option><option>보류</option><option>완료</option><option>취소</option></select></div>
  <div class="label">수주유형</div><div><select id="otype" class="field"><option>신작</option><option>개조</option><option>수리</option></select></div>
@@ -90,7 +92,7 @@ table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th
  <div class="label">견적가</div><div><input id="quo_price" class="field num"></div>
  <div class="label">기계사양</div><div class="lk"><input id="ms_code"><input id="ms_name" readonly><button onclick="openLook('mspec','ms_code','ms_name')">…</button></div>
  <div class="label">사용재료</div><div><input id="material_used" class="field"></div>
- <div class="label">Try-Out 완료일</div><div><input id="s1c" type="date" class="field"></div>
+ <div class="label">T/O 완료일</div><div><input id="s1c" type="date" class="field"></div>
  <div class="label">납기완료일</div><div><input id="dlvc" type="date" class="field"></div>
  <div class="label">ECO</div><div><input id="eco" class="field"></div>
 

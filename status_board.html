@@ -77,7 +77,7 @@ function render(){
    : `<div class="notice">${y}년 품질목표가 없습니다. (SQ &gt; 품질목표 &gt; 품질목표 등록)</div>`;
   return}
  const rs=rows.filter(r=>r.page===pages[pi]);
- stage.innerHTML='<table><thead><tr><th style="width:60px">NO</th><th style="width:150px">제번</th><th>품명</th><th style="width:130px">수주일</th><th style="width:130px">Try-Out 납기</th><th style="width:130px">완료납기</th><th style="width:110px">영업담당</th><th style="width:110px">조립담당</th></tr></thead><tbody>'
+ stage.innerHTML='<table><thead><tr><th style="width:60px">NO</th><th style="width:150px">제번</th><th>품명</th><th style="width:130px">수주일</th><th style="width:130px">T/O 납기</th><th style="width:130px">완료납기</th><th style="width:110px">영업담당</th><th style="width:110px">조립담당</th></tr></thead><tbody>'
  +rs.map(r=>`<tr><td class="c">${r.row_no}</td><td class="c">${esc(r.job_no)}</td><td>${esc(r.item_name||'')}</td><td class="c">${esc(r.order_date||'')}</td><td class="c${r.s1_overdue?' late':''}">${esc(r.s1_due_date||'')}</td><td class="c${r.completion_overdue?' late':''}">${esc(r.completion_due_date||'')}</td><td class="c">${esc(r.sales_manager||'')}</td><td class="c">${esc(r.assembly_manager||'')}</td></tr>`).join('')
  +'</tbody></table>';
 }

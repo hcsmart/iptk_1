@@ -120,7 +120,7 @@ const STAGES=[
  {k:'machining',n:'가공'},
  {k:'assembly', n:'조립'},
  {k:'inspect',  n:'검사'},
- {k:'tryout',   n:'Try-Out'},
+ {k:'tryout',   n:'T/O'},
  {k:'delivery', n:'납품'}
 ];
 const OWNERS=['영업','설계','구매','가공','조립','품질'];
@@ -253,7 +253,7 @@ function detail(r){
   <tr><th>조립</th><td>${n0(r.set_ord)?`SET외주 ${n0(r.set_rcv)}/${n0(r.set_ord)} · `:''}세부공정 ${n0(r.asm_done_steps)}/${n0(r.asm_steps)} · 검사 ${n0(r.insp_cnt)}건${n0(r.insp_ng)?` (부적합 ${n0(r.insp_ng)})`:''}</td>
       <th>계획</th><td class="c">${d(r.assembly_start_date)} ~ ${d(r.assembly_end_date)}</td>
       <th>담당</th><td class="c">${esc(r.assembly_manager||'-')}</td></tr>
-  <tr><th>Try-Out</th><td class="c">예정 ${d(r.s1_planned_date)} / 완료 ${d(r.s1_completed_date)}</td>
+  <tr><th>T/O</th><td class="c">예정 ${d(r.s1_planned_date)} / 완료 ${d(r.s1_completed_date)}</td>
       <th>납기</th><td class="c">예정 ${d(r.delivery_planned_date)} / 완료 ${d(r.delivery_completed_date)}</td>
       <th>영업</th><td class="c">${esc(r.sales_manager||'-')}</td></tr>
   <tr><th>수주가</th><td class="c">${n0(r.order_price).toLocaleString('ko-KR')}</td>
@@ -287,7 +287,7 @@ function goScreen(name){
  msg(`${name} 화면을 좌측 메뉴에서 열어주세요.`);
 }
 function exportCsv(){
- const head=['제번','품명','고객사','설계구분','진척률','Try-Out예정','납기예정','다음담당','다음화면','다음할일',
+ const head=['제번','품명','고객사','설계구분','진척률','T/O예정','납기예정','다음담당','다음화면','다음할일',
   ...STAGES.map(s=>s.n)];
  const out=[head,...view.map(r=>[r.job_no,r.product_name||r.item_name,r.customer_name,
   r.design_outsourced?'외주':'사내',n0(r.progress_pct)+'%',r.s1_planned_date||'',r.delivery_planned_date||'',
