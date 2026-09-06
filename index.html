@@ -231,7 +231,7 @@ const APP={
       '수주':[{name:'수주',items:['수주등록','수주현황','현황판','금형진척현황']}],
       '제작계획':[{name:'제작계획',items:['제작계획등록','제작계획현황']}],
       /* v73: 일평기연은 외주 발주를 영업에서 관리한다. 제작계획에서 사내/외주를 정한 뒤 여기서 발주·입고 */
-      '설계외주':[{name:'설계외주',items:['외주설계발주입고','외주설계발주현황']}],
+      '설계외주':[{name:'설계외주',items:['외주설계발주등록','외주설계발주입고','외주설계발주현황']}],
       '조립외주':[{name:'조립외주',items:['SET외주제작등록','SET발주입고','SET발주현황']}],
       '경비':[{name:'경비',items:['경비등록','경비현황']}]
     }
@@ -270,11 +270,11 @@ const APP={
   },
   '조립관리':{
     secondary:[
-      {name:'조립',icon:'⚙'},
+      {name:'사내조립',icon:'⚙'},
       {name:'검사',icon:'⌕'}
     ],
     menus:{
-      '조립':[{name:'조립',items:['조립실적등록','조립실적현황','조립실적조회']}],
+      '사내조립':[{name:'사내조립',items:['조립실적등록','조립실적현황','조립실적조회']}],
       '검사':[{name:'검사',items:['검사실적등록']}]
     }
   },
@@ -473,7 +473,7 @@ const pageRegistry={
 '조직도':{id:'org_chart',file:'org_chart.html',title:'조직도'}
 };
 const MOD_ICON={'영업관리':'▣','설계관리':'✎','구매관리':'▤','조립관리':'⚙','원가관리':'◴','조직도':'⛶','SQ':'◈','기준정보':'▦','사용메뉴얼':'📖'};
-const MOD_DESC={'영업관리':'수주 · 제작계획 · 설계외주 · 조립외주 · 경비','설계관리':'사내설계 · PARTLIST','구매관리':'원재료 · 구매품 · 가공/외주가공','조립관리':'조립실적 · 검사실적','원가관리':'제조원가 · 매입/매출 · 재고','SQ':'품질목표 · 심사 · 부적합 · 4M · 계측기 · 문서/도면 · 추적성','기준정보':'공정 · 부품 · 자재 · 설비 · 업체 · 사용자 · 단가','사용메뉴얼':'시스템 사용 안내'};
+const MOD_DESC={'영업관리':'수주 · 제작계획 · 설계외주 · 조립외주 · 경비','설계관리':'사내설계 · PARTLIST','구매관리':'원재료 · 구매품 · 가공/외주가공','조립관리':'사내조립 · 검사','원가관리':'제조원가 · 매입/매출 · 재고','SQ':'품질목표 · 심사 · 부적합 · 4M · 계측기 · 문서/도면 · 추적성','기준정보':'공정 · 부품 · 자재 · 설비 · 업체 · 사용자 · 단가','사용메뉴얼':'시스템 사용 안내'};
 const HOME={id:'home',title:'홈',file:null,home:true};
 
 let activeModule='', activeId='', prevId='';
@@ -534,9 +534,12 @@ function placeMega(li,mega){
 }
 /* ---------- 메뉴 링크 ---------- */
 function buildSide(){}
+/* v74: 메가메뉴 표시명. 화면 고유키(탭·권한·즐겨찾기)는 그대로 두고 메뉴 글자만 짧게 */
+const MENU_LABEL={'외주설계발주등록':'발주','외주설계발주입고':'입고','외주설계발주현황':'현황',
+  'SET외주제작등록':'발주','SET발주입고':'입고','SET발주현황':'현황'};
 function menuLink(n){
   const p=pageRegistry[n];const on=p&&p.id===activeId;
-  const a=el('a',on?'active':'',`<span>${esc(n)}</span><span class="star ${favs.includes(n)?'on':''}" title="즐겨찾기">★</span>`);
+  const a=el('a',on?'active':'',`<span title="${esc(n)}">${esc(MENU_LABEL[n]||n)}</span><span class="star ${favs.includes(n)?'on':''}" title="즐겨찾기">★</span>`);
   a.href='#';a.dataset.name=n;a.onclick=e=>{e.preventDefault();openByName(n);document.querySelectorAll('.top-menu>li.pin').forEach(x=>x.classList.remove('pin'))};
   a.querySelector('.star').onclick=e=>{e.stopPropagation();e.preventDefault();toggleFav(n)};
   a.onmouseover=()=>{if(p&&p.file)prefetch(p.file+(p.file.includes('?')?'&':'?')+'v='+APP_VER)};
