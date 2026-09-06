@@ -14,6 +14,18 @@ table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th
 @media(max-width:900px){.formrow{grid-template-columns:78px 1fr 78px 1fr}.entrybox,.gridbox,.searchline{margin-left:6px;margin-right:6px}}
 
 .filt{padding:7px 14px;background:#fafbfc;border-bottom:1px solid var(--line2)}
+/* v78: 이 화면에는 .panes/.pane 스타일이 빠져 있어 그리드가 동작하지 않았다 */
+.panes{flex:1;min-height:0;display:grid;gap:8px;padding:0 14px 8px}
+.pane{border:1px solid var(--line);background:#fff;display:flex;flex-direction:column;min-height:0}
+.ph{padding:5px 9px;font-weight:700;background:linear-gradient(var(--head1),var(--head2));color:#405266;border-bottom:1px solid var(--line2)}
+.pb{flex:1;min-height:0;overflow:auto}
+/* 실적등록 입력부 */
+.rform{padding:8px 9px;display:grid;grid-template-columns:74px 1fr;gap:5px;align-items:center;border-top:1px solid var(--line2);background:#f7fafc}
+.rform .field{width:100%}
+.rform .wk{display:grid;grid-template-columns:74px 1fr;gap:4px}
+.rbtns{padding:6px 9px 8px;display:grid;grid-template-columns:1fr 1fr;gap:5px;background:#f7fafc}
+.rbtns .btn{min-width:0;width:100%}
+.rbtns .wide{grid-column:1/3}
 .fr{display:grid;gap:5px;align-items:center}
 .lb{font-weight:700;text-align:right;padding-right:3px}
 .opts{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
@@ -30,7 +42,7 @@ tbody tr.sel .tag{background:transparent;border-color:#cfe2f4;color:#fff}
 @media(max-width:1400px){.formrow{grid-template-columns:78px minmax(0,1fr) 78px minmax(0,1fr)}}
 @media(max-width:880px){.formrow{grid-template-columns:78px minmax(0,1fr)}}
 .formrow>*{min-width:0}
-</style></head><body><div class="screen"><div class="title"><h1>설계실적등록</h1><small>설계관리</small></div><section class="filt"><div class="opts"><label><input type="radio" name="k" value="미완료" checked>미완료</label><label><input type="radio" name="k" value="완료">완료</label><span class="lb" style="width:56px;padding-left:10px;border-left:1px solid #c5d0d8">설계구분</span><label><input type="radio" name="src" value="전체" checked>전체</label><label><input type="radio" name="src" value="사내">사내</label><label><input type="radio" name="src" value="외주">외주</label><span class="lb" style="width:56px">제 번</span><input id="qJob" class="field" style="width:170px"><span class="lb" style="width:56px">품 명</span><input id="qItem" class="field" style="width:170px"></div></section><div class="panes" style="grid-template-rows:1fr 1.2fr"><div class="pane"><div class="ph">제번리스트</div><div class="pb"><table style="min-width:1080px"><thead><tr><th style="width:100px">설계완료여부</th><th style="width:80px">사내/외주</th><th style="width:130px">제번</th><th style="width:200px">품명</th><th style="width:90px">공정코드</th><th style="width:90px">공정명</th><th style="width:130px">설계완료예정일</th><th style="width:110px">T/O 예정일</th><th>고객요구일</th></tr></thead><tbody id="hbody"></tbody></table></div></div><div class="panes" style="grid-template-columns:1fr 340px;grid-template-rows:1fr;padding:0;gap:8px"><div class="pane"><div class="ph">세부공정 리스트</div><div class="pb"><table style="min-width:840px"><thead><tr><th style="width:80px">완료여부</th><th style="width:64px">공정</th><th style="width:110px">가공공정코드</th><th style="width:140px">가공공정명</th><th style="width:110px">완료 예정일</th><th style="width:100px">작업시간(분)</th><th>설계진척(%)</th></tr></thead><tbody id="sbody"></tbody></table></div></div><div class="pane"><div class="ph">실적등록 <span id="srcBadge" style="margin-left:8px;font-weight:400"></span></div><div class="pb"><table style="min-width:0"><thead><tr><th>작업자</th><th style="width:100px">작업일자</th><th style="width:90px">작업시간(분)</th></tr></thead><tbody id="rbody"></tbody></table><div style="padding:8px;display:grid;grid-template-columns:72px 1fr;gap:5px;align-items:center"><div class="lb">작업시간</div><input id="fMin" class="field"><div class="lb">작업일</div><input id="fDate" type="date" class="field"><div class="lb">작업자</div><div style="display:flex;gap:4px"><input id="fWorkerCd" class="field" value="DG" style="max-width:68px"><input id="fWorker" class="field" list="dl_emp" autocomplete="off" placeholder="입력 또는 선택"></div></div><div style="padding:0 8px 8px;display:flex;gap:5px;flex-wrap:wrap"><button class="btn" onclick="addResult()">실적 등록</button><button class="btn" onclick="sampleFill()" title="화면 순서대로 시연하며 등록요점을 설명합니다.">▶ 등록예제</button><button class="btn" onclick="delResult()">실적 삭제</button><button class="btn" onclick="doneStep()">세부공정 완료</button><button class="btn" onclick="doneDesign()">설계 완료</button></div></div></div></div></div><footer class="foot"><button class="btn" onclick="search()">⌕ 검색</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">제번을 선택하고 세부공정을 고른 뒤 실적을 등록하세요.</span></footer></div>
+</style></head><body><div class="screen"><div class="title"><h1>설계실적등록</h1><small>설계관리</small></div><section class="filt"><div class="opts"><label><input type="radio" name="k" value="미완료" checked>미완료</label><label><input type="radio" name="k" value="완료">완료</label><span class="lb" style="width:56px;padding-left:10px;border-left:1px solid #c5d0d8">설계구분</span><label><input type="radio" name="src" value="전체" checked>전체</label><label><input type="radio" name="src" value="사내">사내</label><label><input type="radio" name="src" value="외주">외주</label><span class="lb" style="width:56px">제 번</span><input id="qJob" class="field" style="width:170px"><span class="lb" style="width:56px">품 명</span><input id="qItem" class="field" style="width:170px"></div></section><div class="panes" style="grid-template-rows:1fr 1.2fr"><div class="pane"><div class="ph">제번리스트</div><div class="pb"><table style="min-width:1080px"><thead><tr><th style="width:100px">설계완료여부</th><th style="width:80px">사내/외주</th><th style="width:130px">제번</th><th style="width:200px">품명</th><th style="width:90px">공정코드</th><th style="width:90px">공정명</th><th style="width:130px">설계완료예정일</th><th style="width:110px">T/O 예정일</th><th>고객요구일</th></tr></thead><tbody id="hbody"></tbody></table></div></div><div class="panes" style="grid-template-columns:1fr 340px;grid-template-rows:1fr;padding:0;gap:8px"><div class="pane"><div class="ph">세부공정 리스트</div><div class="pb"><table style="min-width:840px"><thead><tr><th style="width:80px">완료여부</th><th style="width:64px">공정</th><th style="width:110px">가공공정코드</th><th style="width:140px">가공공정명</th><th style="width:110px">완료 예정일</th><th style="width:100px">작업시간(분)</th><th>설계진척(%)</th></tr></thead><tbody id="sbody"></tbody></table></div></div><div class="pane"><div class="ph">실적등록 <span id="srcBadge" style="margin-left:8px;font-weight:400"></span></div><div class="pb"><table style="min-width:0"><thead><tr><th>작업자</th><th style="width:100px">작업일자</th><th style="width:90px">작업시간(분)</th></tr></thead><tbody id="rbody"></tbody></table><div class="rform"><div class="lb">작업시간(분)</div><input id="fMin" class="field" placeholder="예: 240" title="투입 시간을 분 단위로 입력합니다. 240분 = 4시간"><div class="lb">작업일</div><input id="fDate" type="date" class="field"><div class="lb">작업자</div><div class="wk"><input id="fWorkerCd" class="field" placeholder="코드" title="사번/코드"><input id="fWorker" class="field cbo" list="dl_emp" autocomplete="off" placeholder="입력 또는 선택"></div></div><div class="rbtns"><button class="btn wide" onclick="addResult()" style="font-weight:700">＋ 실적 등록</button><button class="btn" onclick="delResult()">－ 실적 삭제</button><button class="btn" onclick="sampleFill()" title="화면 순서대로 시연하며 등록요점을 설명합니다.">▶ 등록예제</button><button class="btn" onclick="doneStep()">✓ 세부공정 완료</button><button class="btn" onclick="doneDesign()">✓ 설계 완료</button></div></div></div></div></div><footer class="foot"><button class="btn" onclick="search()">⌕ 검색</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">제번을 선택하고 세부공정을 고른 뒤 실적을 등록하세요.</span></footer></div>
 <datalist id="dl_emp"></datalist>
 <script>const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const n=v=>v==null?'':Number(v).toLocaleString();const p=v=>v==null?'':Number(v).toFixed(2)+'%';
@@ -98,6 +110,7 @@ async function pickJob(i,tr){
  document.querySelectorAll('#hbody tr').forEach(x=>x.classList.remove('sel'));if(tr)tr.classList.add('sel');
  steps=(selJob._steps||[]).map(s=>({...s,done:!!s.step_completed}));   /* v62: 완료상태 DB 파생 */
  srcBadge.innerHTML=`${esc(selJob.job_no)} ${tag(selJob.src)}`;
+ qItem.value=selJob.item_name||'';   /* v78: 제번 선택 시 품명 자동 */
  await loadResults();renderSteps();
  msg(`${selJob.job_no} (${selJob.src}설계) · 세부공정 ${steps.length}건 · 실적 ${results.length}건`);
 }
@@ -156,14 +169,21 @@ async function doneDesign(){
 document.querySelectorAll('input[name=k],input[name=src]').forEach(x=>x.addEventListener('change',search));
 fDate.value=new Date().toISOString().slice(0,10);
 window.MES={search,save:addResult,setMessage:msg};
-search();</script><script src="mes_sample.js?v=68"></script><script src="mes_scene.js?v=68"></script><script src="mes_demo.js?v=68"></script><script src="mes_db.js?v=68"></script>
-<script src="mes_lookup.js?v=68"></script>
+search();</script><script src="mes_sample.js?v=78"></script><script src="mes_scene.js?v=78"></script><script src="mes_demo.js?v=78"></script><script src="mes_db.js?v=78"></script>
+<script src="mes_lookup.js?v=78"></script>
 <script>
 /* v68: 작업자 목록 — 기준정보 사용자정보(사용중 계정) */
 (async function(){try{if(MESDB.ready)await MESDB.ready;const rs=await MESLOOK.rows('employee');
  dl_emp.innerHTML=rs.map(r=>`<option value="${esc(r.name)}">${esc(r.department_name||'')}</option>`).join('')}catch(e){}})();
+/* v78: 작업자 기본값 = 로그인 사용자 (예전 하드코딩 'DG' 제거) */
+(function(){try{const a=window.MES_AUTH||window.parent.MES_AUTH;if(!a)return;
+ const em=a.session&&a.session.user&&a.session.user.email;
+ const nm=a.name||a.user_name||(em?String(em).split('@')[0]:'');
+ if(nm&&!fWorker.value)fWorker.value=nm;
+ if(!fWorkerCd.value)fWorkerCd.value=(em?String(em).split('@')[0]:'')||'';
+}catch(e){}})();
 </script>
-<script src="mes_ctx.js?v=68"></script>
+<script src="mes_ctx.js?v=78"></script>
 <script>
 function sampleFill(){
   if(window.MESDEMO)return MESDEMO.run('design_result_input',{});
