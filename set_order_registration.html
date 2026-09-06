@@ -59,9 +59,28 @@ function renderP(){const q=pq.value.trim().toLowerCase();
 function pickP(v){pv=v;renderP();msg(`협력업체: ${v}`)}
 
 async function pick(i,tr){sel=view[i];document.querySelectorAll('#hbody tr').forEach(x=>x.classList.remove('sel'));tr.classList.add('sel');
- mbody.innerHTML='<tr><td class="c"><input type="checkbox" checked></td><td>A</td><td>1/1</td></tr>';
+ renderSeq();
  await loadDets();
- msg(`${sel.job_no} · 발주 ${dets.length}건`);}
+ msg(`${sel.job_no} · 조수 ${SEQ.length}조 · 발주 ${dets.length}건`);}
+/* v73: 조수 공정 매칭 리스트 — 제번의 공정(조)수만큼 A,B,C… 로 전개한다.
+   (v72 까지는 'A / 1/1' 한 줄이 하드코딩돼 3조짜리도 1조분만 발주됐다) */
+let SEQ=[];
+const seqCode=i=>{let s='',n=i;do{s=String.fromCharCode(65+n%26)+s;n=Math.floor(n/26)-1}while(n>=0);return s};
+function renderSeq(){
+ const q=Math.max(1,Math.trunc(Number(sel&&sel.set_qty)||1));
+ SEQ=Array.from({length:q},(_,i)=>({code:seqCode(i),name:`${i+1}/${q}`}));
+ mbody.innerHTML=SEQ.map((x,i)=>`<tr onclick="pickSeq(${i})" class="${i===0?'sel':''}">`
+  +`<td class="c"><input type="radio" name="seqpick" ${i===0?'checked':''}></td>`
+  +`<td>${x.code}</td><td>${x.name}</td></tr>`).join('');
+ if(SEQ.length)pickSeq(0,true);
+}
+function pickSeq(i,quiet){
+ const x=SEQ[i];if(!x)return;
+ document.querySelectorAll('#mbody tr').forEach((tr,k)=>{tr.classList.toggle('sel',k===i);
+  const r=tr.querySelector('input');if(r)r.checked=(k===i)});
+ fSeq.value=x.code;fProc.value=x.name;
+ if(!quiet)msg(`조수 ${x.code} (${x.name}) 선택`);
+}
 
 /* 제번리스트 = 수주에서 직접 (뷰 set_order_job_pool) — 수주등록만 하면 여기 나타남 */
 /* v39: SET 협력업체를 마스터에서 로드 (화면 하드코딩과 DB 가 어긋나던 문제) */
@@ -89,8 +108,12 @@ async function loadDets(){
   try{dets=await MESDB.table(TBL).select(`select=*&job_no=eq.${encodeURIComponent(sel.job_no)}&order=line_id`)}
   catch(e){msg('조회 실패: '+String(e.message||e).slice(0,110))}
  }
- renderD();
+ renderD();markSeq();
 }
+/* 이미 발주된 조수는 리스트에서 회색 처리 */
+function markSeq(){document.querySelectorAll('#mbody tr').forEach((tr,i)=>{const x=SEQ[i];if(!x)return;
+ const used=dets.some(d=>d.set_seq===x.code);tr.style.color=used?'#8a97a2':'';
+ tr.title=used?'이미 발주된 조수입니다':''});}
 function renderD(){
  dbody.innerHTML=dets.length?dets.map(d=>{
   const done=d.status!=='발주';
