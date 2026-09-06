@@ -316,16 +316,19 @@ SCENE['set_order_registration']=function(){
   ];
 };
 
+/* v77: 조립외주입고 — 설계외주입고와 같은 진척률·이력 방식 */
 SCENE['set_order_receipt']=function(){
   return [
-   {id:'q_job', value:'', label:'제 번', tip:'입고 처리할 제번을 찾습니다.'},
-   {act:'click', sel:BTN('search'), label:'검색', tip:'SET 발주된 제번이 나옵니다.'},
-   {act:'click', sel:'#hbody tr', label:'제번 선택',
-    tip:'그 제번의 SET 발주 내역이 아래에 펼쳐집니다.'},
-   {act:'check', sel:'#dbody input[type=checkbox]', n:1, label:'입고 대상 선택',
-    tip:'납품된 SET에 체크합니다.'},
+   {act:'click', sel:BTN('search'), label:'조회', tip:'조립외주 발주 중 아직 입고되지 않은 건이 나옵니다. (미입고만 체크 상태)'},
+   {act:'click', sel:'#ordBody tr', label:'발주 선택',
+    tip:'입고할 발주 행을 클릭하면 아래 <b>입고 등록</b>에 제번·조수·업체·네고가가 채워지고, 오른쪽에 그 발주의 입고 이력이 나옵니다.'},
+   {id:'fDate', value:D(0), label:'입고일', tip:'SET을 실제로 받은 날.'},
+   {id:'fRate', value:'100', label:'진척률(%)',
+    tip:'부분 납품이면 50, 70 처럼 나눠 여러 번 처리합니다. <b>100%가 되면 입고완료</b>로 바뀌고 제조원가의 SET외주비에 잡힙니다.'},
+   {id:'fAmt', value:'', label:'입고금액', tip:'이번 회차 금액. 네고가에서 이미 입고된 금액을 뺀 값이 자동으로 들어옵니다.'},
+   {id:'fInsp', value:'', label:'검수자', tip:'검수한 사람. 비우면 로그인 사용자.'},
    {act:'note', sel:BTN('receive'), label:'입고처리',
-    tip:'<b>[▣ 입고처리]</b>로 입고를 확정합니다. 잘못했으면 <b>[↶ 입고취소]</b>로 되돌리세요.'}
+    tip:'<b>[▣ 입고처리]</b>로 기록합니다. 잘못했으면 이력에서 체크 → <b>[↶ 입고취소]</b>로 되돌리세요.'}
   ];
 };
 
