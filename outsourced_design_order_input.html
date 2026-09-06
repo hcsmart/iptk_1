@@ -18,6 +18,11 @@
 .btn{height:28px;min-width:70px;border:1px solid #9ca9b5;background:linear-gradient(#fff,#dfe6eb)}.btn:hover{background:#fff}.btn.primary{background:linear-gradient(#f9ffff,#d2e7f6);color:#1e5e91}
 .foot{height:42px;display:flex;align-items:center;padding:5px 14px;border-top:1px solid var(--line);background:#eef2f5;gap:5px}.msg{margin-left:10px;color:#687784}.foot .right{margin-left:auto;color:#7c8993}
 input.cell{width:100%;height:20px;border:1px solid #cbd4dc;padding:0 3px;text-align:right}
+.reqbar{display:flex;gap:4px;padding:5px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--line2);background:#f6f8fa}
+.reqbar .lb{font-weight:700;white-space:nowrap;margin-left:4px}
+#ordBody tr.req td{background:#fff8ee!important;color:#5a4a35!important}
+#ordBody tr.req.sel td{background:#fbe6c8!important;color:#7a3f10!important;font-weight:700}
+.num{text-align:right}
 @media(max-width:900px){.top,.bottom{grid-template-columns:1fr;height:auto}.title h1{font-size:18px}}
 </style>
 </head>
@@ -25,10 +30,10 @@ input.cell{width:100%;height:20px;border:1px solid #cbd4dc;padding:0 3px;text-al
 <div class="screen">
   <div class="title"><h1>설계외주발주</h1><small>영업관리 · 설계외주</small></div>
   <section class="filters">
-    <span class="label">제 번</span><input id="jobQ" class="field" style="width:260px" placeholder="제번">
+    <span class="label">제 번</span><input id="jobQ" class="field cbo" list="dl_job" autocomplete="off" style="width:260px" placeholder="제번 입력/선택 (제작계획 등록분)" title="제작계획이 등록된 제번 목록입니다. 글자를 입력하면 걸러집니다.">
     <span class="label">품 명</span><input id="itemQ" class="field" style="width:260px" placeholder="품명">
     <button class="btn" onclick="search()">⌕ 조회</button>
-  </section>
+  </section><datalist id="dl_job"></datalist>
   <section class="top">
     <div class="box"><div class="box-title">제번리스트</div><div class="tablewrap"><table>
       <colgroup><col style="width:38px"><col style="width:22%"><col style="width:24%"><col style="width:18%"><col style="width:18%"><col style="width:18%"></colgroup>
@@ -37,14 +42,15 @@ input.cell{width:100%;height:20px;border:1px solid #cbd4dc;padding:0 3px;text-al
       <colgroup><col style="width:38px"><col style="width:50%"><col style="width:45%"></colgroup>
       <thead><tr><th></th><th>공정코드</th><th>공정명</th></tr></thead><tbody id="poolBody"></tbody></table></div></div>
   </section>
-  <div class="movebar"><button class="btn" onclick="addRow()">⬇ 발주추가</button><button class="btn" onclick="delRow()">⬆ 발주삭제</button></div>
-  <section class="bottom">
+    <section class="bottom">
     <div class="box"><div class="box-title">협력업체리스트</div>
       <div class="searchbar"><input id="venQ" placeholder="Enter text to search"><button onclick="findVendor()">찾기</button><button onclick="clearVendor()">지우기</button></div>
       <div class="tablewrap"><table><thead><tr><th style="width:36px"><input type="checkbox" id="venAll" onclick="toggleAllVendors(this.checked)" title="전체 선택/해제"></th><th>협력업체</th></tr></thead><tbody id="venBody"></tbody></table></div></div>
-    <div class="box"><div class="box-title">조수공정 리스트</div><div class="tablewrap"><table>
-      <colgroup><col style="width:38px"><col style="width:36px"><col style="width:16%"><col style="width:8%"><col style="width:10%"><col style="width:13%"><col style="width:13%"><col style="width:13%"><col style="width:13%"><col style="width:10%"></colgroup>
-      <thead><tr><th>No</th><th></th><th>협력업체</th><th>공정</th><th>공정명</th><th>발주일</th><th>입고예정일</th><th>견적가</th><th>네고가</th><th>작성자</th></tr></thead>
+    <div class="box"><div class="box-title">조수공정 리스트</div>
+      <div class="reqbar"><span class="lb">조수</span><input id="fSeq" class="field" style="width:70px" readonly title="공정(조)수 대기 리스트에서 체크한 조수"><span class="lb">공정명</span><input id="fProc" class="field" style="width:70px" readonly><span class="lb">발주일</span><input id="fOdate" class="field" type="date" style="width:140px"><span class="lb">입고요구일</span><input id="fRdate" class="field" type="date" style="width:140px"><span class="lb">견적가</span><input id="fQuote" class="field" style="width:110px" placeholder="0" title="비우면 공정단가에서 자동 조회"><span class="lb">네고가</span><input id="fNego" class="field" style="width:110px" placeholder="0"><button class="btn" onclick="addRow()" title="체크한 조수 × 체크한 협력업체를 요청 리스트에 담습니다">⬇ 요청추가</button><button class="btn" onclick="delRow()" title="아직 저장하지 않은 요청행을 뺍니다">⬆ 요청삭제</button></div>
+      <div class="tablewrap"><table>
+      <colgroup><col style="width:38px"><col style="width:36px"><col style="width:15%"><col style="width:7%"><col style="width:8%"><col style="width:11%"><col style="width:11%"><col style="width:12%"><col style="width:12%"><col style="width:9%"><col></colgroup>
+      <thead><tr><th>No</th><th></th><th>협력업체</th><th>조수</th><th>공정명</th><th>발주일</th><th>입고요구일</th><th>견적가</th><th>네고가</th><th>작성자</th><th>상태</th></tr></thead>
       <tbody id="ordBody"></tbody></table></div></div>
   </section>
   <footer class="foot"><button class="btn" onclick="search()">⌕ 검색</button><button class="btn primary" onclick="save()">▣ 발주등록</button><button class="btn" onclick="sampleFill()" title="화면 순서대로 시연하며 등록요점을 설명합니다.">▶ 등록예제</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">제번과 공정, 협력업체를 선택해 외주설계 발주를 등록합니다.</span><span class="right" id="countText"></span></footer>
@@ -67,7 +73,11 @@ const ORD=[];
 let jobIdx=0,venIdx=0,jobView=[...JOBS],venView=[...VENDORS];
 const money=v=>Number(v||0).toLocaleString('ko-KR');
 function renderJobs(){jobBody.innerHTML=jobView.map((j,i)=>`<tr class="${i===jobIdx?'sel':''}" onclick="pickJob(${i})"><td class="c">${i===jobIdx?'▶':''}</td><td>${j.job}</td><td>${j.item}</td><td class="c">${j.due}</td><td class="c">${j.s1}</td><td class="c">${j.cust}</td></tr>`).join('');countText.textContent=`제번 ${jobView.length}건 / 발주 ${ORD.length}건`}
-function renderPool(){poolBody.innerHTML=POOL.map((p,i)=>`<tr><td class="c"><input type="checkbox" data-i="${i}" ${i===0?'checked':''}></td><td class="c">${p.proc}</td><td class="c">${p.procName}</td></tr>`).join('')}
+function renderPool(){poolBody.innerHTML=POOL.map((p,i)=>`<tr onclick="togglePool(${i})"><td class="c"><input type="checkbox" data-i="${i}" ${i===0?'checked':''} onclick="event.stopPropagation();syncPool()"></td><td class="c">${p.proc}</td><td class="c">${p.procName}</td></tr>`).join('');syncPool()}
+function togglePool(i){const cb=poolBody.querySelector(`input[data-i="${i}"]`);if(cb){cb.checked=!cb.checked;syncPool()}}
+function pickedPool(){return [...poolBody.querySelectorAll('input:checked')].map(x=>POOL[Number(x.dataset.i)]).filter(Boolean)}
+function syncPool(){const ps=pickedPool();
+ if(typeof fSeq!=='undefined'){fSeq.value=ps.map(x=>x.proc).join(',');fProc.value=ps.length===1?ps[0].procName:(ps.length?`${ps.length}조`:'')}}
 /* v76: 협력업체는 체크박스로 고른다. 어느 업체에 나가는 발주인지 눈으로 확인하고 담게 한다 */
 const VENSEL=new Set();window.MESVENSEL=VENSEL;   /* mes_ctx 의 업체 자동선택이 체크까지 맞출 수 있게 공개 */
 function renderVendors(){venBody.innerHTML=venView.map((v,i)=>`<tr class="${VENSEL.has(v)?'sel':''}" onclick="pickVendor(${i})"><td class="c"><input type="checkbox" data-v="${i}" ${VENSEL.has(v)?'checked':''} onclick="event.stopPropagation();pickVendor(${i})"></td><td>${v}</td></tr>`).join('');
@@ -75,7 +85,10 @@ function renderVendors(){venBody.innerHTML=venView.map((v,i)=>`<tr class="${VENS
 function pickedVendors(){return venView.filter(v=>VENSEL.has(v))}
 function toggleAllVendors(on){venView.forEach(v=>on?VENSEL.add(v):VENSEL.delete(v));renderVendors();
  msg(on?`협력업체 ${venView.length}개를 모두 선택했습니다.`:'협력업체 선택을 해제했습니다.');}
-function renderOrd(){ordBody.innerHTML=ORD.map((r,i)=>`<tr><td class="c">${i+1}</td><td class="c"><input type="checkbox" data-no="${r.no}"></td><td>${r.vendor}</td><td class="c">${r.proc}</td><td class="c">${r.procName}</td><td class="c">${r.odate}</td><td class="c"><input class="cell" type="date" value="${r.edate}" onchange="setVal(${r.no},'edate',this.value)"></td><td><input class="cell" value="${r.quote}" onchange="setVal(${r.no},'quote',Number(this.value)||0)"></td><td><input class="cell" value="${r.nego}" onchange="setVal(${r.no},'nego',Number(this.value)||0)"></td><td class="c">${r.writer}</td></tr>`).join('');countText.textContent=`제번 ${jobView.length}건 / 발주 ${ORD.length}건`}
+function renderOrd(){ordBody.innerHTML=ORD.length?ORD.map((r,i)=>`<tr class="req" onclick="pickOrd(this)"><td class="c">${i+1}</td><td class="c"><input type="checkbox" data-no="${r.no}" onclick="event.stopPropagation()"></td><td>${r.vendor}</td><td class="c">${r.proc}</td><td class="c">${r.procName}</td><td class="c">${r.odate}</td><td class="c">${r.edate||''}</td><td class="num">${money(r.quote)}</td><td class="num">${money(r.nego)}</td><td class="c">${r.writer||''}</td><td class="c" style="font-weight:700">요청 (미저장)</td></tr>`).join('')
+ :`<tr><td colspan="11" class="c" style="height:70px;color:#8a97a2">${jobView[jobIdx]?'조수와 협력업체를 체크하고 [⬇ 요청추가] → [▣ 발주등록] 하세요.':'제번을 선택하세요.'}</td></tr>`;
+ countText.textContent=`제번 ${jobView.length}건 / 요청 ${ORD.length}건`}
+function pickOrd(tr){document.querySelectorAll('#ordBody tr').forEach(x=>x.classList.remove('sel'));tr.classList.add('sel');const cb=tr.querySelector('input[type=checkbox]');if(cb)cb.checked=!cb.checked}
 function setVal(no,k,v){const r=ORD.find(x=>x.no===no);if(r){r[k]=v;msg(`${r.vendor} ${r.proc} 항목을 수정했습니다.`)}}
 /* v76: 제번을 바꾸면 저장 전 발주행은 비운다.
    ORD 는 page_state 스냅샷으로 남아 있어, 그대로 두면 다른 제번으로 발주가 나간다. */
@@ -93,17 +106,36 @@ function pickVendor(i){const v=venView[i];if(v==null)return;
  msg(ps.length?`협력업체 ${ps.length}개 선택: ${ps.join(', ')}`:'협력업체 선택 없음');}
 function findVendor(){const q=venQ.value.trim().toLowerCase();venView=VENDORS.filter(v=>!q||v.toLowerCase().includes(q));venIdx=0;renderVendors()}   /* 선택(VENSEL)은 검색해도 유지된다 */
 function clearVendor(){venQ.value='';venView=[...VENDORS];venIdx=0;renderVendors()}
-function search(){const j=jobQ.value.trim().toLowerCase(),it=itemQ.value.trim().toLowerCase();jobView=JOBS.filter(x=>(!j||x.job.toLowerCase().includes(j))&&(!it||(x.item||'').toLowerCase().includes(it)));jobIdx=0;renderJobs();msg(`제번 ${jobView.length}건을 조회했습니다.`)}
-async function addRow(){const picks=[...poolBody.querySelectorAll('input:checked')].map(x=>POOL[Number(x.dataset.i)]);if(!picks.length)return msg('대기 리스트에서 공정을 선택하세요.');
+function search(){const j=jobQ.value.trim().toLowerCase(),it=itemQ.value.trim().toLowerCase();
+ jobView=JOBS.filter(x=>(!j||x.job.toLowerCase().includes(j))&&(!it||(x.item||'').toLowerCase().includes(it)));
+ const exact=j?jobView.findIndex(x=>x.job.toLowerCase()===j):-1;
+ if(!jobView.length){jobIdx=-1;renderJobs();return msg(`'${jobQ.value.trim()}' 에 해당하는 제번이 없습니다.`)}
+ pickJob(exact>=0?exact:0);msg(`제번 ${jobView.length}건`+(exact>=0?` — ${jobView[exact].job} 선택`:''));}
+/* v77: 제번 콤보 — 제작계획등록된 제번을 목록으로 (입력하면 걸러짐). 고르면 바로 그 제번을 선택한다 */
+async function loadJobList(){
+ if(!online())return;
+ try{const ps=await MESDB.table('sales_plans').select('select=job_no,item_name,design_outsourced,design_vendor&order=job_no');
+  const esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const dl=document.getElementById('dl_job');if(!dl)return;
+  dl.innerHTML=ps.map(r=>`<option value="${esc(r.job_no)}">${esc((r.design_outsourced===true?'설계외주'+(r.design_vendor?' · '+r.design_vendor:''):'설계사내')+(r.item_name?' · '+r.item_name:''))}</option>`).join('');
+ }catch(e){}
+}
+jobQ.addEventListener('change',()=>search());
+const numv=v=>{const x=Number(String(v??'').replace(/[^0-9.-]/g,''));return Number.isNaN(x)?0:x};
+async function addRow(){const picks=pickedPool();if(!picks.length)return msg('공정(조)수 대기 리스트에서 조수를 체크하세요.');
  const vens=pickedVendors();
  if(!vens.length)return msg('협력업체리스트에서 발주할 업체를 체크하세요.');
- let dup=0;
+ const quote=numv(fQuote.value),nego=numv(fNego.value)||quote;
+ if(nego>quote&&quote>0)return msg('네고가는 견적가를 넘을 수 없습니다.');
+ const odate=fOdate.value||new Date().toISOString().slice(0,10),edate=fRdate.value||'';
+ let dup=0,added=0;
  for(const v of vens)for(const p of picks){
   if(ORD.some(r=>r.vendor===v&&r.proc===p.proc)){dup++;continue}
   ORD.push({no:ORD.length?Math.max(...ORD.map(r=>r.no))+1:1,vendor:v,proc:p.proc,procName:p.procName,
-   odate:new Date().toISOString().slice(0,10),edate:'',quote:0,nego:0,writer:OWNER()});
+   odate,edate,quote,nego,writer:OWNER()});added++;
  }
- if(dup)msg(`이미 담긴 업체·공정 ${dup}건은 제외했습니다.`);
+ if(!added){renderOrd();return msg(dup?'이미 담긴 업체·조수입니다.':'담을 항목이 없습니다.')}
+ if(dup)msg(`이미 담긴 업체·조수 ${dup}건은 제외했습니다.`);
  /* v39: 설계 공정단가를 자동 조회해 견적가를 채운다 (0이면 제조원가 외주설계비가 0) */
  if(window.MESPRICE){
   for(const r of ORD){
@@ -116,9 +148,9 @@ async function addRow(){const picks=[...poolBody.querySelectorAll('input:checked
  renderOrd();
  const tot=ORD.reduce((a,r)=>a+(Number(r.nego)||Number(r.quote)||0),0);
  const noPrice=ORD.filter(r=>!Number(r.quote)).length;
- msg(`${picks.length}건을 조수공정 리스트에 추가했습니다. 발주금액 합계 ${tot.toLocaleString('ko-KR')}원`+
-  (noPrice?` (단가 미등록 ${noPrice}건 - 공정단가변동등록 확인)`:''));}
-function delRow(){const ids=[...ordBody.querySelectorAll('input:checked')].map(x=>Number(x.dataset.no));if(!ids.length)return msg('삭제할 발주 행을 선택하세요.');for(let i=ORD.length-1;i>=0;i--)if(ids.includes(ORD[i].no))ORD.splice(i,1);renderOrd();msg(`${ids.length}건을 삭제했습니다.`)}
+ msg(`요청 리스트에 ${added}건 담았습니다. 네고가 합계 ${tot.toLocaleString('ko-KR')}원`+
+  (noPrice?` (단가 미등록 ${noPrice}건 - 공정단가변동등록 확인)`:'')+' — [▣ 발주등록]을 눌러야 발주됩니다.');}
+function delRow(){const ids=[...ordBody.querySelectorAll('input:checked')].map(x=>Number(x.dataset.no));if(!ids.length)return msg('요청 리스트에서 뺄 행을 체크하세요.');for(let i=ORD.length-1;i>=0;i--)if(ids.includes(ORD[i].no))ORD.splice(i,1);renderOrd();msg(`${ids.length}건을 요청 리스트에서 뺐습니다.`)}
 /* v30: 프로토타입 스텁 → order_lines(외주설계) 실제 기록 */
 const online=()=>!!(window.MESDB&&MESDB.online);
 async function save(){
@@ -184,7 +216,7 @@ async function loadPool(){
 }
 function exportCsv(){const out=[['제번','협력업체','공정','공정명','발주일','입고예정일','견적가','네고가','작성자'],...ORD.map(r=>[jobView[jobIdx]?.job||'',r.vendor,r.proc,r.procName,r.odate,r.edate,r.quote,r.nego,r.writer])];const csv='\ufeff'+out.map(a=>a.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='outsourced_design_order_input.csv';a.click();URL.revokeObjectURL(a.href)}
 function msg(t){message.textContent=t}
-renderJobs();renderPool();renderVendors();renderOrd();window.MES={search,save,exportCsv,setMessage:msg,reload:loadJobs};loadJobs();
+renderJobs();renderPool();renderVendors();renderOrd();window.MES={search,save,exportCsv,setMessage:msg,reload:loadJobs};loadJobs().then(loadJobList);
 </script>
 <script src="mes_sample.js?v=74"></script><script src="mes_scene.js?v=74"></script><script src="mes_demo.js?v=74"></script><script src="mes_db.js?v=74"></script>
 <script>/* v76: ORD 는 저장 전 임시 목록이라 page_state 스냅샷에서 뺀다.

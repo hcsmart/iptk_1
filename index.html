@@ -217,7 +217,7 @@ input,select{font:inherit}
 </div>
 
 <script>
-const APP_VER='76';
+const APP_VER='77';
 const APP={
   '영업관리':{
     secondary:[
@@ -228,7 +228,7 @@ const APP={
       {name:'경비',icon:'▤'}
     ],
     menus:{
-      '수주':[{name:'수주',items:['수주등록','수주현황','현황판','금형진척현황']}],
+      '수주':[{name:'수주',items:['수주등록','수주현황','금형진척현황']}],
       '제작계획':[{name:'제작계획',items:['제작계획등록','제작계획현황']}],
       /* v73: 일평기연은 외주 발주를 영업에서 관리한다. 제작계획에서 사내/외주를 정한 뒤 여기서 발주·입고 */
       '설계외주':[{name:'설계외주',items:['외주설계발주등록','외주설계발주입고','외주설계발주현황']}],
@@ -390,7 +390,6 @@ const pageRegistry={
 '수주등록':{id:'sale_order_input',file:'sale_order_input.html',title:'수주등록'},
 '수주현황':{id:'sale_order_status',file:'sale_order_status.html',title:'수주현황'},
 '제작계획등록':{id:'sales_plan_input',file:'sales_plan_input.html',title:'제작계획등록'},
-'현황판':{id:'status_board',file:'status_board.html',title:'수주현황판'},
 '금형진척현황':{id:'job_progress_board',file:'job_progress_board.html',title:'수주진척현황'},
 '제작계획현황':{id:'sales_plan_status',file:'sales_plan_status.html',title:'제작진행현황'},
 'SET발주현황':{id:'set_order_status',file:'set_order_status.html',title:'조립외주현황'},
@@ -536,7 +535,7 @@ function placeMega(li,mega){
 function buildSide(){}
 /* v74: 메가메뉴 표시명. 화면 고유키(탭·권한·즐겨찾기)는 그대로 두고 메뉴 글자만 짧게 */
 const MENU_LABEL={
-  '수주등록':'수주등록','수주현황':'수주현황','현황판':'수주현황판','금형진척현황':'수주진척현황',
+  '수주등록':'수주등록','수주현황':'수주현황','금형진척현황':'수주진척현황',
   '제작계획등록':'제작계획등록','제작계획현황':'제작진행현황',
   '외주설계발주등록':'설계외주발주','외주설계발주입고':'설계외주입고','외주설계발주현황':'설계외주현황',
   'SET외주제작등록':'조립외주발주','SET발주입고':'조립외주입고','SET발주현황':'조립외주현황',
@@ -664,7 +663,7 @@ function renderStage(){
 /* ---------- 홈 ---------- */
 function homeHTML(){
   const mods=visibleModules().filter(m=>m!=='사용메뉴얼');
-  const quick=['금형진척현황','수주등록','수주현황','현황판','제작계획등록','설계계획등록','가공계획등록','구매품 발주','조립실적등록'];
+  const quick=['금형진척현황','수주등록','수주현황','제작계획등록','설계계획등록','가공계획등록','구매품 발주','조립실적등록'];
   return `<div class="home">
   <div class="card" style="grid-column:span 8"><h3>업무 모듈 <span>상단 메뉴에 마우스를 올리면 세부 메뉴가 열립니다</span></h3>
    <div class="modcard">${mods.map(m=>`<button onclick="pinModule('${m}')"><b>${MOD_ICON[m]||'▪'} ${esc(m)}</b><small>${esc(MOD_DESC[m]||'')}</small></button>`).join('')}</div></div>
