@@ -217,7 +217,7 @@ input,select{font:inherit}
 </div>
 
 <script>
-const APP_VER='74';
+const APP_VER='75';
 const APP={
   '영업관리':{
     secondary:[
@@ -535,8 +535,12 @@ function placeMega(li,mega){
 /* ---------- 메뉴 링크 ---------- */
 function buildSide(){}
 /* v74: 메가메뉴 표시명. 화면 고유키(탭·권한·즐겨찾기)는 그대로 두고 메뉴 글자만 짧게 */
-const MENU_LABEL={'외주설계발주등록':'발주','외주설계발주입고':'입고','외주설계발주현황':'현황',
-  'SET외주제작등록':'발주','SET발주입고':'입고','SET발주현황':'현황'};
+const MENU_LABEL={
+  '수주등록':'등록','수주현황':'현황','현황판':'현황판','금형진척현황':'진척현황',
+  '제작계획등록':'등록','제작계획현황':'현황',
+  '외주설계발주등록':'발주','외주설계발주입고':'입고','외주설계발주현황':'현황',
+  'SET외주제작등록':'발주','SET발주입고':'입고','SET발주현황':'현황',
+  '경비등록':'등록','경비현황':'현황'};
 function menuLink(n){
   const p=pageRegistry[n];const on=p&&p.id===activeId;
   const a=el('a',on?'active':'',`<span title="${esc(n)}">${esc(MENU_LABEL[n]||n)}</span><span class="star ${favs.includes(n)?'on':''}" title="즐겨찾기">★</span>`);
