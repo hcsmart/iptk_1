@@ -112,16 +112,22 @@ async function rest_(path,opt={}){
     throw new Error(msg);
   }
   const t=await r.text();return t?JSON.parse(t):null}
+/* v72: 쓰기가 끝나면 해당 테이블 변경을 자동으로 알린다.
+ * 화면마다 MESDB.notify() 를 직접 부르게 했더니 빠뜨린 화면이 많아
+ * (예: 외주설계 입고 → 금형진척현황이 5분 뒤에야 갱신) 여기서 일괄 처리한다.
+ * 화면이 직접 부르는 notify 와 겹쳐도 무해하다. */
+const autoNotify=(name,p)=>p.then(r=>{try{window.MESDB.notify&&window.MESDB.notify([name])}catch(e){}return r});
 const table=name=>({
   select:(q='select=*')=>rest(`${name}?${q}`),
   upsert:(rows,onConflict)=>{const a=Array.isArray(rows)?rows:[rows];const keys=[];for(const r of a)for(const k in r)if(!keys.includes(k))keys.push(k);
     const norm=a.map(r=>{const o={};for(const k of keys)o[k]=(r[k]===undefined?null:r[k]);return o});
-    return rest(`${name}${onConflict?'?on_conflict='+onConflict:''}`,{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(norm)})},
-  delete:(match)=>rest(`${name}?`+Object.entries(match).map(([k,v])=>`${k}=eq.${encodeURIComponent(v)}`).join('&'),{method:'DELETE',headers:{'Prefer':'return=minimal'}}),
+    return autoNotify(name,rest(`${name}${onConflict?'?on_conflict='+onConflict:''}`,{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(norm)}))},
+  delete:(match)=>autoNotify(name,rest(`${name}?`+Object.entries(match).map(([k,v])=>`${k}=eq.${encodeURIComponent(v)}`).join('&'),{method:'DELETE',headers:{'Prefer':'return=minimal'}})),
   /* v39: identity 채번 컬럼을 DB에 맡기고 생성된 행을 돌려받는다.
      (화면에서 max+1 로 직접 채번하면 동시 저장 시 PK 가 충돌한다) */
   insertOne:async(row)=>{const r=await rest(`${name}?select=*`,{method:'POST',
     headers:{'Prefer':'return=representation'},body:JSON.stringify([row])});
+    try{window.MESDB.notify&&window.MESDB.notify([name])}catch(e){}
     return Array.isArray(r)?r[0]:r}
 });
 let page=null,getter=null,last='',timer=null,online=false;
@@ -292,6 +298,7 @@ async function master(opt){
     for(const r of cur){const k=key(r);if(!k)continue;if(snap.get(k)!==JSON.stringify(r))up.push(r)}
     for(const k of snap.keys())if(!curKeys.has(k))del.push(k);
     if(!up.length&&!del.length)return;
+    selfAt=Date.now();                                     /* v72: 자동 통지가 자기 화면을 되읽지 않게 */
     try{
       const fresh=up.filter(r=>!snap.has(key(r)));
       const renamed=fresh.length?await renumber(fresh):[];
@@ -314,6 +321,7 @@ async function master(opt){
       /* v60: 기준정보에서 바꾼 내용을 다른 화면의 조회 팝업 캐시에 알린다 */
       selfAt=Date.now();
       try{window.MESDB.notify&&window.MESDB.notify([opt.table])}catch(e){}
+      selfAt=Date.now();
     }catch(e){badge('DB 반영 실패','#c62828');console.warn('MESDB.master',e.message);
       if(window.MES?.setMessage)window.MES.setMessage('DB 반영 실패: '+e.message.slice(0,120));
       /* v55: 삭제가 거부된 행(FK 등)은 DB 에서 다시 읽어 화면과 맞춘다 */
