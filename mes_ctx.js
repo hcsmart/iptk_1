@@ -664,36 +664,46 @@ window.MESCTX={confirm:dlgConfirm};
  hook();setTimeout(hook,300);setTimeout(hook,1500);
 })();
 
-/* ── v72: 입력칸 배치 편집 (전 화면 공용) ──────────────────────────────
- * 입력칸을 0.6초 길게 누르면 편집모드가 된다.
- *   · 오른쪽 주황 핸들 드래그  = 폭 조절
- *   · 칸 자체를 드래그해 다른 칸 위에 놓기 = 같은 그리드 안에서 자리 바꿈 (항목명과 함께 이동)
- * 바꾼 배치는 ui_layout(user_key='*') 에 저장되어 전 사용자 화면에 공통 적용된다.
- * (다른 사용자가 열어둔 화면도 DB 변경 알림을 받아 즉시 따라온다)
+/* ── v72→v81: 배치 편집 (전 화면 공용) ────────────────────────────────
+ * 마스터가 입력칸 또는 리스트제목(패널 머리글)을 0.6초 길게 누르면 편집모드.
+ *   [입력칸]     오른쪽 주황 핸들 = 폭 · 칸 드래그해 다른 칸에 놓기 = 자리 바꿈
+ *   [리스트제목] 오른쪽 핸들 = 폭 · 아래쪽 핸들 = 높이 · 제목 드래그해 다른
+ *                제목에 놓기 = 같은 부모 안에서 블록끼리 자리 바꿈
+ *   폭·높이는 모두 5px 단위로 맞춰진다.
+ * 바꾼 배치는 ui_layout(user_key='*') 에 저장되어 전 사용자에게 적용된다.
  * 편집은 마스터(role='master')만 가능. 일반 사용자는 적용만 받는다. */
 (function(){
  const PAGE=(location.pathname.split('/').pop()||'').replace(/\.html?$/,'');
  if(!PAGE||PAGE==='index')return;
+ const SNAP=5,snap=v=>Math.round(v/SNAP)*SNAP;
  const st=document.createElement('style');
  st.textContent=`
  body.mes-le-on input:not([type=checkbox]):not([type=radio]),body.mes-le-on select,body.mes-le-on textarea,body.mes-le-on .mescb{cursor:move!important}
+ body.mes-le-on .mes-le-head{cursor:move!important}
  .mes-le-sel{outline:2px dashed #e0801a!important;outline-offset:1px}
  .mes-le-drop{outline:2px solid #2f75b5!important;outline-offset:1px}
  #mesleH{position:fixed;width:9px;cursor:ew-resize;z-index:9998;background:#e0801a;border-radius:2px;opacity:.85}
+ #mesleV{position:fixed;height:9px;cursor:ns-resize;z-index:9998;background:#e0801a;border-radius:2px;opacity:.85}
  #mesleBar{position:fixed;right:12px;bottom:50px;z-index:9999;background:#fff8ee;border:1px solid #e0a35a;border-radius:4px;padding:5px 8px;font-size:12px;display:flex;gap:5px;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,.2);white-space:nowrap}
  #mesleBar button{height:25px;padding:0 8px;border:1px solid #9ba8b4;background:linear-gradient(#fff,#dfe6eb);cursor:pointer;font:inherit}
  #mesleBar b{color:#b45f06}#mesleBar .id{color:#5a6b7a;min-width:90px}#mesleBar .tip{color:#8a97a3}
  #mesleBar input{width:64px;height:25px;border:1px solid #9ba8b4;padding:0 5px;text-align:right;font:inherit}
+ #mesleBar .hbox{display:none;gap:5px;align-items:center}
+ #mesleBar.blk .hbox{display:flex}
  #mesleBar button[data-a=save]{border-color:#e0801a;background:linear-gradient(#fff5e8,#f6d6ab);font-weight:700}
  #mesleBar.dirty button[data-a=save]{background:linear-gradient(#ffe9c9,#f0b45f)}`;
  (document.head||document.documentElement).appendChild(st);
 
  const FQ='input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not(.mescb-in),select,textarea';
+ const HSEL='.ph,.hd,.cap,.caption';                     /* 리스트/패널 제목 줄 */
+ const NOZONE='#mesleBar,.mescb-pop,#meslk,#mesdlg';
  const auth=()=>{try{return window.MES_AUTH||window.parent.MES_AUTH||null}catch(e){return window.MES_AUTH||null}};
  const KEY='*';                                /* 전 사용자 공통 */
  const isMaster=()=>{const a=auth();return !!a&&a.role==='master'};
  const isGrid=el=>{try{const d=getComputedStyle(el).display;return d==='grid'||d==='inline-grid'}catch(e){return false}};
  const visual=el=>el.__mescbBox?el.__mescbBox.wrap:el;
+ const EID=el=>(el&&el.dataset&&el.dataset.leId)||(el&&el.id)||'';
+ const isBlk=el=>!!(el&&el.dataset&&el.dataset.leId);
  const srcOf=t=>{if(!t||t.nodeType!==1)return null;
   const w=t.closest('.mescb');if(w)return w.querySelector('input:not(.mescb-in),select');
   return t.matches(FQ)?t:null};
@@ -701,27 +711,63 @@ window.MESCTX={confirm:dlgConfirm};
  function gridOf(el){let c=visual(el);while(c&&c.parentElement){const p=c.parentElement;if(isGrid(p))return{grid:p,cell:c};c=p}return null}
  const isLab=n=>!!n&&n.nodeType===1&&/(^|\s)(label|lab|lb)(\s|$)/.test(n.className);
  const pairOf=cell=>isLab(cell.previousElementSibling)?[cell.previousElementSibling,cell]:[cell];
- function tracks(grid){
-  let s='';try{s=getComputedStyle(grid).gridTemplateColumns||''}catch(e){return []}
+ function trackList(el,prop){
+  let s='';try{s=getComputedStyle(el)[prop]||''}catch(e){return []}
   if(!s||s==='none')return [];
-  /* 레이아웃 전이면 computed 값에 repeat() 가 그대로 남는다 → 펴서 실제 열 수를 맞춘다 */
   s=s.replace(/repeat\((\d+),([^()]*(?:\([^()]*\)[^()]*)*)\)/g,(m,n,inner)=>Array(+n).fill(inner.trim()).join(' '));
   if(/repeat\(|auto-fill|auto-fit|\[/.test(s))return [];
   const o=[];let d=0,c='';
   for(const ch of s){if(ch==='(')d++;if(ch===')')d--;if(ch===' '&&!d){if(c)o.push(c);c=''}else c+=ch}if(c)o.push(c);
   return o.length>1?o:[]}
+ const tracks=grid=>trackList(grid,'gridTemplateColumns');
  function colOf(grid,cell){const t=tracks(grid);if(!t.length)return-1;return[...grid.children].indexOf(cell)%t.length}
  /* 그리드 안의 필드(id 있는 것) → 셀 단위로 중복 제거 */
  function fields(grid){const out=[],seen=new Set();grid.querySelectorAll(FQ).forEach(el=>{if(!el.id)return;
   const g=gridOf(el);if(!g||g.grid!==grid||seen.has(g.cell))return;seen.add(g.cell);out.push({el,cell:g.cell})});return out}
 
+ /* ── 리스트제목 블록 ── */
+ function headLabel(h){const c=h.cloneNode(true);
+  c.querySelectorAll('button,input,select,textarea,a,svg').forEach(x=>x.remove());
+  return (c.textContent||'').replace(/\s+/g,' ').trim().slice(0,40)}
+ function tagBlocks(){
+  const used=new Set();
+  document.querySelectorAll('[data-le-id]').forEach(b=>used.add(b.dataset.leId));
+  document.querySelectorAll(HSEL).forEach(h=>{
+   if(h.closest(NOZONE))return;
+   const box=h.parentElement;
+   if(!box||box===document.body||box===document.documentElement)return;
+   if(h!==box.firstElementChild)return;             /* 머리글은 상자의 첫 요소 */
+   if(box.dataset.leId){h.classList.add('mes-le-head');return}
+   const lab=headLabel(h);if(!lab)return;
+   let id='blk:'+lab,n=2;while(used.has(id))id='blk:'+lab+'#'+(n++);
+   used.add(id);box.dataset.leId=id;h.classList.add('mes-le-head');
+  });
+ }
+ const blkOf=t=>{if(!t||t.nodeType!==1)return null;if(t.closest(NOZONE))return null;
+  const h=t.closest(HSEL);if(!h)return null;
+  const box=h.parentElement;return (box&&box.dataset.leId)?box:null};
+
  /* ── 적용 ── */
- const S={};                                   /* elem_id → {width, ord} */
+ const S={};                                   /* elem_id → {width, height, ord} */
  function setWidth(el,w){
   const g=gridOf(el);const v=visual(el);
   el.classList.remove('mes-fit');v.classList.remove('mes-fit');
   el.style.width=w+'px';el.style.maxWidth='none';v.style.width=w+'px';v.style.maxWidth='none';
   if(g){const ci=colOf(g.grid,g.cell);if(ci>=0){const t=tracks(g.grid);t[ci]=w+'px';g.grid.style.gridTemplateColumns=t.join(' ')}}
+ }
+ function setBlkW(box,w){
+  box.style.width=w+'px';box.style.maxWidth='none';box.style.flexGrow='0';box.style.flexShrink='0';
+  const p=box.parentElement;
+  if(p&&isGrid(p)){const t=tracks(p);
+   if(t.length){const i=[...p.children].indexOf(box)%t.length;
+    if(i>=0){t[i]=w+'px';p.style.gridTemplateColumns=t.join(' ')}}}
+ }
+ function setBlkH(box,h){
+  box.style.height=h+'px';box.style.minHeight='0';box.style.flexGrow='0';box.style.flexShrink='0';
+  const p=box.parentElement;
+  if(p&&isGrid(p)){const tc=tracks(p),tr=trackList(p,'gridTemplateRows');
+   if(tr.length){const nc=tc.length||1,i=[...p.children].indexOf(box);
+    const ri=Math.floor(i/nc);if(ri>=0&&ri<tr.length){tr[ri]=h+'px';p.style.gridTemplateRows=tr.join(' ')}}}
  }
  function applyOrder(grid){
   const fs=fields(grid);const has=fs.filter(f=>S[f.el.id]&&S[f.el.id].ord!=null);if(has.length<2)return;
@@ -734,47 +780,78 @@ window.MESCTX={confirm:dlgConfirm};
    if(skip.has(c))continue;out.push(c)}
   out.forEach(c=>grid.appendChild(c));
  }
+ function applyBlocks(){
+  tagBlocks();
+  const groups=new Set();
+  document.querySelectorAll('[data-le-id]').forEach(b=>{const s=S[b.dataset.leId];
+   if(s&&s.ord!=null&&b.parentElement)groups.add(b.parentElement)});
+  groups.forEach(p=>{
+   const kids=[...p.children].filter(c=>c.dataset&&c.dataset.leId&&S[c.dataset.leId]&&S[c.dataset.leId].ord!=null);
+   if(kids.length<2)return;
+   const sorted=kids.slice().sort((a,b)=>S[a.dataset.leId].ord-S[b.dataset.leId].ord);
+   if(kids.every((c,i)=>c===sorted[i]))return;
+   const marks=kids.map(c=>{const m=document.createComment('');p.insertBefore(m,c);return m});
+   sorted.forEach((c,i)=>p.insertBefore(c,marks[i]));
+   marks.forEach(m=>m.remove());
+  });
+  document.querySelectorAll('[data-le-id]').forEach(b=>{const s=S[b.dataset.leId];if(!s)return;
+   if(s.width)setBlkW(b,s.width);if(s.height)setBlkH(b,s.height)});
+ }
  function applyAll(){
   const grids=new Set();
   document.querySelectorAll(FQ).forEach(el=>{if(!el.id||!S[el.id])return;const g=gridOf(el);if(g)grids.add(g.grid)});
   grids.forEach(applyOrder);
   document.querySelectorAll(FQ).forEach(el=>{const s=el.id&&S[el.id];if(s&&s.width)setWidth(el,s.width)});
+  applyBlocks();
  }
+ let COLS='elem_id,width,height,ord';
  async function load(){
   for(let i=0;i<80&&!window.MESDB;i++)await new Promise(r=>setTimeout(r,50));
   if(!window.MESDB)return;try{await MESDB.ready}catch(e){}
   if(!MESDB.online)return;
-  let rows=[];try{rows=await MESDB.table('ui_layout').select(`select=elem_id,width,ord&page=eq.${encodeURIComponent(PAGE)}&user_key=eq.*`)}catch(e){return}
+  const q=async c=>MESDB.table('ui_layout').select(`select=${c}&page=eq.${encodeURIComponent(PAGE)}&user_key=eq.*`);
+  let rows=[];
+  try{rows=await q(COLS)}
+  catch(e){COLS='elem_id,width,ord';try{rows=await q(COLS)}catch(e2){return}}   /* height 컬럼 없는 DB 호환 */
   for(const k in S)delete S[k];
-  for(const r of rows||[])S[r.elem_id]={width:r.width,ord:r.ord};
+  for(const r of rows||[])S[r.elem_id]={width:r.width,height:r.height,ord:r.ord};
   applyAll();setTimeout(applyAll,800);setTimeout(applyAll,1800);
   if(!load.bound&&MESDB.onChange){load.bound=1;MESDB.onChange(['ui_layout'],()=>{if(!on)load()})}   /* 다른 사용자가 바꾸면 따라온다 */
  }
  async function persist(ids,key){
   if(!window.MESDB||!MESDB.online)return;
-  const rows=ids.filter(id=>S[id]).map(id=>({page:PAGE,elem_id:id,user_key:key,width:S[id].width??null,ord:S[id].ord??null,updated_at:new Date().toISOString()}));
+  const hasH=/height/.test(COLS);
+  const rows=ids.filter(id=>S[id]).map(id=>{const r={page:PAGE,elem_id:id,user_key:key,
+    width:S[id].width??null,ord:S[id].ord??null,updated_at:new Date().toISOString()};
+   if(hasH)r.height=S[id].height??null;return r});
   if(rows.length)try{await MESDB.table('ui_layout').upsert(rows,'page,elem_id,user_key');try{MESDB.notify&&MESDB.notify(['ui_layout'])}catch(e){}}catch(e){hint('저장 실패: '+String(e.message||e).slice(0,60))}
  }
  async function wipe(key){try{await MESDB.table('ui_layout').delete({page:PAGE,user_key:key})}catch(e){}}
 
  /* ── 편집모드 UI ── */
- let on=false,sel=null,bar=null,hand=null,drag=null,press=null;
+ let on=false,sel=null,selBlk=false,bar=null,hand=null,handV=null,drag=null,press=null;
  const dirty=new Set();                        /* 아직 저장하지 않은 항목 */
- const mark=id=>{dirty.add(id);if(bar){bar.classList.add('dirty');hint('저장 안 됨 '+dirty.size+'건 — [저장]을 누르세요')}};
+ const mark=id=>{if(!id)return;dirty.add(id);if(bar){bar.classList.add('dirty');hint('저장 안 됨 '+dirty.size+'건 — [저장]을 누르세요')}};
  const hint=t=>{if(bar)bar.querySelector('.tip').textContent=t};
  function ui(){
   if(bar)return;
   bar=document.createElement('div');bar.id='mesleBar';
   bar.innerHTML=`<b>배치 편집(전체 공통)</b><span class="id"></span>`+
-   `<span>폭</span><input type="number" class="w" min="60" max="900" step="5" title="선택한 칸의 폭(px). 입력 후 Enter"><span>px</span>`+
+   `<span>폭</span><input type="number" class="w" min="60" max="2400" step="5" title="선택한 칸/블록의 폭(px, 5단위). 입력 후 Enter"><span>px</span>`+
+   `<span class="hbox"><span>높이</span><input type="number" class="h" min="60" max="2000" step="5" title="선택한 블록의 높이(px, 5단위). 입력 후 Enter"><span>px</span></span>`+
    `<button data-a="save">▤ 저장</button><button data-a="reset">초기화</button><button data-a="close">닫기(Esc)</button>`+
-   `<span class="tip">핸들 드래그=폭 · 칸 드래그=자리 이동</span>`;
-  const wi=bar.querySelector('.w');
-  const applyW=()=>{if(!sel)return;const v=Math.max(60,Math.min(900,Math.round(Number(wi.value)||0)));
-   if(!v)return;wi.value=v;setWidth(sel,v);S[sel.id]=Object.assign(S[sel.id]||{},{width:v});mark(sel.id);place()};
-  wi.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();applyW()}e.stopPropagation()});
-  wi.addEventListener('change',applyW);
-  wi.addEventListener('mousedown',e=>e.stopPropagation());
+   `<span class="tip">핸들 드래그=크기 · 드래그해 다른 칸/제목에 놓기=자리 이동 (5px 단위)</span>`;
+  const wi=bar.querySelector('.w'),hi=bar.querySelector('.h');
+  const applyW=()=>{if(!sel)return;const v=snap(Math.max(60,Math.min(2400,Math.round(Number(wi.value)||0))));
+   if(!v)return;wi.value=v;selBlk?setBlkW(sel,v):setWidth(sel,v);
+   S[EID(sel)]=Object.assign(S[EID(sel)]||{},{width:v});mark(EID(sel));place()};
+  const applyH=()=>{if(!sel||!selBlk)return;const v=snap(Math.max(60,Math.min(2000,Math.round(Number(hi.value)||0))));
+   if(!v)return;hi.value=v;setBlkH(sel,v);
+   S[EID(sel)]=Object.assign(S[EID(sel)]||{},{height:v});mark(EID(sel));place()};
+  [[wi,applyW],[hi,applyH]].forEach(([el,fn])=>{
+   el.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();fn()}e.stopPropagation()});
+   el.addEventListener('change',fn);
+   el.addEventListener('mousedown',e=>e.stopPropagation())});
   bar.addEventListener('click',async e=>{const a=e.target.dataset.a;if(!a)return;
    if(a==='close')exit();
    else if(a==='save'){if(!dirty.size){hint('바뀐 내용이 없습니다.');return}
@@ -785,51 +862,92 @@ window.MESCTX={confirm:dlgConfirm};
   document.body.appendChild(bar);
   hand=document.createElement('div');hand.id='mesleH';hand.style.display='none';document.body.appendChild(hand);
   hand.addEventListener('mousedown',e=>{if(!sel)return;e.preventDefault();e.stopPropagation();
-   drag={mode:'size',el:sel,x0:e.clientX,w0:visual(sel).getBoundingClientRect().width}});
+   drag={mode:'size',el:sel,blk:selBlk,x0:e.clientX,w0:visual(sel).getBoundingClientRect().width}});
+  handV=document.createElement('div');handV.id='mesleV';handV.style.display='none';document.body.appendChild(handV);
+  handV.addEventListener('mousedown',e=>{if(!sel||!selBlk)return;e.preventDefault();e.stopPropagation();
+   drag={mode:'sizeh',el:sel,y0:e.clientY,h0:sel.getBoundingClientRect().height}});
  }
  function place(){if(!sel||!hand)return;const r=visual(sel).getBoundingClientRect();
-  hand.style.display='';hand.style.left=(r.right-4)+'px';hand.style.top=r.top+'px';hand.style.height=r.height+'px'}
- function select(el){if(sel)visual(sel).classList.remove('mes-le-sel');sel=el;
-  if(el){visual(el).classList.add('mes-le-sel');bar.querySelector('.id').textContent='#'+el.id;
-   const wi=bar.querySelector('.w');if(wi)wi.value=Math.round(visual(el).getBoundingClientRect().width);place()}
-  else if(hand)hand.style.display='none'}
- function enter(el){if(!isMaster())return;if(!on){on=true;document.body.classList.add('mes-le-on');ui()}select(el)}
- function exit(){if(dirty.size&&!confirm('저장하지 않은 변경이 '+dirty.size+'건 있습니다. 저장하지 않고 닫을까요?'))return;dirty.clear();on=false;document.body.classList.remove('mes-le-on');select(null);if(bar){bar.remove();bar=null}if(hand){hand.remove();hand=null}drag=null}
+  hand.style.display='';hand.style.left=(r.right-4)+'px';hand.style.top=r.top+'px';hand.style.height=r.height+'px';
+  if(handV){if(selBlk){handV.style.display='';handV.style.top=(r.bottom-4)+'px';handV.style.left=r.left+'px';handV.style.width=r.width+'px'}
+   else handV.style.display='none'}}
+ function select(el,blk){
+  if(sel)visual(sel).classList.remove('mes-le-sel');
+  sel=el;selBlk=!!blk;
+  if(bar)bar.classList.toggle('blk',!!blk);
+  if(el){visual(el).classList.add('mes-le-sel');
+   if(bar){bar.querySelector('.id').textContent=blk?EID(el):'#'+el.id;
+    const r=visual(el).getBoundingClientRect();
+    const wi=bar.querySelector('.w');if(wi)wi.value=snap(r.width);
+    const hi=bar.querySelector('.h');if(hi)hi.value=snap(r.height)}
+   place()}
+  else{if(hand)hand.style.display='none';if(handV)handV.style.display='none'}}
+ function enter(el,blk){if(!isMaster())return;if(!on){on=true;document.body.classList.add('mes-le-on');ui();tagBlocks()}select(el,blk)}
+ function exit(){if(dirty.size&&!confirm('저장하지 않은 변경이 '+dirty.size+'건 있습니다. 저장하지 않고 닫을까요?'))return;
+  dirty.clear();on=false;document.body.classList.remove('mes-le-on');select(null);
+  if(bar){bar.remove();bar=null}if(hand){hand.remove();hand=null}if(handV){handV.remove();handV=null}drag=null}
 
  /* 길게 누르기 → 편집모드. 편집모드 안에서는 클릭=선택+이동 드래그 시작 */
  document.addEventListener('mousedown',e=>{
   if(e.button!==0)return;
-  const el=srcOf(e.target);
+  if(e.target.closest('#mesleBar,#mesleH,#mesleV'))return;
+  const el=srcOf(e.target),bk=el?null:blkOf(e.target);
   if(on){
-   if(e.target.closest('#mesleBar,#mesleH'))return;
    e.preventDefault();e.stopPropagation();
-   if(!el||!el.id)return;
-   select(el);drag={mode:'move',el,x0:e.clientX,y0:e.clientY,moved:false,over:null};return;
+   if(el&&el.id){select(el,false);drag={mode:'move',el,x0:e.clientX,y0:e.clientY,moved:false,over:null};return}
+   if(bk){select(bk,true);drag={mode:'bmove',el:bk,x0:e.clientX,y0:e.clientY,moved:false,over:null};return}
+   return;
   }
+  if(!isMaster())return;
   /* v79: 그리드가 아닌 입력바(flex 등)에서도 폭 조절은 되게 한다. 자리 이동만 그리드 전용 */
-  if(!el||!el.id||!isMaster())return;
-  press={el,x:e.clientX,y:e.clientY,t:setTimeout(()=>{press=null;enter(el);
-   try{el.blur();if(el.__mescbBox)el.__mescbBox.inp.blur();document.activeElement&&document.activeElement.blur()}catch(x){}
-   drag={mode:'move',el,x0:e.clientX,y0:e.clientY,moved:false,over:null}},600)};
+  if(el&&el.id){
+   press={el,x:e.clientX,y:e.clientY,t:setTimeout(()=>{press=null;enter(el,false);
+    try{el.blur();if(el.__mescbBox)el.__mescbBox.inp.blur();document.activeElement&&document.activeElement.blur()}catch(x){}
+    drag={mode:'move',el,x0:e.clientX,y0:e.clientY,moved:false,over:null}},600)};return}
+  /* v81: 리스트제목 길게 누르기 → 블록(패널) 편집 */
+  if(bk){press={el:bk,x:e.clientX,y:e.clientY,t:setTimeout(()=>{press=null;enter(bk,true);
+    drag={mode:'bmove',el:bk,x0:e.clientX,y0:e.clientY,moved:false,over:null}},600)}}
  },true);
  document.addEventListener('mousemove',e=>{
   if(press&&(Math.abs(e.clientX-press.x)>4||Math.abs(e.clientY-press.y)>4)){clearTimeout(press.t);press=null}
   if(!drag)return;e.preventDefault();
-  if(drag.mode==='size'){const w=Math.max(60,Math.min(900,Math.round(drag.w0+e.clientX-drag.x0)));setWidth(drag.el,w);S[drag.el.id]=Object.assign(S[drag.el.id]||{},{width:w});place();const wi=bar&&bar.querySelector('.w');if(wi)wi.value=w;hint(w+'px');return}
+  if(drag.mode==='size'){const w=snap(Math.max(60,Math.min(2400,Math.round(drag.w0+e.clientX-drag.x0))));
+   drag.blk?setBlkW(drag.el,w):setWidth(drag.el,w);
+   S[EID(drag.el)]=Object.assign(S[EID(drag.el)]||{},{width:w});place();
+   const wi=bar&&bar.querySelector('.w');if(wi)wi.value=w;hint('폭 '+w+'px');return}
+  if(drag.mode==='sizeh'){const h=snap(Math.max(60,Math.min(2000,Math.round(drag.h0+e.clientY-drag.y0))));
+   setBlkH(drag.el,h);S[EID(drag.el)]=Object.assign(S[EID(drag.el)]||{},{height:h});place();
+   const hi=bar&&bar.querySelector('.h');if(hi)hi.value=h;hint('높이 '+h+'px');return}
   if(Math.abs(e.clientX-drag.x0)>4||Math.abs(e.clientY-drag.y0)>4)drag.moved=true;
   if(!drag.moved)return;
-  const t=srcOf(document.elementFromPoint(e.clientX,e.clientY));
-  if(drag.over&&drag.over!==t)visual(drag.over).classList.remove('mes-le-drop');
-  const a=gridOf(drag.el),b=t&&t.id&&t!==drag.el?gridOf(t):null;
-  drag.over=(b&&a&&b.grid===a.grid&&pairOf(b.cell).length===pairOf(a.cell).length)?t:null;
+  const pt=document.elementFromPoint(e.clientX,e.clientY);
+  if(drag.over)visual(drag.over).classList.remove('mes-le-drop');
+  if(drag.mode==='bmove'){
+   const t=blkOf(pt);
+   drag.over=(t&&t!==drag.el&&t.parentElement===drag.el.parentElement)?t:null;
+  }else{
+   const t=srcOf(pt);
+   const a=gridOf(drag.el),b=t&&t.id&&t!==drag.el?gridOf(t):null;
+   drag.over=(b&&a&&b.grid===a.grid&&pairOf(b.cell).length===pairOf(a.cell).length)?t:null;
+  }
   if(drag.over)visual(drag.over).classList.add('mes-le-drop');
  },true);
  document.addEventListener('mouseup',async()=>{
   if(press){clearTimeout(press.t);press=null}
   if(!drag)return;const d=drag;drag=null;
-  if(d.mode==='size'){place();mark(d.el.id);return}
+  if(d.mode==='size'||d.mode==='sizeh'){place();mark(EID(d.el));return}
   if(!d.over)return;
   visual(d.over).classList.remove('mes-le-drop');
+  if(d.mode==='bmove'){
+   const p=d.el.parentElement,ma=document.createComment(''),mb=document.createComment('');
+   p.insertBefore(ma,d.el);p.insertBefore(mb,d.over);
+   p.insertBefore(d.el,mb);p.insertBefore(d.over,ma);ma.remove();mb.remove();
+   const kids=[...p.children].filter(c=>c.dataset&&c.dataset.leId);
+   kids.forEach((c,i)=>{S[c.dataset.leId]=Object.assign(S[c.dataset.leId]||{},{ord:i})});
+   kids.forEach(c=>{const s=S[c.dataset.leId];if(s.width)setBlkW(c,s.width);if(s.height)setBlkH(c,s.height)});
+   place();kids.forEach(c=>mark(c.dataset.leId));
+   hint('리스트 자리를 바꿨습니다 — [저장]을 누르세요');return;
+  }
   const a=gridOf(d.el),b=gridOf(d.over);const pa=pairOf(a.cell),pb=pairOf(b.cell);
   const g=a.grid,ma=document.createComment(''),mb=document.createComment('');
   g.insertBefore(ma,pa[0]);g.insertBefore(mb,pb[0]);
@@ -842,8 +960,10 @@ window.MESCTX={confirm:dlgConfirm};
  document.addEventListener('keydown',e=>{if(on&&e.key==='Escape'){e.preventDefault();e.stopPropagation();exit()}},true);
  window.addEventListener('scroll',place,true);window.addEventListener('resize',place);
 
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',load);else load();
- window.MESLAYOUT={apply:applyAll,state:S,edit:enter,exit};
+ const boot=()=>{tagBlocks();load()};
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+ setTimeout(tagBlocks,900);setTimeout(tagBlocks,2000);
+ window.MESLAYOUT={apply:applyAll,state:S,edit:enter,exit,blocks:tagBlocks};
 })();
 
 /* ── v77: 금액 입력칸 천단위 쉼표 (전 화면 공용) ──────────────────────
