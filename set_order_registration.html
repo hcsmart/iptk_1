@@ -34,6 +34,7 @@ table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th
 .kv .lb{text-align:right}
 .kv .v{border:1px solid #c3ccd4;background:#fff;height:26px;line-height:24px;padding:0 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bar{height:14px;background:#3f7fbf;border-radius:2px}
+#dbody tr.req td{background:#fff8ee}
 
 /* v21 입력란 배치 보정: 좁은 폭에서 필드를 숨기지 않고 단계적으로 줄바꿈 */
 .field,.formrow input,.formrow select,.formgrid input,.formgrid select,.detail-grid input,.detail-grid select{min-width:0;max-width:100%}
@@ -42,7 +43,7 @@ table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th
 @media(max-width:880px){.formrow{grid-template-columns:78px minmax(0,1fr)}}
 .formrow>*{min-width:0}
 #dbody tr.done td{color:#7c8a95;background:#f6f8f9}
-</style></head><body><div class="screen"><div class="title"><h1>SET외주제작등록</h1><small>영업관리 · SET발주</small></div><section class="filt"><div class="f2"><div class="lb">제 번</div><div><input id="q_job" class="field"></div><div class="lb">품 명</div><div><input id="q_item" class="field"></div><div></div><div></div></div></section><div class="panes" style="grid-template-rows:1fr 1.15fr"><div class="panes" style="grid-template-columns:1fr 260px 280px;grid-template-rows:1fr;padding:0;gap:8px"><div class="pane"><div class="ph">제번리스트</div><div class="pb"><table style="min-width:650px"><thead><tr><th style="width:140px">제번</th><th style="width:180px">품명</th><th style="width:110px">완료예정일</th><th style="width:110px">T/O 예정일</th><th style="width:110px">고객요구일</th><th></th></tr></thead><tbody id="hbody"></tbody></table></div></div><div class="pane"><div class="ph">조수 공정 매칭 리스트</div><div class="pb"><table style="min-width:0"><thead><tr><th style="width:36px"></th><th style="width:90px">공정코드</th><th>공정명</th></tr></thead><tbody id="mbody"></tbody></table></div></div><div class="pane"><div class="ph">협력업체리스트</div><div style="display:flex;gap:4px;padding:5px"><input id="pq" class="field" placeholder="Enter text to search..." oninput="renderP()"><button class="btn" onclick="renderP()">찾기</button><button class="btn" onclick="pq.value='';renderP()">지우기</button></div><div class="pb"><table style="min-width:0"><thead><tr><th style="width:36px"></th><th>협력업체</th></tr></thead><tbody id="vbody"></tbody></table></div></div></div><div class="panes" style="grid-template-columns:1fr;grid-template-rows:1fr;padding:0;gap:8px"><div class="pane"><div class="ph">조수공정 리스트</div><div style="display:flex;gap:4px;padding:5px;align-items:center;flex-wrap:wrap"><span class="lb" style="width:40px">조수</span><input id="fSeq" class="field" style="width:56px" value="A"><span class="lb" style="width:52px">공정명</span><input id="fProc" class="field" style="width:70px" value="1/1"><span class="lb" style="width:52px">발주일</span><input id="fOdate" class="field" type="date" style="width:140px"><span class="lb" style="width:74px">입고예정일</span><input id="fRdate" class="field" type="date" style="width:140px"><span class="lb" style="width:52px">견적가</span><input id="fQuote" class="field" style="width:110px" placeholder="0"><span class="lb" style="width:52px">네고가</span><input id="fNego" class="field" style="width:110px" placeholder="0"></div><div class="pb"><table style="min-width:900px"><thead><tr><th style="width:36px"></th><th style="width:120px">협력업체</th><th style="width:56px">조수</th><th style="width:80px">공정명</th><th style="width:100px">발주일</th><th style="width:110px">입고예정일</th><th style="width:110px">견적가</th><th style="width:110px">네고가</th><th>작성자</th></tr></thead><tbody id="dbody"></tbody></table></div></div></div></div><footer class="foot"><button class="btn" onclick="search()">⌕ 검색</button><button class="btn" onclick="loadHeads()">⟳ 새로고침</button><button class="btn" onclick="save()">▤ 저장</button><button class="btn" onclick="sampleFill()" title="화면 순서대로 시연하며 등록요점을 설명합니다.">▶ 등록예제</button><button class="btn" onclick="cancelOrder()">✕ 발주취소</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">제번·협력업체 선택 후 저장. 취소는 조수공정 리스트에서 체크 후 발주취소.</span><span class="right" id="countText"></span></footer></div><script>const heads=[];const partners=[];  /* v39: 하드코딩 → set_order_partners 마스터 로드 */const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+</style></head><body><div class="screen"><div class="title"><h1>SET외주제작등록</h1><small>영업관리 · SET발주</small></div><section class="filt"><div class="f2"><div class="lb">제 번</div><div><input id="q_job" class="field"></div><div class="lb">품 명</div><div><input id="q_item" class="field"></div><div></div><div></div></div></section><div class="panes" style="grid-template-rows:1fr 1.15fr"><div class="panes" style="grid-template-columns:1fr 260px 280px;grid-template-rows:1fr;padding:0;gap:8px"><div class="pane"><div class="ph">제번리스트</div><div class="pb"><table style="min-width:650px"><thead><tr><th style="width:140px">제번</th><th style="width:180px">품명</th><th style="width:110px">완료예정일</th><th style="width:110px">T/O 예정일</th><th style="width:110px">고객요구일</th><th></th></tr></thead><tbody id="hbody"></tbody></table></div></div><div class="pane"><div class="ph">조수 공정 매칭 리스트</div><div class="pb"><table style="min-width:0"><thead><tr><th style="width:36px"></th><th style="width:90px">공정코드</th><th>공정명</th></tr></thead><tbody id="mbody"></tbody></table></div></div><div class="pane"><div class="ph">협력업체리스트</div><div style="display:flex;gap:4px;padding:5px"><input id="pq" class="field" placeholder="Enter text to search..." oninput="renderP()"><button class="btn" onclick="renderP()">찾기</button><button class="btn" onclick="pq.value='';renderP()">지우기</button></div><div class="pb"><table style="min-width:0"><thead><tr><th style="width:36px"></th><th>협력업체</th></tr></thead><tbody id="vbody"></tbody></table></div></div></div><div class="panes" style="grid-template-columns:1fr;grid-template-rows:1fr;padding:0;gap:8px"><div class="pane"><div class="ph">조수공정 리스트</div><div style="display:flex;gap:4px;padding:5px;align-items:center;flex-wrap:wrap"><span class="lb" style="width:40px">조수</span><input id="fSeq" class="field" style="width:70px" value="A" readonly title="조수 공정 매칭 리스트에서 고른 조수"><span class="lb" style="width:52px">공정명</span><input id="fProc" class="field" style="width:70px" value="1/1" readonly><span class="lb" style="width:52px">발주일</span><input id="fOdate" class="field" type="date" style="width:140px"><span class="lb" style="width:74px">입고요구일</span><input id="fRdate" class="field" type="date" style="width:140px"><span class="lb" style="width:52px">견적가</span><input id="fQuote" class="field" style="width:110px" placeholder="0"><span class="lb" style="width:52px">네고가</span><input id="fNego" class="field" style="width:110px" placeholder="0"><button class="btn" onclick="pushDown()" title="선택한 조수 × 협력업체를 요청 리스트에 담습니다">⬇ 요청추가</button><button class="btn" onclick="pullUp()" title="아직 저장하지 않은 요청행을 뺍니다">⬆ 요청삭제</button></div><div class="pb"><table style="min-width:900px"><thead><tr><th style="width:36px"></th><th style="width:120px">협력업체</th><th style="width:56px">조수</th><th style="width:80px">공정명</th><th style="width:100px">발주일</th><th style="width:110px">입고예정일</th><th style="width:110px">견적가</th><th style="width:110px">네고가</th><th>작성자</th></tr></thead><tbody id="dbody"></tbody></table></div></div></div></div><footer class="foot"><button class="btn" onclick="search()">⌕ 검색</button><button class="btn" onclick="loadHeads()">⟳ 새로고침</button><button class="btn" onclick="save()">▤ 저장</button><button class="btn" onclick="sampleFill()" title="화면 순서대로 시연하며 등록요점을 설명합니다.">▶ 등록예제</button><button class="btn" onclick="cancelOrder()">✕ 발주취소</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">제번·협력업체 선택 후 저장. 취소는 조수공정 리스트에서 체크 후 발주취소.</span><span class="right" id="countText"></span></footer></div><script>const heads=[];const partners=[];  /* v39: 하드코딩 → set_order_partners 마스터 로드 */const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const n=v=>v==null?'':Number(v).toLocaleString();const p=v=>v==null?'':Number(v).toFixed(2)+'%';
 const msg=t=>message.textContent=t;
 let view=[...heads],sel=null,pv=null;
@@ -59,6 +60,7 @@ function renderP(){const q=pq.value.trim().toLowerCase();
 function pickP(v){pv=v;renderP();msg(`협력업체: ${v}`)}
 
 async function pick(i,tr){sel=view[i];document.querySelectorAll('#hbody tr').forEach(x=>x.classList.remove('sel'));tr.classList.add('sel');
+ REQ.length=0;
  renderSeq();
  await loadDets();
  msg(`${sel.job_no} · 조수 ${SEQ.length}조 · 발주 ${dets.length}건`);}
@@ -69,17 +71,20 @@ const seqCode=i=>{let s='',n=i;do{s=String.fromCharCode(65+n%26)+s;n=Math.floor(
 function renderSeq(){
  const q=Math.max(1,Math.trunc(Number(sel&&sel.set_qty)||1));
  SEQ=Array.from({length:q},(_,i)=>({code:seqCode(i),name:`${i+1}/${q}`}));
- mbody.innerHTML=SEQ.map((x,i)=>`<tr onclick="pickSeq(${i})" class="${i===0?'sel':''}">`
-  +`<td class="c"><input type="radio" name="seqpick" ${i===0?'checked':''}></td>`
+ mbody.innerHTML=SEQ.map((x,i)=>`<tr onclick="toggleSeq(${i})" class="${i===0?'sel':''}">`
+  +`<td class="c"><input type="checkbox" data-i="${i}" ${i===0?'checked':''} onclick="event.stopPropagation();syncSeq()"></td>`
   +`<td>${x.code}</td><td>${x.name}</td></tr>`).join('');
- if(SEQ.length)pickSeq(0,true);
+ syncSeq();
 }
-function pickSeq(i,quiet){
- const x=SEQ[i];if(!x)return;
- document.querySelectorAll('#mbody tr').forEach((tr,k)=>{tr.classList.toggle('sel',k===i);
-  const r=tr.querySelector('input');if(r)r.checked=(k===i)});
- fSeq.value=x.code;fProc.value=x.name;
- if(!quiet)msg(`조수 ${x.code} (${x.name}) 선택`);
+/* 여러 조수를 한 번에 요청할 수 있게 다중선택 */
+function toggleSeq(i){const tr=document.querySelectorAll('#mbody tr')[i];if(!tr)return;
+ const cb=tr.querySelector('input');if(cb)cb.checked=!cb.checked;syncSeq();}
+function pickedSeq(){return [...document.querySelectorAll('#mbody input:checked')].map(x=>SEQ[Number(x.dataset.i)]).filter(Boolean)}
+function syncSeq(){
+ document.querySelectorAll('#mbody tr').forEach(tr=>{const cb=tr.querySelector('input');tr.classList.toggle('sel',!!(cb&&cb.checked))});
+ const ps=pickedSeq();
+ fSeq.value=ps.map(x=>x.code).join(',');
+ fProc.value=ps.length===1?ps[0].name:(ps.length?`${ps.length}조`:'');
 }
 
 /* 제번리스트 = 수주에서 직접 (뷰 set_order_job_pool) — 수주등록만 하면 여기 나타남 */
@@ -114,11 +119,47 @@ async function loadDets(){
 function markSeq(){document.querySelectorAll('#mbody tr').forEach((tr,i)=>{const x=SEQ[i];if(!x)return;
  const used=dets.some(d=>d.set_seq===x.code);tr.style.color=used?'#8a97a2':'';
  tr.title=used?'이미 발주된 조수입니다':''});}
+/* v73: 원재료 발주와 같은 '요청 → 저장' 방식. REQ 는 아직 DB 에 없는 대기 행 */
+const REQ=[];
+function pushDown(){
+ if(!sel)return msg('제번을 선택하세요.');
+ if(!pv)return msg('협력업체를 선택하세요.');
+ const ps=pickedSeq();
+ if(!ps.length)return msg('조수 공정 매칭 리스트에서 조수를 선택하세요.');
+ const numv=v=>{const x=Number(String(v??'').replace(/[^0-9.-]/g,''));return Number.isNaN(x)?0:x};
+ const quote=numv(fQuote.value),nego=numv(fNego.value)||quote;
+ if(nego>quote&&quote>0)return msg('네고가는 견적가를 넘을 수 없습니다.');
+ let add=0,dup=0;
+ for(const x of ps){
+  if(dets.some(d=>d.partner_vendor_name===pv&&d.set_seq===x.code)||REQ.some(r=>r.partner_vendor_name===pv&&r.set_seq===x.code)){dup++;continue}
+  REQ.push({_no:(REQ.length?Math.max(...REQ.map(r=>r._no))+1:1),
+   job_no:sel.job_no,partner_vendor_name:pv,set_seq:x.code,process_name:x.name,
+   order_date:fOdate.value||today(),receipt_planned_date:fRdate.value||null,
+   quote_price:quote,nego_price:nego,writer:me()});
+  add++;
+ }
+ renderD();
+ msg(add?`요청 리스트에 ${add}건 담았습니다.${dup?` (중복 ${dup}건 제외)`:''} [▤ 저장]을 눌러야 발주됩니다.`
+        :'이미 발주되었거나 요청에 담긴 조수입니다.');
+}
+function pullUp(){
+ const ids=[...dbody.querySelectorAll('input[data-req]:checked')].map(x=>Number(x.dataset.req));
+ if(!ids.length)return msg('요청 리스트에서 뺄 행을 선택하세요. (저장 전 요청행만 삭제됩니다)');
+ for(let i=REQ.length-1;i>=0;i--)if(ids.includes(REQ[i]._no))REQ.splice(i,1);
+ renderD();msg(`${ids.length}건을 요청 리스트에서 뺐습니다.`);
+}
 function renderD(){
- dbody.innerHTML=dets.length?dets.map(d=>{
+ const reqHtml=REQ.map(r=>`<tr class="req" onclick="pickD(this)">`
+  +`<td class="c"><input type="checkbox" data-req="${r._no}"></td>`
+  +`<td>${esc(r.partner_vendor_name)}</td><td class="c">${esc(r.set_seq)}</td><td class="c">${esc(r.process_name)}</td>`
+  +`<td class="c">${esc(r.order_date||'')}</td><td class="c">${esc(r.receipt_planned_date||'')}</td>`
+  +`<td class="num">${n(r.quote_price)}</td><td class="num">${n(r.nego_price)}</td>`
+  +`<td class="c" style="color:#a2481c;font-weight:700">요청 (미저장)</td></tr>`).join('');
+ dbody.innerHTML=(dets.length||REQ.length)?reqHtml+dets.map(d=>{
   const done=d.status!=='발주';
   return `<tr class="${done?'done':''}" onclick="pickD(this)"><td class="c"><input type="checkbox" data-id="${d.line_id}" ${done?'disabled title="입고건은 취소할 수 없습니다"':''}></td><td>${esc(d.partner_vendor_name)}</td><td class="c">${esc(d.set_seq)}</td><td class="c">${esc(d.process_name)}</td><td class="c">${esc(d.order_date||'')}</td><td class="c">${esc(d.receipt_planned_date||'')}</td><td class="num">${n(d.quote_price)}</td><td class="num">${n(d.nego_price)}</td><td class="c">${esc(d.writer||'')}${done?' · '+esc(d.status):''}</td></tr>`}).join('')
-  :`<tr><td colspan="9" class="c" style="height:80px;color:#8a97a2">${sel?(online()?'등록된 발주가 없습니다. 협력업체를 선택하고 저장하세요.':'DB 미연결 — 발주 등록/취소를 사용할 수 없습니다.'):'제번을 선택하세요.'}</td></tr>`;
+  :`<tr><td colspan="9" class="c" style="height:80px;color:#8a97a2">${sel?(online()?'조수와 협력업체를 고르고 [⬇ 요청추가] → [▤ 저장] 하세요.':'DB 미연결 — 발주 등록/취소를 사용할 수 없습니다.'):'제번을 선택하세요.'}</td></tr>`;
+ markSeq();
 }
 function pickD(tr){document.querySelectorAll('#dbody tr').forEach(x=>x.classList.remove('sel'));tr.classList.add('sel');
  const cb=tr.querySelector('input[type=checkbox]');if(cb&&!cb.disabled)cb.checked=!cb.checked;}
@@ -128,27 +169,26 @@ function search(){const j=q_job.value.trim().toLowerCase(),it=q_item.value.trim(
  sel=null;dets=[];render();renderD();msg(`조회결과 ${view.length}건입니다.`);}
 
 /* ── 발주 등록 ─────────────────────────────────────── */
+/* v73: 요청 리스트에 담긴 행을 한 번에 발주 등록한다.
+   (v72 까지는 입력칸 한 줄만 저장돼 조수마다 반복 입력해야 했다) */
 async function save(){
  if(!sel){msg('제번을 선택하세요.');return}
- if(!pv){msg('협력업체를 선택하세요.');return}
  if(!online()){msg('DB 미연결 상태에서는 발주를 등록할 수 없습니다.');return}
- /* v28: 조수·공정·금액을 실제 입력값으로 저장 (기존에는 A/1/1/0원 하드코딩) */
- const numv=v=>{const x=Number(String(v??'').replace(/[^0-9.-]/g,''));return Number.isNaN(x)?0:x};
- const seq=(fSeq.value||'A').trim(),proc=(fProc.value||'1/1').trim();
- const quote=numv(fQuote.value),nego=numv(fNego.value)||quote;
- if(nego>quote&&quote>0){msg('네고가는 견적가를 넘을 수 없습니다.');return}
- if(dets.some(d=>d.partner_vendor_name===pv&&d.set_seq===seq&&d.process_name===proc)){
-  msg(`${sel.job_no} / ${pv} / ${seq}-${proc} 는 이미 발주되어 있습니다.`);return}
- if(!confirm(`업체 : ${pv} (${seq}·${proc})\n견적 ${quote.toLocaleString()} / 네고 ${nego.toLocaleString()}\n등록하시겠습니까?`))return;
+ if(!REQ.length){msg('요청 리스트가 비어 있습니다. 조수·협력업체를 고르고 [⬇ 요청추가] 하세요.');return}
+ const sum=REQ.reduce((a,r)=>a+(Number(r.nego_price)||0),0);
+ const lines=REQ.map(r=>`· ${r.partner_vendor_name} ${r.set_seq}(${r.process_name}) ${Number(r.nego_price||0).toLocaleString()}원`).join('\n');
+ if(!confirm(`${sel.job_no} SET외주 발주 ${REQ.length}건\n${lines}\n\n네고가 합계 ${sum.toLocaleString()}원\n등록하시겠습니까?`))return;
  try{
-  await MESDB.table(TBL).upsert([{job_no:sel.job_no,partner_vendor_name:pv,set_seq:seq,process_name:proc,
-   status:'발주',order_date:fOdate.value||today(),receipt_planned_date:fRdate.value||null,
-   quote_price:quote,nego_price:nego,unit_price:nego,writer:me()}]);
+  await MESDB.table(TBL).upsert(REQ.map(r=>({job_no:r.job_no,partner_vendor_name:r.partner_vendor_name,
+   set_seq:r.set_seq,process_name:r.process_name,status:'발주',
+   order_date:r.order_date||today(),receipt_planned_date:r.receipt_planned_date||null,
+   quote_price:r.quote_price,nego_price:r.nego_price,unit_price:r.nego_price,writer:r.writer})));
+  const cnt=REQ.length;REQ.length=0;
   await loadDets();
-  msg(`${sel.job_no} / ${pv} (${seq}·${proc}) 발주를 등록했습니다. 견적 ${quote.toLocaleString()} / 네고 ${nego.toLocaleString()}`);
+  msg(`${sel.job_no} SET외주 발주 ${cnt}건을 등록했습니다. (네고가 합계 ${sum.toLocaleString()}원)`);
  }catch(e){
   const m=String(e.message||e);
-  msg(/duplicate|unique/i.test(m)?`${sel.job_no} / ${pv} 는 이미 발주되어 있습니다.`:'등록 실패: '+m.slice(0,110));
+  msg(/duplicate|unique/i.test(m)?'이미 발주된 조수가 포함되어 있습니다. 요청 리스트를 확인하세요.':'등록 실패: '+m.slice(0,110));
  }
 }
 
