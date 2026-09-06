@@ -54,7 +54,44 @@ const POOL=[];
 const allHeads=()=>[...heads,...POOL.filter(p=>!heads.some(h=>h.job_no===p.job_no))];
 function render(){hbody.innerHTML=view.map((r,i)=>`<tr onclick="pick(${i},this)"><td>${esc(r.job_no)}</td><td>${esc(r.item_name||'')}</td><td>${esc(r.customer_name||'')}</td><td class="c">${esc(r.design_completion_planned_date||'')}</td><td class="c">${esc(r.s1_date||'')}</td><td class="c">${srcTag(r.job_no)}</td><td class="c">${esc(r.customer_request_date||'')}</td></tr>`).join('');countText.textContent=view.length+'건';}
 /* v78: SET외주·외주설계 열은 제거됨 (영업관리 › 조립외주/설계외주에서 관리) */
-const VEND={set:{},des:{}};
+/* v73: 제작계획의 설계 사내/외주 구분. 이 화면은 사내설계 전용이라 외주 제번은 빼고 보여준다. */
+const DSRC={};
+const srcOf=job=>DSRC[job]||'';
+const srcTag=job=>{const v=srcOf(job);return v?`<span class="tag ${v==='외주'?'out':'in'}">${v}</span>`:'<span style="color:#9aa7b1">-</span>'};
+async function loadSrc(){
+ if(!online())return;
+ try{const ps=await MESDB.table('sales_plans').select('select=job_no,design_outsourced');
+  Object.keys(DSRC).forEach(k=>delete DSRC[k]);
+  (ps||[]).forEach(r=>{DSRC[r.job_no]=(r.design_outsourced===true||r.design_outsourced==='true')?'외주':'사내'});
+ }catch(e){}
+}
+/* v77: 정산완료된 제번(sale_orders.completion_date 있음)은 설계계획 대상에서 뺀다 */
+const DONE=new Set();
+async function loadDone(){
+ if(!online())return;
+ try{const rs=await MESDB.table('sale_orders').select('select=job_no,completion_date');
+  DONE.clear();(rs||[]).forEach(r=>{if(r.completion_date)DONE.add(r.job_no)});
+ }catch(e){}
+}
+/* v78: 콤보 목록 — 담당자(users) · 설계 세부공정(processes 설계그룹) · 제작계획(기간-설계) */
+const EMP=[],MACH=[],PLAN={},SETQ={};
+const optHtml=(rows,val,lab)=>rows.map(r=>`<option value="${esc(val(r))}">${esc(lab?lab(r):'')}</option>`).join('');
+async function loadRefs(){
+ if(!online())return;
+ try{const rs=await MESDB.table('users').select('select=name,department_name&order=name');
+  EMP.length=0;(rs||[]).forEach(r=>{if(r.name)EMP.push(r)});
+  const dl=document.getElementById('dl_emp');if(dl)dl.innerHTML=optHtml(EMP,r=>r.name,r=>r.department_name||'');
+ }catch(e){}
+ try{const rs=await MESDB.table('processes').select('select=process_code,process_name&process_group=eq.'+encodeURIComponent('설계')+'&order=sort_order');
+  MACH.length=0;(rs||[]).forEach(r=>MACH.push(r));
+  const dl=document.getElementById('dl_mach');if(dl)dl.innerHTML=optHtml(MACH,r=>r.process_code,r=>r.process_name||'');
+ }catch(e){}
+ try{const rs=await MESDB.table('sales_plans').select('select=job_no,design_end_date,design_manager,design_start_date');
+  Object.keys(PLAN).forEach(k=>delete PLAN[k]);(rs||[]).forEach(r=>PLAN[r.job_no]=r);
+ }catch(e){}
+}
+const seqCode=i=>{let s='',n=i;do{s=String.fromCharCode(65+n%26)+s;n=Math.floor(n/26)-1}while(n>=0);return s};
+function seqList(job){const q=Math.max(1,Math.trunc(Number(SETQ[job])||1));return Array.from({length:q},(_,i)=>({code:seqCode(i),name:`${i+1}/${q}`}))}
 function pick(i,tr){const r=view[i];sel=r;document.querySelectorAll('#hbody tr').forEach(x=>x.classList.remove('sel'));tr.classList.add('sel');
  const pl=PLAN[r.job_no]||{};
  /* 품명 자동 · 설계완료예정일은 계획이 있으면 계획값, 없으면 제작계획 기간-설계 완료예정일 · 담당은 제작계획 설계담당 */
