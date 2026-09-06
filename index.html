@@ -217,7 +217,7 @@ input,select{font:inherit}
 </div>
 
 <script>
-const APP_VER='75';
+const APP_VER='76';
 const APP={
   '영업관리':{
     secondary:[
@@ -387,15 +387,15 @@ const pageRegistry={
 '공정단가변동등록':{id:'process_price_change_registration',file:'process_price_change_registration.html',title:'공정단가변동 등록'},
 '공정단가변동현황':{id:'process_price_change_status',file:'process_price_change_status.html',title:'가공공정단가변동 현황'},
 '제조원가조회(실시간)':{id:'manufacturing_cost_inquiry',file:'manufacturing_cost_inquiry.html',title:'제조원가 조회'},
-'수주등록':{id:'sale_order_input',file:'sale_order_input.html',title:'수주정보 등록'},
+'수주등록':{id:'sale_order_input',file:'sale_order_input.html',title:'수주등록'},
 '수주현황':{id:'sale_order_status',file:'sale_order_status.html',title:'수주현황'},
 '제작계획등록':{id:'sales_plan_input',file:'sales_plan_input.html',title:'제작계획등록'},
-'현황판':{id:'status_board',file:'status_board.html',title:'일평기연 현황판'},
-'금형진척현황':{id:'job_progress_board',file:'job_progress_board.html',title:'금형진척현황'},
-'제작계획현황':{id:'sales_plan_status',file:'sales_plan_status.html',title:'제작계획현황'},
-'SET발주현황':{id:'set_order_status',file:'set_order_status.html',title:'SET 발주현황'},
-'SET발주입고':{id:'set_order_receipt',file:'set_order_receipt.html',title:'SET발주입고'},
-'경비등록':{id:'expense_registration',file:'expense_registration.html',title:'경비 등록'},
+'현황판':{id:'status_board',file:'status_board.html',title:'수주현황판'},
+'금형진척현황':{id:'job_progress_board',file:'job_progress_board.html',title:'수주진척현황'},
+'제작계획현황':{id:'sales_plan_status',file:'sales_plan_status.html',title:'제작진행현황'},
+'SET발주현황':{id:'set_order_status',file:'set_order_status.html',title:'조립외주현황'},
+'SET발주입고':{id:'set_order_receipt',file:'set_order_receipt.html',title:'조립외주입고'},
+'경비등록':{id:'expense_registration',file:'expense_registration.html',title:'경비등록'},
 '경비현황':{id:'expense_status',file:'expense_status.html',title:'경비현황'},
 '설계계획등록':{id:'design_plan_input',file:'design_plan_input.html',title:'설계계획등록'},
 '설계실적등록':{id:'design_result_input',file:'design_result_input.html',title:'설계실적등록'},
@@ -404,7 +404,7 @@ const pageRegistry={
 'PartList 등록(원재료)':{id:'partlist_material_input',file:'partlist_material_input.html',title:'PartList 등록(원재료)'},
 'PartList 등록(구매품)':{id:'partlist_purchase_input',file:'partlist_purchase_input.html',title:'PartList 등록(구매품)'},
 'PartList 현황':{id:'partlist_status',file:'partlist_status.html',title:'PartList 현황'},
-'SET외주제작등록':{id:'set_order_registration',file:'set_order_registration.html',title:'SET외주제작등록'},
+'SET외주제작등록':{id:'set_order_registration',file:'set_order_registration.html',title:'조립외주발주'},
 '가공계획등록':{id:'machining_plan_input',file:'machining_plan_input.html',title:'가공계획등록'},
 '매입현황':{id:'purchase_status',file:'purchase_status.html',title:'매입현황'},
 '조립실적조회':{id:'design_result_inquiry_assembly',file:'design_result_inquiry.html?mode=assembly',title:'조립실적조회'},
@@ -415,9 +415,9 @@ const pageRegistry={
 '원재료 발주현황':{id:'material_order_status',file:'material_order_status.html',title:'원재료 발주현황'},
 '구매품 발주':{id:'purchase_order_input',file:'purchase_order_input.html',title:'구매품 발주'},
 '구매품 입고':{id:'purchase_receipt_input',file:'purchase_receipt_input.html',title:'구매품 입고'},
-'외주설계발주등록':{id:'outsourced_design_order_input',file:'outsourced_design_order_input.html',title:'외주설계발주등록'},
-'외주설계발주입고':{id:'outsourced_design_receipt_input',file:'outsourced_design_receipt_input.html',title:'외주설계발주입고'},
-'외주설계발주현황':{id:'outsourced_design_order_status',file:'outsourced_design_order_status.html',title:'외주설계발주현황'},
+'외주설계발주등록':{id:'outsourced_design_order_input',file:'outsourced_design_order_input.html',title:'설계외주발주'},
+'외주설계발주입고':{id:'outsourced_design_receipt_input',file:'outsourced_design_receipt_input.html',title:'설계외주입고현황'},
+'외주설계발주현황':{id:'outsourced_design_order_status',file:'outsourced_design_order_status.html',title:'설계외주현황'},
 'PartList 복사':{id:'partlist_copy',file:'partlist_copy.html',title:'PartList 복사'},
 '재고조회':{id:'stock_inquiry',file:'stock_inquiry.html',title:'재고조회'},
 '구매품 발주현황':{id:'purchase_order_status',file:'purchase_order_status.html',title:'구매품 발주현황'},
@@ -536,11 +536,11 @@ function placeMega(li,mega){
 function buildSide(){}
 /* v74: 메가메뉴 표시명. 화면 고유키(탭·권한·즐겨찾기)는 그대로 두고 메뉴 글자만 짧게 */
 const MENU_LABEL={
-  '수주등록':'등록','수주현황':'현황','현황판':'현황판','금형진척현황':'진척현황',
-  '제작계획등록':'등록','제작계획현황':'현황',
-  '외주설계발주등록':'발주','외주설계발주입고':'입고','외주설계발주현황':'현황',
-  'SET외주제작등록':'발주','SET발주입고':'입고','SET발주현황':'현황',
-  '경비등록':'등록','경비현황':'현황'};
+  '수주등록':'수주등록','수주현황':'수주현황','현황판':'수주현황판','금형진척현황':'수주진척현황',
+  '제작계획등록':'제작계획등록','제작계획현황':'제작진행현황',
+  '외주설계발주등록':'설계외주발주','외주설계발주입고':'설계외주입고현황','외주설계발주현황':'설계외주현황',
+  'SET외주제작등록':'조립외주발주','SET발주입고':'조립외주입고','SET발주현황':'조립외주현황',
+  '경비등록':'경비등록','경비현황':'경비현황'};
 function menuLink(n){
   const p=pageRegistry[n];const on=p&&p.id===activeId;
   const a=el('a',on?'active':'',`<span title="${esc(n)}">${esc(MENU_LABEL[n]||n)}</span><span class="star ${favs.includes(n)?'on':''}" title="즐겨찾기">★</span>`);
