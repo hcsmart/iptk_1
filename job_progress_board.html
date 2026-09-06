@@ -263,8 +263,10 @@ async function resetJob(job){
  const ok=confirm(`[${job}] 을(를) 완전히 삭제합니다.\n\n삭제 대상: 수주정보(제번), 제작계획, 외주설계·원재료·구매품·외주가공 발주/입고, 설계계획·실적, PartList, 가공계획·작업지시·이력카드, 조립실적, 검사실적, SET발주, 경비\n\n되돌릴 수 없습니다. 계속할까요?`);
  if(!ok)return;
  const typed=prompt(`확인을 위해 제번을 그대로 입력하세요:\n${job}`);
- if(typed===null)return;
- if(typed.trim()!==job){msg('제번이 일치하지 않아 취소했습니다.');return}
+ if(typed===null){msg(`${job} 삭제를 취소했습니다. (아무것도 지워지지 않았습니다)`);return}
+ if(typed.trim()!==job){
+  alert(`입력한 제번이 다릅니다.\n\n입력: ${typed.trim()}\n대상: ${job}\n\n아무것도 삭제하지 않았습니다.`);
+  msg(`제번이 일치하지 않아 취소했습니다. (입력: ${typed.trim()} / 대상: ${job}) — 아무것도 지워지지 않았습니다.`);return}
  try{
   msg(`${job} 진행내용 삭제 중...`);
   const r=await MESDB.rpc('mes_reset_job_progress',{p_job:job});
@@ -276,7 +278,15 @@ async function resetJob(job){
   rows=rows.filter(x=>x.job_no!==job);apply();
   await load();
   setTimeout(load,800);
-  msg(`${job} 을(를) 삭제했습니다. ${r&&r.deleted!=null?r.deleted+'건':''}`+(tabs?` (${tabs})`:''));
+  /* v80: 정말로 지워졌는지 확인한다. 남아 있으면 조용히 넘어가지 않고 알린다 */
+  let left=0;
+  try{const chk=await MESDB.table('jobs').select(`select=job_no&job_no=eq.${encodeURIComponent(job)}`);left=(chk||[]).length}catch(e){}
+  if(left){
+   alert(`${job} 이(가) 아직 남아 있습니다. 삭제가 완전히 되지 않았습니다.`);
+   msg(`${job} 삭제가 완전히 되지 않았습니다. 화면을 새로고침한 뒤 다시 시도하세요.`);
+  }else{
+   msg(`${job} 을(를) 삭제했습니다. ${r&&r.deleted!=null?r.deleted+'건':''}`+(tabs?` (${tabs})`:''));
+  }
  }catch(e){msg('진행삭제 실패: '+String(e.message||e).slice(0,140))}
 }
 function goScreen(name){
