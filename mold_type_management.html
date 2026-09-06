@@ -21,7 +21,7 @@ button,input,select,textarea{font:inherit;color:inherit}.screen{height:100%;disp
 <footer class="foot"><button class="btn" onclick="save()">▣ 저장</button><button class="btn" onclick="add()">＋ 신규</button><button class="btn" onclick="sampleFill()" title="예시값을 순서대로 채우며 등록요점을 설명합니다.">◈ 등록예제</button><button class="btn" onclick="window.remove()">✖ 삭제</button><button class="btn" onclick="exportCsv()">▤ EXCEL</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">데이터를 조회했습니다.</span><span class="right" id="countText"></span></footer>
 </div>
 <script>
-const data=[{"code": "MD001", "name": "PROGRESSIVE", "remark": ""}, {"code": "MD002", "name": "SEMI+단발", "remark": ""}, {"code": "MD005", "name": "TR", "remark": ""}];
+const data=[];
 let view=[...data],selected=-1;
 const fieldIds=['code','name','remark'], colKeys=['code','name','remark'], keyName='code';
 function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
