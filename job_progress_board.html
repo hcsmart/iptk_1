@@ -271,7 +271,11 @@ async function resetJob(job){
   const tabs=r&&r.tables?Object.entries(r.tables).map(([k,v])=>`${k} ${v}`).join(', '):'';
   try{MESDB.notify&&MESDB.notify(['jobs','sale_orders','sale_order_status_rows','sales_plans','sales_plan_status_rows','order_lines','design_plans','design_plan_steps','design_results','partlist_materials','partlist_purchases','assembly_jobs','assembly_steps','work_order_details','inspection_results','set_order_lines','expenses','sale_orders'])}catch(e){}
   open.delete(job);
+  /* v80: 삭제 즉시 화면에서 지우고(낙관적 갱신) → DB 재조회 → 잠시 뒤 한 번 더.
+     RPC 는 여러 테이블을 지우므로 뷰 반영이 살짝 늦을 수 있다. */
+  rows=rows.filter(x=>x.job_no!==job);apply();
   await load();
+  setTimeout(load,800);
   msg(`${job} 을(를) 삭제했습니다. ${r&&r.deleted!=null?r.deleted+'건':''}`+(tabs?` (${tabs})`:''));
  }catch(e){msg('진행삭제 실패: '+String(e.message||e).slice(0,140))}
 }
