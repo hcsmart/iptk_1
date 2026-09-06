@@ -16,14 +16,15 @@ table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th
 .filt{padding:7px 14px;background:#fafbfc;border-bottom:1px solid var(--line2)}
 .frow{display:grid;grid-template-columns:56px 1fr;gap:6px;align-items:center}
 .frow+.frow{margin-top:5px}
-.opts{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.opts{display:flex;flex-wrap:nowrap;gap:11px;align-items:center;padding-left:74px;white-space:nowrap}
 .opts label{display:flex;align-items:center;gap:3px;cursor:pointer}
-.f2{display:grid;grid-template-columns:repeat(4,max-content minmax(120px,200px));gap:6px 8px;align-items:center;justify-content:start}
+.f2{display:grid;grid-template-columns:repeat(4,66px minmax(120px,200px));gap:6px 8px;align-items:center;justify-content:start}
 .f2 .lb{font-weight:700;text-align:right;padding-right:2px;white-space:nowrap}
 .f2>.lb:not(:first-child){margin-left:22px}
 .f2 .field{width:100%}
-@media(max-width:1500px){.f2{grid-template-columns:repeat(3,max-content minmax(110px,190px))}}
-@media(max-width:1150px){.f2{grid-template-columns:repeat(2,max-content minmax(110px,1fr))}.f2>.lb:not(:first-child){margin-left:12px}}
+@media(max-width:1500px){.f2{grid-template-columns:repeat(3,66px minmax(110px,190px))}}
+@media(max-width:1150px){.f2{grid-template-columns:repeat(2,66px minmax(110px,1fr))}.f2>.lb:not(:first-child){margin-left:12px}
+ .opts{flex-wrap:wrap;white-space:normal}}
 .gtot td{background:#dfe9f2;font-weight:700}
 
 /* v21 입력란 배치 보정: 좁은 폭에서 필드를 숨기지 않고 단계적으로 줄바꿈 */
@@ -54,7 +55,7 @@ table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th
    <label><input type="radio" name="st" value="전체" checked>전체</label>
    <label><input type="radio" name="st" value="진행">진행</label>
    <label><input type="radio" name="st" value="완료">완료</label>
-   <span style="display:inline-block;width:1px;height:18px;background:#9aa8b4;margin:0 14px;vertical-align:middle"></span>
+   <span style="display:inline-block;width:1px;height:18px;background:#9aa8b4;margin:0 10px;vertical-align:middle"></span>
    <span style="font-weight:700">수주유형</span>
    <label><input type="radio" name="ot" value="전체" checked>전체</label>
    <label><input type="radio" name="ot" value="신작">신작</label>
