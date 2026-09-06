@@ -33,7 +33,7 @@ input.cell{width:100%;height:20px;border:1px solid #cbd4dc;padding:0 3px;text-al
     <div class="box"><div class="box-title">제번리스트</div><div class="tablewrap"><table>
       <colgroup><col style="width:38px"><col style="width:22%"><col style="width:24%"><col style="width:18%"><col style="width:18%"><col style="width:18%"></colgroup>
       <thead><tr><th></th><th>제번</th><th>품명</th><th>완료예정일</th><th>T/O 예정일</th><th>고객요구일</th></tr></thead><tbody id="jobBody"></tbody></table></div></div>
-    <div class="box"><div class="box-title">조수 공정 대기 리스트</div><div class="tablewrap"><table>
+    <div class="box"><div class="box-title">공정(조)수 대기 리스트</div><div class="tablewrap"><table>
       <colgroup><col style="width:38px"><col style="width:50%"><col style="width:45%"></colgroup>
       <thead><tr><th></th><th>공정코드</th><th>공정명</th></tr></thead><tbody id="poolBody"></tbody></table></div></div>
   </section>
@@ -125,30 +125,34 @@ async function loadJobs(){
   const rs=await MESDB.table('job_pool').select('select=*&order=row_no');
   const seen=new Set(JOBS.map(j=>j.job));
   rs.forEach(r=>{if(!seen.has(r.job_no))JOBS.push({job:r.job_no,item:r.item_name||'',
-    due:r.completion_date||'',s1:r.s1_date||'',cust:r.customer_name||''})});
+    due:r.completion_date||'',s1:r.s1_date||'',cust:r.customer_name||'',setQty:Number(r.set_qty)||0})});
   jobView=[...JOBS];jobIdx=JOBS.length?0:-1;renderJobs();
   await loadPool();
  }catch(e){}
 }
-/* 대기 공정 리스트: 설계계획 세부공정 → 없으면 표준공정 A/1/1 */
+/* 대기 리스트: 제번의 공정(조)수만큼 A,B,C… 로 전개.
+   v73 까지는 설계계획 세부공정(사내설계 전용)이 없으면 A/1/1 한 줄만 나와 3조짜리도 1조분만 발주됐다. */
+const seqCode=i=>{let s='',n=i;do{s=String.fromCharCode(65+n%26)+s;n=Math.floor(n/26)-1}while(n>=0);return s};
 async function loadPool(){
- const job=jobView[jobIdx]?.job;if(!job||!online())return;
- try{
-  const st=await MESDB.table('design_plan_steps').select(`select=*&job_no=eq.${encodeURIComponent(job)}&order=row_no`);
-  POOL.length=0;
-  if(st&&st.length)st.forEach(s=>POOL.push({proc:s.process_code,procName:s.process_name}));
-  else POOL.push({proc:'A',procName:'1/1'});
-  renderPool();
- }catch(e){}
+ const j=jobView[jobIdx];const job=j?.job;if(!job)return;
+ POOL.length=0;
+ const q=Math.max(1,Math.trunc(Number(j.setQty)||1));
+ for(let i=0;i<q;i++)POOL.push({proc:seqCode(i),procName:`${i+1}/${q}`});
+ /* 사내 설계계획에 세부공정이 있으면 그 코드도 함께 (조수 외 별도 공정이 있는 경우) */
+ if(online()){try{
+  const st=await MESDB.table('design_plan_steps').select(`select=process_code,process_name&job_no=eq.${encodeURIComponent(job)}&order=row_no`);
+  (st||[]).forEach(s=>{if(s.process_code&&!POOL.some(p=>p.proc===s.process_code))POOL.push({proc:s.process_code,procName:s.process_name||''})});
+ }catch(e){}}
+ renderPool();
 }
 function exportCsv(){const out=[['제번','협력업체','공정','공정명','발주일','입고예정일','견적가','네고가','작성자'],...ORD.map(r=>[jobView[jobIdx]?.job||'',r.vendor,r.proc,r.procName,r.odate,r.edate,r.quote,r.nego,r.writer])];const csv='\ufeff'+out.map(a=>a.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='outsourced_design_order_input.csv';a.click();URL.revokeObjectURL(a.href)}
 function msg(t){message.textContent=t}
 renderJobs();renderPool();renderVendors();renderOrd();window.MES={search,save,exportCsv,setMessage:msg,reload:loadJobs};loadJobs();
 </script>
-<script src="mes_sample.js?v=67"></script><script src="mes_scene.js?v=67"></script><script src="mes_demo.js?v=67"></script><script src="mes_db.js?v=67"></script>
+<script src="mes_sample.js?v=74"></script><script src="mes_scene.js?v=74"></script><script src="mes_demo.js?v=74"></script><script src="mes_db.js?v=74"></script>
 <script>MESDB.bind("outsourced_design_order_input",()=>({ORD}));   /* v62: 제번/공정/업체는 매번 DB 에서 (스냅샷 복원 시 취소 수주 잔존) */</script>
-<script src="mes_ctx.js?v=67"></script>
-<script src="mes_lookup.js?v=67"></script>
+<script src="mes_ctx.js?v=74"></script>
+<script src="mes_lookup.js?v=74"></script>
 <script>
 /* 협력업체 목록: 하드코딩 → 마스터 직결 */
 (async function loadVendors(){
@@ -168,8 +172,8 @@ window.MESLOOK_RELOAD_VENDORS=async()=>{MESLOOK.invalidate('design_partner');
  if(typeof venView!=='undefined')venView=[...VENDORS];
  if(typeof renderVendors==='function')renderVendors();};
 </script>
-<script src="mes_price.js?v=67"></script>
-<script src="mes_vendorcheck.js?v=67"></script>
+<script src="mes_price.js?v=74"></script>
+<script src="mes_vendorcheck.js?v=74"></script>
 <script>
 function sampleFill(){
   if(window.MESDEMO)return MESDEMO.run('outsourced_design_order_input',{});
