@@ -670,7 +670,10 @@ window.MESCTX={confirm:dlgConfirm};
  #mesleH{position:fixed;width:9px;cursor:ew-resize;z-index:9998;background:#e0801a;border-radius:2px;opacity:.85}
  #mesleBar{position:fixed;right:12px;bottom:50px;z-index:9999;background:#fff8ee;border:1px solid #e0a35a;border-radius:4px;padding:5px 8px;font-size:12px;display:flex;gap:5px;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,.2);white-space:nowrap}
  #mesleBar button{height:25px;padding:0 8px;border:1px solid #9ba8b4;background:linear-gradient(#fff,#dfe6eb);cursor:pointer;font:inherit}
- #mesleBar b{color:#b45f06}#mesleBar .id{color:#5a6b7a;min-width:90px}#mesleBar .tip{color:#8a97a3}`;
+ #mesleBar b{color:#b45f06}#mesleBar .id{color:#5a6b7a;min-width:90px}#mesleBar .tip{color:#8a97a3}
+ #mesleBar input{width:64px;height:25px;border:1px solid #9ba8b4;padding:0 5px;text-align:right;font:inherit}
+ #mesleBar button[data-a=save]{border-color:#e0801a;background:linear-gradient(#fff5e8,#f6d6ab);font-weight:700}
+ #mesleBar.dirty button[data-a=save]{background:linear-gradient(#ffe9c9,#f0b45f)}`;
  (document.head||document.documentElement).appendChild(st);
 
  const FQ='input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not(.mescb-in),select,textarea';
@@ -737,14 +740,27 @@ window.MESCTX={confirm:dlgConfirm};
 
  /* ── 편집모드 UI ── */
  let on=false,sel=null,bar=null,hand=null,drag=null,press=null;
+ const dirty=new Set();                        /* 아직 저장하지 않은 항목 */
+ const mark=id=>{dirty.add(id);if(bar){bar.classList.add('dirty');hint('저장 안 됨 '+dirty.size+'건 — [저장]을 누르세요')}};
  const hint=t=>{if(bar)bar.querySelector('.tip').textContent=t};
  function ui(){
   if(bar)return;
   bar=document.createElement('div');bar.id='mesleBar';
-  bar.innerHTML=`<b>배치 편집(전체 공통)</b><span class="id"></span><span class="tip">핸들 드래그=폭 · 칸 드래그=자리 이동</span>`+
-   `<button data-a="reset">이 화면 배치 초기화</button><button data-a="close">닫기(Esc)</button>`;
+  bar.innerHTML=`<b>배치 편집(전체 공통)</b><span class="id"></span>`+
+   `<span>폭</span><input type="number" class="w" min="60" max="900" step="5" title="선택한 칸의 폭(px). 입력 후 Enter"><span>px</span>`+
+   `<button data-a="save">▤ 저장</button><button data-a="reset">초기화</button><button data-a="close">닫기(Esc)</button>`+
+   `<span class="tip">핸들 드래그=폭 · 칸 드래그=자리 이동</span>`;
+  const wi=bar.querySelector('.w');
+  const applyW=()=>{if(!sel)return;const v=Math.max(60,Math.min(900,Math.round(Number(wi.value)||0)));
+   if(!v)return;wi.value=v;setWidth(sel,v);S[sel.id]=Object.assign(S[sel.id]||{},{width:v});mark(sel.id);place()};
+  wi.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();applyW()}e.stopPropagation()});
+  wi.addEventListener('change',applyW);
+  wi.addEventListener('mousedown',e=>e.stopPropagation());
   bar.addEventListener('click',async e=>{const a=e.target.dataset.a;if(!a)return;
    if(a==='close')exit();
+   else if(a==='save'){if(!dirty.size){hint('바뀐 내용이 없습니다.');return}
+    const ids=[...dirty];hint('저장 중…');await persist(ids,KEY);dirty.clear();bar.classList.remove('dirty');
+    hint(ids.length+'건 저장됨 — 전 사용자에게 적용됩니다.')}
    else if(a==='reset'){if(confirm('이 화면의 배치를 원래대로 되돌릴까요? (전 사용자에게 적용)')){await wipe(KEY);try{MESDB.notify&&MESDB.notify(['ui_layout'])}catch(e){}location.reload()}}
   });
   document.body.appendChild(bar);
@@ -755,9 +771,11 @@ window.MESCTX={confirm:dlgConfirm};
  function place(){if(!sel||!hand)return;const r=visual(sel).getBoundingClientRect();
   hand.style.display='';hand.style.left=(r.right-4)+'px';hand.style.top=r.top+'px';hand.style.height=r.height+'px'}
  function select(el){if(sel)visual(sel).classList.remove('mes-le-sel');sel=el;
-  if(el){visual(el).classList.add('mes-le-sel');bar.querySelector('.id').textContent='#'+el.id;place()}else if(hand)hand.style.display='none'}
+  if(el){visual(el).classList.add('mes-le-sel');bar.querySelector('.id').textContent='#'+el.id;
+   const wi=bar.querySelector('.w');if(wi)wi.value=Math.round(visual(el).getBoundingClientRect().width);place()}
+  else if(hand)hand.style.display='none'}
  function enter(el){if(!isMaster())return;if(!on){on=true;document.body.classList.add('mes-le-on');ui()}select(el)}
- function exit(){on=false;document.body.classList.remove('mes-le-on');select(null);if(bar){bar.remove();bar=null}if(hand){hand.remove();hand=null}drag=null}
+ function exit(){if(dirty.size&&!confirm('저장하지 않은 변경이 '+dirty.size+'건 있습니다. 저장하지 않고 닫을까요?'))return;dirty.clear();on=false;document.body.classList.remove('mes-le-on');select(null);if(bar){bar.remove();bar=null}if(hand){hand.remove();hand=null}drag=null}
 
  /* 길게 누르기 → 편집모드. 편집모드 안에서는 클릭=선택+이동 드래그 시작 */
  document.addEventListener('mousedown',e=>{
@@ -777,7 +795,7 @@ window.MESCTX={confirm:dlgConfirm};
  document.addEventListener('mousemove',e=>{
   if(press&&(Math.abs(e.clientX-press.x)>4||Math.abs(e.clientY-press.y)>4)){clearTimeout(press.t);press=null}
   if(!drag)return;e.preventDefault();
-  if(drag.mode==='size'){const w=Math.max(60,Math.min(900,Math.round(drag.w0+e.clientX-drag.x0)));setWidth(drag.el,w);S[drag.el.id]=Object.assign(S[drag.el.id]||{},{width:w});place();hint(w+'px');return}
+  if(drag.mode==='size'){const w=Math.max(60,Math.min(900,Math.round(drag.w0+e.clientX-drag.x0)));setWidth(drag.el,w);S[drag.el.id]=Object.assign(S[drag.el.id]||{},{width:w});place();const wi=bar&&bar.querySelector('.w');if(wi)wi.value=w;hint(w+'px');return}
   if(Math.abs(e.clientX-drag.x0)>4||Math.abs(e.clientY-drag.y0)>4)drag.moved=true;
   if(!drag.moved)return;
   const t=srcOf(document.elementFromPoint(e.clientX,e.clientY));
@@ -789,7 +807,7 @@ window.MESCTX={confirm:dlgConfirm};
  document.addEventListener('mouseup',async()=>{
   if(press){clearTimeout(press.t);press=null}
   if(!drag)return;const d=drag;drag=null;
-  if(d.mode==='size'){place();await persist([d.el.id],KEY);hint('저장됨 '+S[d.el.id].width+'px');return}
+  if(d.mode==='size'){place();mark(d.el.id);return}
   if(!d.over)return;
   visual(d.over).classList.remove('mes-le-drop');
   const a=gridOf(d.el),b=gridOf(d.over);const pa=pairOf(a.cell),pb=pairOf(b.cell);
@@ -799,7 +817,7 @@ window.MESCTX={confirm:dlgConfirm};
   /* 이 그리드 안 모든 필드의 순서를 기록 */
   const fs=fields(g);fs.forEach((f,i)=>{S[f.el.id]=Object.assign(S[f.el.id]||{},{ord:i})});
   fs.forEach(f=>{if(S[f.el.id].width)setWidth(f.el,S[f.el.id].width)});
-  place();await persist(fs.map(f=>f.el.id),KEY);hint('자리 저장됨');
+  place();fs.forEach(f=>mark(f.el.id));
  },true);
  document.addEventListener('keydown',e=>{if(on&&e.key==='Escape'){e.preventDefault();e.stopPropagation();exit()}},true);
  window.addEventListener('scroll',place,true);window.addEventListener('resize',place);
