@@ -53,7 +53,7 @@ const online=()=>!!(window.MESDB&&MESDB.online);
 async function loadRows(){
  for(let i=0;i<60&&!window.MESDB;i++)await new Promise(r=>setTimeout(r,50));
  if(window.MESDB&&MESDB.ready){try{await MESDB.ready}catch(e){}}
- if(!online()){msg('DB 미연결 — 사진 판독본을 표시합니다.');render();return}
+ if(!online()){msg('DB 미연결 — 목록을 불러올 수 없습니다.');render();return}
  try{
   const rs=await MESDB.table('outsourced_design_status_view').select('select=*&order=row_no');
   rows.length=0;

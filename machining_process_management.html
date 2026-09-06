@@ -26,42 +26,7 @@
   <footer class="foot"><button class="btn" onclick="save()">▣ 저장</button><button class="btn" onclick="add()">＋ 신규</button><button class="btn" onclick="sampleFill()" title="예시값을 순서대로 채우며 등록요점을 설명합니다.">◈ 등록예제</button><button class="btn" onclick="window.remove()">✖ 삭제</button><button class="btn" onclick="exportCsv()">▤ EXCEL</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">가공공정 데이터를 조회했습니다.</span><span class="right" id="countText"></span></footer>
 </div>
 <script>
-const data=[
-{code:'DL',name:'조립도',group:'설계',order:1,complete:30,progress:'Y',plan:'Y',remark:''},
-{code:'DA',name:'레이아웃',group:'설계',order:2,complete:30,progress:'Y',plan:'Y',remark:''},
-{code:'DP',name:'부품도',group:'설계',order:3,complete:40,progress:'Y',plan:'Y',remark:''},
-{code:'CT',name:'코팅',group:'가공',order:0,complete:0,progress:'N',plan:'Y',remark:''},
-{code:'LM1',name:'선반 황삭',group:'가공',order:0,complete:0,progress:'N',plan:'Y',remark:''},
-{code:'LM2',name:'선반 밀처리 정삭',group:'가공',order:0,complete:0,progress:'N',plan:'Y',remark:''},
-{code:'NL1',name:'M/C정삭(대형)',group:'가공',order:0,complete:0,progress:'N',plan:'Y',remark:''},
-{code:'NL2',name:'M/C밀처리정삭',group:'가공',order:0,complete:0,progress:'N',plan:'Y',remark:''},
-{code:'TC',name:'각인',group:'가공',order:0,complete:0,progress:'N',plan:'Y',remark:''},
-{code:'TE',name:'방전',group:'가공',order:0,complete:0,progress:'N',plan:'Y',remark:''},
-{code:'WS1',name:'WIRE CUT1',group:'가공',order:0,complete:0,progress:'N',plan:'Y',remark:''},
-{code:'AB',name:'가공ASSY',group:'가공',order:1,complete:0,progress:'N',plan:'Y',remark:''},
-{code:'MA',name:'면삭밀링(소형)',group:'가공',order:2,complete:0,progress:'N',plan:'Y',remark:''},
-{code:'MF',name:'면삭밀링(대형)',group:'가공',order:3,complete:0,progress:'N',plan:'Y',remark:''},
-{code:'MP',name:'면삭밀링(초대형)',group:'가공',order:4,complete:0,progress:'N',plan:'Y',remark:''},
-{code:'MS',name:'성형밀링(소형)',group:'가공',order:5,complete:0,progress:'N',plan:'Y',remark:''},
-{code:'DR',name:'DRILLING',group:'가공',order:6,complete:0,progress:'N',plan:'Y',remark:''},
-{code:'HA',name:'홀가공',group:'가공',order:7,complete:0,progress:'N',plan:'Y',remark:''},
-{code:'HQ',name:'열처리',group:'가공',order:8,complete:0,progress:'N',plan:'Y',remark:''},
-{code:'NM',name:'M/C황삭(소형,중형)',group:'가공',order:9,complete:0,progress:'N',plan:'Y',remark:''},
-{code:'NL',name:'M/C정삭(대형)',group:'가공',order:10,complete:0,progress:'N',plan:'Y',remark:''},
-{code:'GS',name:'성형연삭(소형)',group:'가공',order:11,complete:0,progress:'N',plan:'Y',remark:''},
-{code:'GM',name:'평면연삭(중형)',group:'가공',order:12,complete:0,progress:'N',plan:'Y',remark:''},
-{code:'GL',name:'평면연삭(대형)',group:'가공',order:13,complete:0,progress:'N',plan:'Y',remark:''},
-{code:'WS',name:'WIRE CUT',group:'가공',order:15,complete:0,progress:'N',plan:'Y',remark:''},
-{code:'LM',name:'선반',group:'가공',order:18,complete:0,progress:'N',plan:'Y',remark:''},
-{code:'GG',name:'원통연삭',group:'가공',order:19,complete:0,progress:'N',plan:'Y',remark:''},
-{code:'WW',name:'용접',group:'가공',order:20,complete:0,progress:'N',plan:'Y',remark:''},
-{code:'NM1',name:'M/C정삭(소형,중형)',group:'가공',order:25,complete:0,progress:'N',plan:'Y',remark:''},
-{code:'NM2',name:'M/C열처리정삭',group:'가공',order:26,complete:0,progress:'N',plan:'Y',remark:''},
-{code:'AS',name:'래핑,조립',group:'조립',order:1,complete:25,progress:'Y',plan:'Y',remark:''},
-{code:'TO',name:'시험',group:'조립',order:2,complete:25,progress:'Y',plan:'Y',remark:''},
-{code:'S1',name:'S1',group:'조립',order:3,complete:25,progress:'Y',plan:'Y',remark:''},
-{code:'CQ',name:'품질육성',group:'조립',order:4,complete:25,progress:'Y',plan:'Y',remark:''}
-];
+const data=[];
 let view=[...data],selected=-1;
 function render(){body.innerHTML=view.map((r,i)=>`<tr onclick="select('${r.code}',this)"><td class="c">${i+1}</td><td>${r.code}</td><td>${r.name}</td><td class="c">${r.group}</td><td class="num">${r.order}</td><td class="num">${r.complete}</td><td class="c">${r.progress}</td><td class="c">${r.plan}</td><td>${r.remark}</td></tr>`).join('');countText.textContent=`${view.length}건`}
 function select(c,tr){selected=data.findIndex(x=>x.code===c);document.querySelectorAll('tbody tr').forEach(x=>x.classList.remove('sel'));tr?.classList.add('sel');const r=data[selected];if(!r)return;code.value=r.code;document.getElementById('name').value=r.name;group.value=r.group;order.value=r.order;completeProgress.value=r.complete;useProgress.value=r.progress;usePlan.value=r.plan;remark.value=r.remark;msg(`${r.code} ${r.name} 공정을 선택했습니다.`)}

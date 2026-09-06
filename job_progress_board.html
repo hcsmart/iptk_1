@@ -124,14 +124,7 @@ const STAGES=[
  {k:'delivery', n:'납품'}
 ];
 const OWNERS=['영업','설계','구매','가공','조립','품질'];
-const SAMPLE=[{job_no:'26DGA010A',item_name:'가전',product_name:'DOOR,LINER',customer_name:'서성정기',
- order_status:'진행',design_outsourced:true,design_vendor:'대성설계',sales_manager:'오수아',design_manager:'이태윤',
- s1_planned_date:'2026-09-20',delivery_planned_date:'2026-11-30',progress_pct:40,
- st_order:'done',st_plan:'done',st_design:'run',st_partlist:'done',st_purchase:'wait',st_machining:'wait',
- st_assembly:'wait',st_inspect:'wait',st_tryout:'wait',st_delivery:'wait',
- od_cnt:1,od_pct:50,pl_mat:7,pl_pur:0,buy_ord:0,buy_cfm:0,mac_ord:0,wo_cnt:0,asm_steps:0,insp_cnt:0,
- next_owner:'설계',next_screen:'외주설계발주입고',next_step:'외주설계 진척 50% 입니다. 도면 수령분을 입고처리하세요.',
- s1_overdue:false,delivery_overdue:false,s1_days_left:15,delivery_days_left:86}];
+const SAMPLE=[];
 
 let rows=[...SAMPLE],view=[],fOwner='',fLate=false,open=new Set();
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));

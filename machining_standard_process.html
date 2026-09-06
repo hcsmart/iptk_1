@@ -48,17 +48,7 @@
   <footer class="bottom"><button class="btn" onclick="search()">⌕ 검색</button><button class="btn" onclick="save()">▣ 저장</button><button class="btn" onclick="removeStandard()">✖ 삭제</button><button class="btn" onclick="sampleFill()" title="예시값을 순서대로 채우며 등록요점을 설명합니다.">▶ 등록예제</button><button class="btn" onclick="clearForm()">□ 신규</button><div class="msg" id="message">데이터가 조회되었습니다.</div><div class="spacer"></div><div class="status" id="countText"></div></footer>
 </div>
 <script>
-const standards=[
-{id:'1',name:'표준',owner:'임직원',date:'2023-09-21',processes:['CT','LM1','LM2','TC']},
-{id:'2',name:'EWE형2',owner:'임직원',date:'2023-08-24',processes:['NL1','NL2','WS1']},
-{id:'3',name:'기본',owner:'임직원',date:'2023-08-24',processes:['MP','MS','DR']},
-{id:'4',name:'대형 가공',owner:'임직원',date:'2024-03-05',processes:['HA','HQ','NM']},
-{id:'5',name:'EWE형2',owner:'임직원',date:'2024-06-29',processes:['CT','GS','WS']},
-{id:'6',name:'EWE형2',owner:'임직원',date:'2023-06-29',processes:['MF','MP','MS']},
-{id:'7',name:'외주 일반형',owner:'임직원',date:'2023-09-04',processes:['DR','GL']},
-{id:'8',name:'외주EWE1',owner:'임직원',date:'2023-09-05',processes:['HQ','NM','NL']},
-{id:'9',name:'외주EWE2',owner:'임직원',date:'2024-09-24',processes:['GS','GM','WS']}
-];
+const standards=[];
 const processes=[
 ['CT','코팅'],['LM1','선반 황삭'],['LM2','선반 밀처리 정삭'],['NL1','M/C정삭(대형)'],['NL2','M/C밀처리정삭'],['TC','각인'],['TE','방전'],['WS1','WIRE CUT1'],['AB','가공ASSY'],['MA','면삭밀링(소형)'],['MF','면삭밀링(대형)'],['MP','면삭밀링(초대형)'],['MS','성형밀링(소형)'],['DR','DRILLING'],['HA','홀가공'],['HQ','열처리'],['NM','M/C황삭'],['NL','M/C정삭'],['GS','성형연삭'],['GM','평면연삭'],['GL','평면연삭(대형)'],['WS','WIRE CUT'],['LM','선반'],['GG','원통연삭'],['WW','홈가공'],['NM1','M/C황삭(소형,중형)'],['NM2','M/C밀처리정삭']
 ];
