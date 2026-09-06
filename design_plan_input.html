@@ -44,7 +44,7 @@ table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th
 @media(max-width:1400px){.formrow{grid-template-columns:78px minmax(0,1fr) 78px minmax(0,1fr)}}
 @media(max-width:880px){.formrow{grid-template-columns:78px minmax(0,1fr)}}
 .formrow>*{min-width:0}
-</style></head><body><div class="screen"><div class="title"><h1>설계계획등록</h1><small>설계관리</small></div><section class="filt"><div class="f2"><div class="lb">제 번</div><div><input id="q_job" class="field cbo" list="dl_job" autocomplete="off" placeholder="제번 입력/선택" title="정산완료되지 않은 사내설계 제번입니다. 글자를 입력하면 걸러집니다."></div><div class="lb">품 명</div><div><input id="q_item" class="field"></div><div></div><div style="color:#6b7a87;font-size:11px;white-space:nowrap" title="외주설계 제번은 영업관리 › 설계외주에서 발주·입고로 관리합니다.">※ 사내설계 제번만 표시 (외주설계는 영업관리 › 설계외주)</div></div></section><datalist id="dl_job"></datalist><div class="panes" style="grid-template-rows:1.2fr 1fr"><div class="pane"><div class="ph">제번리스트</div><div class="pb"><table style="min-width:900px"><thead><tr><th style="width:140px">제번</th><th style="width:200px">품명</th><th style="width:170px">고객사</th><th style="width:120px">설계완료 예정일</th><th style="width:110px">T/O 예정일</th><th style="width:70px">설계구분</th><th style="width:140px">SET외주</th><th style="width:140px">외주설계</th><th>고객요구일</th></tr></thead><tbody id="hbody"></tbody></table></div></div><div class="panes" style="grid-template-columns:1fr 1.3fr;grid-template-rows:1fr;padding:0;gap:8px"><div class="pane"><div class="ph">조수 리스트</div><div class="pb"><table style="min-width:0"><thead><tr><th style="width:110px">공정코드</th><th>공정명</th><th style="width:100px">담당자</th></tr></thead><tbody id="sbody"></tbody></table></div></div><div class="pane"><div class="ph">세부공정 리스트</div><div class="pb"><table style="min-width:640px"><thead><tr><th style="width:90px">공정코드</th><th style="width:80px">공정명</th><th style="width:110px">가공공정코드</th><th style="width:130px">가공공정명</th><th>완료 예정일</th></tr></thead><tbody id="dbody"></tbody></table></div></div></div></div><div style="display:flex;gap:4px;padding:6px;align-items:center;flex-wrap:wrap;border-top:1px solid #c3ccd4;background:#f4f8fb"><span class="lb">설계완료예정일</span><input id="fPlanDate" class="field" type="date" style="width:140px"><span class="lb">설계담당</span><input id="fManager" class="field" style="width:90px"><span class="lb">공정</span><input id="fProc" class="field" style="width:56px" value="A"><input id="fProcName" class="field" style="width:70px" value="1/1"><span class="lb">가공공정</span><input id="fMach" class="field" style="width:70px" placeholder="DA"><input id="fMachName" class="field" style="width:90px" placeholder="레이아웃"><button class="btn" onclick="addStep()">＋ 세부공정</button><button class="btn" onclick="delStep()">－ 세부공정</button></div><footer class="foot"><button class="btn" onclick="search()">⌕ 검색</button><button class="btn" onclick="save()">▤ 저장</button><button class="btn" onclick="sampleFill()" title="화면 순서대로 시연하며 등록요점을 설명합니다.">▶ 등록예제</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">제번을 선택하면 세부공정이 표시됩니다.</span><span class="right" id="countText"></span></footer></div><script>const heads=[];const steps=[];const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+</style></head><body><div class="screen"><div class="title"><h1>설계계획등록</h1><small>설계관리</small></div><section class="filt"><div class="f2"><div class="lb">제 번</div><div><input id="q_job" class="field cbo" list="dl_job" autocomplete="off" placeholder="제번 입력/선택" title="정산완료되지 않은 사내설계 제번입니다. 글자를 입력하면 걸러집니다."></div><div class="lb">품 명</div><div><input id="q_item" class="field"></div><div></div><div style="color:#6b7a87;font-size:11px;white-space:nowrap" title="외주설계 제번은 영업관리 › 설계외주에서 발주·입고로 관리합니다.">※ 사내설계 제번만 표시 (외주설계는 영업관리 › 설계외주)</div></div></section><datalist id="dl_job"></datalist><div class="panes" style="grid-template-rows:1.2fr 1fr"><div class="pane"><div class="ph">제번리스트</div><div class="pb"><table style="min-width:900px"><thead><tr><th style="width:140px">제번</th><th style="width:200px">품명</th><th style="width:170px">고객사</th><th style="width:120px">설계완료 예정일</th><th style="width:110px">T/O 예정일</th><th style="width:70px">설계구분</th><th>고객요구일</th></tr></thead><tbody id="hbody"></tbody></table></div></div><div class="panes" style="grid-template-columns:1fr 1.3fr;grid-template-rows:1fr;padding:0;gap:8px"><div class="pane"><div class="ph">조수 리스트</div><div class="pb"><table style="min-width:0"><thead><tr><th style="width:110px">공정코드</th><th>공정명</th><th style="width:100px">담당자</th></tr></thead><tbody id="sbody"></tbody></table></div></div><div class="pane"><div class="ph">세부공정 리스트</div><div class="pb"><table style="min-width:640px"><thead><tr><th style="width:90px">공정코드</th><th style="width:80px">공정명</th><th style="width:110px">가공공정코드</th><th style="width:130px">가공공정명</th><th>완료 예정일</th></tr></thead><tbody id="dbody"></tbody></table></div></div></div></div><div style="display:flex;gap:4px;padding:6px;align-items:center;flex-wrap:wrap;border-top:1px solid #c3ccd4;background:#f4f8fb"><span class="lb">설계완료예정일</span><input id="fPlanDate" class="field" type="date" style="width:140px"><span class="lb">설계담당</span><input id="fManager" class="field cbo" list="dl_emp" autocomplete="off" style="width:110px" placeholder="입력/선택"><span class="lb">공정</span><input id="fProc" class="field cbo" list="dl_proc" autocomplete="off" style="width:70px" value="A" placeholder="A" title="조수 리스트의 공정코드"><input id="fProcName" class="field" style="width:70px" value="1/1" readonly title="공정을 고르면 자동"><span class="lb">가공공정</span><input id="fMach" class="field cbo" list="dl_mach" autocomplete="off" style="width:80px" placeholder="DA" title="기준정보 › 공정관리의 설계 공정"><input id="fMachName" class="field" style="width:90px" placeholder="레이아웃" readonly title="가공공정을 고르면 자동"><datalist id="dl_emp"></datalist><datalist id="dl_proc"></datalist><datalist id="dl_mach"></datalist><button class="btn" onclick="addStep()">＋ 세부공정</button><button class="btn" onclick="delStep()">－ 세부공정</button></div><footer class="foot"><button class="btn" onclick="search()">⌕ 검색</button><button class="btn" onclick="save()">▤ 저장</button><button class="btn" onclick="sampleFill()" title="화면 순서대로 시연하며 등록요점을 설명합니다.">▶ 등록예제</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">제번을 선택하면 세부공정이 표시됩니다.</span><span class="right" id="countText"></span></footer></div><script>const heads=[];const steps=[];const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const n=v=>v==null?'':Number(v).toLocaleString();const p=v=>v==null?'':Number(v).toFixed(2)+'%';
 const msg=t=>message.textContent=t;
 let view=[...heads];
@@ -52,43 +52,28 @@ let view=[...heads];
    heads 에 섞어 두면 MESDB.master 의 클릭 동기화가 미수립 제번까지 design_plans 에 자동 삽입했다. */
 const POOL=[];
 const allHeads=()=>[...heads,...POOL.filter(p=>!heads.some(h=>h.job_no===p.job_no))];
-function render(){hbody.innerHTML=view.map((r,i)=>`<tr onclick="pick(${i},this)"><td>${esc(r.job_no)}</td><td>${esc(r.item_name||'')}</td><td>${esc(r.customer_name||'')}</td><td class="c">${esc(r.design_completion_planned_date||'')}</td><td class="c">${esc(r.s1_date||'')}</td><td class="c">${srcTag(r.job_no)}</td><td class="c">${esc(VEND.set[r.job_no]||'-')}</td><td class="c">${esc(VEND.des[r.job_no]||'-')}</td><td class="c">${esc(r.customer_request_date||'')}</td></tr>`).join('');countText.textContent=view.length+'건';}
-/* v63: SET외주 / 외주설계 협력업체 표시 (set_order_lines, order_lines[외주설계]) */
+function render(){hbody.innerHTML=view.map((r,i)=>`<tr onclick="pick(${i},this)"><td>${esc(r.job_no)}</td><td>${esc(r.item_name||'')}</td><td>${esc(r.customer_name||'')}</td><td class="c">${esc(r.design_completion_planned_date||'')}</td><td class="c">${esc(r.s1_date||'')}</td><td class="c">${srcTag(r.job_no)}</td><td class="c">${esc(r.customer_request_date||'')}</td></tr>`).join('');countText.textContent=view.length+'건';}
+/* v78: SET외주·외주설계 열은 제거됨 (영업관리 › 조립외주/설계외주에서 관리) */
 const VEND={set:{},des:{}};
-/* v73: 제작계획의 설계 사내/외주 구분. 이 화면은 사내설계용이라 기본은 '사내'만 보여준다.
-   계획 미수립(구분 없음)은 아직 정해지지 않은 것이므로 '사내'에 함께 보인다. */
-const DSRC={};
-const srcOf=job=>DSRC[job]||'';
-/* v77: 정산완료된 제번(sale_orders.completion_date 있음)은 설계계획 대상에서 뺀다 */
-const DONE=new Set();
-async function loadDone(){
- if(!online())return;
- try{const rs=await MESDB.table('sale_orders').select('select=job_no,completion_date');
-  DONE.clear();(rs||[]).forEach(r=>{if(r.completion_date)DONE.add(r.job_no)});
- }catch(e){}
-}
-const srcTag=job=>{const v=srcOf(job);return v?`<span class="tag ${v==='외주'?'out':'in'}">${v}</span>`:'<span style="color:#9aa7b1">-</span>'};
-async function loadSrc(){
- if(!online())return;
- try{const ps=await MESDB.table('sales_plans').select('select=job_no,design_outsourced');
-  Object.keys(DSRC).forEach(k=>delete DSRC[k]);
-  ps.forEach(r=>{DSRC[r.job_no]=(r.design_outsourced===true||r.design_outsourced==='true')?'외주':'사내'});
- }catch(e){}
-}
-async function loadVendors(){
- if(!online())return;
- const agg=(rows,key)=>{const m={};rows.forEach(r=>{const v=r[key];if(!v||!r.job_no)return;(m[r.job_no]=m[r.job_no]||new Set()).add(v)});const o={};Object.keys(m).forEach(j=>o[j]=[...m[j]].join(', '));return o};
- try{VEND.set=agg(await MESDB.table('set_order_lines').select('select=job_no,partner_vendor_name'),'partner_vendor_name')}catch(e){}
- try{VEND.des=agg(await MESDB.table('order_lines').select('select=job_no,vendor_name&category=eq.외주설계'),'vendor_name')}catch(e){}
- render();
-}
-function pick(i,tr){const r=view[i];sel=r;if(typeof fPlanDate!=='undefined')fPlanDate.value=r.design_completion_planned_date||'';document.querySelectorAll('#hbody tr').forEach(x=>x.classList.remove('sel'));tr.classList.add('sel');
+function pick(i,tr){const r=view[i];sel=r;document.querySelectorAll('#hbody tr').forEach(x=>x.classList.remove('sel'));tr.classList.add('sel');
+ const pl=PLAN[r.job_no]||{};
+ /* 품명 자동 · 설계완료예정일은 계획이 있으면 계획값, 없으면 제작계획 기간-설계 완료예정일 · 담당은 제작계획 설계담당 */
+ q_item.value=r.item_name||'';
+ fPlanDate.value=r.design_completion_planned_date||pl.design_end_date||'';
+ if(!fManager.value)fManager.value=pl.design_manager||'';
  const rs=steps.filter(s=>s.job_no===r.job_no);
- const seen=new Set();
- sbody.innerHTML=rs.filter(s=>!seen.has(s.process_code)&&seen.add(s.process_code)).map(s=>`<tr><td>${esc(s.process_code)}</td><td>${esc(s.process_name||'')}</td><td>${esc(s.manager_name||'')}</td></tr>`).join('')||'<tr><td colspan="3" class="c" style="height:60px;color:#8a97a2">-</td></tr>';
+ /* 조수 리스트: 공정(조)수만큼 A,B,C… (세부공정에 등록된 담당자가 있으면 표시) */
+ const seqs=seqList(r.job_no);
+ const mgrOf=code=>{const x=rs.find(s=>s.process_code===code&&s.manager_name);return x?x.manager_name:(pl.design_manager||'')};
+ sbody.innerHTML=seqs.map((x,k)=>`<tr onclick="pickSeq('${x.code}','${x.name}')" title="클릭하면 공정 칸에 들어갑니다"><td>${esc(x.code)}</td><td>${esc(x.name)}</td><td>${esc(mgrOf(x.code))}</td></tr>`).join('');
+ const dl=document.getElementById('dl_proc');if(dl)dl.innerHTML=optHtml(seqs,x=>x.code,x=>x.name);
+ fProc.value=seqs[0]?seqs[0].code:'A';fProcName.value=seqs[0]?seqs[0].name:'1/1';
  dbody.innerHTML=rs.length?rs.map(s=>`<tr><td>${esc(s.process_code)}</td><td>${esc(s.process_name||'')}</td><td>${esc(s.machining_process_code||'')}</td><td>${esc(s.machining_process_name||'')}</td><td class="c">${esc(s.completion_planned_date||'')}</td></tr>`).join('')
   :'<tr><td colspan="5" class="c" style="height:60px;color:#8a97a2">등록된 세부공정이 없습니다.</td></tr>';
  msg(`${r.job_no} · 세부공정 ${rs.length}건`);}
+function pickSeq(code,name){fProc.value=code;fProcName.value=name;document.querySelectorAll('#sbody tr').forEach(t=>t.classList.toggle('sel',t.cells[0].textContent===code))}
+fProc.addEventListener('change',()=>{const x=(sel?seqList(sel.job_no):[]).find(y=>y.code===fProc.value.trim());fProcName.value=x?x.name:''});
+fMach.addEventListener('change',()=>{const x=MACH.find(y=>y.process_code===fMach.value.trim());fMachName.value=x?x.process_name:''});
 function curSrc(){return '사내'}   /* v74: 이 화면은 사내설계 전용 */
 /* 계획을 세울 수 있는 제번: 사내설계(또는 미수립) + 정산 미완료 */
 function pickable(){return allHeads().filter(r=>srcOf(r.job_no)!=='외주'&&!DONE.has(r.job_no))}
@@ -112,20 +97,19 @@ q_job.addEventListener('change',()=>search());
 let sel=null;
 const online=()=>!!(window.MESDB&&MESDB.online);
 document.addEventListener('change',e=>{if(e.target&&e.target.name==='dsrc')search()});
-(function(){const bind=()=>{if(window.MESDB&&MESDB.onChange){MESDB.onChange(['sales_plans','sale_orders'],async()=>{await loadSrc();await loadDone();fillJobList();search()});return true}return false};
+(function(){const bind=()=>{if(window.MESDB&&MESDB.onChange){MESDB.onChange(['sales_plans','sale_orders','users','processes'],async()=>{await loadSrc();await loadDone();await loadRefs();fillJobList();search()});return true}return false};
  if(!bind()){let n=0;const iv=setInterval(()=>{if(bind()||++n>40)clearInterval(iv)},100)}})();
 async function waitDB(){for(let i=0;i<60&&!window.MESDB;i++)await new Promise(r=>setTimeout(r,50));
  if(window.MESDB&&MESDB.ready){try{await MESDB.ready}catch(e){}}}
 
 async function loadPool(){
  await waitDB();if(!online())return;
- await loadSrc();await loadDone();
- loadVendors();
+ await loadSrc();await loadDone();await loadRefs();
  try{
   const pool=await MESDB.table('job_pool').select('select=*&order=row_no');
   POOL.length=0;
   const seen=new Set(heads.map(h=>h.job_no));
-  pool.forEach(r=>{if(!seen.has(r.job_no))POOL.push({row_no:null,job_no:r.job_no,item_name:r.item_name,
+  pool.forEach(r=>{SETQ[r.job_no]=r.set_qty;if(!seen.has(r.job_no))POOL.push({row_no:null,job_no:r.job_no,item_name:r.item_name,
     customer_name:r.customer_name,design_completion_planned_date:null,
     s1_date:r.s1_date,customer_request_date:r.customer_request_date,plant_name:r.plant_name,_new:true})});
   fillJobList();search();
@@ -147,7 +131,7 @@ async function save(){
  try{
   /* v39: 신규는 row_no 미전달(identity), 기존 행만 명시 */
   const o={job_no:sel.job_no,item_name:sel.item_name,customer_name:sel.customer_name,
-   design_completion_planned_date:fPlanDate.value||sel.design_completion_planned_date||null,
+   design_completion_planned_date:fPlanDate.value||sel.design_completion_planned_date||(PLAN[sel.job_no]||{}).design_end_date||null,
    s1_date:sel.s1_date||null,customer_request_date:sel.customer_request_date||null,
    plant_name:sel.plant_name||'1공장'};
   await MESDB.table('design_plans').upsert(o,'job_no');
@@ -177,7 +161,7 @@ async function addStep(){
    job_no:sel.job_no,process_code:proc,process_name:(fProcName.value||'1/1').trim(),
    manager_name:fManager.value||null,machining_process_code:fMach.value||null,
    machining_process_name:fMachName.value||null,
-   completion_planned_date:fPlanDate.value||null},'row_no');
+   completion_planned_date:fPlanDate.value||(PLAN[sel.job_no]||{}).design_end_date||null},'row_no');
   await reloadSteps(sel.job_no);
   msg(`${sel.job_no} 세부공정 ${proc} 을(를) 추가했습니다.`);
  }catch(e){msg('추가 실패: '+String(e.message||e).slice(0,120))}
@@ -191,12 +175,12 @@ async function delStep(){
   await reloadSteps(sel.job_no);msg(`세부공정 ${rs.length}건을 삭제했습니다.`);
  }catch(e){msg('삭제 실패: '+String(e.message||e).slice(0,120))}
 }
-window.MES={search,save,setMessage:msg,reload:loadPool};render();loadPool();</script><script src="mes_sample.js?v=67"></script><script src="mes_scene.js?v=67"></script><script src="mes_demo.js?v=67"></script><script src="mes_db.js?v=67"></script>
+window.MES={search,save,setMessage:msg,reload:loadPool};render();loadPool();</script><script src="mes_sample.js?v=78"></script><script src="mes_scene.js?v=78"></script><script src="mes_demo.js?v=78"></script><script src="mes_db.js?v=78"></script>
 <script>
 MESDB.master({page:"design_plan_input:heads",table:"design_plans",pk:"job_no",map:{/* v39: row_no 는 DB identity 이므로 매핑 제외 (null 전송 시 NOT NULL 위반) */"job_no": "job_no", "item_name": "item_name", "customer_name": "customer_name", "design_completion_planned_date": {"col": "design_completion_planned_date", "type": "date"}, "s1_date": {"col": "s1_date", "type": "date"}, "customer_request_date": {"col": "customer_request_date", "type": "date"}, "plant_name": "plant_name"},get:()=>heads,render:()=>{if(typeof view!=="undefined")view=(typeof allHeads==='function'?allHeads():[...heads]);(window.render||window.search||function(){})()}});
 MESDB.master({page:"design_plan_input:steps",table:"design_plan_steps",pk:"row_no",map:{"row_no": {"col": "row_no", "type": "num"}, "job_no": "job_no", "process_code": "process_code", "process_name": "process_name", "manager_name": "manager_name", "machining_process_code": "machining_process_code", "machining_process_name": "machining_process_name", "completion_planned_date": {"col": "completion_planned_date", "type": "date"}},get:()=>steps,render:()=>{if(typeof view!=="undefined")view=(typeof allHeads==='function'?allHeads():[...heads]);(window.render||window.search||function(){})()}});
 </script>
-<script src="mes_ctx.js?v=67"></script>
+<script src="mes_ctx.js?v=78"></script>
 
 <script>
 function sampleFill(){
