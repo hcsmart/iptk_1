@@ -23,7 +23,7 @@ table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th
 .g4{grid-template-columns:repeat(4,74px minmax(110px,1fr))}
 .g3{grid-template-columns:64px repeat(3,1fr)}
 .lb{font-weight:700;text-align:right;padding-right:3px}
-.amt{display:grid;grid-template-columns:64px repeat(8,1fr);gap:4px;padding:8px 9px;align-items:end}
+.amt{display:grid;grid-template-columns:74px repeat(8,minmax(0,200px));gap:5px;padding:8px 9px;align-items:end;justify-content:start}
 .amt .hd{text-align:center;font-weight:700;font-size:11px;color:#4b5c6a;padding-bottom:2px}
 .amt input{width:100%;height:26px;border:1px solid #b5c0c9;text-align:right;padding:0 5px}
 .pct{font-size:11px;color:#5d6d7b;text-align:right}
@@ -59,7 +59,7 @@ table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th
  <div class="lb">조 립</div><input id="assembly_start_date" type="date" class="field"><div class="c">~</div><input id="assembly_end_date" type="date" class="field"><input id="assembly_days" class="field c" placeholder="일수" title="소요일수 (자동 계산)"><div class="chk src" title="사내 작업인지 외주(협력업체)인지 선택합니다."><label><input type="radio" name="assembly_src" value="사내" checked>사내</label><label><input type="radio" name="assembly_src" value="외주">외주</label></div><div class="chk"><span class="lb" style="width:52px">담당자</span><input id="assembly_manager" class="field cbo" list="dl_emp" autocomplete="off" style="width:160px" placeholder="입력 또는 선택"></div><div class="chk" style="justify-content:center"><input type="checkbox" id="assembly_set_outsourced" title="세트(조수 전체) 외주"></div><input id="assembly_vendor" class="field cbo" list="dl_vd_asm" autocomplete="off" placeholder="외주 선택 시" disabled><input id="assembly_tryout_date" type="date" class="field" title="이 단계의 완료예정일 (비우면 기본정보 T/O 예정일)"><div></div>
 </div></div>
 <div class="blk"><div class="bt">금액</div>
- <div class="gg" style="grid-template-columns:56px 1fr 64px 1fr 64px 1fr 72px 1fr">
+ <div class="gg g4">
   <div class="lb">수주가</div><input id="order_price" class="field num" oninput="recalc()"><div class="lb">목표가</div><input id="target_price" class="field num" readonly title="아래 8개 금액의 합계 (자동)"><div class="lb">이익금</div><input id="profit_amount" class="field num" readonly title="수주가 − 목표가 (자동)"><div class="lb">이익률(%)</div><input id="profit_rate_pct" class="field num" readonly title="이익금 ÷ 수주가 (자동)">
  </div>
  <div class="amt">

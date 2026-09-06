@@ -469,10 +469,18 @@ window.MESCTX={confirm:dlgConfirm};
    }
   });
   /* 화면 코드가 값을 바꾸거나 옵션을 다시 채우면 표시도 따라간다 */
-  const sync=()=>{const t=isSel?labelOf(box,el.value):(el.value||'');if(document.activeElement!==inp&&inp.value!==t)inp.value=t};
-  el.addEventListener('change',sync);
-  new MutationObserver(sync).observe(el,{childList:true,attributes:true,attributeFilter:['value']});
-  if(dl)new MutationObserver(sync).observe(dl,{childList:true});
+  const sync=(force)=>{const t=isSel?labelOf(box,el.value):(el.value||'');if((force||document.activeElement!==inp)&&inp.value!==t)inp.value=t};
+  el.addEventListener('change',()=>sync());
+  new MutationObserver(()=>sync()).observe(el,{childList:true,attributes:true,attributeFilter:['value']});
+  if(dl)new MutationObserver(()=>sync()).observe(dl,{childList:true});
+  /* v72: 화면 코드가 el.value 로 직접 값을 넣으면 보이는 칸이 '즉시' 따라온다.
+   * (800ms 폴링만 믿으면 그 사이 blur 가 나면서 빈 글자로 commit 되어 값이 지워졌다) */
+  try{const pr=isSel?HTMLSelectElement.prototype:HTMLInputElement.prototype;
+   const d=Object.getOwnPropertyDescriptor(pr,'value');
+   if(d&&d.get&&d.set)Object.defineProperty(el,'value',{configurable:true,enumerable:true,
+    get(){return d.get.call(this)},
+    set(v){d.set.call(this,v);try{sync(true)}catch(e){}}});
+  }catch(e){}
   box.sync=sync;BOXES.push(box);
  }
  function scan(root){
