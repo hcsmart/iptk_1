@@ -667,6 +667,7 @@ window.MESCTX={confirm:dlgConfirm};
 /* ── v72→v81: 배치 편집 (전 화면 공용) ────────────────────────────────
  * 마스터가 입력칸 또는 리스트제목(패널 머리글)을 0.6초 길게 누르면 편집모드.
  *   [입력칸]     오른쪽 주황 핸들 = 폭 · 칸 드래그해 다른 칸에 놓기 = 자리 바꿈
+ *                v84: 줄마다 grid 가 나뉜 폼(.formgrid 등)에서도 줄을 넘나들며 바꿀 수 있다
  *   [리스트제목] 오른쪽 핸들 = 폭 · 아래쪽 핸들 = 높이 · 제목 드래그해 다른
  *                제목에 놓기 = 같은 부모 안에서 블록끼리 자리 바꿈
  *   [버튼]       v83: 길게 누른 뒤 드래그 = 화면 어디로든 자유 이동 (하단 검색버튼을 상단으로 등)
@@ -725,9 +726,19 @@ window.MESCTX={confirm:dlgConfirm};
   return o.length>1?o:[]}
  const tracks=grid=>trackList(grid,'gridTemplateColumns');
  function colOf(grid,cell){const t=tracks(grid);if(!t.length)return-1;return[...grid.children].indexOf(cell)%t.length}
- /* 그리드 안의 필드(id 있는 것) → 셀 단위로 중복 제거 */
- function fields(grid){const out=[],seen=new Set();grid.querySelectorAll(FQ).forEach(el=>{if(!el.id)return;
-  const g=gridOf(el);if(!g||g.grid!==grid||seen.has(g.cell))return;seen.add(g.cell);out.push({el,cell:g.cell})});return out}
+ /* v84: 한 줄이 grid 하나인 화면(.formgrid 를 줄마다 두는 폼)이 많아서, 같은 부모 아래
+  * 열 구성이 같은 형제 그리드를 한 묶음으로 보고 줄을 넘나드는 이동도 허용한다. */
+ function gridsOf(grid){
+  const p=grid&&grid.parentElement;if(!p)return grid?[grid]:[];
+  const n=tracks(grid).length;if(!n)return [grid];
+  const g=[...p.children].filter(c=>c===grid||(c.nodeType===1&&isGrid(c)&&c.className===grid.className&&tracks(c).length===n));
+  return g.length?g:[grid]}
+ const sameGroup=(a,b)=>!!a&&!!b&&(a===b||gridsOf(a).indexOf(b)>=0);
+ /* 그리드(묶음) 안의 필드(id 있는 것) → 셀 단위로 중복 제거, DOM 순서 */
+ function fields(grids){const gs=Array.isArray(grids)?grids:[grids];const out=[],seen=new Set();
+  gs.forEach(grid=>grid.querySelectorAll(FQ).forEach(el=>{if(!el.id)return;
+   const g=gridOf(el);if(!g||g.grid!==grid||seen.has(g.cell))return;seen.add(g.cell);out.push({el,cell:g.cell,grid})}));
+  return out}
 
  /* ── 리스트제목 블록 ── */
  function headLabel(h){const c=h.cloneNode(true);
@@ -793,16 +804,14 @@ window.MESCTX={confirm:dlgConfirm};
    if(tr.length){const nc=tc.length||1,i=[...p.children].indexOf(box);
     const ri=Math.floor(i/nc);if(ri>=0&&ri<tr.length){tr[ri]=h+'px';p.style.gridTemplateRows=tr.join(' ')}}}
  }
- function applyOrder(grid){
-  const fs=fields(grid);const has=fs.filter(f=>S[f.el.id]&&S[f.el.id].ord!=null);if(has.length<2)return;
+ function applyOrder(grids){
+  const fs=fields(grids);const has=fs.filter(f=>S[f.el.id]&&S[f.el.id].ord!=null);if(has.length<2)return;
   const sorted=has.slice().sort((a,b)=>S[a.el.id].ord-S[b.el.id].ord);
   if(has.every((f,i)=>f===sorted[i]))return;             /* 이미 그 순서 */
-  const head=new Map();has.forEach((f,i)=>head.set(pairOf(f.cell)[0],sorted[i]));   /* 자리의 첫 셀 → 그 자리에 올 필드 */
-  const skip=new Set();has.forEach(f=>pairOf(f.cell).forEach(c=>skip.add(c)));
-  const out=[];for(const c of [...grid.children]){
-   if(head.has(c)){pairOf(head.get(c).cell).forEach(x=>out.push(x));continue}
-   if(skip.has(c))continue;out.push(c)}
-  out.forEach(c=>grid.appendChild(c));
+  /* 지금 자리마다 표식을 꽂고, 정렬된 순서대로 그 자리에 채워 넣는다 (줄을 넘나들어도 안전) */
+  const marks=has.map(f=>{const a=pairOf(f.cell)[0],m=document.createComment('');a.parentElement.insertBefore(m,a);return m});
+  sorted.forEach((f,i)=>{const m=marks[i];pairOf(f.cell).forEach(nd=>m.parentElement.insertBefore(nd,m))});
+  marks.forEach(m=>m.remove());
  }
  function applyBlocks(){
   tagBlocks();
@@ -828,9 +837,10 @@ window.MESCTX={confirm:dlgConfirm};
    if(s.x!=null&&s.y!=null)setPos(b,s.x,s.y)});
  }
  function applyAll(){
-  const grids=new Set();
-  document.querySelectorAll(FQ).forEach(el=>{if(!el.id||!S[el.id])return;const g=gridOf(el);if(g)grids.add(g.grid)});
-  grids.forEach(applyOrder);
+  const done=new Set();
+  document.querySelectorAll(FQ).forEach(el=>{if(!el.id||!S[el.id])return;
+   const g=gridOf(el);if(!g||done.has(g.grid))return;
+   const gs=gridsOf(g.grid);gs.forEach(x=>done.add(x));applyOrder(gs)});
   document.querySelectorAll(FQ).forEach(el=>{const s=el.id&&S[el.id];if(s&&s.width)setWidth(el,s.width)});
   applyBlocks();applyButtons();
  }
@@ -977,7 +987,7 @@ window.MESCTX={confirm:dlgConfirm};
   }else{
    const t=srcOf(pt);
    const a=gridOf(drag.el),b=t&&t.id&&t!==drag.el?gridOf(t):null;
-   drag.over=(b&&a&&b.grid===a.grid&&pairOf(b.cell).length===pairOf(a.cell).length)?t:null;
+   drag.over=(b&&a&&sameGroup(a.grid,b.grid)&&pairOf(b.cell).length===pairOf(a.cell).length)?t:null;
   }
   if(drag.over)visual(drag.over).classList.add('mes-le-drop');
  },true);
@@ -999,11 +1009,12 @@ window.MESCTX={confirm:dlgConfirm};
    hint('리스트 자리를 바꿨습니다 — [저장]을 누르세요');return;
   }
   const a=gridOf(d.el),b=gridOf(d.over);const pa=pairOf(a.cell),pb=pairOf(b.cell);
-  const g=a.grid,ma=document.createComment(''),mb=document.createComment('');
-  g.insertBefore(ma,pa[0]);g.insertBefore(mb,pb[0]);
-  pa.forEach(n=>g.insertBefore(n,mb));pb.forEach(n=>g.insertBefore(n,ma));ma.remove();mb.remove();
-  /* 이 그리드 안 모든 필드의 순서를 기록 */
-  const fs=fields(g);fs.forEach((f,i)=>{S[f.el.id]=Object.assign(S[f.el.id]||{},{ord:i})});
+  const ma=document.createComment(''),mb=document.createComment('');
+  pa[0].parentElement.insertBefore(ma,pa[0]);pb[0].parentElement.insertBefore(mb,pb[0]);
+  pa.forEach(n=>mb.parentElement.insertBefore(n,mb));pb.forEach(n=>ma.parentElement.insertBefore(n,ma));
+  ma.remove();mb.remove();
+  /* 이 그리드 묶음 안 모든 필드의 순서를 기록 (줄을 넘어간 이동도 그대로 저장) */
+  const fs=fields(gridsOf(a.grid));fs.forEach((f,i)=>{S[f.el.id]=Object.assign(S[f.el.id]||{},{ord:i})});
   fs.forEach(f=>{if(S[f.el.id].width)setWidth(f.el,S[f.el.id].width)});
   place();fs.forEach(f=>mark(f.el.id));
  },true);
