@@ -98,7 +98,7 @@ table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th
 
  <div class="label">비 고</div><div class="span3"><input id="remark" class="field"></div>
  <div class="label">수주가</div><div><input id="order_price" class="field num"></div>
- <div class="label">완료일</div><div><input id="comp_date" type="date" class="field"></div>
+ <div class="label">정산완료일</div><div><input id="comp_date" type="date" class="field" title="납품 후 잔여 수정·검수·정산까지 끝나 이 제번을 종결한 날."></div>
 </section>
 <div class="secthead">첨부파일</div>
 <div class="toolbar"><button class="btn" onclick="attPick()">파일첨부</button><button class="btn" onclick="attOpen(1)">다운로드</button><button class="btn" onclick="attOpen()">미리보기</button><button class="btn" onclick="attDel()">파일삭제</button><input type="file" id="attFile" multiple style="display:none" onchange="attUpload(this.files)"></div>

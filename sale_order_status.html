@@ -64,7 +64,7 @@ table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th
   <th style="width:44px">NO</th><th style="width:104px">제번</th><th style="width:112px">모델</th><th style="width:112px">도번</th>
   <th style="width:180px">품명</th><th style="width:72px">ECO</th><th style="width:140px">고객사</th><th style="width:70px" title="공정 SET 수(조수)">공정(조)수</th>
   <th style="width:70px">개발유형</th><th style="width:70px">수주유형</th><th style="width:96px">금형타입</th><th style="width:78px">기계사양</th>
-  <th style="width:92px">수주일</th><th style="width:104px">T/O 예정일</th><th style="width:92px">완료일</th><th style="width:110px">양산처</th><th style="width:60px">상태</th>
+  <th style="width:92px">수주일</th><th style="width:104px">T/O 예정일</th><th style="width:92px" title="정산까지 끝나 제번을 종결한 날">정산완료일</th><th style="width:110px">양산처</th><th style="width:60px">상태</th>
  </tr></thead>
  <tbody id="body"></tbody>
  <tfoot><tr class="gtot"><td colspan="17" class="c" id="totline">조회 건수 0건</td></tr></tfoot>
@@ -122,7 +122,7 @@ const DFIELDS=[['job_no','제번'],['plant_name','공장'],['order_status','수�
  ['mass_production_vendor_name','양산처'],['product_name','품명'],['model','모델'],['process_set_qty','공정(조)수'],
  ['quotation_price','견적가'],['machine_spec_name','기계사양'],['material_used','사용재료'],
  ['s1_completed_date','T/O 완료일'],['delivery_completed_date','납기완료일'],['eco','ECO'],
- ['order_price','수주가'],['completion_date','완료일'],['remark','비고']];
+ ['order_price','수주가'],['completion_date','정산완료일'],['remark','비고']];
 async function openDetail(r){
  if(!r)return;
  let d=r;
@@ -205,7 +205,7 @@ async function delOrder(){
  message.textContent=`${r.job_no} 수주를 삭제했습니다.`;
 }
 function exportCsv(){
- const h=['제번','모델','도번','품명','ECO','고객사','공정','개발유형','수주유형','금형타입','기계사양','수주일','T/O예정일','완료일','양산처','상태'];
+ const h=['제번','모델','도번','품명','ECO','고객사','공정','개발유형','수주유형','금형타입','기계사양','수주일','T/O예정일','정산완료일','양산처','상태'];
  const rs=view.map(r=>[r.job_no,r.model,r.drawing_no,r.item_name,r.eco,r.customer_name,r.set_qty,r.development_type,r.order_type,r.mold_type_name,r.machine_spec_name,r.order_date,r.s1_planned_date,r.completion_date,r.mass_production_vendor_name,r.order_status]);
  const csv='\ufeff'+[h,...rs].map(a=>a.map(x=>'"'+String(x??'').replaceAll('"','""')+'"').join(',')).join('\n');
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='sale_order_status.csv';a.click();
