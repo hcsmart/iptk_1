@@ -803,10 +803,11 @@ window.MESCTX={confirm:dlgConfirm};
   if(on){
    if(e.target.closest('#mesleBar,#mesleH'))return;
    e.preventDefault();e.stopPropagation();
-   if(!el||!el.id||!gridOf(el))return;
+   if(!el||!el.id)return;
    select(el);drag={mode:'move',el,x0:e.clientX,y0:e.clientY,moved:false,over:null};return;
   }
-  if(!el||!el.id||!gridOf(el)||!isMaster())return;
+  /* v79: 그리드가 아닌 입력바(flex 등)에서도 폭 조절은 되게 한다. 자리 이동만 그리드 전용 */
+  if(!el||!el.id||!isMaster())return;
   press={el,x:e.clientX,y:e.clientY,t:setTimeout(()=>{press=null;enter(el);
    try{el.blur();if(el.__mescbBox)el.__mescbBox.inp.blur();document.activeElement&&document.activeElement.blur()}catch(x){}
    drag={mode:'move',el,x0:e.clientX,y0:e.clientY,moved:false,over:null}},600)};
