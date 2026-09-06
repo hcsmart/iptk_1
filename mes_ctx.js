@@ -360,9 +360,15 @@ window.MESCTX={confirm:dlgConfirm};
   pop=document.createElement('div');pop.className='mescb-pop';
   document.body.appendChild(pop);
   pop.addEventListener('mousedown',e=>{
+   e.preventDefault();                           /* 스크롤바 클릭 시 입력창 포커스 유지 → 팝업 닫히지 않음 */
    const it=e.target.closest('.it');if(!it)return;
-   e.preventDefault();choose(Number(it.dataset.i));
+   choose(Number(it.dataset.i));
   });
+  pop.addEventListener('wheel',e=>{              /* 휠은 팝업 안에서만 소비 (부모 스크롤 전파 차단) */
+   const d=e.deltaY,top=pop.scrollTop,max=pop.scrollHeight-pop.clientHeight;
+   if((d<0&&top<=0)||(d>0&&top>=max))e.preventDefault();
+   e.stopPropagation();
+  },{passive:false});
   return pop;
  }
  /* 대상 요소에서 목록을 뽑는다 → [{v:값, l:표시, s:부가설명}] */
@@ -481,7 +487,7 @@ window.MESCTX={confirm:dlgConfirm};
  setTimeout(run,400);setTimeout(run,1500);
  let t=null;
  new MutationObserver(()=>{clearTimeout(t);t=setTimeout(run,250)}).observe(document.documentElement,{childList:true,subtree:true});
- window.addEventListener('scroll',()=>{if(cur)close()},true);
+ window.addEventListener('scroll',e=>{if(!cur)return;if(pop&&(e.target===pop||(e.target&&e.target.nodeType===1&&pop.contains(e.target))))return;close()},true);
  window.addEventListener('resize',()=>{if(cur)close()});
  document.addEventListener('mousedown',e=>{if(cur&&!e.target.closest('.mescb,.mescb-pop'))close()},true);
  window.MESCOMBO={scan:run,build};

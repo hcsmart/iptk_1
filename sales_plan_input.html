@@ -78,10 +78,11 @@ table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th
 <footer class="foot"><button class="btn" onclick="save()">▤ 저장</button><button class="btn" onclick="sampleFill()" title="예시값을 순서대로 채우며 등록요점을 설명합니다.">▶ 등록예제</button><button class="btn" onclick="clearForm()">✕ 삭제</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">제번을 입력하거나 목록에서 고르면 수주정보가 자동으로 채워집니다.</span></footer>
 </div>
 <datalist id="dl_job"></datalist><datalist id="dl_cust"></datalist><datalist id="dl_item"></datalist><datalist id="dl_mold"></datalist><datalist id="dl_emp"></datalist><datalist id="dl_vd_design"></datalist><datalist id="dl_vd_mach"></datalist><datalist id="dl_vd_asm"></datalist>
-<script src="mes_lookup.js?v=68"></script><script>
+<script src="mes_lookup.js?v=71"></script><script>
 /* v68: 제번·고객사·아이템·금형타입·담당자를 기준정보 드롭다운으로 (하드코딩 seed 제거) */
 const AK=['design_internal_amount','design_external_amount','raw_material_amount','purchase_amount','machining_internal_amount','machining_external_amount','assembly_internal_amount','assembly_external_amount'];
 const num=v=>Number(String(v??'').replace(/[^0-9.-]/g,''))||0;
+const fmt=v=>{const n=Number(v);return isFinite(n)&&n!==0?n.toLocaleString('ko-KR'):(n===0?'0':'')};
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 /* select 에 값을 넣는다. 목록에 없는 값(옛 자료·수주정보 텍스트)이면 옵션을 추가해 유지한다 */
 /* v68 사내/외주 라디오 */
@@ -290,9 +291,9 @@ async function syncDesignOrder(o){
 window.MES={save,clearForm,setMessage:t=>message.textContent=t,search:loadJob,load,loadJob};
 job_no.addEventListener('change',()=>loadJob());
 clearForm(true);
-</script><script src="mes_sample.js?v=68"></script><script src="mes_demo.js?v=68"></script><script src="mes_db.js?v=68"></script>
+</script><script src="mes_sample.js?v=68"></script><script src="mes_demo.js?v=68"></script><script src="mes_db.js?v=71"></script>
 <script>loadMasters();</script>
-<script src="mes_ctx.js?v=68"></script>
+<script src="mes_ctx.js?v=71"></script>
 
 <script>
 function sampleFill(){
