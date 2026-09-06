@@ -656,8 +656,9 @@ window.MESCTX={confirm:dlgConfirm};
  * 입력칸을 0.6초 길게 누르면 편집모드가 된다.
  *   · 오른쪽 주황 핸들 드래그  = 폭 조절
  *   · 칸 자체를 드래그해 다른 칸 위에 놓기 = 같은 그리드 안에서 자리 바꿈 (항목명과 함께 이동)
- * 내 배치는 자동 저장(ui_layout.user_key = 내 id). 관리자는 [기본값 저장]으로
- * 전 직원 기본값(user_key='*')을 지정한다. 내 배치가 있으면 기본값보다 우선. */
+ * 바꾼 배치는 ui_layout(user_key='*') 에 저장되어 전 사용자 화면에 공통 적용된다.
+ * (다른 사용자가 열어둔 화면도 DB 변경 알림을 받아 즉시 따라온다)
+ * 편집은 마스터(role='master')만 가능. 일반 사용자는 적용만 받는다. */
 (function(){
  const PAGE=(location.pathname.split('/').pop()||'').replace(/\.html?$/,'');
  if(!PAGE||PAGE==='index')return;
@@ -674,8 +675,8 @@ window.MESCTX={confirm:dlgConfirm};
 
  const FQ='input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not(.mescb-in),select,textarea';
  const auth=()=>{try{return window.MES_AUTH||window.parent.MES_AUTH||null}catch(e){return window.MES_AUTH||null}};
- const me=()=>{const a=auth();return a&&a.session&&a.session.user&&(a.session.user.id||a.session.user.email)||null};
- const isAdmin=()=>{const a=auth();return !!a&&(a.role==='master'||a.role==='admin')};
+ const KEY='*';                                /* 전 사용자 공통 */
+ const isMaster=()=>{const a=auth();return !!a&&a.role==='master'};
  const isGrid=el=>{try{const d=getComputedStyle(el).display;return d==='grid'||d==='inline-grid'}catch(e){return false}};
  const visual=el=>el.__mescbBox?el.__mescbBox.wrap:el;
  const srcOf=t=>{if(!t||t.nodeType!==1)return null;
@@ -721,17 +722,16 @@ window.MESCTX={confirm:dlgConfirm};
   for(let i=0;i<80&&!window.MESDB;i++)await new Promise(r=>setTimeout(r,50));
   if(!window.MESDB)return;try{await MESDB.ready}catch(e){}
   if(!MESDB.online)return;
-  let rows=[];try{rows=await MESDB.table('ui_layout').select(`select=elem_id,user_key,width,ord&page=eq.${encodeURIComponent(PAGE)}`)}catch(e){return}
-  const my=me();const base={},mine={};
-  for(const r of rows||[]){if(r.user_key==='*')base[r.elem_id]=r;else if(my&&r.user_key===my)mine[r.elem_id]=r}
-  for(const k in base)S[k]={width:base[k].width,ord:base[k].ord};
-  for(const k in mine)S[k]={width:mine[k].width,ord:mine[k].ord};
+  let rows=[];try{rows=await MESDB.table('ui_layout').select(`select=elem_id,width,ord&page=eq.${encodeURIComponent(PAGE)}&user_key=eq.*`)}catch(e){return}
+  for(const k in S)delete S[k];
+  for(const r of rows||[])S[r.elem_id]={width:r.width,ord:r.ord};
   applyAll();setTimeout(applyAll,800);setTimeout(applyAll,1800);
+  if(!load.bound&&MESDB.onChange){load.bound=1;MESDB.onChange(['ui_layout'],()=>{if(!on)load()})}   /* 다른 사용자가 바꾸면 따라온다 */
  }
  async function persist(ids,key){
   if(!window.MESDB||!MESDB.online)return;
   const rows=ids.filter(id=>S[id]).map(id=>({page:PAGE,elem_id:id,user_key:key,width:S[id].width??null,ord:S[id].ord??null,updated_at:new Date().toISOString()}));
-  if(rows.length)try{await MESDB.table('ui_layout').upsert(rows,'page,elem_id,user_key')}catch(e){hint('저장 실패: '+String(e.message||e).slice(0,60))}
+  if(rows.length)try{await MESDB.table('ui_layout').upsert(rows,'page,elem_id,user_key');try{MESDB.notify&&MESDB.notify(['ui_layout'])}catch(e){}}catch(e){hint('저장 실패: '+String(e.message||e).slice(0,60))}
  }
  async function wipe(key){try{await MESDB.table('ui_layout').delete({page:PAGE,user_key:key})}catch(e){}}
 
@@ -741,13 +741,11 @@ window.MESCTX={confirm:dlgConfirm};
  function ui(){
   if(bar)return;
   bar=document.createElement('div');bar.id='mesleBar';
-  bar.innerHTML=`<b>배치 편집</b><span class="id"></span><span class="tip">핸들 드래그=폭 · 칸 드래그=자리 이동</span>`+
-   `<button data-a="mine">내 배치 초기화</button>`+(isAdmin()?`<button data-a="def">기본값 저장</button><button data-a="defclr">기본값 초기화</button>`:'')+`<button data-a="close">닫기(Esc)</button>`;
+  bar.innerHTML=`<b>배치 편집(전체 공통)</b><span class="id"></span><span class="tip">핸들 드래그=폭 · 칸 드래그=자리 이동</span>`+
+   `<button data-a="reset">이 화면 배치 초기화</button><button data-a="close">닫기(Esc)</button>`;
   bar.addEventListener('click',async e=>{const a=e.target.dataset.a;if(!a)return;
    if(a==='close')exit();
-   else if(a==='mine'){if(confirm('이 화면의 내 배치를 지우고 기본값으로 되돌릴까요?')){await wipe(me());location.reload()}}
-   else if(a==='def'){if(confirm('현재 배치를 전 직원 기본값으로 저장할까요?')){await persist(Object.keys(S),'*');hint('기본값 저장됨')}}
-   else if(a==='defclr'){if(confirm('전 직원 기본값을 지울까요? (개인 배치는 유지)')){await wipe('*');hint('기본값 지움')}}
+   else if(a==='reset'){if(confirm('이 화면의 배치를 원래대로 되돌릴까요? (전 사용자에게 적용)')){await wipe(KEY);try{MESDB.notify&&MESDB.notify(['ui_layout'])}catch(e){}location.reload()}}
   });
   document.body.appendChild(bar);
   hand=document.createElement('div');hand.id='mesleH';hand.style.display='none';document.body.appendChild(hand);
@@ -758,7 +756,7 @@ window.MESCTX={confirm:dlgConfirm};
   hand.style.display='';hand.style.left=(r.right-4)+'px';hand.style.top=r.top+'px';hand.style.height=r.height+'px'}
  function select(el){if(sel)visual(sel).classList.remove('mes-le-sel');sel=el;
   if(el){visual(el).classList.add('mes-le-sel');bar.querySelector('.id').textContent='#'+el.id;place()}else if(hand)hand.style.display='none'}
- function enter(el){if(!on){on=true;document.body.classList.add('mes-le-on');ui()}select(el)}
+ function enter(el){if(!isMaster())return;if(!on){on=true;document.body.classList.add('mes-le-on');ui()}select(el)}
  function exit(){on=false;document.body.classList.remove('mes-le-on');select(null);if(bar){bar.remove();bar=null}if(hand){hand.remove();hand=null}drag=null}
 
  /* 길게 누르기 → 편집모드. 편집모드 안에서는 클릭=선택+이동 드래그 시작 */
@@ -771,7 +769,7 @@ window.MESCTX={confirm:dlgConfirm};
    if(!el||!el.id||!gridOf(el))return;
    select(el);drag={mode:'move',el,x0:e.clientX,y0:e.clientY,moved:false,over:null};return;
   }
-  if(!el||!el.id||!gridOf(el))return;
+  if(!el||!el.id||!gridOf(el)||!isMaster())return;
   press={el,x:e.clientX,y:e.clientY,t:setTimeout(()=>{press=null;enter(el);
    try{el.blur();if(el.__mescbBox)el.__mescbBox.inp.blur();document.activeElement&&document.activeElement.blur()}catch(x){}
    drag={mode:'move',el,x0:e.clientX,y0:e.clientY,moved:false,over:null}},600)};
@@ -791,7 +789,7 @@ window.MESCTX={confirm:dlgConfirm};
  document.addEventListener('mouseup',async()=>{
   if(press){clearTimeout(press.t);press=null}
   if(!drag)return;const d=drag;drag=null;
-  if(d.mode==='size'){place();await persist([d.el.id],me());hint('저장됨 '+S[d.el.id].width+'px');return}
+  if(d.mode==='size'){place();await persist([d.el.id],KEY);hint('저장됨 '+S[d.el.id].width+'px');return}
   if(!d.over)return;
   visual(d.over).classList.remove('mes-le-drop');
   const a=gridOf(d.el),b=gridOf(d.over);const pa=pairOf(a.cell),pb=pairOf(b.cell);
@@ -801,7 +799,7 @@ window.MESCTX={confirm:dlgConfirm};
   /* 이 그리드 안 모든 필드의 순서를 기록 */
   const fs=fields(g);fs.forEach((f,i)=>{S[f.el.id]=Object.assign(S[f.el.id]||{},{ord:i})});
   fs.forEach(f=>{if(S[f.el.id].width)setWidth(f.el,S[f.el.id].width)});
-  place();await persist(fs.map(f=>f.el.id),me());hint('자리 저장됨');
+  place();await persist(fs.map(f=>f.el.id),KEY);hint('자리 저장됨');
  },true);
  document.addEventListener('keydown',e=>{if(on&&e.key==='Escape'){e.preventDefault();e.stopPropagation();exit()}},true);
  window.addEventListener('scroll',place,true);window.addEventListener('resize',place);
