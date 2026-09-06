@@ -29,6 +29,9 @@
  #preview .sheet{width:100%!important;max-height:none!important;border:0!important;box-shadow:none!important;overflow:visible!important}
  #preview .sheet-head{display:none!important}
 }
+
+/* v80: 요청 리스트 안의 편집 가능한 단가칸 */
+input.cell{width:100%;height:20px;border:1px solid #cbd4dc;padding:0 3px;text-align:right;font:inherit}
 </style>
 </head>
 <body>
@@ -53,7 +56,7 @@
   <div class="midbar"><span class="label">입고요구일</span><input id="reqDate" class="field" type="date"><button class="btn" onclick="pushDown()">⬇ 요청추가</button><button class="btn" onclick="pullUp()">⬆ 요청삭제</button></div>
   <div class="reqbox"><div class="box-title">구매요청 리스트</div><div class="tablewrap"><table>
     <colgroup><col style="width:40px"><col style="width:38px"><col style="width:104px"><col style="width:104px"><col style="width:48px"><col style="width:70px"><col style="width:130px"><col style="width:64px"><col style="width:130px"><col style="width:56px"><col style="width:72px"><col style="width:86px"><col style="width:92px"><col style="width:56px"><col style="width:90px"><col style="width:74px"><col style="width:84px"><col style="width:84px"><col style="width:92px"></colgroup>
-    <thead><tr><th>No</th><th>선택</th><th>협력업체</th><th>제번</th><th>공정</th><th>품번</th><th>부품명</th><th>재질</th><th>규격</th><th>수량</th><th>발주수량</th><th>발주월</th><th>입고요구일</th><th>첨부</th><th>비고</th><th>담당자</th><th>기준단가</th><th>매입단가</th><th>책정금액</th></tr></thead>
+    <thead><tr><th>No</th><th>선택</th><th>협력업체</th><th>제번</th><th>공정</th><th>품번</th><th>부품명</th><th>재질</th><th>규격</th><th>수량</th><th>발주수량</th><th>발주월</th><th>입고요구일</th><th>첨부</th><th>비고</th><th>담당자</th><th>기준단가</th><th>매입단가</th><th>매입금액</th></tr></thead>
     <tbody id="reqBody"></tbody>
     <tfoot><tr><th colspan="9" class="r">합 계</th><th class="r" id="sumQty">0</th><th class="r" id="sumOrd">0</th><th colspan="6"></th><th class="r" id="sumBuy">0</th><th class="r" id="sumAmt">0</th></tr></tfoot>
   </table></div></div>
@@ -72,8 +75,13 @@ const money=v=>Number(v||0).toLocaleString('ko-KR');
 function renderJobs(){jobBody.innerHTML=jobView.map((j,i)=>`<tr class="${i===jobIdx?'sel':''}" onclick="pickJob(${i})"><td>${j.job}</td><td>${j.item}</td><td class="c">${j.proc}</td><td class="c">${j.procName}</td></tr>`).join('');countText.textContent=`제번 ${jobView.length}건 / 요청 ${REQ.length}건`}
 function renderVendors(){venBody.innerHTML=venView.map((v,i)=>`<tr class="${i===venIdx?'sel':''}" onclick="pickVendor(${i})"><td>${v}</td></tr>`).join('')}
 function renderBom(){const b=jobView[jobIdx]?.bom||[];bomBody.innerHTML=b.length?b.map((r,i)=>`<tr><td class="c"><input type="checkbox" data-i="${i}"></td><td>${r.part}</td><td>${r.name}</td><td class="c">${r.mat}</td><td>${r.spec}</td><td class="r">${r.qty}</td><td class="c">${r.att}</td></tr>`).join(''):'<tr><td colspan="7" class="c" style="color:#8b98a4">자재표가 없습니다.</td></tr>'}
-function renderReq(){reqBody.innerHTML=REQ.map((r,i)=>`<tr onclick="this.classList.toggle('sel')"><td class="c">${i+1}</td><td class="c"><input type="checkbox" data-no="${r.no}"></td><td>${r.vendor}</td><td>${r.job}</td><td class="c">${r.proc}</td><td>${r.part}</td><td>${r.name}</td><td class="c">${r.mat}</td><td>${r.spec}</td><td class="r">${r.qty}</td><td class="r">${r.ord}</td><td class="c">${r.odate}</td><td class="c">${r.rdate}</td><td class="c">${r.att}</td><td>${r.remark}</td><td class="c">${r.owner}</td><td class="r">${money(r.stdPrice)}</td><td class="r">${money(r.buyPrice)}</td><td class="r">${money(r.amount)}</td></tr>`).join('');
-sumQty.textContent=REQ.reduce((a,r)=>a+(r.qty||0),0);sumOrd.textContent=REQ.reduce((a,r)=>a+(r.ord||0),0);sumBuy.textContent=money(REQ.reduce((a,r)=>a+(r.buyPrice||0),0));sumAmt.textContent=money(REQ.reduce((a,r)=>a+(r.amount||0),0));countText.textContent=`제번 ${jobView.length}건 / 요청 ${REQ.length}건`}
+function renderReq(){reqBody.innerHTML=REQ.map((r,i)=>`<tr onclick="this.classList.toggle('sel')"><td class="c">${i+1}</td><td class="c"><input type="checkbox" data-no="${r.no}"></td><td>${r.vendor}</td><td>${r.job}</td><td class="c">${r.proc}</td><td>${r.part}</td><td>${r.name}</td><td class="c">${r.mat}</td><td>${r.spec}</td><td class="r">${r.qty}</td><td class="r">${r.ord}</td><td class="c">${r.odate}</td><td class="c">${r.rdate}</td><td class="c">${r.att}</td><td>${r.remark}</td><td class="c">${r.owner}</td><td class="r">${money(r.stdPrice)}</td><td class="r"><input class="cell" value="${r.buyPrice??0}" onclick="event.stopPropagation()" onchange="setBuy(${r.no},this.value)" title="매입단가를 고치면 매입금액이 다시 계산됩니다"></td><td class="r">${money(r.amount)}</td></tr>`).join('');
+sumQty.textContent=REQ.reduce((a,r)=>a+(r.qty||0),0);sumOrd.textContent=REQ.reduce((a,r)=>a+(r.ord||0),0);sumBuy.textContent='';sumAmt.textContent=money(REQ.reduce((a,r)=>a+(r.amount||0),0));countText.textContent=`제번 ${jobView.length}건 / 요청 ${REQ.length}건`}
+/* v80: 매입단가를 고치면 매입금액을 다시 계산한다 (발주수량 기준) */
+function calcAmt(r){r.amount=Math.round((Number(r.buyPrice)||0)*(Number(r.ord)||Number(r.qty)||1));return r.amount}
+function setBuy(no,v){const r=REQ.find(x=>x.no===no);if(!r)return;
+ r.buyPrice=Number(String(v).replace(/[^0-9.-]/g,''))||0;calcAmt(r);renderReq();
+ msg(`${r.part} 매입단가 ${money(r.buyPrice)}원 · 매입금액 ${money(r.amount)}원`)}
 function pickJob(i){jobIdx=i;renderJobs();renderBom();if(typeof loadBom==='function')loadBom();msg(`${jobView[i].job} 자재표를 조회했습니다.`)}
 function pickVendor(i){venIdx=i;renderVendors();msg(`협력업체 ${venView[i]} 선택`)}
 function findVendor(){const q=venQ.value.trim().toLowerCase();venView=VENDORS.filter(v=>!q||v.toLowerCase().includes(q));venIdx=0;renderVendors()}
@@ -86,8 +94,7 @@ async function pushDown(){const j=jobView[jobIdx];if(!j)return;const picks=[...b
    if(r.amount)continue;
    /* v40: 발주일 시점에 적용시작된 단가만 사용 */
    const hit=await MESPRICE.material(r.mat||r.part,r.vendor,{asOf:r.odate});
-   if(hit&&hit.price){r.stdPrice=hit.price;r.buyPrice=hit.price;
-     r.amount=Math.round(hit.price*(Number(r.ord)||1))}
+   if(hit&&hit.price){r.stdPrice=hit.price;if(!r.buyPrice)r.buyPrice=hit.price;calcAmt(r)}
   }
  }
  renderReq();
@@ -105,7 +112,7 @@ async function dupCheck(cat,job,rows){
 }
 async function save(){if(!REQ.length)return msg('저장할 구매요청이 없습니다.');if(!window.MESDB||!MESDB.online){msg(`구매요청 ${REQ.length}건을 저장했습니다. (DB 미연결 - 로컬)`);return}try{const j=jobView[jobIdx]||{};
  const dup=await dupCheck('구매품',j.job,REQ);if(dup.length)return msg(`이미 발주(미입고) 된 품번이 있습니다: ${[...new Set(dup.map(r=>r.part))].join(', ')} — 요청 리스트에서 제외하거나 입고 후 재발주하세요.`);
- await MESDB.newLines(REQ.map(r=>({category:'구매품',status:'발주',vendor_name:r.vendor,job_no:r.job,item_name:j.item||null,process_code:r.proc,part_no:r.part,part_name:r.name,material:r.mat,spec:r.spec,order_qty:Number(r.ord)||null,unit_price:Number(r.buyPrice)||null,quote_price:Number(r.amount)||null,order_date:r.odate||null,required_date:r.rdate||null,owner_name:r.owner||null,remark:r.remark||null})));const n=REQ.length;REQ.length=0;renderReq();msg(`구매품 발주 ${n}건을 DB에 등록했습니다. 발주현황/입고등록 화면에서 확인하세요.`)}catch(e){msg('DB 등록 실패: '+e.message.slice(0,120))}}
+ await MESDB.newLines(REQ.map(r=>({category:'구매품',status:'발주',vendor_name:r.vendor,job_no:r.job,item_name:j.item||null,process_code:r.proc,part_no:r.part,part_name:r.name,material:r.mat,spec:r.spec,order_qty:Number(r.ord)||null,unit_price:Number(r.buyPrice)||null,quote_price:Number(r.amount)||null,confirm_price:Number(r.amount)||null,order_date:r.odate||null,required_date:r.rdate||null,owner_name:r.owner||null,remark:r.remark||null})));const n=REQ.length;REQ.length=0;renderReq();msg(`구매품 발주 ${n}건을 DB에 등록했습니다. 발주현황/입고등록 화면에서 확인하세요.`)}catch(e){msg('DB 등록 실패: '+e.message.slice(0,120))}}
 function printOrder(){if(!REQ.length)return msg('출력할 구매요청이 없습니다.');const r0=REQ[0];const j=JOBS.find(x=>x.job===r0.job)||{};
 docArea.innerHTML=`<h2>구매품 발주서</h2>
 <table><tr><td>발　신 : (주)일평기연</td></tr><tr><td>작성자 : ${OWNER}</td></tr><tr><td>수　신 : ${r0.vendor}</td></tr></table>
@@ -144,13 +151,13 @@ async function loadBom(){
 }
 window.MES={search,save,exportCsv,setMessage:msg,print:printOrder};loadJobs();
 </script>
-<script src="mes_sample.js?v=67"></script><script src="mes_scene.js?v=67"></script><script src="mes_demo.js?v=67"></script><script src="mes_db.js?v=67"></script>
+<script src="mes_sample.js?v=80"></script><script src="mes_scene.js?v=80"></script><script src="mes_demo.js?v=80"></script><script src="mes_db.js?v=80"></script>
 <script>MESDB.bind("purchase_order_input",()=>({REQ}));   /* v62 */
 /* v22: 구매요청 리스트는 화면을 열 때 빈 작업공간으로 시작 (샘플 잔존분이 저장되는 것 방지) */
 REQ.length=0;/*v22*/if(typeof renderReq==='function')renderReq();
 </script>
-<script src="mes_ctx.js?v=67"></script>
-<script src="mes_lookup.js?v=67"></script>
+<script src="mes_ctx.js?v=80"></script>
+<script src="mes_lookup.js?v=80"></script>
 <script>
 /* 협력업체 목록: 하드코딩 → 마스터 직결 */
 (async function loadVendors(){
@@ -170,8 +177,8 @@ window.MESLOOK_RELOAD_VENDORS=async()=>{MESLOOK.invalidate('vendor_purchase');
  if(typeof venView!=='undefined')venView=[...VENDORS];
  if(typeof renderVendors==='function')renderVendors();};
 </script>
-<script src="mes_price.js?v=67"></script>
-<script src="mes_vendorcheck.js?v=67"></script>
+<script src="mes_price.js?v=80"></script>
+<script src="mes_vendorcheck.js?v=80"></script>
 <script>
 function sampleFill(){
   if(window.MESDEMO)return MESDEMO.run('purchase_order_input',{});
