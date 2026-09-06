@@ -48,7 +48,7 @@ input.cell{width:100%;height:20px;border:1px solid #cbd4dc;padding:0 3px;text-al
       <thead><tr><th>제번</th><th>품명</th><th>공정</th><th>공정명</th></tr></thead><tbody id="jobBody"></tbody></table></div></div>
     <div class="box"><div class="box-title">협력업체리스트</div>
       <div class="searchbar"><input id="venQ" placeholder="Enter text to search"><button onclick="findVendor()">찾기</button><button onclick="clearVendor()">지우기</button></div>
-      <div class="tablewrap"><table><thead><tr><th>협력업체</th></tr></thead><tbody id="venBody"></tbody></table></div></div>
+      <div class="tablewrap"><table><thead><tr><th style="width:36px"><input type="checkbox" id="venAll" onclick="toggleAllVendors(this.checked)" title="전체 선택/해제"></th><th>협력업체</th></tr></thead><tbody id="venBody"></tbody></table></div></div>
     <div class="box"><div class="box-title">자재표 리스트</div><div class="tablewrap"><table>
       <colgroup><col style="width:38px"><col style="width:14%"><col style="width:20%"><col style="width:12%"><col style="width:22%"><col style="width:10%"><col style="width:12%"></colgroup>
       <thead><tr><th></th><th>품번</th><th>부품명</th><th>재질</th><th>규격</th><th>수량</th><th>첨부</th></tr></thead><tbody id="bomBody"></tbody></table></div></div>
@@ -73,7 +73,13 @@ const REQ=[];
 let jobIdx=0,venIdx=0,jobView=[...JOBS],venView=[...VENDORS];
 const money=v=>Number(v||0).toLocaleString('ko-KR');
 function renderJobs(){jobBody.innerHTML=jobView.map((j,i)=>`<tr class="${i===jobIdx?'sel':''}" onclick="pickJob(${i})"><td>${j.job}</td><td>${j.item}</td><td class="c">${j.proc}</td><td class="c">${j.procName}</td></tr>`).join('');countText.textContent=`제번 ${jobView.length}건 / 요청 ${REQ.length}건`}
-function renderVendors(){venBody.innerHTML=venView.map((v,i)=>`<tr class="${i===venIdx?'sel':''}" onclick="pickVendor(${i})"><td>${v}</td></tr>`).join('')}
+/* v80: 협력업체는 체크박스로 고른다. 여러 업체에 나눠 발주할 수 있고, 어디로 나가는지 눈으로 확인된다 */
+const VENSEL=new Set();window.MESVENSEL=VENSEL;
+function pickedVendors(){return venView.filter(v=>VENSEL.has(v))}
+function toggleAllVendors(on){venView.forEach(v=>on?VENSEL.add(v):VENSEL.delete(v));renderVendors();
+ msg(on?`협력업체 ${venView.length}개를 모두 선택했습니다.`:'협력업체 선택을 해제했습니다.')}
+function renderVendors(){venBody.innerHTML=venView.map((v,i)=>`<tr class="${VENSEL.has(v)?'sel':''}" onclick="pickVendor(${i})"><td class="c"><input type="checkbox" ${VENSEL.has(v)?'checked':''} onclick="event.stopPropagation();pickVendor(${i})"></td><td>${v}</td></tr>`).join('');
+ const all=document.getElementById('venAll');if(all)all.checked=venView.length>0&&venView.every(v=>VENSEL.has(v))}
 function renderBom(){const b=jobView[jobIdx]?.bom||[];bomBody.innerHTML=b.length?b.map((r,i)=>`<tr><td class="c"><input type="checkbox" data-i="${i}"></td><td>${r.part}</td><td>${r.name}</td><td class="c">${r.mat}</td><td>${r.spec}</td><td class="r">${r.qty}</td><td class="c">${r.att}</td></tr>`).join(''):'<tr><td colspan="7" class="c" style="color:#8b98a4">자재표가 없습니다.</td></tr>'}
 function renderReq(){reqBody.innerHTML=REQ.map((r,i)=>`<tr onclick="this.classList.toggle('sel')"><td class="c">${i+1}</td><td class="c"><input type="checkbox" data-no="${r.no}"></td><td>${r.vendor}</td><td>${r.job}</td><td class="c">${r.proc}</td><td>${r.part}</td><td>${r.name}</td><td class="c">${r.mat}</td><td>${r.spec}</td><td class="r">${r.qty}</td><td class="r">${r.ord}</td><td class="c">${r.odate}</td><td class="c">${r.rdate}</td><td class="c">${r.att}</td><td>${r.remark}</td><td class="c">${r.owner}</td><td class="r">${money(r.stdPrice)}</td><td class="r"><input class="cell" value="${r.buyPrice??0}" onclick="event.stopPropagation()" onchange="setBuy(${r.no},this.value)" title="매입단가를 고치면 매입금액이 다시 계산됩니다"></td><td class="r">${money(r.amount)}</td></tr>`).join('');
 sumQty.textContent=REQ.reduce((a,r)=>a+(r.qty||0),0);sumOrd.textContent=REQ.reduce((a,r)=>a+(r.ord||0),0);sumBuy.textContent='';sumAmt.textContent=money(REQ.reduce((a,r)=>a+(r.amount||0),0));countText.textContent=`제번 ${jobView.length}건 / 요청 ${REQ.length}건`}
@@ -83,11 +89,18 @@ function setBuy(no,v){const r=REQ.find(x=>x.no===no);if(!r)return;
  r.buyPrice=Number(String(v).replace(/[^0-9.-]/g,''))||0;calcAmt(r);renderReq();
  msg(`${r.part} 매입단가 ${money(r.buyPrice)}원 · 매입금액 ${money(r.amount)}원`)}
 function pickJob(i){jobIdx=i;renderJobs();renderBom();if(typeof loadBom==='function')loadBom();msg(`${jobView[i].job} 자재표를 조회했습니다.`)}
-function pickVendor(i){venIdx=i;renderVendors();msg(`협력업체 ${venView[i]} 선택`)}
+function pickVendor(i){const v=venView[i];if(v==null)return;
+ if(VENSEL.has(v))VENSEL.delete(v);else VENSEL.add(v);
+ venIdx=i;renderVendors();
+ const ps=pickedVendors();msg(ps.length?`협력업체 ${ps.length}개 선택: ${ps.join(', ')}`:'협력업체 선택 없음')}
 function findVendor(){const q=venQ.value.trim().toLowerCase();venView=VENDORS.filter(v=>!q||v.toLowerCase().includes(q));venIdx=0;renderVendors()}
 function clearVendor(){venQ.value='';venView=[...VENDORS];venIdx=0;renderVendors()}
 function search(){const j=jobQ.value.trim().toLowerCase(),it=itemQ.value.trim().toLowerCase();jobView=JOBS.filter(x=>(!j||x.job.toLowerCase().includes(j))&&(!it||(x.item||'').toLowerCase().includes(it)));jobIdx=0;renderJobs();renderBom();msg(`제번 ${jobView.length}건을 조회했습니다.`)}
-async function pushDown(){const j=jobView[jobIdx];if(!j)return;const picks=[...bomBody.querySelectorAll('input:checked')].map(x=>j.bom[Number(x.dataset.i)]);if(!picks.length)return msg('자재표에서 발주할 품번을 선택하세요.');const d=reqDate.value||new Date().toISOString().slice(0,10);picks.forEach(b=>REQ.push({no:REQ.length?Math.max(...REQ.map(r=>r.no))+1:1,vendor:venView[venIdx],job:j.job,proc:j.proc,part:b.part,name:b.name,mat:b.mat,spec:b.spec,qty:b.qty,ord:b.qty,odate:new Date().toISOString().slice(0,10),rdate:d,att:b.att,remark:'',owner:OWNER,stdPrice:0,buyPrice:0,amount:0}));
+async function pushDown(){const j=jobView[jobIdx];if(!j)return;const picks=[...bomBody.querySelectorAll('input:checked')].map(x=>j.bom[Number(x.dataset.i)]);if(!picks.length)return msg('자재표에서 발주할 품번을 선택하세요.');const vens=pickedVendors();
+ if(!vens.length)return msg('협력업체리스트에서 발주할 업체를 체크하세요.');
+ const d=reqDate.value||new Date().toISOString().slice(0,10);
+ const combos=[];for(const v of vens)for(const b of picks)combos.push({v,b});
+ combos.forEach(({v,b})=>REQ.push({no:REQ.length?Math.max(...REQ.map(r=>r.no))+1:1,vendor:v,job:j.job,proc:j.proc,part:b.part,name:b.name,mat:b.mat,spec:b.spec,qty:b.qty,ord:b.qty,odate:new Date().toISOString().slice(0,10),rdate:d,att:b.att,remark:'',owner:OWNER,stdPrice:0,buyPrice:0,amount:0}));
  /* v39: 자재단가 마스터에 등록된 품목이면 매입가를 자동으로 채운다. */
  if(window.MESPRICE){
   for(const r of REQ){
@@ -100,7 +113,7 @@ async function pushDown(){const j=jobView[jobIdx];if(!j)return;const picks=[...b
  renderReq();
  const tot=REQ.reduce((a,r)=>a+(Number(r.amount)||0),0);
  const noPrice=REQ.filter(r=>!r.amount).length;
- msg(`${picks.length}건을 구매요청 리스트에 추가했습니다. 발주금액 합계 ${tot.toLocaleString('ko-KR')}원`+
+ msg(`${combos.length}건을 구매요청 리스트에 추가했습니다. 발주금액 합계 ${tot.toLocaleString('ko-KR')}원`+
    (noPrice?` (단가 미입력 ${noPrice}건 - 매입가를 직접 입력하세요)`:''));}
 function pullUp(){const ids=[...reqBody.querySelectorAll('input:checked')].map(x=>Number(x.dataset.no));if(!ids.length)return msg('삭제할 요청 행을 선택하세요.');for(let i=REQ.length-1;i>=0;i--)if(ids.includes(REQ[i].no))REQ.splice(i,1);renderReq();msg(`${ids.length}건을 삭제했습니다.`)}
 /* v62: 같은 제번·품번·업체(외주가공은 가공공정 포함)의 미입고 발주가 있으면 중복 등록 차단 */
