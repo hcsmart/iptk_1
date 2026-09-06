@@ -85,10 +85,11 @@ async function pick(i,tr){sel=view[i];document.querySelectorAll('#hbody tr').for
 /* v73: 공정(조)수 매칭 리스트 — 제번의 공정(조)수만큼 A,B,C… 로 전개한다.
    (v72 까지는 'A / 1/1' 한 줄이 하드코딩돼 3조짜리도 1조분만 발주됐다) */
 let SEQ=[];
-const seqCode=i=>{let s='',n=i;do{s=String.fromCharCode(65+n%26)+s;n=Math.floor(n/26)-1}while(n>=0);return s};
+/* v82: 공정(조)는 A,B,C 대신 1,2,3 (저장값 '1','2','3', 표시 1조·2조·3조) */
+const seqCode=i=>String(i+1);
 function renderSeq(){
  const q=Math.max(1,Math.trunc(Number(sel&&sel.set_qty)||1));
- SEQ=Array.from({length:q},(_,i)=>({code:seqCode(i),name:`${i+1}/${q}`}));
+ SEQ=Array.from({length:q},(_,i)=>({code:seqCode(i),name:`${i+1}조 (${i+1}/${q})`}));
  mbody.innerHTML=SEQ.map((x,i)=>`<tr onclick="toggleSeq(${i})" class="${i===0?'sel':''}">`
   +`<td class="c"><input type="checkbox" data-i="${i}" ${i===0?'checked':''} onclick="event.stopPropagation();syncSeq()"></td>`
   +`<td>${x.code}</td><td>${x.name}</td></tr>`).join('');

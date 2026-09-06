@@ -201,12 +201,13 @@ async function loadJobs(){
 }
 /* 대기 리스트: 제번의 공정(조)수만큼 A,B,C… 로 전개.
    v73 까지는 설계계획 세부공정(사내설계 전용)이 없으면 A/1/1 한 줄만 나와 3조짜리도 1조분만 발주됐다. */
-const seqCode=i=>{let s='',n=i;do{s=String.fromCharCode(65+n%26)+s;n=Math.floor(n/26)-1}while(n>=0);return s};
+/* v82: 공정(조)는 A,B,C 대신 1,2,3 (저장값 '1','2','3', 표시 1조·2조·3조) */
+const seqCode=i=>String(i+1);
 async function loadPool(){
  const j=jobView[jobIdx];const job=j?.job;if(!job)return;
  POOL.length=0;
  const q=Math.max(1,Math.trunc(Number(j.setQty)||1));
- for(let i=0;i<q;i++)POOL.push({proc:seqCode(i),procName:`${i+1}/${q}`});
+ for(let i=0;i<q;i++)POOL.push({proc:seqCode(i),procName:`${i+1}조 (${i+1}/${q})`});
  /* 사내 설계계획에 세부공정이 있으면 그 코드도 함께 (조수 외 별도 공정이 있는 경우) */
  if(online()){try{
   const st=await MESDB.table('design_plan_steps').select(`select=process_code,process_name&job_no=eq.${encodeURIComponent(job)}&order=row_no`);

@@ -669,7 +669,9 @@ window.MESCTX={confirm:dlgConfirm};
  *   [입력칸]     오른쪽 주황 핸들 = 폭 · 칸 드래그해 다른 칸에 놓기 = 자리 바꿈
  *   [리스트제목] 오른쪽 핸들 = 폭 · 아래쪽 핸들 = 높이 · 제목 드래그해 다른
  *                제목에 놓기 = 같은 부모 안에서 블록끼리 자리 바꿈
- *   폭·높이는 모두 5px 단위로 맞춰진다.
+ *   [버튼]       v83: 길게 누른 뒤 드래그 = 화면 어디로든 자유 이동 (하단 검색버튼을 상단으로 등)
+ *                오른쪽 핸들 = 폭. 위치는 화면(.screen) 기준 절대좌표로 저장.
+ *   폭·높이·위치는 모두 5px 단위로 맞춰진다.
  * 바꾼 배치는 ui_layout(user_key='*') 에 저장되어 전 사용자에게 적용된다.
  * 편집은 마스터(role='master')만 가능. 일반 사용자는 적용만 받는다. */
 (function(){
@@ -680,6 +682,8 @@ window.MESCTX={confirm:dlgConfirm};
  st.textContent=`
  body.mes-le-on input:not([type=checkbox]):not([type=radio]),body.mes-le-on select,body.mes-le-on textarea,body.mes-le-on .mescb{cursor:move!important}
  body.mes-le-on .mes-le-head{cursor:move!important}
+ body.mes-le-on button:not(#mesleBar button){cursor:move!important}
+ .mes-le-free{z-index:30}
  .mes-le-sel{outline:2px dashed #e0801a!important;outline-offset:1px}
  .mes-le-drop{outline:2px solid #2f75b5!important;outline-offset:1px}
  #mesleH{position:fixed;width:9px;cursor:ew-resize;z-index:9998;background:#e0801a;border-radius:2px;opacity:.85}
@@ -688,8 +692,8 @@ window.MESCTX={confirm:dlgConfirm};
  #mesleBar button{height:25px;padding:0 8px;border:1px solid #9ba8b4;background:linear-gradient(#fff,#dfe6eb);cursor:pointer;font:inherit}
  #mesleBar b{color:#b45f06}#mesleBar .id{color:#5a6b7a;min-width:90px}#mesleBar .tip{color:#8a97a3}
  #mesleBar input{width:64px;height:25px;border:1px solid #9ba8b4;padding:0 5px;text-align:right;font:inherit}
- #mesleBar .hbox{display:none;gap:5px;align-items:center}
- #mesleBar.blk .hbox{display:flex}
+ #mesleBar .hbox,#mesleBar .pbox{display:none;gap:5px;align-items:center}
+ #mesleBar.blk .hbox{display:flex}#mesleBar.btn .pbox{display:flex}
  #mesleBar button[data-a=save]{border-color:#e0801a;background:linear-gradient(#fff5e8,#f6d6ab);font-weight:700}
  #mesleBar.dirty button[data-a=save]{background:linear-gradient(#ffe9c9,#f0b45f)}`;
  (document.head||document.documentElement).appendChild(st);
@@ -747,6 +751,26 @@ window.MESCTX={confirm:dlgConfirm};
   const h=t.closest(HSEL);if(!h)return null;
   const box=h.parentElement;return (box&&box.dataset.leId)?box:null};
 
+ /* ── v83: 버튼 (자유 이동) ── */
+ const ROOT=()=>document.querySelector('.screen')||document.body;
+ function tagButtons(){
+  const used=new Set();document.querySelectorAll('[data-le-id]').forEach(b=>used.add(b.dataset.leId));
+  document.querySelectorAll('button').forEach(b=>{
+   if(b.dataset.leId||b.closest(NOZONE)||b.closest('#mesleBar,table'))return;
+   const lab=(b.id?'#'+b.id:(b.textContent||'').replace(/\s+/g,' ').trim().slice(0,30));if(!lab)return;
+   let id='btn:'+lab,n=2;while(used.has(id))id='btn:'+lab+'#'+(n++);
+   used.add(id);b.dataset.leId=id;b.dataset.leBtn='1'});
+ }
+ const btnOf=t=>{if(!t||t.nodeType!==1)return null;if(t.closest(NOZONE))return null;
+  const b=t.closest('button');return (b&&b.dataset.leBtn)?b:null};
+ const isBtn=el=>!!(el&&el.dataset&&el.dataset.leBtn);
+ function setPos(el,x,y){const r=ROOT();if(getComputedStyle(r).position==='static')r.style.position='relative';
+  if(!el.__leHome){el.__leHome={pos:el.style.position,left:el.style.left,top:el.style.top,z:el.style.zIndex}}
+  el.style.position='absolute';el.style.left=x+'px';el.style.top=y+'px';el.style.margin='0';el.classList.add('mes-le-free')}
+ function clearPos(el){if(!el.__leHome)return;const h=el.__leHome;el.style.position=h.pos;el.style.left=h.left;el.style.top=h.top;el.style.zIndex=h.z;el.classList.remove('mes-le-free');el.__leHome=null}
+ /* 버튼의 현재 위치를 ROOT 기준 좌표로 */
+ function posOf(el){const a=el.getBoundingClientRect(),b=ROOT().getBoundingClientRect();return{x:a.left-b.left+ROOT().scrollLeft,y:a.top-b.top+ROOT().scrollTop}}
+
  /* ── 적용 ── */
  const S={};                                   /* elem_id → {width, height, ord} */
  function setWidth(el,w){
@@ -794,17 +818,23 @@ window.MESCTX={confirm:dlgConfirm};
    sorted.forEach((c,i)=>p.insertBefore(c,marks[i]));
    marks.forEach(m=>m.remove());
   });
-  document.querySelectorAll('[data-le-id]').forEach(b=>{const s=S[b.dataset.leId];if(!s)return;
+  document.querySelectorAll('[data-le-id]:not([data-le-btn])').forEach(b=>{const s=S[b.dataset.leId];if(!s)return;
    if(s.width)setBlkW(b,s.width);if(s.height)setBlkH(b,s.height)});
+ }
+ function applyButtons(){
+  tagButtons();
+  document.querySelectorAll('button[data-le-btn]').forEach(b=>{const s=S[b.dataset.leId];if(!s)return;
+   if(s.width){b.style.width=s.width+'px';b.style.minWidth='0'}
+   if(s.x!=null&&s.y!=null)setPos(b,s.x,s.y)});
  }
  function applyAll(){
   const grids=new Set();
   document.querySelectorAll(FQ).forEach(el=>{if(!el.id||!S[el.id])return;const g=gridOf(el);if(g)grids.add(g.grid)});
   grids.forEach(applyOrder);
   document.querySelectorAll(FQ).forEach(el=>{const s=el.id&&S[el.id];if(s&&s.width)setWidth(el,s.width)});
-  applyBlocks();
+  applyBlocks();applyButtons();
  }
- let COLS='elem_id,width,height,ord';
+ let COLS='elem_id,width,height,ord,pos_x,pos_y';
  async function load(){
   for(let i=0;i<80&&!window.MESDB;i++)await new Promise(r=>setTimeout(r,50));
   if(!window.MESDB)return;try{await MESDB.ready}catch(e){}
@@ -812,18 +842,19 @@ window.MESCTX={confirm:dlgConfirm};
   const q=async c=>MESDB.table('ui_layout').select(`select=${c}&page=eq.${encodeURIComponent(PAGE)}&user_key=eq.*`);
   let rows=[];
   try{rows=await q(COLS)}
-  catch(e){COLS='elem_id,width,ord';try{rows=await q(COLS)}catch(e2){return}}   /* height 컬럼 없는 DB 호환 */
+  catch(e){COLS='elem_id,width,height,ord';try{rows=await q(COLS)}catch(e2){COLS='elem_id,width,ord';try{rows=await q(COLS)}catch(e3){return}}}   /* 컬럼 없는 옛 DB 호환 */
   for(const k in S)delete S[k];
-  for(const r of rows||[])S[r.elem_id]={width:r.width,height:r.height,ord:r.ord};
+  for(const r of rows||[])S[r.elem_id]={width:r.width,height:r.height,ord:r.ord,x:r.pos_x,y:r.pos_y};
   applyAll();setTimeout(applyAll,800);setTimeout(applyAll,1800);
   if(!load.bound&&MESDB.onChange){load.bound=1;MESDB.onChange(['ui_layout'],()=>{if(!on)load()})}   /* 다른 사용자가 바꾸면 따라온다 */
  }
  async function persist(ids,key){
   if(!window.MESDB||!MESDB.online)return;
-  const hasH=/height/.test(COLS);
+  const hasH=/height/.test(COLS),hasP=/pos_x/.test(COLS);
   const rows=ids.filter(id=>S[id]).map(id=>{const r={page:PAGE,elem_id:id,user_key:key,
     width:S[id].width??null,ord:S[id].ord??null,updated_at:new Date().toISOString()};
-   if(hasH)r.height=S[id].height??null;return r});
+   if(hasH)r.height=S[id].height??null;
+   if(hasP){r.pos_x=S[id].x??null;r.pos_y=S[id].y??null}return r});
   if(rows.length)try{await MESDB.table('ui_layout').upsert(rows,'page,elem_id,user_key');try{MESDB.notify&&MESDB.notify(['ui_layout'])}catch(e){}}catch(e){hint('저장 실패: '+String(e.message||e).slice(0,60))}
  }
  async function wipe(key){try{await MESDB.table('ui_layout').delete({page:PAGE,user_key:key})}catch(e){}}
@@ -839,21 +870,26 @@ window.MESCTX={confirm:dlgConfirm};
   bar.innerHTML=`<b>배치 편집(전체 공통)</b><span class="id"></span>`+
    `<span>폭</span><input type="number" class="w" min="60" max="2400" step="5" title="선택한 칸/블록의 폭(px, 5단위). 입력 후 Enter"><span>px</span>`+
    `<span class="hbox"><span>높이</span><input type="number" class="h" min="60" max="2000" step="5" title="선택한 블록의 높이(px, 5단위). 입력 후 Enter"><span>px</span></span>`+
+   `<span class="pbox"><span>X</span><input type="number" class="x" min="0" max="4000" step="5" title="버튼 위치 X(px, 5단위). 입력 후 Enter"><span>Y</span><input type="number" class="y" min="0" max="4000" step="5" title="버튼 위치 Y(px, 5단위). 입력 후 Enter"><button data-a="home" title="원래 자리로 되돌립니다">제자리</button></span>`+
    `<button data-a="save">▤ 저장</button><button data-a="reset">초기화</button><button data-a="close">닫기(Esc)</button>`+
    `<span class="tip">핸들 드래그=크기 · 드래그해 다른 칸/제목에 놓기=자리 이동 (5px 단위)</span>`;
   const wi=bar.querySelector('.w'),hi=bar.querySelector('.h');
   const applyW=()=>{if(!sel)return;const v=snap(Math.max(60,Math.min(2400,Math.round(Number(wi.value)||0))));
-   if(!v)return;wi.value=v;selBlk?setBlkW(sel,v):setWidth(sel,v);
+   if(!v)return;wi.value=v;isBtn(sel)?(sel.style.width=v+'px',sel.style.minWidth='0'):selBlk?setBlkW(sel,v):setWidth(sel,v);
    S[EID(sel)]=Object.assign(S[EID(sel)]||{},{width:v});mark(EID(sel));place()};
   const applyH=()=>{if(!sel||!selBlk)return;const v=snap(Math.max(60,Math.min(2000,Math.round(Number(hi.value)||0))));
    if(!v)return;hi.value=v;setBlkH(sel,v);
    S[EID(sel)]=Object.assign(S[EID(sel)]||{},{height:v});mark(EID(sel));place()};
-  [[wi,applyW],[hi,applyH]].forEach(([el,fn])=>{
+  const xi=bar.querySelector('.x'),yi=bar.querySelector('.y');
+  const applyP=()=>{if(!sel||!isBtn(sel))return;const x=snap(Math.max(0,Math.round(Number(xi.value)||0))),y=snap(Math.max(0,Math.round(Number(yi.value)||0)));
+   xi.value=x;yi.value=y;setPos(sel,x,y);S[EID(sel)]=Object.assign(S[EID(sel)]||{},{x,y});mark(EID(sel));place()};
+  [[wi,applyW],[hi,applyH],[xi,applyP],[yi,applyP]].forEach(([el,fn])=>{
    el.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();fn()}e.stopPropagation()});
    el.addEventListener('change',fn);
    el.addEventListener('mousedown',e=>e.stopPropagation())});
   bar.addEventListener('click',async e=>{const a=e.target.dataset.a;if(!a)return;
    if(a==='close')exit();
+   else if(a==='home'){if(!sel||!isBtn(sel))return;clearPos(sel);S[EID(sel)]=Object.assign(S[EID(sel)]||{},{x:null,y:null});mark(EID(sel));place();hint('원래 자리로 되돌렸습니다 — [저장]을 누르세요')}
    else if(a==='save'){if(!dirty.size){hint('바뀐 내용이 없습니다.');return}
     const ids=[...dirty];hint('저장 중…');await persist(ids,KEY);dirty.clear();bar.classList.remove('dirty');
     hint(ids.length+'건 저장됨 — 전 사용자에게 적용됩니다.')}
@@ -862,7 +898,7 @@ window.MESCTX={confirm:dlgConfirm};
   document.body.appendChild(bar);
   hand=document.createElement('div');hand.id='mesleH';hand.style.display='none';document.body.appendChild(hand);
   hand.addEventListener('mousedown',e=>{if(!sel)return;e.preventDefault();e.stopPropagation();
-   drag={mode:'size',el:sel,blk:selBlk,x0:e.clientX,w0:visual(sel).getBoundingClientRect().width}});
+   drag={mode:'size',el:sel,blk:selBlk,btn:isBtn(sel),x0:e.clientX,w0:visual(sel).getBoundingClientRect().width}});
   handV=document.createElement('div');handV.id='mesleV';handV.style.display='none';document.body.appendChild(handV);
   handV.addEventListener('mousedown',e=>{if(!sel||!selBlk)return;e.preventDefault();e.stopPropagation();
    drag={mode:'sizeh',el:sel,y0:e.clientY,h0:sel.getBoundingClientRect().height}});
@@ -874,15 +910,16 @@ window.MESCTX={confirm:dlgConfirm};
  function select(el,blk){
   if(sel)visual(sel).classList.remove('mes-le-sel');
   sel=el;selBlk=!!blk;
-  if(bar)bar.classList.toggle('blk',!!blk);
+  if(bar){bar.classList.toggle('blk',!!blk);bar.classList.toggle('btn',isBtn(el))}
   if(el){visual(el).classList.add('mes-le-sel');
-   if(bar){bar.querySelector('.id').textContent=blk?EID(el):'#'+el.id;
+   if(bar){bar.querySelector('.id').textContent=(blk||isBtn(el))?EID(el):'#'+el.id;
+    if(isBtn(el)){const p=posOf(el);const xi=bar.querySelector('.x'),yi=bar.querySelector('.y');if(xi)xi.value=snap(p.x);if(yi)yi.value=snap(p.y)}
     const r=visual(el).getBoundingClientRect();
     const wi=bar.querySelector('.w');if(wi)wi.value=snap(r.width);
     const hi=bar.querySelector('.h');if(hi)hi.value=snap(r.height)}
    place()}
   else{if(hand)hand.style.display='none';if(handV)handV.style.display='none'}}
- function enter(el,blk){if(!isMaster())return;if(!on){on=true;document.body.classList.add('mes-le-on');ui();tagBlocks()}select(el,blk)}
+ function enter(el,blk){if(!isMaster())return;if(!on){on=true;document.body.classList.add('mes-le-on');ui();tagBlocks();tagButtons()}select(el,blk)}
  function exit(){if(dirty.size&&!confirm('저장하지 않은 변경이 '+dirty.size+'건 있습니다. 저장하지 않고 닫을까요?'))return;
   dirty.clear();on=false;document.body.classList.remove('mes-le-on');select(null);
   if(bar){bar.remove();bar=null}if(hand){hand.remove();hand=null}if(handV){handV.remove();handV=null}drag=null}
@@ -891,10 +928,12 @@ window.MESCTX={confirm:dlgConfirm};
  document.addEventListener('mousedown',e=>{
   if(e.button!==0)return;
   if(e.target.closest('#mesleBar,#mesleH,#mesleV'))return;
-  const el=srcOf(e.target),bk=el?null:blkOf(e.target);
+  const el=srcOf(e.target),bt=el?null:btnOf(e.target),bk=(el||bt)?null:blkOf(e.target);
+  const freeDrag=b=>{const p=posOf(b);return{mode:'free',el:b,x0:e.clientX,y0:e.clientY,px:p.x,py:p.y,moved:false}};
   if(on){
    e.preventDefault();e.stopPropagation();
    if(el&&el.id){select(el,false);drag={mode:'move',el,x0:e.clientX,y0:e.clientY,moved:false,over:null};return}
+   if(bt){select(bt,false);drag=freeDrag(bt);return}
    if(bk){select(bk,true);drag={mode:'bmove',el:bk,x0:e.clientX,y0:e.clientY,moved:false,over:null};return}
    return;
   }
@@ -906,13 +945,23 @@ window.MESCTX={confirm:dlgConfirm};
     drag={mode:'move',el,x0:e.clientX,y0:e.clientY,moved:false,over:null}},600)};return}
   /* v81: 리스트제목 길게 누르기 → 블록(패널) 편집 */
   if(bk){press={el:bk,x:e.clientX,y:e.clientY,t:setTimeout(()=>{press=null;enter(bk,true);
-    drag={mode:'bmove',el:bk,x0:e.clientX,y0:e.clientY,moved:false,over:null}},600)}}
+    drag={mode:'bmove',el:bk,x0:e.clientX,y0:e.clientY,moved:false,over:null}},600)};return}
+  /* v83: 버튼 길게 누르기 → 자유 이동 (놓기 전까지 버튼 동작은 막는다) */
+  if(bt){press={el:bt,x:e.clientX,y:e.clientY,t:setTimeout(()=>{press=null;swallow=true;enter(bt,false);
+    if(on)drag=freeDrag(bt)},600)}}
  },true);
+ /* 편집모드에서, 또는 길게 누른 직후의 클릭은 버튼 동작을 실행하지 않는다 */
+ let swallow=false;
+ document.addEventListener('click',e=>{if((on||swallow)&&e.target.closest('button')&&!e.target.closest('#mesleBar')){e.preventDefault();e.stopPropagation()}swallow=false},true);
  document.addEventListener('mousemove',e=>{
   if(press&&(Math.abs(e.clientX-press.x)>4||Math.abs(e.clientY-press.y)>4)){clearTimeout(press.t);press=null}
   if(!drag)return;e.preventDefault();
-  if(drag.mode==='size'){const w=snap(Math.max(60,Math.min(2400,Math.round(drag.w0+e.clientX-drag.x0))));
-   drag.blk?setBlkW(drag.el,w):setWidth(drag.el,w);
+  if(drag.mode==='free'){if(Math.abs(e.clientX-drag.x0)>3||Math.abs(e.clientY-drag.y0)>3)drag.moved=true;if(!drag.moved)return;
+   const x=snap(Math.max(0,drag.px+e.clientX-drag.x0)),y=snap(Math.max(0,drag.py+e.clientY-drag.y0));
+   setPos(drag.el,x,y);S[EID(drag.el)]=Object.assign(S[EID(drag.el)]||{},{x,y});place();
+   const xi=bar&&bar.querySelector('.x'),yi=bar&&bar.querySelector('.y');if(xi)xi.value=x;if(yi)yi.value=y;hint(`위치 ${x}, ${y}`);return}
+  if(drag.mode==='size'){const w=snap(Math.max(drag.btn?40:60,Math.min(2400,Math.round(drag.w0+e.clientX-drag.x0))));
+   drag.btn?(drag.el.style.width=w+'px',drag.el.style.minWidth='0'):drag.blk?setBlkW(drag.el,w):setWidth(drag.el,w);
    S[EID(drag.el)]=Object.assign(S[EID(drag.el)]||{},{width:w});place();
    const wi=bar&&bar.querySelector('.w');if(wi)wi.value=w;hint('폭 '+w+'px');return}
   if(drag.mode==='sizeh'){const h=snap(Math.max(60,Math.min(2000,Math.round(drag.h0+e.clientY-drag.y0))));
@@ -936,6 +985,7 @@ window.MESCTX={confirm:dlgConfirm};
   if(press){clearTimeout(press.t);press=null}
   if(!drag)return;const d=drag;drag=null;
   if(d.mode==='size'||d.mode==='sizeh'){place();mark(EID(d.el));return}
+  if(d.mode==='free'){if(d.moved){place();mark(EID(d.el));hint('버튼을 옮겼습니다 — [저장]을 누르세요')}return}
   if(!d.over)return;
   visual(d.over).classList.remove('mes-le-drop');
   if(d.mode==='bmove'){
@@ -960,10 +1010,66 @@ window.MESCTX={confirm:dlgConfirm};
  document.addEventListener('keydown',e=>{if(on&&e.key==='Escape'){e.preventDefault();e.stopPropagation();exit()}},true);
  window.addEventListener('scroll',place,true);window.addEventListener('resize',place);
 
- const boot=()=>{tagBlocks();load()};
+  const boot=()=>{tagBlocks();tagButtons();load()};
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
- setTimeout(tagBlocks,900);setTimeout(tagBlocks,2000);
- window.MESLAYOUT={apply:applyAll,state:S,edit:enter,exit,blocks:tagBlocks};
+ setTimeout(()=>{tagBlocks();tagButtons()},900);setTimeout(()=>{tagBlocks();tagButtons()},2000);
+ window.MESLAYOUT={apply:applyAll,state:S,edit:enter,exit,blocks:tagBlocks,buttons:tagButtons};
+})();
+
+/* ── v82: 공정(조) 공통 레이어 ───────────────────────────────────────
+ * 제번은 수주의 공정(조)수(job_pool.set_qty)만큼 조로 나뉜다.
+ * 예전엔 A,B,C 글자로 나눴는데 이제 1조,2조,3조 로 나눈다 (저장값 '1','2','3').
+ *   MESJO.qty(job)          → 조수 (없으면 1)
+ *   MESJO.list(job)         → [{code:'1',name:'1조',seq:'1/3'},…]
+ *   MESJO.norm(v)           → 'A'→'1', '2조'→'2', '3/3'→'3', ' 2 '→'2'
+ *   MESJO.label(v)          → '1조' (옛 글자 코드도 조로 바꿔 보여준다)
+ *   MESJO.bind(el,getJob)   → <select>에 조 목록을 채운다 (input 이면 select 로 바꿈)
+ *   MESJO.refresh(sel)      → 제번이 바뀐 뒤 목록 다시 채우기
+ * 자동: #fProc 이 <select> 이거나 data-jo 속성이 있으면 #q_job/#jobQ 와 묶어 자동 바인딩 */
+(function(){
+ let MAP=null,loading=null;
+ async function all(){
+  if(MAP)return MAP;if(loading)return loading;
+  loading=(async()=>{
+   for(let i=0;i<80&&!window.MESDB;i++)await new Promise(r=>setTimeout(r,50));
+   if(window.MESDB&&MESDB.ready){try{await MESDB.ready}catch(e){}}
+   MAP=new Map();
+   if(window.MESDB&&MESDB.online){try{const rs=await MESDB.table('job_pool').select('select=job_no,set_qty');
+     (rs||[]).forEach(r=>MAP.set(String(r.job_no),Math.max(1,Math.trunc(Number(r.set_qty))||1)))}catch(e){}}
+   return MAP})();
+  return loading}
+ const qtyOf=(m,job)=>Math.max(1,Number(m.get(String(job||'').trim()))||1);
+ async function qty(job){return qtyOf(await all(),job)}
+ const norm=v=>{const s=String(v??'').trim();if(!s)return '';
+  let m=/^(\d+)\s*(?:조.*)?$/.exec(s);if(m)return String(Number(m[1]));
+  m=/^([A-Za-z]{1,2})$/.exec(s);if(m){let n=0;for(const ch of m[1].toUpperCase())n=n*26+(ch.charCodeAt(0)-64);return String(n)}
+  m=/^(\d+)\s*\/\s*\d+$/.exec(s);if(m)return String(Number(m[1]));
+  return s};
+ const label=v=>{const n=norm(v);return /^\d+$/.test(n)?n+'조':n};
+ const codes=n=>Array.from({length:Math.max(1,Math.trunc(Number(n))||1)},(_,i)=>String(i+1));
+ async function list(job){const q=await qty(job);return codes(q).map(c=>({code:c,name:c+'조',seq:c+'/'+q}))}
+ function fillSel(sel,q,keep){const cs=codes(q);const cur=norm(keep!=null?keep:sel.value);
+  sel.innerHTML=cs.map(c=>`<option value="${c}">${c}조</option>`).join('');
+  sel.value=cs.includes(cur)?cur:cs[0]}
+ async function refresh(sel,keep){if(!sel)return;const j=sel.__jo&&sel.__jo.job?String(sel.__jo.job()||'').trim():'';
+  fillSel(sel,j?await qty(j):1,keep)}
+ function bind(el,getJob){if(!el)return null;let sel=el;
+  if(sel.tagName!=='SELECT'){sel=document.createElement('select');
+   ['id','class','style','title'].forEach(a=>{const v=el.getAttribute(a);if(v!=null)sel.setAttribute(a,v)});
+   el.replaceWith(sel)}
+  sel.dataset.jo='1';sel.setAttribute('data-nocombo','');sel.__jo={job:getJob};refresh(sel);return sel}
+ function auto(){const el=document.getElementById('fProc');if(!el||el.__jo)return;
+  if(!(el.tagName==='SELECT'||el.hasAttribute('data-jo')))return;
+  const jb=document.getElementById('q_job')||document.getElementById('jobQ')||document.getElementById('job_no');
+  if(!jb)return;
+  const sel=bind(el,()=>jb.value);
+  jb.addEventListener('change',()=>refresh(sel));}
+ const run=()=>{try{auto()}catch(e){}};
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);else run();
+ setTimeout(run,600);
+ const hook=()=>{try{if(window.MESDB&&MESDB.onChange){MESDB.onChange(['sale_orders','jobs'],()=>{MAP=null;loading=null});return true}}catch(e){}return false};
+ if(!hook()){let n=0;const iv=setInterval(()=>{if(hook()||++n>40)clearInterval(iv)},200)}
+ window.MESJO={qty,list,norm,label,codes,bind,refresh,all};
 })();
 
 /* ── v77: 금액 입력칸 천단위 쉼표 (전 화면 공용) ──────────────────────
