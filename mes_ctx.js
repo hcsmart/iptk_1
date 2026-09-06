@@ -844,3 +844,63 @@ window.MESCTX={confirm:dlgConfirm};
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',load);else load();
  window.MESLAYOUT={apply:applyAll,state:S,edit:enter,exit};
 })();
+
+/* ── v77: 금액 입력칸 천단위 쉼표 (전 화면 공용) ──────────────────────
+ * 화면에는 1,234,567 로 보이고, 화면 코드가 .value 로 읽으면 항상 1234567 이 온다
+ * (value 속성을 감싸서 getter 는 쉼표를 뺀 값, setter 는 쉼표를 넣은 표시).
+ * 대상: id/name 에 price·amount·amt·cost·nego·quote… 가 들어가는 input,
+ *       또는 class=num 이면서 항목명이 …가/금액/단가/원가/비용 인 input.
+ * 제외: rate·pct·qty·cnt·days·code·date·no 등 수량·비율·코드성 칸, 콤보, data-nomoney. */
+(function(){
+ const MONEY=/(price|amount|amt|cost|nego|quote|budget|fee|pay|revenue|profit|won|salary|wage)/i;
+ const NOT=/(rate|pct|percent|ratio|qty|cnt|count|days|minute|min\b|hour|seq|code|phone|tel|zip|date|_no\b|no$|id$|ver|rev)/i;
+ const LAB=/(가|금액|단가|비용|원가|경비|이익금|매입|매출|합계|급여)\s*(\(.*\))?$/;
+ const isLab=n=>!!n&&n.nodeType===1&&/(^|\s)(label|lab|lb)(\s|$)/.test(n.className);
+ function labelText(el){
+  let n=el.previousElementSibling;if(isLab(n))return n.textContent.trim();
+  const p=el.parentElement;if(p){n=p.previousElementSibling;if(isLab(n))return n.textContent.trim()}
+  return '';
+ }
+ function isMoney(el){
+  if(!el||el.tagName!=='INPUT')return false;
+  const t=(el.getAttribute('type')||'text').toLowerCase();
+  if(!['text','number','tel'].includes(t))return false;
+  if(el.hasAttribute('data-nomoney')||el.classList.contains('mescb-in')||el.classList.contains('cbo')||el.hasAttribute('list'))return false;
+  if(el.hasAttribute('data-money'))return true;
+  const key=(el.id||'')+' '+(el.name||'');
+  if(NOT.test(key))return false;
+  if(MONEY.test(key))return true;
+  if(el.classList.contains('num')&&LAB.test(labelText(el).replace(/\s+/g,'')))return true;
+  return false;
+ }
+ const raw=v=>String(v??'').replace(/,/g,'');
+ function fmt(v){
+  const s=raw(v).trim();if(s===''||s==='-')return s;
+  if(!/^-?\d*(\.\d*)?$/.test(s))return s;              /* 숫자 아닌 글자는 건드리지 않음 */
+  const neg=s.startsWith('-');let [i,d]=s.replace('-','').split('.');
+  i=i.replace(/^0+(?=\d)/,'');
+  return (neg?'-':'')+i.replace(/\B(?=(\d{3})+(?!\d))/g,',')+(d!=null?'.'+d:'');
+ }
+ const D=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+ function enhance(el){
+  if(el.__mesMoney||!D||!D.get||!D.set)return;el.__mesMoney=1;
+  if((el.getAttribute('type')||'').toLowerCase()==='number'){el.setAttribute('type','text');el.setAttribute('inputmode','decimal')}
+  if(!el.style.textAlign)el.style.textAlign='right';
+  const own=Object.getOwnPropertyDescriptor(el,'value');       /* 다른 모듈이 이미 감쌌으면 그 위에 얹는다 */
+  const g=own&&own.get?()=>own.get.call(el):()=>D.get.call(el);
+  const s=own&&own.set?v=>own.set.call(el,v):v=>D.set.call(el,v);
+  Object.defineProperty(el,'value',{configurable:true,enumerable:true,
+   get(){return raw(g())},
+   set(v){s(document.activeElement===el?raw(v):fmt(v))}});
+  el.addEventListener('focus',()=>{const v=raw(g());if(v!==g())s(v)});
+  el.addEventListener('blur',()=>{const v=fmt(g());if(v!==g())s(v)});
+  const v0=fmt(g());if(v0!==g())s(v0);
+ }
+ function scan(root){(root&&root.querySelectorAll?root:document).querySelectorAll('input').forEach(el=>{try{if(isMoney(el))enhance(el)}catch(e){}})}
+ const run=()=>scan(document);
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);else run();
+ setTimeout(run,500);setTimeout(run,1500);
+ new MutationObserver(ms=>{for(const m of ms)for(const n of m.addedNodes)if(n.nodeType===1)scan(n.parentNode||document)})
+  .observe(document.documentElement,{childList:true,subtree:true});
+ window.MESMONEY={fmt,raw,scan:run,isMoney};
+})();
