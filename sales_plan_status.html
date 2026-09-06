@@ -106,7 +106,7 @@ function openPlan(pl,r){
  planBody.innerHTML=
   `<div class="sec"><div class="st">기본정보</div><div class="kv mes-grid-fit">`
   +fld('제 번',pl.job_no)+fld('품 명',pl.product_name)+fld('고객사',pl.customer_name)+fld('아이템',pl.item_name)
-  +fld('금형타입',pl.mold_type_name)+fld('모 델',pl.model)+fld('공정/조수',pl.process_set_qty)+fld('수주일',pl.order_date)
+  +fld('금형타입',pl.mold_type_name)+fld('모 델',pl.model)+fld('공정(조)수',pl.process_set_qty)+fld('수주일',pl.order_date)
   +fld('T/O 예정일',pl.s1_planned_date)+fld('납기 예정일',pl.delivery_planned_date)+`<div></div><div></div><div></div><div></div></div></div>`
   +`<div class="sec"><div class="st">금액</div><div class="kv mes-grid-fit">`
   +fld('수주가',n(op),'num')+fld('목표가',n(target),'num')+fld('이익금',n(profit),'num'+(profit<0?' neg':''))+fld('이익률(%)',rate==null?'':rate.toFixed(1),'num'+(profit<0?' neg':''))
