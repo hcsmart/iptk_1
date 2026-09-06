@@ -161,12 +161,26 @@ window.MESDB={cfg:CFG,rest,table,bind,persist,reset,rpc,get online(){return onli
 MESDB.auth=()=>{try{return window.MES_AUTH||window.parent.MES_AUTH||null}catch(e){return null}};
 MESDB.pageMenu=()=>{try{const f=location.pathname.split('/').pop();return window.parent.MES_MENU_OF?.(f)||null}catch(e){return null}};
 MESDB.canSave=()=>{const a=MESDB.auth();if(!a)return true;const m=MESDB.pageMenu();return m?a.can(m,'save'):true};
-/* 저장 권한이 없으면 저장/삭제류 버튼 비활성 */
-document.addEventListener('DOMContentLoaded',()=>{const a=MESDB.auth();if(!a||a.role==='admin'||a.role==='master')return;const m=MESDB.pageMenu();if(!m)return;
-  const cs=a.can(m,'save'),ce=a.can(m,'edit'),cd=a.can(m,'delete');
-  document.querySelectorAll('button[onclick]').forEach(b=>{const oc=b.getAttribute('onclick');
-    if(/save|receive|confirm|apply|register/i.test(oc)&&!cs||/remove|del|cancel/i.test(oc)&&!cd){
-      b.disabled=true;b.title='권한이 없습니다';b.style.opacity=.45}});});
+/* 저장 권한이 없으면 저장/삭제류 버튼 비활성
+ * v72: 부모의 loadPerms() 가 비동기라 iframe 이 먼저 뜨면 role 이 아직 null 이다.
+ *      그 상태로 판정하면 마스터인데도 저장 버튼이 꺼진 채 남으므로, role 이
+ *      정해질 때까지 기다렸다가 한 번만 적용한다. */
+(function(){
+  const apply=()=>{
+    const a=MESDB.auth();if(!a)return true;                 /* 로그인 모듈 없음 → 제한 없음 */
+    if(!a.role)return false;                                /* 권한 로딩 전 → 다시 시도 */
+    if(a.role==='admin'||a.role==='master')return true;
+    const m=MESDB.pageMenu();if(!m)return true;
+    const cs=a.can(m,'save'),cd=a.can(m,'delete');
+    document.querySelectorAll('button[onclick]').forEach(b=>{const oc=b.getAttribute('onclick');
+      if(/save|receive|confirm|apply|register/i.test(oc)&&!cs||/remove|del|cancel/i.test(oc)&&!cd){
+        b.disabled=true;b.title='권한이 없습니다';b.style.opacity=.45}});
+    return true;
+  };
+  const start=()=>{if(apply())return;let n=0;
+    const iv=setInterval(()=>{if(apply()||++n>60)clearInterval(iv)},200)};   /* 최대 12초 대기 */
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
+})();
 MESDB.ping=async()=>{try{await rest('page_state?select=page&limit=1');online=true}catch(e){online=false}return online};MESDB.ready=MESDB.ping();
 })();
 
