@@ -62,7 +62,7 @@ const money=v=>Number(v||0).toLocaleString('ko-KR');
 function renderJobs(){jobBody.innerHTML=jobView.map((j,i)=>`<tr class="${i===jobIdx?'sel':''}" onclick="pickJob(${i})"><td class="c">${i===jobIdx?'▶':''}</td><td>${j.job}</td><td>${j.item}</td><td class="c">${j.due}</td><td class="c">${j.s1}</td><td class="c">${j.cust}</td></tr>`).join('');countText.textContent=`제번 ${jobView.length}건 / 발주 ${ORD.length}건`}
 function renderPool(){poolBody.innerHTML=POOL.map((p,i)=>`<tr><td class="c"><input type="checkbox" data-i="${i}" ${i===0?'checked':''}></td><td class="c">${p.proc}</td><td class="c">${p.procName}</td></tr>`).join('')}
 /* v76: 협력업체는 체크박스로 고른다. 어느 업체에 나가는 발주인지 눈으로 확인하고 담게 한다 */
-const VENSEL=new Set();
+const VENSEL=new Set();window.MESVENSEL=VENSEL;   /* mes_ctx 의 업체 자동선택이 체크까지 맞출 수 있게 공개 */
 function renderVendors(){venBody.innerHTML=venView.map((v,i)=>`<tr class="${VENSEL.has(v)?'sel':''}" onclick="pickVendor(${i})"><td class="c"><input type="checkbox" data-v="${i}" ${VENSEL.has(v)?'checked':''} onclick="event.stopPropagation();pickVendor(${i})"></td><td>${v}</td></tr>`).join('');
  const all=document.getElementById('venAll');if(all)all.checked=venView.length>0&&venView.every(v=>VENSEL.has(v));}
 function pickedVendors(){return venView.filter(v=>VENSEL.has(v))}
@@ -180,7 +180,9 @@ function msg(t){message.textContent=t}
 renderJobs();renderPool();renderVendors();renderOrd();window.MES={search,save,exportCsv,setMessage:msg,reload:loadJobs};loadJobs();
 </script>
 <script src="mes_sample.js?v=74"></script><script src="mes_scene.js?v=74"></script><script src="mes_demo.js?v=74"></script><script src="mes_db.js?v=74"></script>
-<script>MESDB.bind("outsourced_design_order_input",()=>({ORD}));   /* v62: 제번/공정/업체는 매번 DB 에서 (스냅샷 복원 시 취소 수주 잔존) */</script>
+<script>/* v76: ORD 는 저장 전 임시 목록이라 page_state 스냅샷에서 뺀다.
+   복원되면 예전 발주행이 살아남아 다른 제번·공정으로 발주가 나갔다. (MESDB.bind 제거) */
+try{ORD.length=0;renderOrd()}catch(e){}</script>
 <script src="mes_ctx.js?v=74"></script>
 <script src="mes_lookup.js?v=74"></script>
 <script>

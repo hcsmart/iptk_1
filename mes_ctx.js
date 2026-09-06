@@ -596,6 +596,8 @@ window.MESCTX={confirm:dlgConfirm};
    if(!VENDORS.includes(vd)){say(`제작계획 업체 '${vd}' 가 협력업체 목록에 없습니다. 업체관리에서 ${PAGE.label==='설계'?'외주설계':'외주가공'} 업체로 등록하세요.`);return}
    if(typeof venQ!=='undefined'&&venQ)venQ.value='';
    venView=[...VENDORS];venIdx=venView.indexOf(vd);
+   /* v76: 협력업체가 체크박스 방식인 화면은 체크 상태도 맞춘다 */
+   try{if(window.MESVENSEL){window.MESVENSEL.clear();window.MESVENSEL.add(vd)}}catch(e){}
    if(typeof renderVendors==='function')renderVendors();
    say(`${j.job} 제작계획의 ${PAGE.label} 외주업체 '${vd}' 를 자동 선택했습니다.`);
   }catch(e){}
