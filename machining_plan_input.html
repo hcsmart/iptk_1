@@ -82,8 +82,41 @@ function pick(i,tr){const r=view[i];if(!r)return;selIdx=i;
  const rs=parts.filter(p=>p.job_no===r.job_no);
  pbody.innerHTML=rs.length?rs.map(PROW).join(''):PEMPTY;
  msg(`${r.job_no} / 공정 ${r.process_code} · 부품 ${rs.length}건`);}
-function search(){const j=q_job.value.trim().toLowerCase();
- view=heads.filter(r=>!j||r.job_no.toLowerCase().includes(j));render();msg(`조회결과 ${view.length}건입니다.`);}
+function search(){const j=q_job.value.trim().toLowerCase(),it=q_item.value.trim().toLowerCase();
+ view=heads.filter(r=>(!j||String(r.job_no||'').toLowerCase().includes(j))
+   &&(!it||String(r.item_name||'').toLowerCase().includes(it)));
+ selIdx=-1;render();
+ if(view.length===1)pick(0);
+ msg(`조회결과 ${view.length}건입니다.`);}
+/* ── v81: 제번·품명 입력칸을 드롭다운+직접입력 콤보(datalist)로 ──────────
+ * 글자를 치면 목록이 걸러지고, 목록에 없는 값도 그대로 입력해 조회할 수 있다. */
+function makeDL(id,opts){
+ let dl=document.getElementById(id);
+ if(!dl){dl=document.createElement('datalist');dl.id=id;document.body.appendChild(dl)}
+ dl.innerHTML=opts.map(o=>`<option value="${esc(o.v)}">${esc(o.s||'')}</option>`).join('');
+ return dl;
+}
+let _pickerBound=false;
+function buildPickers(){
+ makeDL('dl_job',heads.map(r=>({v:r.job_no,s:r.item_name||''})));
+ q_job.setAttribute('list','dl_job');q_job.setAttribute('autocomplete','off');
+ q_job.placeholder=heads.length?`제번 입력/선택 (${heads.length}건)`:'제번 입력';
+ q_job.title='등록된 제번 목록입니다. 글자를 입력하면 걸러집니다.';
+ const items=[...new Set(heads.map(r=>r.item_name).filter(Boolean))];
+ makeDL('dl_item',items.map(v=>({v})));
+ q_item.setAttribute('list','dl_item');q_item.setAttribute('autocomplete','off');
+ q_item.placeholder=items.length?`품명 입력/선택 (${items.length}건)`:'품명 입력';
+ q_item.title='등록된 품명 목록입니다. 글자를 입력하면 걸러집니다.';
+ if(!_pickerBound){
+  _pickerBound=true;
+  q_job.addEventListener('change',()=>{const v=(q_job.value||'').trim();
+    search();                                   /* 1건이면 search() 안에서 이미 선택됨 */
+    if(view.length!==1){const k=view.findIndex(r=>r.job_no===v);if(k>=0)pick(k)}});
+  q_item.addEventListener('change',()=>search());
+  [q_job,q_item].forEach(el=>el.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();el.blur();search()}}));
+ }
+ try{window.MESCOMBO&&MESCOMBO.scan()}catch(e){}   /* 공용 콤보 UI 로 승격 */
+}
 /* v39: 스텁 → machining_plans / machining_plan_parts 실제 저장 */
 const _online=()=>!!(window.MESDB&&MESDB.online);
 async function save(){
@@ -170,7 +203,7 @@ async function loadRoutes(){
 }
 async function loadHeads(){
  await _waitDB();
- if(!(window.MESDB&&MESDB.online))return msg('DB 미연결 - 제번리스트를 불러올 수 없습니다.');
+ if(!(window.MESDB&&MESDB.online)){buildPickers();return msg('DB 미연결 - 제번리스트를 불러올 수 없습니다.')}
  await loadProcs();buildOpts();await loadRoutes();
  try{
   const [pool,plans]=await Promise.all([
@@ -183,7 +216,7 @@ async function loadHeads(){
       process_code:p.process_code||'A',
       machining_completion_date:p.machining_completion_date||r.completion_date||'',
       s1_date:p.s1_date||r.s1_date||''})});
-  view=[...heads];render();loadRoutes();
+  view=[...heads];render();buildPickers();loadRoutes();
   msg(heads.length?`제번 ${heads.length}건. 제번을 선택하면 부품별 가공공정이 표시됩니다.`
     :'등록된 수주가 없습니다. 영업관리 > 수주등록을 먼저 하세요.');
  }catch(e){msg('제번리스트 조회 실패: '+String(e.message||e).slice(0,110))}
@@ -296,18 +329,22 @@ async function applySeq(){
  idx.forEach(k=>{const cb=document.querySelector(`#pbody input[data-i="${k}"]`);if(cb)cb.checked=true});
  msg(`부품 ${idx.length}건에 공정순서를 적용했습니다 — ${seq.map(c=>PROCN[c]||c).join(' → ')} · 기준공정 ${r.standard_process_no}. [▤ 저장]을 눌러야 확정됩니다.`);
 }
+let _partsTok=0;
 async function loadParts(job){
+ const _tk=++_partsTok;
  parts.length=0;
  if(!(window.MESDB&&MESDB.online)){pbody.innerHTML=PEMPTY;return}
  try{
   const rs=await MESDB.table('machining_plan_parts')
     .select(`select=*&job_no=eq.${encodeURIComponent(job)}&order=row_no`);
+  if(_tk!==_partsTok)return;
   if(rs.length){
    rs.forEach(r=>parts.push({row_no:r.row_no,job_no:job,part_no:r.part_no,part_name:r.part_name||'',
      standard_process:r.standard_process||'',steps:Array.isArray(r.steps)?r.steps:[]}));
   }else{
    const pl=await MESDB.table('partlist_materials')
      .select(`select=part_no,part_name&job_no=eq.${encodeURIComponent(job)}&order=row_no`);
+   if(_tk!==_partsTok)return;
    const std=routes[0];
    pl.forEach(r=>parts.push({row_no:null,job_no:job,part_no:r.part_no,part_name:r.part_name||'',
      standard_process:std?std.standard_process_name:'',steps:std?std.steps:[]}));
