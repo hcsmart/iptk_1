@@ -13,7 +13,9 @@ const AUTH={session:null,perms:null,role:null,name:null,
     if(!AUTH.perms)return right==='view';        /* 권한자료 없으면 조회만 */
     /* v46: 메뉴 개명 별칭 - 기존 권한자료(구 명칭)와 호환 */
     const ALIAS={'제작계획':'영업계획','제작계획등록':'영업계획등록','제작계획현황':'영업계획현황',
-      '사내설계':'설계','SET외주제작등록':'SET발주등록'};
+      '사내설계':'설계','SET외주제작등록':'SET발주등록',
+      /* v73: 영업관리 › 설계외주/조립외주 로 재편 (DB 권한행은 새 경로로 옮겼고, 남은 옛 행 호환용) */
+      '조립외주':'SET발주','설계외주':'외주설계발주'};
     const alias=m=>m.split('/').map(x=>ALIAS[x]||x).join('/');
     const hit=(m)=>AUTH.perms.find(p=>p.menu_name===m)||AUTH.perms.find(p=>p.menu_name===alias(m));
     /* 화면 권한 → 없으면 상위(중분류/모듈) 권한 상속 */
