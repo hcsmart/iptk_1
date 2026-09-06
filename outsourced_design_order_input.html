@@ -41,7 +41,7 @@ input.cell{width:100%;height:20px;border:1px solid #cbd4dc;padding:0 3px;text-al
   <section class="bottom">
     <div class="box"><div class="box-title">협력업체리스트</div>
       <div class="searchbar"><input id="venQ" placeholder="Enter text to search"><button onclick="findVendor()">찾기</button><button onclick="clearVendor()">지우기</button></div>
-      <div class="tablewrap"><table><thead><tr><th>협력업체</th></tr></thead><tbody id="venBody"></tbody></table></div></div>
+      <div class="tablewrap"><table><thead><tr><th style="width:36px"><input type="checkbox" id="venAll" onclick="toggleAllVendors(this.checked)" title="전체 선택/해제"></th><th>협력업체</th></tr></thead><tbody id="venBody"></tbody></table></div></div>
     <div class="box"><div class="box-title">조수공정 리스트</div><div class="tablewrap"><table>
       <colgroup><col style="width:38px"><col style="width:36px"><col style="width:16%"><col style="width:8%"><col style="width:10%"><col style="width:13%"><col style="width:13%"><col style="width:13%"><col style="width:13%"><col style="width:10%"></colgroup>
       <thead><tr><th>No</th><th></th><th>협력업체</th><th>공정</th><th>공정명</th><th>발주일</th><th>입고예정일</th><th>견적가</th><th>네고가</th><th>작성자</th></tr></thead>
@@ -61,16 +61,42 @@ let jobIdx=0,venIdx=0,jobView=[...JOBS],venView=[...VENDORS];
 const money=v=>Number(v||0).toLocaleString('ko-KR');
 function renderJobs(){jobBody.innerHTML=jobView.map((j,i)=>`<tr class="${i===jobIdx?'sel':''}" onclick="pickJob(${i})"><td class="c">${i===jobIdx?'▶':''}</td><td>${j.job}</td><td>${j.item}</td><td class="c">${j.due}</td><td class="c">${j.s1}</td><td class="c">${j.cust}</td></tr>`).join('');countText.textContent=`제번 ${jobView.length}건 / 발주 ${ORD.length}건`}
 function renderPool(){poolBody.innerHTML=POOL.map((p,i)=>`<tr><td class="c"><input type="checkbox" data-i="${i}" ${i===0?'checked':''}></td><td class="c">${p.proc}</td><td class="c">${p.procName}</td></tr>`).join('')}
-function renderVendors(){venBody.innerHTML=venView.map((v,i)=>`<tr class="${i===venIdx?'sel':''}" onclick="pickVendor(${i})"><td>${v}</td></tr>`).join('')}
+/* v76: 협력업체는 체크박스로 고른다. 어느 업체에 나가는 발주인지 눈으로 확인하고 담게 한다 */
+const VENSEL=new Set();
+function renderVendors(){venBody.innerHTML=venView.map((v,i)=>`<tr class="${VENSEL.has(v)?'sel':''}" onclick="pickVendor(${i})"><td class="c"><input type="checkbox" data-v="${i}" ${VENSEL.has(v)?'checked':''} onclick="event.stopPropagation();pickVendor(${i})"></td><td>${v}</td></tr>`).join('');
+ const all=document.getElementById('venAll');if(all)all.checked=venView.length>0&&venView.every(v=>VENSEL.has(v));}
+function pickedVendors(){return venView.filter(v=>VENSEL.has(v))}
+function toggleAllVendors(on){venView.forEach(v=>on?VENSEL.add(v):VENSEL.delete(v));renderVendors();
+ msg(on?`협력업체 ${venView.length}개를 모두 선택했습니다.`:'협력업체 선택을 해제했습니다.');}
 function renderOrd(){ordBody.innerHTML=ORD.map((r,i)=>`<tr><td class="c">${i+1}</td><td class="c"><input type="checkbox" data-no="${r.no}"></td><td>${r.vendor}</td><td class="c">${r.proc}</td><td class="c">${r.procName}</td><td class="c">${r.odate}</td><td class="c"><input class="cell" type="date" value="${r.edate}" onchange="setVal(${r.no},'edate',this.value)"></td><td><input class="cell" value="${r.quote}" onchange="setVal(${r.no},'quote',Number(this.value)||0)"></td><td><input class="cell" value="${r.nego}" onchange="setVal(${r.no},'nego',Number(this.value)||0)"></td><td class="c">${r.writer}</td></tr>`).join('');countText.textContent=`제번 ${jobView.length}건 / 발주 ${ORD.length}건`}
 function setVal(no,k,v){const r=ORD.find(x=>x.no===no);if(r){r[k]=v;msg(`${r.vendor} ${r.proc} 항목을 수정했습니다.`)}}
-function pickJob(i){jobIdx=i;renderJobs();if(typeof loadPool==='function')loadPool();msg(`${jobView[i].job} 선택 (완료예정일 ${jobView[i].due||'-'})`)}
-function pickVendor(i){venIdx=i;renderVendors();msg(`협력업체 ${venView[i]} 선택`)}
-function findVendor(){const q=venQ.value.trim().toLowerCase();venView=VENDORS.filter(v=>!q||v.toLowerCase().includes(q));venIdx=0;renderVendors()}
+/* v76: 제번을 바꾸면 저장 전 발주행은 비운다.
+   ORD 는 page_state 스냅샷으로 남아 있어, 그대로 두면 다른 제번으로 발주가 나간다. */
+function pickJob(i){
+ const prev=jobIdx>=0?jobView[jobIdx]?.job:null, next=jobView[i]?.job;
+ let cleared=0;
+ if(ORD.length&&prev!==next){cleared=ORD.length;ORD.length=0;renderOrd()}
+ jobIdx=i;renderJobs();if(typeof loadPool==='function')loadPool();
+ msg(`${next} 선택 (완료예정일 ${jobView[i].due||'-'})`+(cleared?` · 저장하지 않은 발주행 ${cleared}건을 비웠습니다.`:''));
+}
+function pickVendor(i){const v=venView[i];if(v==null)return;
+ if(VENSEL.has(v))VENSEL.delete(v);else VENSEL.add(v);
+ venIdx=i;renderVendors();
+ const ps=pickedVendors();
+ msg(ps.length?`협력업체 ${ps.length}개 선택: ${ps.join(', ')}`:'협력업체 선택 없음');}
+function findVendor(){const q=venQ.value.trim().toLowerCase();venView=VENDORS.filter(v=>!q||v.toLowerCase().includes(q));venIdx=0;renderVendors()}   /* 선택(VENSEL)은 검색해도 유지된다 */
 function clearVendor(){venQ.value='';venView=[...VENDORS];venIdx=0;renderVendors()}
 function search(){const j=jobQ.value.trim().toLowerCase(),it=itemQ.value.trim().toLowerCase();jobView=JOBS.filter(x=>(!j||x.job.toLowerCase().includes(j))&&(!it||(x.item||'').toLowerCase().includes(it)));jobIdx=0;renderJobs();msg(`제번 ${jobView.length}건을 조회했습니다.`)}
 async function addRow(){const picks=[...poolBody.querySelectorAll('input:checked')].map(x=>POOL[Number(x.dataset.i)]);if(!picks.length)return msg('대기 리스트에서 공정을 선택하세요.');
- picks.forEach(p=>ORD.push({no:ORD.length?Math.max(...ORD.map(r=>r.no))+1:1,vendor:venView[venIdx],proc:p.proc,procName:p.procName,odate:new Date().toISOString().slice(0,10),edate:'',quote:0,nego:0,writer:OWNER}));
+ const vens=pickedVendors();
+ if(!vens.length)return msg('협력업체리스트에서 발주할 업체를 체크하세요.');
+ let dup=0;
+ for(const v of vens)for(const p of picks){
+  if(ORD.some(r=>r.vendor===v&&r.proc===p.proc)){dup++;continue}
+  ORD.push({no:ORD.length?Math.max(...ORD.map(r=>r.no))+1:1,vendor:v,proc:p.proc,procName:p.procName,
+   odate:new Date().toISOString().slice(0,10),edate:'',quote:0,nego:0,writer:OWNER});
+ }
+ if(dup)msg(`이미 담긴 업체·공정 ${dup}건은 제외했습니다.`);
  /* v39: 설계 공정단가를 자동 조회해 견적가를 채운다 (0이면 제조원가 외주설계비가 0) */
  if(window.MESPRICE){
   for(const r of ORD){
@@ -95,6 +121,10 @@ async function save(){
  if(!online()){msg(`${job} 외주설계발주 ${ORD.length}건을 저장했습니다. (DB 미연결 - 로컬)`);return}
  const bad=ORD.filter(r=>Number(r.nego||0)>Number(r.quote||0)&&Number(r.quote||0)>0);
  if(bad.length){msg('네고가는 견적가를 넘을 수 없습니다.');return}
+ const byVen={};ORD.forEach(r=>{(byVen[r.vendor]=byVen[r.vendor]||[]).push(r.proc)});
+ const sum=ORD.reduce((a,r)=>a+(Number(r.nego)||Number(r.quote)||0),0);
+ const lines=Object.entries(byVen).map(([v,ps])=>`· ${v} — 공정 ${ps.join(',')}`).join('\n');
+ if(!confirm(`${job} 설계외주발주 ${ORD.length}건\n${lines}\n\n금액 합계 ${sum.toLocaleString()}원\n등록하시겠습니까?`))return;
  try{
   const ex=await MESDB.table('order_lines')
     .select(`select=line_id,process_code,vendor_name&category=eq.외주설계&job_no=eq.${encodeURIComponent(job)}`);
