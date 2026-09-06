@@ -574,7 +574,6 @@ const S={
     dlvp:'최종 납기 예정일. KPI02의 기준입니다.',
     quo_price:'견적 금액.',
     order_price:'실제 수주 금액. 제작계획의 목표원가 기준이 됩니다.',
-    sales_price:'매출 인식 금액. 매출현황에 집계됩니다.',
     eco:'설계변경 관리번호가 있으면 적습니다.',
     remark:'특기사항. 현황 화면에서 함께 보입니다.'
   },
@@ -604,7 +603,6 @@ const S={
   dlvp:day(45),
   quo_price:52000000,
   order_price:48000000,
-  sales_price:48000000,
   eco:'ECO-26-041',
   remark:'프로그레시브 4공정 · 고객 T/O 입회 요청'
 },

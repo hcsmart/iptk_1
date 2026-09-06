@@ -98,7 +98,6 @@ table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th
 
  <div class="label">비 고</div><div class="span3"><input id="remark" class="field"></div>
  <div class="label">수주가</div><div><input id="order_price" class="field num"></div>
- <div class="label">판매가</div><div><input id="sales_price" class="field num"></div>
  <div class="label">완료일</div><div><input id="comp_date" type="date" class="field"></div>
 </section>
 <div class="secthead">첨부파일</div>
@@ -129,10 +128,10 @@ const MAP={job_no:'job_no',order_date:'order_date',s1p:'s1_planned_date',
  product_name:'product_name',model:'model',proc_cnt:'process_set_qty',quo_price:'quotation_price',
  ms_code:'machine_spec_code',ms_name:'machine_spec_name',material_used:'material_used',
  s1c:'s1_completed_date',dlvc:'delivery_completed_date',eco:'eco',remark:'remark',
- order_price:'order_price',sales_price:'sales_price',comp_date:'completion_date'};
+ order_price:'order_price',comp_date:'completion_date'};
 function load(o){for(const[el,k]of Object.entries(MAP)){const n=document.getElementById(el);if(n)n.value=o[k]??''}}
 function clearForm(){for(const el of Object.keys(MAP)){const n=document.getElementById(el);if(n)n.value=''}document.getElementById('status').value='진행';otype.value='신작';dom.value='국내';ATT.length=0;renderAtt();msg('신규 입력 상태입니다.')}
-const NUMF=['quotation_price','order_price','sales_price'];   /* v62: 공정(process_set_qty)은 '1/1' 형식 text — 숫자변환 제외 */
+const NUMF=['quotation_price','order_price'];   /* v62: 공정(process_set_qty)은 '1/1' 형식 text — 숫자변환 제외 */
 const DATEF=['order_date','s1_planned_date','delivery_planned_date','s1_completed_date','delivery_completed_date','completion_date'];
 async function save(mode){
  const ACT=(typeof mode==='string'&&mode)?mode:'저장';

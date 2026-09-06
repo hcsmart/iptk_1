@@ -78,20 +78,20 @@ let view=[...data],sel=-1;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const g=n=>document.querySelector(`input[name="${n}"]:checked`).value;
 const v=id=>document.getElementById(id).value.trim().toLowerCase();
-let AMT={};   /* job_no -> {quotation_price, order_price, sales_price} */
+let AMT={};   /* job_no -> {quotation_price, order_price} */
 function renderTotal(){
   const money=v=>Number(v||0).toLocaleString('ko-KR');
-  let q=0,o=0,sl=0,n=0;
-  for(const r of view){const a=AMT[r.job_no];if(a){q+=Number(a.quotation_price)||0;o+=Number(a.order_price)||0;sl+=Number(a.sales_price)||0;n++}}
+  let q=0,o=0,n=0;
+  for(const r of view){const a=AMT[r.job_no];if(a){q+=Number(a.quotation_price)||0;o+=Number(a.order_price)||0;n++}}
   totline.textContent = view.length
-    ? `조회 ${view.length}건 · 견적가 ${money(q)} · 수주가 ${money(o)} · 판매가 ${money(sl)}`
+    ? `조회 ${view.length}건 · 견적가 ${money(q)} · 수주가 ${money(o)}`
       + (n<view.length?`  (금액 미등록 ${view.length-n}건 제외)`:'')
     : '조회된 수주가 없습니다.';
 }
 async function loadAmounts(){
   if(!window.MESDB)return;
   try{
-    const rs=await MESDB.table('sale_orders').select('select=job_no,quotation_price,order_price,sales_price');
+    const rs=await MESDB.table('sale_orders').select('select=job_no,quotation_price,order_price');
     AMT={}; rs.forEach(r=>AMT[r.job_no]=r); renderTotal();
   }catch(e){}
 }
@@ -122,7 +122,7 @@ const DFIELDS=[['job_no','제번'],['plant_name','공장'],['order_status','수�
  ['mass_production_vendor_name','양산처'],['product_name','품명'],['model','모델'],['process_set_qty','공정'],
  ['quotation_price','견적가'],['machine_spec_name','기계사양'],['material_used','사용재료'],
  ['s1_completed_date','T/O 완료일'],['delivery_completed_date','납기완료일'],['eco','ECO'],
- ['order_price','수주가'],['sales_price','판매가'],['completion_date','완료일'],['remark','비고']];
+ ['order_price','수주가'],['completion_date','완료일'],['remark','비고']];
 async function openDetail(r){
  if(!r)return;
  let d=r;
@@ -131,7 +131,7 @@ async function openDetail(r){
    if(rs&&rs[0])d={...r,...rs[0]};}catch(e){}
  }
  const money=v=>v==null||v===''?'':Number(v).toLocaleString('ko-KR');
- const rows=DFIELDS.map(([k,l])=>{let v=d[k];if(['quotation_price','order_price','sales_price'].includes(k))v=money(v);
+ const rows=DFIELDS.map(([k,l])=>{let v=d[k];if(['quotation_price','order_price'].includes(k))v=money(v);
    return `<div class="dl">${l}</div><div class="dv">${esc(v??'')}</div>`}).join('');
  let att='';
  if(Array.isArray(d.attachments)&&d.attachments.length){
