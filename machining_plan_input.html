@@ -119,6 +119,7 @@ function buildPickers(){
 }
 /* v39: 스텁 → machining_plans / machining_plan_parts 실제 저장 */
 const _online=()=>!!(window.MESDB&&MESDB.online);
+const OWNER=()=>{try{return (window.MES_AUTH||window.parent.MES_AUTH)?.name||''}catch(e){return ''}};
 async function save(){
  const job=(view[selIdx]&&view[selIdx].job_no)||(q_job.value||'').trim();
  if(!job)return msg('제번을 선택하세요.');
@@ -188,6 +189,8 @@ function pr(){
  msg(`${h.job_no} 가공계획서 ${rs.length}건을 인쇄합니다.`);
 }
 window.MES={search,save,print:pr,del:del_,setMessage:msg,reload:()=>loadHeads()};render();
+/* 기준정보 › 가공 기준공정관리에서 바뀌면 이 화면도 따라온다 */
+(function(){const b=()=>{if(window.MESDB&&MESDB.onChange){MESDB.onChange(['standard_processes','standard_process_steps','machining_standard_routes'],()=>{if(typeof loadRoutes==='function')loadRoutes()});return true}return false};if(!b()){let n=0;const iv=setInterval(()=>{if(b()||++n>40)clearInterval(iv)},150)}})();
 
 /* ── v39: 제번리스트=job_pool(수주), 기준공정=machining_standard_routes,
    부품=machining_plan_parts → 없으면 PartList 부품 × 기준공정 ── */
@@ -287,14 +290,23 @@ async function routeSave(){
  const bad=tg.find(r=>!(r.steps||[]).filter(Boolean).length);
  if(bad)return msg(`기준공정 ${bad.standard_process_no}: 공정을 하나 이상 선택하세요.`);
  try{
+  const today=new Date().toISOString().slice(0,10);
   for(const r of tg){
    const st=(r.steps||[]).filter(Boolean);
-   const base={standard_process_no:Number(r.standard_process_no),
-     standard_process_name:(r.standard_process_name||'').trim()||routeName(st),steps:st};
-   await MESDB.table('machining_standard_routes').upsert(base,'standard_process_no');
+   const id=Number(r.standard_process_no);
+   const nm=(r.standard_process_name||'').trim()||routeName(st);
+   /* 기준정보 › 가공 기준공정관리 와 같은 마스터에 저장한다 */
+   await MESDB.table('standard_processes').upsert({standard_process_id:id,
+     standard_process_name:nm,owner_name:r.owner_name||OWNER(),registered_date:today},'standard_process_id');
+   await MESDB.table('standard_process_steps').delete({standard_process_id:id});
+   if(st.length)await MESDB.table('standard_process_steps')
+     .upsert(st.map((c,i)=>({standard_process_id:id,sequence:i+1,process_code:c})));
+   await MESDB.table('machining_standard_routes')
+     .upsert({standard_process_no:id,standard_process_name:nm,steps:st},'standard_process_no');
   }
+  try{MESDB.notify&&MESDB.notify(['standard_processes','standard_process_steps','machining_standard_routes'])}catch(e){}
   await loadRoutes();
-  msg(`기준공정 ${tg.length}건을 저장했습니다.`);
+  msg(`기준공정 ${tg.length}건을 저장했습니다. (기준정보 › 가공 기준공정관리에도 반영)`);
  }catch(e){msg('기준공정 저장 실패: '+String(e.message||e).slice(0,140))}
 }
 async function routeDel(){
@@ -304,7 +316,12 @@ async function routeDel(){
  if(ids.length&&!_online())return msg('DB 미연결 상태에서는 삭제할 수 없습니다.');
  if(!confirm(`기준공정 ${idx.length}건을 삭제하시겠습니까?`))return;
  try{
-  for(const id of ids)await MESDB.table('machining_standard_routes').delete({standard_process_no:id});
+  for(const id of ids){
+   await MESDB.table('standard_process_steps').delete({standard_process_id:id});
+   await MESDB.table('standard_processes').delete({standard_process_id:id});
+   await MESDB.table('machining_standard_routes').delete({standard_process_no:id});
+  }
+  try{MESDB.notify&&MESDB.notify(['standard_processes','standard_process_steps','machining_standard_routes'])}catch(e){}
   idx.slice().sort((a,b)=>b-a).forEach(i=>{if(routes[i]&&routes[i]._new)routes.splice(i,1)});
   routeIdx=-1;
   if(ids.length)await loadRoutes();else renderRoutes();
