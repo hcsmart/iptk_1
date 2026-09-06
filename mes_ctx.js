@@ -165,11 +165,11 @@ window.MESCTX={confirm:dlgConfirm};
  st.textContent=`
  .mes-ralign{text-align:right!important;padding-right:8px!important;box-sizing:border-box}
  .mes-ralign.mes-ralign-flex{justify-content:flex-end!important}
- /* v67: 그리드 입력칸은 종류와 무관하게 320px 로 통일해 좌측에 행렬로 정렬한다 */
- .mes-fit{max-width:320px!important;justify-self:start;width:100%}
+ /* v72: 그리드 입력칸은 종류와 무관하게 200px 로 통일해 좌측에 행렬로 정렬한다 */
+ .mes-fit{max-width:200px!important;justify-self:start;width:100%}
  .mes-grid-fit{justify-content:start!important}`;
  (document.head||document.documentElement).appendChild(st);
- /* 그리드 열 정의를 '항목명 폭 / 320px' 반복으로 바꿔 1fr 로 늘어나던 열을 없앤다.
+ /* 그리드 열 정의를 '항목명 폭 / 200px' 반복으로 바꿔 1fr 로 늘어나던 열을 없앤다.
   * 화면 원래 정의가 repeat()/auto-fill 같은 특수형이면 손대지 않는다. */
  function splitTracks(str){const out=[];let dep=0,cur='';for(const ch of str){if(ch==='(')dep++;if(ch===')')dep--;
    if(ch===' '&&!dep){if(cur)out.push(cur);cur=''}else cur+=ch}if(cur)out.push(cur);return out}
@@ -184,7 +184,7 @@ window.MESCTX={confirm:dlgConfirm};
   const kids=[...p.children];
   /* 첫 열이 항목명인 구조만 대상 */
   if(!kids[0]||!/(^|\s)(label|lab|lb)(\s|$)/.test(kids[0].className))return;
-  const nt=tr.map((t,i)=>{if(i%2===0){const m=t.match(/^(\d+(?:\.\d+)?)px$/);return (m&&+m[1]<=160)?t:'max-content'}return '320px'});
+  const nt=tr.map((t,i)=>{if(i%2===0){const m=t.match(/^(\d+(?:\.\d+)?)px$/);return (m&&+m[1]<=160)?t:'max-content'}return '200px'});
   p.style.gridTemplateColumns=nt.join(' ');
   p.classList.add('mes-grid-fit');
  }
@@ -196,7 +196,7 @@ window.MESCTX={confirm:dlgConfirm};
    const p=el.parentElement;if(!p||!isGrid(p))return;
    el.classList.add('mes-ralign');
    const d=getComputedStyle(el).display;if(d==='flex'||d==='inline-flex')el.classList.add('mes-ralign-flex');
-   /* 항목명 바로 뒤의 입력칸: 320px 상한 (화면에서 폭을 직접 지정했거나 data-wide 면 제외) */
+   /* 항목명 바로 뒤의 입력칸: 200px 상한 (화면에서 폭을 직접 지정했거나 data-wide 면 제외) */
    const f=el.nextElementSibling;
    if(f&&(f.tagName==='INPUT'||f.tagName==='SELECT'||f.tagName==='TEXTAREA')&&!f.classList.contains('mes-fit')&&!f.style.width&&!f.style.maxWidth&&!f.hasAttribute('data-wide'))
     f.classList.add('mes-fit');

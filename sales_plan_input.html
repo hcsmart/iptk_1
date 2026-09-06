@@ -20,10 +20,7 @@ table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th
 .blk{margin:0 14px 8px;border:1px solid var(--line);background:#fff}
 .bt{padding:5px 9px;font-weight:700;background:linear-gradient(var(--head1),var(--head2));color:#405266;border-bottom:1px solid var(--line2)}
 .gg{display:grid;gap:5px;padding:8px 9px;align-items:center}
-.g4{grid-template-columns:repeat(4,74px 200px);justify-content:start}
-.g4 .field{width:200px}
-@media(max-width:1180px){.g4{grid-template-columns:repeat(2,74px 200px)}}
-@media(max-width:660px){.g4{grid-template-columns:74px 200px}}
+.g4{grid-template-columns:repeat(4,74px minmax(110px,1fr))}
 .g3{grid-template-columns:64px repeat(3,1fr)}
 .lb{font-weight:700;text-align:right;padding-right:3px}
 .amt{display:grid;grid-template-columns:64px repeat(8,1fr);gap:4px;padding:8px 9px;align-items:end}
