@@ -217,7 +217,7 @@ input,select{font:inherit}
 </div>
 
 <script>
-const APP_VER='72';
+const APP_VER='73';
 const APP={
   '영업관리':{
     secondary:[
@@ -240,7 +240,7 @@ const APP={
       {name:'PARTLIST',icon:'▦'}
     ],
     menus:{
-      '외주설계':[{name:'외주설계',items:['외주설계발주입고','외주설계발주현황','외주설계실적조회']}],
+      '외주설계':[{name:'외주설계',items:['외주설계발주입고','외주설계발주현황']}],
       '사내설계':[{name:'사내설계',items:['설계계획등록','설계실적등록','설계실적현황','설계실적조회']}],
       'PARTLIST':[{name:'PARTLIST',items:['PartList 등록(원재료)','PartList 등록(구매품)','PartList 현황','PartList 복사']}]
     }
@@ -400,7 +400,6 @@ const pageRegistry={
 '설계실적등록':{id:'design_result_input',file:'design_result_input.html',title:'설계실적등록'},
 '설계실적현황':{id:'design_result_status_design',file:'design_result_status.html?mode=design',title:'설계실적현황'},
 '설계실적조회':{id:'design_result_inquiry_design',file:'design_result_inquiry.html?mode=design',title:'설계실적조회'},
-'외주설계실적조회':{id:'design_result_inquiry_outsourced',file:'design_result_inquiry.html?mode=design&src=외주',title:'외주설계실적조회'},
 'PartList 등록(원재료)':{id:'partlist_material_input',file:'partlist_material_input.html',title:'PartList 등록(원재료)'},
 'PartList 등록(구매품)':{id:'partlist_purchase_input',file:'partlist_purchase_input.html',title:'PartList 등록(구매품)'},
 'PartList 현황':{id:'partlist_status',file:'partlist_status.html',title:'PartList 현황'},

@@ -42,7 +42,7 @@ tfoot th{position:sticky;bottom:0;background:linear-gradient(#e6eef5,#d3e0ea)}
     <tbody id="body"></tbody>
     <tfoot><tr><th colspan="9" class="r">합 계</th><th class="r" id="sumQuote">0</th><th class="r" id="sumNego">0</th><th class="r" id="sumDiff">0</th><th colspan="5"></th></tr></tfoot>
   </table></div></div>
-  <footer class="foot"><button class="btn" onclick="search()">⌕ 검색</button><button class="btn primary" onclick="exportCsv()">▤ EXCEL</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">외주설계 발주현황을 조회했습니다.</span><span class="right" id="countText"></span></footer>
+  <footer class="foot"><button class="btn" onclick="search()">⌕ 검색</button><button class="btn primary" onclick="exportCsv()">▤ EXCEL</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">행을 더블클릭하면 입고(진척) 이력을 볼 수 있습니다.</span><span class="right" id="countText"></span></footer>
 </div>
 <script>
 const rows=[];
@@ -59,6 +59,7 @@ async function loadRows(){
   rows.length=0;
   rs.forEach(r=>rows.push({job:r.job_no,item:r.item_name||'',model:r.model||'',area:r.area||'',
    cust:r.customer_name||'',amount:Number(r.order_price||0),proc:r.process_code||'',
+   line:r.line_id,status:r.status||'',
    paid:r.paid_supply||'',quote:Number(r.quote_price||0),nego:Number(r.nego_price||0),
    diff:Number(r.difference||0),partner:r.vendor_name||'',rate:Number(r.progress_rate||0),
    idate:r.receipt_date||'',odate:r.order_date||'',edate:r.required_date||''}));
@@ -67,7 +68,7 @@ async function loadRows(){
  }catch(e){msg('조회 실패: '+String(e.message||e).slice(0,120));render()}
 }
 function within(v,a,b){if(!a&&!b)return true;if(!v)return false;return (!a||v>=a)&&(!b||v<=b)}
-function render(){body.innerHTML=view.map((r,i)=>`<tr onclick="sel(this)"><td class="c">${i+1}</td><td>${r.job}</td><td>${r.item}</td><td>${r.model}</td><td class="c">${r.area}</td><td>${r.cust}</td><td class="r">${money(r.amount)}</td><td class="c">${r.proc}</td><td class="c">${r.paid}</td><td class="r">${money(r.quote)}</td><td class="r">${money(r.nego)}</td><td class="r">${money(r.diff)}</td><td>${r.partner}</td><td><div class="bar"><i style="width:${r.rate}%"></i><b>${r.rate}%</b></div></td><td class="c">${r.idate}</td><td class="c">${r.odate}</td><td class="c">${r.edate}</td></tr>`).join('');
+function render(){body.innerHTML=view.map((r,i)=>`<tr onclick="sel(this)" ondblclick="sel(this);detail(${i})" title="더블클릭하면 입고 이력을 봅니다"><td class="c">${i+1}</td><td>${r.job}</td><td>${r.item}</td><td>${r.model}</td><td class="c">${r.area}</td><td>${r.cust}</td><td class="r">${money(r.amount)}</td><td class="c">${r.proc}</td><td class="c">${r.paid}</td><td class="r">${money(r.quote)}</td><td class="r">${money(r.nego)}</td><td class="r">${money(r.diff)}</td><td>${r.partner}</td><td><div class="bar"><i style="width:${r.rate}%"></i><b>${r.rate}%</b></div></td><td class="c">${r.idate}</td><td class="c">${r.odate}</td><td class="c">${r.edate}</td></tr>`).join('');
 sumQuote.textContent=money(view.reduce((a,r)=>a+r.quote,0));sumNego.textContent=money(view.reduce((a,r)=>a+r.nego,0));sumDiff.textContent=money(view.reduce((a,r)=>a+r.diff,0));countText.textContent=`${view.length}건`}
 function sel(tr){document.querySelectorAll('#body tr').forEach(x=>x.classList.remove('sel'));tr.classList.add('sel')}
 function search(){const st=document.querySelector('input[name=st]:checked').value;const j=jobQ.value.trim().toLowerCase(),it=itemQ.value.trim().toLowerCase(),m=modelQ.value.trim().toLowerCase();
@@ -75,10 +76,47 @@ view=rows.filter(r=>(st==='전체'||(st==='입고'?!!r.idate:!r.idate))&&(!j||r.
 render();msg(`${st} 기준 ${view.length}건을 조회했습니다.`)}
 function exportCsv(){const out=[['제번','품명','모델','국내/해외','거래처','수주가','공정','견적가','네고가','차액','협력업체','진행률','입고일','발주일','입고예정일'],...view.map(r=>[r.job,r.item,r.model,r.area,r.cust,r.amount,r.proc,r.quote,r.nego,r.diff,r.partner,r.rate,r.idate,r.odate,r.edate])];const csv='\ufeff'+out.map(a=>a.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='outsourced_design_order_status.csv';a.click();URL.revokeObjectURL(a.href);msg('EXCEL(CSV) 파일을 생성했습니다.')}
 function msg(t){message.textContent=t}
+/* v73: 외주설계실적조회를 이 화면으로 통합 — 발주 행의 입고(진척) 이력을 팝업으로 본다 */
+const esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+async function detail(i){
+ const r=view[i];if(!r)return;
+ let rc=[];
+ if(online()){try{rc=await MESDB.table('outsourced_design_receipts')
+   .select(`select=*&order_seq=eq.${encodeURIComponent(r.line)}&order=receipt_date`)}catch(e){}}
+ const rowsHtml=rc.length?rc.map((x,n)=>`<tr><td class="c">${n+1}</td><td class="c">${esc(x.receipt_date||'')}</td>`
+   +`<td class="c">${Number(x.progress_rate||0)}%</td><td class="r">${money(x.amount)}</td>`
+   +`<td class="c">${esc(x.inspector||'')}</td><td>${esc(x.remark||'')}</td></tr>`).join('')
+  :'<tr><td colspan="6" class="c" style="height:70px;color:#8a97a2">입고 이력이 없습니다. 외주설계발주입고에서 진척을 등록하세요.</td></tr>';
+ const done=rc.reduce((a,x)=>a+(Number(x.amount)||0),0);
+ const d=document.createElement('div');
+ d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9999;display:flex;align-items:center;justify-content:center';
+ d.innerHTML=`<div style="background:#fff;border:1px solid #7f8f9c;min-width:640px;max-width:92vw;max-height:86vh;overflow:auto">
+  <div style="padding:6px 10px;font-weight:700;background:linear-gradient(#e8f1f8,#c8dbe9);color:#405266">외주설계 입고 이력</div>
+  <div style="padding:8px 10px;font-size:12px;color:#4b5c6a">
+   <b>${esc(r.job)}</b> · ${esc(r.partner)} · 공정 ${esc(r.proc)} · 네고가 ${money(r.nego)}원
+   · 진척 ${r.rate}% · 상태 ${esc(r.status)}</div>
+  <table style="border-collapse:collapse;width:100%;font-size:12px">
+   <thead><tr style="background:#eef3f8"><th style="border:1px solid #c5d0d8;width:40px">NO</th>
+   <th style="border:1px solid #c5d0d8;width:100px">입고일</th><th style="border:1px solid #c5d0d8;width:70px">진척률</th>
+   <th style="border:1px solid #c5d0d8;width:110px">입고금액</th><th style="border:1px solid #c5d0d8;width:90px">검수자</th>
+   <th style="border:1px solid #c5d0d8">비고</th></tr></thead>
+   <tbody>${rowsHtml}</tbody>
+   <tfoot><tr style="background:#f5f8fb"><th colspan="3" style="border:1px solid #c5d0d8;text-align:right">입고금액 누계</th>
+   <th style="border:1px solid #c5d0d8;text-align:right">${money(done)}</th><th colspan="2" style="border:1px solid #c5d0d8"></th></tr></tfoot>
+  </table>
+  <div style="padding:8px 10px;text-align:right"><button class="btn">닫기</button></div></div>`;
+ const close=()=>d.remove();
+ d.addEventListener('click',e=>{if(e.target===d||e.target.tagName==='BUTTON')close()});
+ document.addEventListener('keydown',function k(e){if(e.key==='Escape'){close();document.removeEventListener('keydown',k)}});
+ document.body.appendChild(d);
+}
+/* 입고처리 화면에서 진척을 올리면 즉시 따라온다 */
+(function(){const bind=()=>{if(window.MESDB&&MESDB.onChange){MESDB.onChange(['order_lines','outsourced_design_receipts'],()=>loadRows());return true}return false};
+ if(!bind()){let n=0;const iv=setInterval(()=>{if(bind()||++n>40)clearInterval(iv)},100)}})();
 render();window.MES={search,exportCsv,setMessage:msg};
 </script>
-<script src="mes_db.js?v=67"></script>
+<script src="mes_db.js?v=73"></script>
 <script>loadRows();</script>
-<script src="mes_ctx.js?v=67"></script>
+<script src="mes_ctx.js?v=73"></script>
 </body>
 </html>
