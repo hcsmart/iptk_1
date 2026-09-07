@@ -157,6 +157,9 @@ async function save(){
     .map(c=>Number(c.dataset.i)).filter(n=>!Number.isNaN(n));
   const allParts=!picks.length&&parts.length;
   if(allParts)picks=parts.map((_,k)=>k);
+  /* v85: 공정이 비어 있는 부품은 저장하지 않는다 — [부품에 적용]을 먼저 해야 한다 */
+  const noSeq=picks.filter(k=>!((parts[k]||{}).steps||[]).filter(Boolean).length).length;
+  picks=picks.filter(k=>((parts[k]||{}).steps||[]).filter(Boolean).length);
   if(picks.length){
    /* v39: 기존 행(row_no 보유)은 갱신, 신규 행은 row_no 없이 insert */
    const upd=[],ins=[];
@@ -178,8 +181,9 @@ async function save(){
   }
   await loadParts(job,jo);
   msg(`${job} ${jo}조 가공계획을 저장했습니다.`+
-      (picks.length?` (부품 ${picks.length}건 확정${allParts?' · 체크가 없어 전체 저장':''})`
-                   :' 저장할 부품이 없습니다 — PartList를 먼저 등록하세요.'));
+      (picks.length?` (부품 ${picks.length}건 확정${allParts?' · 체크가 없어 전체 저장':''})`:'')+
+      (noSeq?` · 공정이 비어 있는 ${noSeq}건은 제외했습니다 — 기준공정을 체크하고 [부품에 적용] 하세요.`
+            :(picks.length?'':' 저장할 부품이 없습니다 — PartList를 먼저 등록하세요.')));
  }catch(e){msg('저장 실패: '+String(e.message||e).slice(0,140))}
 }
 async function del_(){
@@ -426,15 +430,17 @@ async function loadParts(job,jo){
     .then(a=>a.filter(x=>(window.MESJO?MESJO.norm(x.process_code):String(x.process_code||''))===jo))
     .catch(()=>[])]);
   if(_tk!==_partsTok)return;
-  const std=routes[0];
   const saved=new Map(rs.map(r=>[String(r.part_no||''),r]));
   const seen=new Set();
   /* PartList 순서를 기준으로 — 저장된 부품은 저장값, 없는 부품은 기본값 */
   pl.forEach(r=>{const k=String(r.part_no||'');seen.add(k);const sv=saved.get(k);
    if(sv)parts.push({row_no:sv.row_no,job_no:job,part_no:sv.part_no,part_name:sv.part_name||r.part_name||'',
      standard_process:sv.standard_process||'',steps:Array.isArray(sv.steps)?sv.steps:[]});
+   /* v85: 미저장 부품은 공정을 비워 둔다.
+      기본공정을 미리 채워두면 이미 정해진 것처럼 보여 헷갈린다.
+      [부품에 적용]으로 기준공정을 골라야 채워진다. */
    else parts.push({row_no:null,job_no:job,part_no:r.part_no,part_name:r.part_name||'',
-     standard_process:std?std.standard_process_name:'',steps:std?std.steps:[]})});
+     standard_process:'',steps:[]})});
   /* PartList 에서 빠졌지만 저장돼 있는 부품도 남긴다 */
   rs.forEach(r=>{if(seen.has(String(r.part_no||'')))return;
    parts.push({row_no:r.row_no,job_no:job,part_no:r.part_no,part_name:r.part_name||'',
@@ -443,7 +449,7 @@ async function loadParts(job,jo){
   q_job.value=job;
   const unsaved=parts.filter(p=>p.row_no==null).length;
   msg(`${job} ${jo}조 · 부품 ${parts.length}건`+
-      (unsaved?(unsaved===parts.length?' (PartList 기준 · 저장하면 가공계획으로 확정)':` (미저장 ${unsaved}건 — 저장 시 함께 확정)`):' (가공계획 확정)'));
+      (unsaved?` · 공정 미지정 ${unsaved}건 — 기준공정을 체크하고 [부품에 적용] 하세요.`:' (가공계획 확정)'));
  }catch(e){msg('부품 조회 실패: '+String(e.message||e).slice(0,110))}
 }
 </script><script src="mes_sample.js?v=85"></script><script src="mes_scene.js?v=85"></script><script src="mes_demo.js?v=85"></script><script src="mes_db.js?v=85"></script>
