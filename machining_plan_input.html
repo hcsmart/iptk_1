@@ -162,6 +162,15 @@ async function save(){
      if(p.row_no!=null)upd.push({row_no:Number(p.row_no),...base});else ins.push(base)});
    if(upd.length)await MESDB.table('machining_plan_parts').upsert(upd,'row_no');
    if(ins.length)await MESDB.table('machining_plan_parts').upsert(ins);
+   /* v85: 저장 여부를 직접 확인한다.
+      RLS(anon 세션)로 INSERT 가 조용히 걸리면 오류 없이 0건이 되고,
+      바로 뒤 loadParts 가 PartList 기본값을 다시 그려 '원복'된 것처럼 보인다. */
+   const chk=await MESDB.table('machining_plan_parts')
+     .select(`select=row_no&job_no=eq.${encodeURIComponent(job)}&process_code=eq.${encodeURIComponent(jo)}&limit=1`)
+     .catch(()=>null);
+   if(!chk||!chk.length)
+    throw new Error('부품 공정이 DB에 반영되지 않았습니다. 로그아웃 후 다시 로그인해 주세요 '
+                   +'(machining_plan_parts 의 INSERT 권한/RLS 확인).');
   }
   await loadParts(job,jo);
   msg(`${job} ${jo}조 가공계획을 저장했습니다.`+
