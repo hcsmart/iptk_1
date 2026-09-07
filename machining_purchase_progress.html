@@ -62,7 +62,7 @@ function search(){const j=jobQ.value.trim().toLowerCase(),p=procQ.value.trim().t
 view=rows.filter(r=>(!j||r.job.toLowerCase().includes(j))&&(!p||r.proc.toLowerCase().includes(p))&&(!pt||r.part.toLowerCase().includes(pt))&&(!onlyDelay||isDelayed(r)));render();const dl=view.filter(isDelayed).length;msg(`${view.length}건을 조회했습니다.`+(dl?` · 납기초과 ${dl}건`:''))}
 function exportCsv(){const out=[['제번','공정','품번',...Array.from({length:MAXCOL},(_,i)=>`공정${i+1}`)],...view.map(r=>[r.job,r.proc,r.part,...Array.from({length:MAXCOL},(_,i)=>{const s=r.steps[i];return s?`${s.mp}/${s.vendor}/${s.date}/${posText(s)}`:''})])];const csv='\ufeff'+out.map(a=>a.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='machining_purchase_progress.csv';a.click();URL.revokeObjectURL(a.href);msg('EXCEL(CSV) 파일을 생성했습니다.')}
 function msg(t){message.textContent=t}
-/* v64: 외주 보유처·체류일 (v_outsourcing_position) — 읽기 전용 */
+/* v85: 외주 보유처·체류일 (v_outsourcing_position) — 읽기 전용 */
 let POS={},onlyDelay=false;
 async function applyPos(list){
  try{
@@ -132,8 +132,8 @@ async function loadLive(){
 loadLive();
 window.MES={search,exportCsv,setMessage:msg};
 </script>
-<script src="mes_db.js?v=64"></script>
+<script src="mes_db.js?v=85"></script>
 <script>MESDB.bind("machining_purchase_progress",()=>({rows}));</script>
-<script src="mes_ctx.js?v=64"></script>
+<script src="mes_ctx.js?v=85"></script>
 </body>
 </html>
