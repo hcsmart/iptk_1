@@ -6,9 +6,10 @@
 <title>공정이력카드 미리보기</title>
 <style>
 :root{--line:#68747e;--soft:#dfe5ea;--bar:#eef1f3;--blue:#1d5ca6}
-*{box-sizing:border-box}html,body{height:100%;margin:0}body{font-family:"Malgun Gothic","맑은 고딕",Arial,sans-serif;font-size:12px;color:#222;background:#cfd5da;overflow:hidden}.viewer{height:100%;display:flex;flex-direction:column}.caption{height:28px;display:flex;align-items:center;padding:0 9px;background:#eef1f3;border-bottom:1px solid #8f9aa4;font-weight:700;color:#4b5965}.caption .win{margin-left:auto;display:flex;gap:3px}.caption .win span{width:22px;height:18px;border:1px solid #a9b1b8;background:#f8f9fa;text-align:center;line-height:16px}.menubar{height:28px;display:flex;align-items:center;gap:20px;padding:0 10px;background:#f4f6f7;border-bottom:1px solid #c1c8ce}.toolbar{height:36px;display:flex;align-items:center;padding:0 9px;gap:4px;background:#eef1f3;border-bottom:1px solid #9ba5ad}.ico{width:27px;height:26px;border:1px solid transparent;background:transparent;color:#4c5f70;font-size:15px}.ico:hover{border-color:#a5afb8;background:#fff}.sep{width:1px;height:20px;background:#c1c7cc;margin:0 4px}.zoom{width:66px;height:24px;border:1px solid #adb6bd;background:#fff;padding:0 5px}.counter{margin-left:4px;color:#66747e}.canvas{flex:1;min-height:0;overflow:auto;padding:16px 20px 28px;background:#d6dbe0}.paper{display:none;width:1040px;min-height:720px;margin:0 auto 18px;background:white;box-shadow:0 0 0 1px #9da6ad,0 3px 12px rgba(0,0,0,.22);padding:26px 28px 24px;transform-origin:top center}.paper.on{display:block}.report{border:2px solid #394149}.head{display:grid;grid-template-columns:1.5fr 1fr;border-bottom:1px solid #394149}.brandcell{padding:16px 132px 14px 18px;position:relative;min-height:135px}.brandcell h1{margin:0 0 14px;font-size:37px;letter-spacing:1px;font-weight:500}.issue{font-size:14px;display:flex;flex-direction:column;gap:5px;align-items:flex-start}.issue b{font-weight:700;color:#4b5965;margin-right:6px}.issue .key{font-family:Consolas,'D2Coding',monospace;font-size:17px;font-weight:700;letter-spacing:.4px;word-break:break-all}.issue .note{font-size:11px;color:#5a6a78;line-height:1.45;margin-top:2px}.qr{position:absolute;right:22px;top:15px;width:92px;height:92px;background:#fff;border:6px solid #fff;box-shadow:0 0 0 1px #333;display:flex;align-items:center;justify-content:center}.qr svg{width:100%;height:100%;display:block}.dates{display:grid;grid-template-columns:58px repeat(5,1fr);grid-auto-rows:31px}.dates div{border-left:1px solid #394149;border-bottom:1px solid #394149;display:flex;align-items:center;justify-content:center;text-align:center;padding:2px;font-size:13px}.dates div:nth-last-child(-n+6){border-bottom:0}.dates .th{background:#f4f5f6;font-weight:700}.meta{display:grid;grid-template-columns:1.2fr .75fr 1fr .85fr .5fr 1.2fr .9fr}.meta div{height:37px;border-right:1px solid #394149;border-bottom:1px solid #394149;display:flex;align-items:center;justify-content:center;font-size:14px}.meta div:last-child{border-right:0}.meta.th div{font-weight:700;background:#f4f5f6;height:30px}.workgrid{display:grid;grid-template-columns:92px 110px repeat(8,1fr)}.workgrid div{height:31px;border-right:1px solid #394149;border-bottom:1px solid #394149;display:flex;align-items:center;justify-content:center}.workgrid .side{grid-row:span 4;font-weight:700}.workgrid .lbl{background:#f6f7f8;font-weight:700}.inspection-title{height:32px;border-bottom:1px solid #394149;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px}.inspection{width:100%;border-collapse:collapse;table-layout:fixed}.inspection th,.inspection td{border-right:1px solid #394149;border-bottom:1px solid #394149;height:31px;text-align:center;padding:0 2px}.inspection th{background:#f6f7f8}.inspection td:last-child,.inspection th:last-child{border-right:0}.inspection tr:last-child td{border-bottom:0}.notes{margin-top:16px;border:1px solid #394149;padding:9px 12px;font-size:14px;line-height:1.7}.firstpage .report{min-height:665px}.firstpage .section{padding:10px 0}.firstpage .small-table{width:100%;border-collapse:collapse}.firstpage th,.firstpage td{height:28px;border:1px solid #394149;text-align:center}.firstpage .summary{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}.firstpage .summary>div{border:1px solid #394149;padding:10px;min-height:120px}.statusbar{height:26px;display:flex;align-items:center;padding:0 8px;background:#0f56a8;color:white;border-top:1px solid #0a4385}.statusbar span:last-child{margin-left:auto}.navbtn{height:24px;min-width:26px;border:1px solid #aab3bb;background:#f7f8f9}.navbtn:hover{background:#fff}
+*{box-sizing:border-box}html,body{height:100%;margin:0}body{font-family:"Malgun Gothic","맑은 고딕",Arial,sans-serif;font-size:12px;color:#222;background:#cfd5da;overflow:hidden}.viewer{height:100%;display:flex;flex-direction:column}.caption{height:28px;display:flex;align-items:center;padding:0 9px;background:#eef1f3;border-bottom:1px solid #8f9aa4;font-weight:700;color:#4b5965}.caption .win{margin-left:auto;display:flex;gap:3px}.caption .win span{width:22px;height:18px;border:1px solid #a9b1b8;background:#f8f9fa;text-align:center;line-height:16px}.menubar{height:28px;display:flex;align-items:center;gap:20px;padding:0 10px;background:#f4f6f7;border-bottom:1px solid #c1c8ce}.toolbar{height:36px;display:flex;align-items:center;padding:0 9px;gap:4px;background:#eef1f3;border-bottom:1px solid #9ba5ad}.ico{width:27px;height:26px;border:1px solid transparent;background:transparent;color:#4c5f70;font-size:15px}.ico:hover{border-color:#a5afb8;background:#fff}.sep{width:1px;height:20px;background:#c1c7cc;margin:0 4px}.zoom{width:66px;height:24px;border:1px solid #adb6bd;background:#fff;padding:0 5px}.counter{margin-left:4px;color:#66747e}.canvas{flex:1;min-height:0;overflow:auto;padding:16px 20px 28px;background:#d6dbe0}.paper{display:none;width:1040px;min-height:720px;margin:0 auto 18px;background:white;box-shadow:0 0 0 1px #9da6ad,0 3px 12px rgba(0,0,0,.22);padding:26px 28px 24px;transform-origin:top center}.paper.on{display:block}.report{border:2px solid #394149}.head{display:grid;grid-template-columns:1.5fr 1fr;border-bottom:1px solid #394149}.brandcell{padding:16px 132px 14px 18px;position:relative;min-height:135px}.brandcell h1{margin:0 0 14px;font-size:37px;letter-spacing:1px;font-weight:500}.issue{font-size:14px;display:flex;flex-direction:column;gap:5px;align-items:flex-start}.issue b{font-weight:700;color:#4b5965;margin-right:6px}.issue .key{font-family:Consolas,'D2Coding',monospace;font-size:17px;font-weight:700;letter-spacing:.4px;word-break:break-all}.issue .note{font-size:11px;color:#5a6a78;line-height:1.45;margin-top:2px}.qr{position:absolute;right:22px;top:15px;width:92px;height:92px;background:#fff;border:6px solid #fff;box-shadow:0 0 0 1px #333;display:flex;align-items:center;justify-content:center}.qr svg{width:100%;height:100%;display:block}.dates{display:grid;grid-template-columns:58px repeat(5,1fr);grid-auto-rows:31px}.dates div{border-left:1px solid #394149;border-bottom:1px solid #394149;display:flex;align-items:center;justify-content:center;text-align:center;padding:2px;font-size:13px}.dates div:nth-last-child(-n+6){border-bottom:0}.dates .th{background:#f4f5f6;font-weight:700}.meta{display:grid;grid-template-columns:1.2fr .75fr 1fr .85fr .5fr 1.2fr .9fr}.meta div{height:37px;border-right:1px solid #394149;border-bottom:1px solid #394149;display:flex;align-items:center;justify-content:center;font-size:14px}.meta div:last-child{border-right:0}.meta.th div{font-weight:700;background:#f4f5f6;height:30px}.workgrid{display:grid;grid-template-columns:92px 110px repeat(8,1fr)}.workgrid div{height:31px;border-right:1px solid #394149;border-bottom:1px solid #394149;display:flex;align-items:center;justify-content:center}.workgrid .side{grid-row:span 4;font-weight:700}.workgrid .lbl{background:#f6f7f8;font-weight:700}.inspection-title{height:32px;border-bottom:1px solid #394149;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px}.inspection{width:100%;border-collapse:collapse;table-layout:fixed}.inspection th,.inspection td{border-right:1px solid #394149;border-bottom:1px solid #394149;height:31px;text-align:center;padding:0 2px}.inspection th{background:#f6f7f8}.inspection td:last-child,.inspection th:last-child{border-right:0}.inspection tr:last-child td{border-bottom:0}.notes{margin-top:16px;border:1px solid #394149;padding:9px 12px;font-size:14px;line-height:1.7}.firstpage .report{min-height:665px}.firstpage .section{padding:10px 0}.firstpage .small-table{width:100%;border-collapse:collapse}.firstpage th,.firstpage td{height:28px;border:1px solid #394149;text-align:center}.firstpage .summary{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}.firstpage .summary>div{border:1px solid #394149;padding:10px;min-height:120px}.statusbar{height:26px;display:flex;align-items:center;padding:0 8px;background:#0f56a8;color:white;border-top:1px solid #0a4385}.statusbar span:last-child{margin-left:auto}.navbtn{height:24px;min-width:26px;border:1px solid #aab3bb;background:#f7f8f9}.navbtn:hover{background:#fff}.prt{display:none}#printBox{display:contents}
+.ptbl{border-collapse:collapse;width:100%;background:#fff;font-size:12px}.ptbl th{background:#e9eef3;border:1px solid #c3ccd4;padding:3px}
 @media(max-width:1100px){.paper{width:900px}.brandcell h1{font-size:31px}}
-@media print{body{background:#fff;overflow:visible}.caption,.menubar,.toolbar,.statusbar{display:none!important}.viewer,.canvas{display:block;height:auto;overflow:visible;background:#fff;padding:0}.paper{display:block!important;width:100%;min-height:auto;margin:0;box-shadow:none;page-break-after:always;transform:none!important}.paper:last-child{page-break-after:auto}}
+@media print{body.batch .paper:not(.prt){display:none!important}body.batch .prt{display:block!important}body{background:#fff;overflow:visible}.caption,.menubar,.toolbar,.statusbar{display:none!important}.viewer,.canvas{display:block;height:auto;overflow:visible;background:#fff;padding:0}.paper{display:block!important;width:100%;min-height:auto;margin:0;box-shadow:none;page-break-after:always;transform:none!important}.paper:last-child{page-break-after:auto}}
 </style>
 <script src="mes_qr.js?v=67"></script>
 </head>
@@ -17,12 +18,12 @@
   <div class="caption">미리 보기 <div class="win"><span>–</span><span>□</span><span>×</span></div></div>
   <div class="menubar"><span>파일(F)</span><span>보기(V)</span><span>배경(B)</span></div>
   <div class="toolbar">
-    <button class="ico" title="검색">⌕</button><button class="ico" title="열기">📂</button><button class="ico" title="저장">▣</button><button class="ico" title="인쇄" onclick="window.print()">🖨</button><div class="sep"></div>
+    <button class="ico" title="검색">⌕</button><button class="ico" title="열기">📂</button><button class="ico" title="저장">▣</button><button class="ico" title="인쇄" onclick="printSelected()">🖨</button><div class="sep"></div>
     <select class="zoom" id="zoom" onchange="applyZoom()"><option>75%</option><option selected>100%</option><option>125%</option><option>150%</option></select><div class="sep"></div>
     <button class="navbtn" onclick="goPage(1)">|◀</button><button class="navbtn" onclick="prevPage()">◀</button><button class="navbtn" onclick="nextPage()">▶</button><button class="navbtn" onclick="goPage(2)">▶|</button><span class="counter" id="counter">페이지 1 / 2</span><div class="sep"></div>
-    <button class="ico" title="인쇄" onclick="window.print()">🖨</button><button class="ico" title="닫기" onclick="closePreview()">⊗</button>
+    <button class="ico" title="인쇄" onclick="printSelected()">🖨</button><button class="ico" title="닫기" onclick="closePreview()">⊗</button>
   </div>
-  <div style="display:flex;gap:4px;padding:6px;align-items:center;background:#f4f8fb;border-bottom:1px solid #c3ccd4"><span class="lb">제번</span><input id="qJob" class="field" style="width:150px"><span class="lb">공정</span><input id="qProc" class="field" style="width:60px"><span class="lb">품번</span><input id="qPart" class="field" style="width:100px"><button class="btn" onclick="loadCard()">⌕ 카드조회</button><button class="btn" onclick="sampleFill()" title="예시값을 순서대로 채우며 등록요점을 설명합니다.">▶ 등록예제</button><button class="btn" onclick="issueCard()">▣ 카드발행</button><button class="btn" onclick="toggleProg()" id="btnProg">✎ 진행기록</button><span class="msg" id="message"></span></div><div id="progPanel" style="display:none;padding:6px 8px;background:#fffdf3;border-bottom:1px solid #c3ccd4;max-height:240px;overflow:auto"><div style="display:flex;gap:6px;align-items:center;margin-bottom:4px"><b>공정 진행기록</b><span style="color:#5a6b7a">공정별 접수일·완료일을 기록합니다. 작업지시가 있는 공정은 작업지시(work_order_details)에, 없는 공정은 카드에 저장됩니다.</span><span style="flex:1"></span><button class="btn" onclick="saveProgress()">▣ 진행저장</button></div><table class="prog" id="progTable" style="border-collapse:collapse;width:100%;background:#fff;font-size:12px"><thead><tr style="background:#e9eef3"><th style="border:1px solid #c3ccd4;padding:3px;width:36px">NO</th><th style="border:1px solid #c3ccd4;padding:3px;width:70px">공정</th><th style="border:1px solid #c3ccd4;padding:3px">공정명</th><th style="border:1px solid #c3ccd4;padding:3px;width:150px">작업장·작업자</th><th style="border:1px solid #c3ccd4;padding:3px;width:200px">접수일</th><th style="border:1px solid #c3ccd4;padding:3px;width:200px">완료일</th><th style="border:1px solid #c3ccd4;padding:3px;width:90px">작업지시</th></tr></thead><tbody id="progRows"></tbody></table></div><div class="canvas" id="canvas">
+  <div style="display:flex;gap:4px;padding:6px;align-items:center;background:#f4f8fb;border-bottom:1px solid #c3ccd4"><span class="lb">제번</span><input id="qJob" class="field" style="width:150px"><span class="lb">공정</span><input id="qProc" class="field" style="width:60px"><span class="lb">품번</span><input id="qPart" class="field" style="width:100px"><button class="btn" onclick="loadCard()">⌕ 카드조회</button><button class="btn" onclick="sampleFill()" title="예시값을 순서대로 채우며 등록요점을 설명합니다.">▶ 등록예제</button><button class="btn" onclick="issueCard()">▣ 카드발행</button><button class="btn" onclick="toggleParts()" id="btnParts">▤ 부품목록</button><button class="btn" onclick="issueSelected()">▣ 부품별 일괄발행</button><button class="btn" onclick="toggleProg()" id="btnProg">✎ 진행기록</button><span class="msg" id="message"></span></div><div id="progPanel" style="display:none;padding:6px 8px;background:#fffdf3;border-bottom:1px solid #c3ccd4;max-height:240px;overflow:auto"><div style="display:flex;gap:6px;align-items:center;margin-bottom:4px"><b>공정 진행기록</b><span style="color:#5a6b7a">공정별 접수일·완료일을 기록합니다. 작업지시가 있는 공정은 작업지시(work_order_details)에, 없는 공정은 카드에 저장됩니다.</span><span style="flex:1"></span><button class="btn" onclick="saveProgress()">▣ 진행저장</button></div><table class="prog" id="progTable" style="border-collapse:collapse;width:100%;background:#fff;font-size:12px"><thead><tr style="background:#e9eef3"><th style="border:1px solid #c3ccd4;padding:3px;width:36px">NO</th><th style="border:1px solid #c3ccd4;padding:3px;width:70px">공정</th><th style="border:1px solid #c3ccd4;padding:3px">공정명</th><th style="border:1px solid #c3ccd4;padding:3px;width:150px">작업장·작업자</th><th style="border:1px solid #c3ccd4;padding:3px;width:200px">접수일</th><th style="border:1px solid #c3ccd4;padding:3px;width:200px">완료일</th><th style="border:1px solid #c3ccd4;padding:3px;width:90px">작업지시</th></tr></thead><tbody id="progRows"></tbody></table></div><div id="partPanel" style="display:none;padding:6px 8px;background:#f3f8f3;border-bottom:1px solid #c3ccd4;max-height:240px;overflow:auto"><div style="display:flex;gap:6px;align-items:center;margin-bottom:4px"><b>부품 목록</b><span style="color:#5a6b7a">공정이력카드는 <b>부품(품번) 1개당 1장</b>입니다. 행을 클릭하면 그 부품 카드가 미리보기에 표시됩니다.</span><span style="flex:1"></span><button class="btn" onclick="selAll(true)">☑ 전체선택</button><button class="btn" onclick="selAll(false)">☐ 전체해제</button><button class="btn" onclick="issueSelected()">▣ 선택 일괄발행</button><button class="btn" onclick="printSelected()">🖨 선택 연속인쇄</button></div><table class="ptbl" id="partTable"><thead><tr><th style="width:40px">선택</th><th style="width:36px">NO</th><th style="width:130px">품번</th><th>부품명</th><th style="width:90px">재질</th><th style="width:56px">수량</th><th style="width:60px">조/공정</th><th style="width:150px">카드번호</th><th style="width:70px">상태</th></tr></thead><tbody id="partRows"></tbody></table></div><div class="canvas" id="canvas">
     <section class="paper firstpage on" id="page1">
       <div class="report">
         <div class="head">
@@ -64,6 +65,7 @@
       </div>
     </section>
   </div>
+  <div id="printBox"></div>
   <div class="statusbar"><span id="pageStatus">페이지 1 / 2</span><span>100%</span></div>
 </div>
 <script>
@@ -73,7 +75,7 @@ function goPage(n){page=Math.max(1,Math.min(2,n));document.querySelectorAll('.pa
 function prevPage(){goPage(page-1)}function nextPage(){goPage(page+1)}
 function applyZoom(){const scale=parseInt(zoom.value)/100;document.querySelectorAll('.paper').forEach(p=>p.style.transform=`scale(${scale})`);const active=document.querySelector('.paper.on');if(active){active.style.marginBottom=(active.offsetHeight*(scale-1)+18)+'px'}}
 function closePreview(){if(window.parent&&window.parent!==window){try{window.parent.closeActive()}catch(e){}}else history.back()}
-/* v31: 더미 인쇄지 → process_history_cards + 실적(order_lines/design_results) 조회 */
+/* v31: 더미 인쇄지 → process_history_cards + 실적 조회 / v85: 발행 단위를 부품(품번) 1장으로 고정 */
 const online=()=>!!(window.MESDB&&MESDB.online);
 const msg=t=>{const m=document.getElementById('message');if(m)m.textContent=t};
 async function waitDB(){for(let i=0;i<60&&!window.MESDB;i++)await new Promise(r=>setTimeout(r,50));
@@ -90,55 +92,137 @@ function renderQR(text){
  }catch(e){}
 }
 
+/* ── v85: 카드 발행 단위 = 부품(품번) 1개당 1장 ── */
+const enc=s=>encodeURIComponent(s);
+let JOB=null, PARTS=[], PART_IDX=-1, JOBD=null;
+function openParts(on){const p=document.getElementById('partPanel');if(p)p.style.display=on?'':'none'}
+function toggleParts(){const p=document.getElementById('partPanel');if(p)openParts(p.style.display==='none')}
+
 async function loadCard(){
  await waitDB();
  if(!online()){msg('DB 미연결 — 사진 판독본을 표시합니다.');return}
- const job=(qJob.value||'').trim();
+ const job=(qJob.value||'').trim(), proc=(qProc.value||'').trim(), part=(qPart.value||'').trim();
  try{
-  let q='select=*&order=card_key.desc&limit=1';
-  if(/^IP-\d{8}-\d+$/i.test(job))q+=`&card_key=eq.${encodeURIComponent(job.toUpperCase())}`;   /* 카드번호로 직접 조회 */
-  else{
-   if(job)q+=`&job_no=eq.${encodeURIComponent(job)}`;
-   if((qProc.value||'').trim())q+=`&process_code=eq.${encodeURIComponent(qProc.value.trim())}`;
-   if((qPart.value||'').trim())q+=`&part_no=eq.${encodeURIComponent(qPart.value.trim())}`;
+  JOBD=null;
+  /* ① 카드번호 직접 입력 → 그 카드 1장만 */
+  if(/^IP-\d{8}-\d+$/i.test(job)){
+   const cs=await MESDB.table('process_history_cards').select(`select=*&card_key=eq.${enc(job.toUpperCase())}&limit=1`);
+   if(!cs||!cs[0]){msg(`${job} 카드를 찾을 수 없습니다.`);return}
+   PARTS=[];PART_IDX=-1;renderPartRows();openParts(false);
+   await showCard(cs[0]);msg(`${cs[0].card_key} 공정이력카드를 조회했습니다.`);return;
   }
-  const cs=await MESDB.table('process_history_cards').select(q);
-  let c=cs&&cs[0];
-  if(!c&&job&&!/^IP-/i.test(job)){   /* 카드가 없으면 수주/설계/조립 실적으로 즉석 생성 (번호는 발행 시 부여) */
-   const jp=await MESDB.table('job_pool').select(`select=*&job_no=eq.${encodeURIComponent(job)}&limit=1`);
-   if(!jp||!jp[0]){msg(`${job} 제번을 찾을 수 없습니다.`);return}
-   let pq=`select=*&job_no=eq.${encodeURIComponent(job)}&limit=1`;
-   if((qPart.value||'').trim())pq+=`&part_no=eq.${encodeURIComponent(qPart.value.trim())}`;
-   const pl=await MESDB.table('partlist_all').select(pq);
-   c={card_key:null,issue_date:null,
-      job_no:job,process_code:pl[0]?.process_code||'A',part_no:pl[0]?.part_no||'',
-      material_code:pl[0]?.material||'',quantity:pl[0]?.qty||'',product_name:jp[0].item_name,
-      part_name:pl[0]?.part_name||'',order_date:jp[0].order_date,s1_date:jp[0].s1_date,
-      design_date:null,machining_date:null,assembly_date:null,sales_manager:null,design_manager:null};
-  }
-  if(!c){msg('조회된 공정이력카드가 없습니다.');return}
-  /* 실적일자 보정 */
+  if(!job){msg('제번을 입력하세요.');return}
+  const jp=await MESDB.table('job_pool').select(`select=*&job_no=eq.${enc(job)}&limit=1`);
+  if(!jp||!jp[0]){msg(`${job} 제번을 찾을 수 없습니다.`);return}
+  JOB=jp[0];
+  /* ② 부품 목록 = 카드 단위 (PartList → 없으면 가공계획) */
+  let pl=[];
   try{
-   const dr=await MESDB.table('design_results').select(`select=work_type,work_date&job_no=eq.${encodeURIComponent(c.job_no)}&order=work_date`);
-   const d1=dr.filter(r=>r.work_type==='설계').pop();const a1=dr.filter(r=>r.work_type==='조립').pop();
-   if(d1)c.design_date=c.design_date||d1.work_date;
-   if(a1)c.assembly_date=c.assembly_date||a1.work_date;
-   const ol=await MESDB.table('order_lines').select(`select=category,receipt_date&job_no=eq.${encodeURIComponent(c.job_no)}&category=eq.외주가공&order=receipt_date`);
-   const m1=ol.filter(r=>r.receipt_date).pop();if(m1)c.machining_date=c.machining_date||m1.receipt_date;
+   let pq=`select=*&job_no=eq.${enc(job)}`;
+   if(proc)pq+=`&process_code=eq.${enc(proc)}`;
+   if(part)pq+=`&part_no=eq.${enc(part)}`;
+   pl=(await MESDB.table('partlist_all').select(pq))||[];
   }catch(e){}
-  setTxt('cardKey',c.card_key||'(발행 시 부여)');renderQR(c.card_key||`${c.job_no}_${c.process_code||''}_${c.part_no||''}`);setTxt('issueDate',MD(c.issue_date));
-  setTxt('dOrder',MD(c.order_date));setTxt('dDesign',MD(c.design_date));
-  setTxt('dMach',MD(c.machining_date));setTxt('dAsm',MD(c.assembly_date));setTxt('dS1',MD(c.s1_date));
-  
-  setTxt('mJob',c.job_no);setTxt('mProc',c.process_code||'');setTxt('mPart',c.part_no||'');
-  setTxt('mMat',c.material_code||'');setTxt('mQty',c.quantity??'');
-  setTxt('mProd',c.product_name||'');setTxt('mPartName',c.part_name||'');
-  CARD=c;
-  await buildPlan(c);
-  fillPage2(c);
-  await buildInspect(c);
-  goPage(1);msg(`${c.card_key||c.job_no+' (미발행)'} 공정이력카드를 조회했습니다.${CARD_SRC?' 공정 '+CARD_PLAN.length+'건 · 출처: '+CARD_SRC:''}`);
+  if(!pl.length){
+   try{
+    let mq=`select=*&job_no=eq.${enc(job)}`;
+    if(proc)mq+=`&process_code=eq.${enc(proc)}`;
+    if(part)mq+=`&part_no=eq.${enc(part)}`;
+    pl=(await MESDB.table('machining_plan_parts').select(mq))||[];
+   }catch(e){}
+  }
+  /* ③ 이미 발행된 카드 매핑 (품번 기준) */
+  let cards=[];
+  try{cards=(await MESDB.table('process_history_cards').select(`select=*&job_no=eq.${enc(job)}&order=card_key`))||[]}catch(e){}
+  const byPart={};cards.forEach(c=>{const k=String(c.part_no||'').trim();if(k&&!byPart[k])byPart[k]=c});
+  const seen={};PARTS=[];
+  pl.forEach(p=>{
+   const pn=String(p.part_no||'').trim();if(!pn||seen[pn])return;seen[pn]=1;
+   PARTS.push({part_no:pn,part_name:p.part_name||'',material:p.material||p.material_code||'',
+     qty:(p.qty??p.quantity??''),process_code:p.process_code||'',card:byPart[pn]||null,sel:true});
+  });
+  cards.forEach(c=>{   /* PartList엔 없어도 카드가 있으면 목록에 포함 */
+   const pn=String(c.part_no||'').trim();if(!pn||seen[pn])return;
+   if(part&&pn!==part)return;
+   if(proc&&String(c.process_code||'')!==proc)return;
+   seen[pn]=1;
+   PARTS.push({part_no:pn,part_name:c.part_name||'',material:c.material_code||'',qty:(c.quantity??''),
+     process_code:c.process_code||'',card:c,sel:true});
+  });
+  renderPartRows();
+  if(!PARTS.length){msg(`${job} 에 등록된 부품이 없습니다. PartList 또는 가공계획등록에서 부품을 먼저 등록하세요.`);openParts(false);return}
+  openParts(true);
+  await selectPart(0);
+  const done=PARTS.filter(p=>p.card&&p.card.card_key).length;
+  msg(`${job} 부품 ${PARTS.length}건 · 부품 1개당 카드 1장 (발행 ${done} / 미발행 ${PARTS.length-done})`);
  }catch(e){msg('조회 실패: '+String(e.message||e).slice(0,110))}
+}
+/* ── 부품 목록 ── */
+function renderPartRows(){
+ const tb=document.getElementById('partRows');if(!tb)return;
+ const td='border:1px solid #c3ccd4;padding:2px 4px;text-align:center';
+ tb.innerHTML=PARTS.length?PARTS.map((p,i)=>`<tr data-i="${i}" style="cursor:pointer;${i===PART_IDX?'background:#e2ecfb':''}">
+  <td style="${td}"><input type="checkbox" data-sel="${i}" ${p.sel?'checked':''}></td>
+  <td style="${td}">${i+1}</td>
+  <td style="${td};text-align:left"><b>${hesc(p.part_no)}</b></td>
+  <td style="${td};text-align:left">${hesc(p.part_name)}</td>
+  <td style="${td}">${hesc(p.material)}</td>
+  <td style="${td}">${hesc(p.qty)}</td>
+  <td style="${td}">${hesc(p.process_code)}</td>
+  <td style="${td};font-family:Consolas,monospace">${hesc((p.card&&p.card.card_key)||'')}</td>
+  <td style="${td};color:${(p.card&&p.card.card_key)?'#1d5ca6':'#a33'}">${(p.card&&p.card.card_key)?'발행':'미발행'}</td></tr>`).join('')
+  :`<tr><td colspan="9" style="${td};color:#8a97a2;height:40px">제번을 넣고 [⌕ 카드조회]를 하세요.</td></tr>`;
+ tb.querySelectorAll('input[data-sel]').forEach(cb=>cb.onclick=e=>{e.stopPropagation();const p=PARTS[+cb.dataset.sel];if(p)p.sel=cb.checked});
+ tb.querySelectorAll('tr[data-i]').forEach(tr=>tr.onclick=()=>selectPart(+tr.dataset.i));
+}
+function selAll(on){PARTS.forEach(p=>p.sel=!!on);renderPartRows();msg(`${PARTS.filter(p=>p.sel).length}건 선택`)}
+function selIdx(){return PARTS.map((p,i)=>p.sel?i:-1).filter(i=>i>=0)}
+
+/* 선택 부품 1개 → 카드 1장 미리보기 */
+async function selectPart(i){
+ const p=PARTS[i];if(!p)return;PART_IDX=i;renderPartRows();
+ let c=p.card?Object.assign({},p.card):{card_key:null,issue_date:null,job_no:JOB.job_no,
+   process_code:p.process_code||'',part_no:p.part_no,material_code:p.material||'',quantity:p.qty||'',
+   product_name:JOB.item_name,part_name:p.part_name||'',order_date:JOB.order_date,s1_date:JOB.s1_date,
+   design_date:null,machining_date:null,assembly_date:null};
+ if(JOB){
+  c.product_name=c.product_name||JOB.item_name;c.order_date=c.order_date||JOB.order_date;c.s1_date=c.s1_date||JOB.s1_date;
+  c.part_name=c.part_name||p.part_name;c.material_code=c.material_code||p.material;
+  if(c.quantity===''||c.quantity==null)c.quantity=(p.qty??'');
+  if(!c.process_code)c.process_code=p.process_code||'';
+ }
+ await showCard(c);
+}
+/* 제번 공통 실적일자 (부품마다 재조회하지 않도록 캐시) */
+async function jobDates(job){
+ if(JOBD&&JOBD.job===job)return JOBD;
+ const o={job,design:null,assembly:null,machining:null};
+ try{
+  const dr=await MESDB.table('design_results').select(`select=work_type,work_date&job_no=eq.${enc(job)}&order=work_date`);
+  const d1=dr.filter(r=>r.work_type==='설계').pop(),a1=dr.filter(r=>r.work_type==='조립').pop();
+  o.design=d1?d1.work_date:null;o.assembly=a1?a1.work_date:null;
+  const ol=await MESDB.table('order_lines').select(`select=category,receipt_date&job_no=eq.${enc(job)}&category=eq.외주가공&order=receipt_date`);
+  const m1=ol.filter(r=>r.receipt_date).pop();o.machining=m1?m1.receipt_date:null;
+ }catch(e){}
+ JOBD=o;return o;
+}
+/* 카드 1장 렌더 */
+async function showCard(c){
+ const jd=await jobDates(c.job_no);
+ c.design_date=c.design_date||jd.design;c.assembly_date=c.assembly_date||jd.assembly;c.machining_date=c.machining_date||jd.machining;
+ setTxt('cardKey',c.card_key||'(발행 시 부여)');
+ renderQR(c.card_key||`${c.job_no}_${c.process_code||''}_${c.part_no||''}`);
+ setTxt('issueDate',MD(c.issue_date));
+ setTxt('dOrder',MD(c.order_date));setTxt('dDesign',MD(c.design_date));
+ setTxt('dMach',MD(c.machining_date));setTxt('dAsm',MD(c.assembly_date));setTxt('dS1',MD(c.s1_date));
+ setTxt('mJob',c.job_no);setTxt('mProc',c.process_code||'');setTxt('mPart',c.part_no||'');
+ setTxt('mMat',c.material_code||'');setTxt('mQty',c.quantity??'');
+ setTxt('mProd',c.product_name||'');setTxt('mPartName',c.part_name||'');
+ CARD=c;
+ await buildPlan(c);
+ fillPage2(c);
+ await buildInspect(c);
+ goPage(1);
 }
 /* 공정 계획 행: ① 작업지시(work_order_details) ② 없으면 외주가공 발주(order_lines) */
 let CARD=null, CARD_PLAN=[];
@@ -338,9 +422,9 @@ async function ensureCardNo(){
  return CARD.card_key;
 }
 /* 카드발행: 조회 결과 + 공정행 스냅샷을 process_history_cards 에 저장 */
-async function issueCard(){
- if(!online()){msg('DB 미연결 상태에서는 발행할 수 없습니다.');return}
- if(!CARD){msg('먼저 카드조회를 하세요.');return}
+async function issueCard(silent){
+ if(!online()){msg('DB 미연결 상태에서는 발행할 수 없습니다.');return false}
+ if(!CARD){msg('먼저 카드조회를 하세요.');return false}
  await ensureCardNo();
  const K=['card_key','job_no','process_code','part_no','material_code','quantity','product_name','part_name',
    'order_date','design_date','machining_date','assembly_date','s1_date','issued_by'];
@@ -351,11 +435,54 @@ async function issueCard(){
  try{
   await MESDB.table('process_history_cards').upsert([row],'card_key');
   CARD.issue_date=row.issue_date;setTxt('issueDate',MD(row.issue_date));setTxt('p2Issue',MD(row.issue_date));
-  msg(`${row.card_key} 공정이력카드를 발행(저장)했습니다.`);
- }catch(e){msg('발행 실패: '+String(e.message||e).slice(0,120))}
+  if(PART_IDX>=0&&PARTS[PART_IDX]){PARTS[PART_IDX].card=Object.assign({},row);renderPartRows()}
+  try{MESDB.notify&&MESDB.notify(['process_history_cards'])}catch(e){}
+  if(!silent)msg(`${row.card_key} · ${row.part_no||''} 공정이력카드를 발행(저장)했습니다.`);
+  return true;
+ }catch(e){msg('발행 실패: '+String(e.message||e).slice(0,120));return false}
 }
-function search(){const j=(qJob.value||'').trim();if(j)return loadCard();goPage(1)}function add(){return false}function remove(){return false}function save(){window.print()}function exportCsv(){const rows=[['NO','공정','공정명','작업장·작업자','접수일','완료일','작업지시']].concat(CARD_PLAN.map((r,i)=>[i+1,r.code,r.name||'',r.place||'',r.recv||'',r.done||'',r.wo||'']));const csv='\ufeff'+rows.map(r=>r.map(v=>'"'+v+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='process_history_card.csv';a.click();URL.revokeObjectURL(a.href)}
-window.MES={search,add,delete:remove,save,exportCsv,setMessage:msg,reload:loadCard,issueCard};build();goPage(1);renderQR(document.getElementById('cardKey').textContent.trim());(async()=>{await waitDB();if(online())loadCard()})();
+/* 선택한 부품마다 카드 1장씩 일괄 발행 */
+async function issueSelected(){
+ if(!online())return msg('DB 미연결 상태에서는 발행할 수 없습니다.');
+ if(!PARTS.length)return issueCard();
+ const idx=selIdx();
+ if(!idx.length)return msg('발행할 부품을 선택하세요.');
+ const keep=PART_IDX;let ok=0,ng=0,skip=0;
+ for(const i of idx){
+  if(PARTS[i].card&&PARTS[i].card.card_key){skip++;continue}   /* 이미 발행분은 재발행하지 않음 */
+  msg(`발행 중… ${PARTS[i].part_no} (${ok+ng+1}/${idx.length-skip})`);
+  await selectPart(i);
+  (await issueCard(true))?ok++:ng++;
+ }
+ if(keep>=0)await selectPart(keep);
+ renderPartRows();
+ msg(`부품별 카드 ${ok}장 발행${skip?` · 기발행 ${skip}건 건너뜀`:''}${ng?` · 실패 ${ng}건`:''}`);
+}
+/* 선택한 부품 카드를 부품당 2페이지로 연속 인쇄 */
+async function printSelected(){
+ if(!PARTS.length)return window.print();
+ const idx=selIdx();
+ if(!idx.length)return msg('인쇄할 부품을 선택하세요.');
+ if(idx.length===1){await selectPart(idx[0]);return window.print()}
+ const box=document.getElementById('printBox');if(!box)return window.print();
+ const keep=PART_IDX;box.innerHTML='';
+ for(let k=0;k<idx.length;k++){
+  msg(`인쇄 준비… ${k+1}/${idx.length}`);
+  await selectPart(idx[k]);
+  ['page1','page2'].forEach(id=>{
+   const cl=document.getElementById(id).cloneNode(true);
+   cl.removeAttribute('id');cl.classList.remove('on');cl.classList.add('prt');
+   cl.querySelectorAll('[id]').forEach(e=>e.removeAttribute('id'));
+   box.appendChild(cl);
+  });
+ }
+ document.body.classList.add('batch');
+ msg(`부품 ${idx.length}건 · ${idx.length*2}페이지 인쇄`);
+ window.print();
+ setTimeout(()=>{document.body.classList.remove('batch');box.innerHTML='';if(keep>=0)selectPart(keep)},900);
+}
+function search(){const j=(qJob.value||'').trim();if(j)return loadCard();goPage(1)}function add(){return false}function remove(){return false}function save(){return printSelected()}function exportCsv(){const rows=[['NO','공정','공정명','작업장·작업자','접수일','완료일','작업지시']].concat(CARD_PLAN.map((r,i)=>[i+1,r.code,r.name||'',r.place||'',r.recv||'',r.done||'',r.wo||'']));const csv='\ufeff'+rows.map(r=>r.map(v=>'"'+v+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='process_history_card.csv';a.click();URL.revokeObjectURL(a.href)}
+window.MES={search,add,delete:remove,save,exportCsv,setMessage:msg,reload:loadCard,issueCard,issueSelected,printSelected};build();goPage(1);renderQR(document.getElementById('cardKey').textContent.trim());(async()=>{await waitDB();if(online())loadCard()})();
 
 function sampleFill(){
   if(window.MESDEMO)return MESDEMO.run('process_history_card');
