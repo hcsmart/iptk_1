@@ -266,7 +266,7 @@ function buildOpts(){
 }
 function routeName(a){const nm=(a||[]).filter(Boolean).map(c=>PROCN[c]||c);
  return nm.length?`${nm.join('·')} (${nm.length}공정)`.slice(0,80):''}
-function RROW(r,i){return `<tr data-i="${i}" class="${r._dirty?'dirty':''}" onclick="pickRoute(${i})">`
+function RROW(r,i){return `<tr data-i="${i}" class="${r._dirty?'dirty':''}">`
  +`<td class="c pad0"><input type="checkbox" class="rchk" data-i="${i}" onclick="event.stopPropagation()" onchange="pickRouteChk(${i},this)"></td>`
  +`<td class="c">${esc(r.standard_process_no??'')}</td>`
  +`<td class="pad0"><input class="rname" data-i="${i}" value="${esc(r.standard_process_name||'')}" placeholder="자동생성" oninput="routeNameEdit(${i},this.value)" onclick="event.stopPropagation()"></td>`
@@ -292,6 +292,10 @@ function rchkAll(el){rbody.querySelectorAll('input.rchk').forEach(c=>c.checked=e
 /* v85: 기준공정 선택은 체크박스로 통일한다.
    여러 개를 체크해도 [공정삭제]는 그대로 동작하고,
    [부품에 적용]은 마지막에 체크한 행(또는 체크가 하나뿐이면 그 행)을 쓴다. */
+/* v85: 적용 결과를 [부품에 적용] 버튼 옆에 띄운다. 하단 회색 안내는 놓치기 쉽다. */
+function rmsg(t,err){const e=document.getElementById('routeMsg');
+ if(e){e.textContent=t;e.style.color=err?'#c0392b':'#1360a8';e.style.fontWeight='700'}
+ msg(t)}
 function pickRouteChk(i,el){
  if(el&&el.checked){routeIdx=i;markRouteSel();
   const r=routes[i]||{},st=(r.steps||[]).filter(Boolean);
@@ -378,22 +382,24 @@ async function routeDel(){
 /* 선택한 기준공정의 공정순서를 부품(체크한 행, 없으면 전체)에 적용 */
 async function applySeq(){
  const ri=routeForApply();
- if(ri===-2)return msg('기준공정이 여러 개 체크되어 있습니다. 적용할 하나만 남기세요.');
+ if(ri===-2)return rmsg('기준공정이 여러 개 체크되어 있습니다. 적용할 하나만 남기세요.',1);
  const r=routes[ri];
- if(!r)return msg('가공 공정 리스트에서 적용할 기준공정을 체크하세요.');
- if(r._dirty)return msg('변경된 기준공정입니다. [▤ 공정저장] 후 적용하세요.');
+ if(!r)return rmsg('가공 공정 리스트에서 적용할 기준공정을 체크하세요.',1);
+ if(r._dirty)return rmsg('변경된 기준공정입니다. [▤ 공정저장] 후 적용하세요.',1);
  const seq=(r.steps||[]).filter(Boolean);
- if(!seq.length)return msg('공정이 비어 있는 기준공정입니다.');
+ if(!seq.length)return rmsg('공정이 비어 있는 기준공정입니다.',1);
  const job=(view[selIdx]&&view[selIdx].job_no)||(q_job.value||'').trim();
- if(!job)return msg('제번을 선택하세요.');
- if(!parts.length)return msg('적용할 부품이 없습니다. PartList를 먼저 등록하세요.');
+ if(!job)return rmsg('제번을 선택하세요.',1);
+ if(!parts.length)return rmsg('적용할 부품이 없습니다. PartList를 먼저 등록하세요.',1);
  let idx=[...document.querySelectorAll('#pbody input[type=checkbox]:checked')]
    .map(c=>Number(c.dataset.i)).filter(n=>!Number.isNaN(n));
  if(!idx.length)idx=parts.map((_,k)=>k);
  idx.forEach(k=>{const p=parts[k];if(!p)return;p.steps=[...seq];p.standard_process=r.standard_process_name});
  pbody.innerHTML=parts.length?parts.map(PROW).join(''):PEMPTY;
  idx.forEach(k=>{const cb=document.querySelector(`#pbody input[data-i="${k}"]`);if(cb)cb.checked=true});
- msg(`부품 ${idx.length}건에 공정순서를 적용했습니다 — ${seq.map(c=>PROCN[c]||c).join(' → ')} · 기준공정 ${r.standard_process_no}. [▤ 저장]을 눌러야 확정됩니다.`);
+ const rc=rbody.querySelector(`input.rchk[data-i="${ri}"]`);if(rc)rc.checked=true;
+ routeIdx=ri;markRouteSel();
+ rmsg(`부품 ${idx.length}건에 공정순서를 적용했습니다 — ${seq.map(c=>PROCN[c]||c).join(' → ')} · 기준공정 ${r.standard_process_no}. [▤ 저장]을 눌러야 확정됩니다.`);
 }
 let _partsTok=0;
 async function loadParts(job,jo){
