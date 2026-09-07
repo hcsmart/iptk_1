@@ -1224,3 +1224,13 @@ window.MESCTX={confirm:dlgConfirm};
   .observe(document.documentElement,{childList:true,subtree:true});
  window.MESJOBLIST={scan:run,jobs,isJobBox};
 })();
+
+/* ── v85: 하단 상태 메시지 가시성 (전 화면 공용) ──
+   연회색(#687784)이라 잘 안 보이던 저장·오류 안내를 파랑으로 올린다. */
+(function(){
+ if(document.getElementById('mes-msg-style'))return;
+ const st=document.createElement('style');
+ st.id='mes-msg-style';
+ st.textContent='.foot .msg,.foot .sp,.msg{color:#1360a8!important;font-weight:600}';
+ (document.head||document.documentElement).appendChild(st);
+})();
