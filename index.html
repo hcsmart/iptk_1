@@ -1,481 +1,320 @@
-<!doctype html>
-<html lang="ko">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>IPTK mes</title>
-<link rel="preconnect" href="https://ipggvrzxfcryzryileuv.supabase.co" crossorigin>
-<link rel="dns-prefetch" href="https://ipggvrzxfcryzryileuv.supabase.co">
-<style>
-:root{--bar1:42px;--bar2:78px;--top1:42px;--top2:78px;--left:300px;--tabs:32px;--line:#aeb8c2;--blue:#2469a8;--text:#273746}
-*{box-sizing:border-box}html,body{height:100%;margin:0}body{font-family:"Malgun Gothic","맑은 고딕",Arial,sans-serif;font-size:12px;color:var(--text);background:#dfe4e9;overflow:hidden}button{font:inherit;cursor:pointer}
-.top1{position:fixed;inset:0 0 auto 0;min-height:var(--bar1);display:flex;align-items:stretch;flex-wrap:wrap;background:linear-gradient(#fafbfc,#edf1f4);border-bottom:1px solid #b2bdc6;z-index:20}.logo{width:258px;min-height:var(--bar1);display:flex;align-items:center;padding-left:22px;border-right:1px solid #c8d0d7;white-space:nowrap;flex:0 0 auto}.logo img{height:26px;width:auto;display:block}.modules{display:flex;flex-wrap:wrap;flex:1 1 auto;min-width:0}.module{min-height:var(--bar1);min-width:82px;padding:0 12px;border:0;border-right:1px solid #d5dce2;background:transparent;color:#546270;font-weight:700;white-space:nowrap}.module:hover,.module.on{background:#e5edf5;color:#1d568c}.user{margin-left:auto;padding:0 15px;color:#687684;white-space:nowrap;display:flex;align-items:center}.top2{position:fixed;top:var(--top1);left:0;right:0;min-height:var(--bar2);display:flex;align-items:stretch;flex-wrap:wrap;background:linear-gradient(#f8fafb,#edf1f4);border-bottom:1px solid #9eabb6;z-index:19}.tool{width:68px;min-height:var(--bar2);border:0;border-right:1px solid #d1d8de;background:transparent;color:#465665;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}.tool:hover,.tool.on{background:#fff;color:#1d568c}.tool.on{box-shadow:inset 0 -3px 0 #2f73b6}.ico{font-size:22px;color:#214d79;line-height:24px}.tool span:last-child{font-size:11px}.tool.disabled{opacity:.35;cursor:default}.left{position:fixed;top:calc(var(--top1) + var(--top2));left:0;bottom:24px;width:var(--left);background:#f5f7f8;border-right:1px solid #8f9ca8;z-index:18;display:flex;flex-direction:column}.tree{overflow:auto;padding:5px 0 10px;flex:1}.group{margin-bottom:1px}.group-title{padding:4px 8px;font-weight:800;color:#2f4559;display:flex;align-items:center;gap:5px}.group-title::before{content:'⊟';font-size:12px;color:#315c86}.item{display:block;width:100%;border:0;background:transparent;text-align:left;padding:4px 8px 4px 32px;color:#374958;position:relative}.item::before{content:'▣';position:absolute;left:18px;color:#5a7185}.item:hover{background:#e5eef6}.item.on{background:#2e77bd;color:white}.item.on::before{color:white}.workspace{position:fixed;top:calc(var(--top1) + var(--top2));left:var(--left);right:0;bottom:24px;background:#d7dde3;display:flex;flex-direction:column;min-width:0}.tabs{height:var(--tabs);display:flex;align-items:flex-end;gap:2px;padding:3px 5px 0;background:#e3e8ec;border-bottom:1px solid #8d99a5;overflow-x:auto}.tab{height:27px;min-width:126px;max-width:190px;display:flex;align-items:center;padding-left:9px;border:1px solid #9ba8b4;border-bottom:0;background:linear-gradient(#f4f6f8,#dde4e9);color:#5d6b78;white-space:nowrap}.tab.on{background:#fff;color:#244c73;font-weight:800}.tab .title{overflow:hidden;text-overflow:ellipsis}.x{margin-left:auto;width:25px;height:24px;border:0;background:transparent;color:#6d7882}.x:hover{background:#e8ecf0;color:#a22}.stage{flex:1;min-height:0;padding:0;background:#fff}.stage iframe{display:none;width:100%;height:100%;border:0;background:#fff}.stage iframe.on{display:block}.stage{position:relative}.stage .vwait{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(255,255,255,.72);color:#5b6b7a;font-size:13px;z-index:5}.stage .vwait.on{display:flex}.placeholder{display:none;height:100%;align-items:center;justify-content:center;background:#f6f8fa;color:#71808d;font-size:14px}.placeholder.on{display:flex}.status{position:fixed;left:0;right:0;bottom:0;height:24px;z-index:30;display:flex;align-items:center;border-top:1px solid #9aa6b1;background:#e6ebef;padding:0 12px;color:#5f6d78}.status .msg{margin-left:var(--left);padding-left:16px}.status .right{margin-left:auto}.splitter{position:fixed;top:calc(var(--top1) + var(--top2));bottom:24px;left:calc(var(--left) - 3px);width:7px;z-index:19;cursor:col-resize;background:transparent;touch-action:none}.splitter::after{content:'';position:absolute;left:2px;top:50%;transform:translateY(-50%);width:3px;height:40px;border-radius:2px;background:#b9c4ce}.splitter:hover::after{background:#2e77bd}.splitter.drag::after{background:#1d568c;height:100%;top:0;transform:none;width:3px}body.resizing{cursor:col-resize;user-select:none}body.resizing iframe{pointer-events:none}.left,.workspace{transition:none}.mobile{display:none}@media(max-width:900px){:root{--left:220px}.logo{width:208px}.logo img{height:23px}.module{min-width:70px}.user{display:none}}@media(max-width:680px){:root{--left:0px}.left{display:none}.splitter{display:none}.logo{width:auto;padding-left:12px}.logo img{height:20px}.tool{width:56px}.status .msg{margin-left:0}.mobile{display:block}}
-</style>
-</head>
-<body>
-<header class="top1"><div class="logo"><img src="iptk_logo.png?v=v54" alt="IPTK"></div><nav class="modules" id="modules"></nav><div class="user">MES</div></header>
-<section class="top2" id="secondaryNav"></section>
-<aside class="left"><div class="tree" id="tree"></div></aside>
-<div class="splitter" id="splitter" title="드래그: 창 폭 조절 / 더블클릭: 기본값(300px)"></div>
-<main class="workspace"><div class="tabs" id="tabs"></div><div class="stage" id="stage"><div class="vwait" id="vwait">화면을 여는 중…</div></div></main>
-<footer class="status"><span id="now">2026-08-22 10:15:13</span><span class="msg" id="statusMsg">데이터가 조회되었습니다.</span><span class="right">AP0020</span></footer>
-<script>
-const APP_VER='64';
-const APP={
-  '영업관리':{
-    secondary:[
-      {name:'수주',icon:'▣'},
-      {name:'제작계획',icon:'◴'},
-      {name:'SET발주',icon:'◆'},
-      {name:'경비',icon:'▤'}
-    ],
-    menus:{
-      '수주':[{name:'수주',items:['수주등록','수주현황','현황판']}],
-      '제작계획':[{name:'제작계획',items:['제작계획등록','제작계획현황']}],
-      'SET발주':[{name:'SET발주',items:['SET외주제작등록','SET발주입고','SET발주현황']}],
-      '경비':[{name:'경비',items:['경비등록','경비현황']}]
-    }
-  },
-  '설계관리':{
-    secondary:[
-      {name:'외주설계발주',icon:'✎'},
-      {name:'사내설계',icon:'▤'},
-      {name:'PARTLIST',icon:'▦'}
-    ],
-    menus:{
-      '외주설계발주':[{name:'외주설계발주',items:['외주설계발주등록','외주설계발주입고','외주설계발주현황']}],
-      '사내설계':[{name:'사내설계',items:['설계계획등록','설계실적등록','설계실적현황','설계실적조회']}],
-      'PARTLIST':[{name:'PARTLIST',items:['PartList 등록(원재료)','PartList 등록(구매품)','PartList 현황','PartList 복사']}]
-    }
-  },
-  '구매관리':{
-    secondary:[
-      {name:'원재료',icon:'▣'},
-      {name:'구매품',icon:'◆'},
-      {name:'가공',icon:'⚒'}
-    ],
-    menus:{
-      '원재료':[
-        {name:'원재료',items:['원재료 발주','원재료 입고','원재료 입고확정']},
-        {name:'현황',items:['원재료 발주현황']}
-      ],
-      '구매품':[
-        {name:'구매품',items:['구매품 발주','구매품 입고','구매품 입고확정']},
-        {name:'현황',items:['구매품 발주현황']}
-      ],
-      '가공':[
-        {name:'가공',items:['가공계획등록','공정이력카드']},
-        {name:'외주가공',items:['외주가공 발주','외주가공 입고','외주가공 입고확정']},
-        {name:'현황',items:['외주가공발주현황','가공구매 진척현황']}
-      ]
-    }
-  },
-  '조립관리':{
-    secondary:[
-      {name:'조립',icon:'⚙'},
-      {name:'검사',icon:'⌕'}
-    ],
-    menus:{
-      '조립':[{name:'조립',items:['조립실적등록','조립실적현황','조립실적조회']}],
-      '검사':[{name:'검사',items:['검사실적등록']}]
-    }
-  },
-  '원가관리':{
-    secondary:[
-      {name:'원가관리',icon:'◴'},
-      {name:'매입매출현황',icon:'▥'}
-    ],
-    menus:{
-      '원가관리':[{name:'제조원가',items:['제조원가조회(실시간)']}],
-      '매입매출현황':[{name:'매입매출현황',items:['매입현황','매출현황','재고조회']}]
-    }
-  },
-  'SQ':{
-    secondary:[
-      {name:'알림판',icon:'🔔'},
-      {name:'품질목표',icon:'◎'},
-      {name:'심사',icon:'☑'},
-      {name:'부적합',icon:'⚠'},
-      {name:'변경관리',icon:'⇄'},
-      {name:'계측기',icon:'⌗'},
-      {name:'문서/도면',icon:'▤'},
-      {name:'추적성',icon:'⌕'},
-      {name:'관리계획서',icon:'⊞'},
-      {name:'교육/자격',icon:'⚇'},
-      {name:'협력업체',icon:'⚑'}
-    ],
-    menus:{
-      '알림판':[{name:'점검',items:['기한관리 알림판','입력누락 점검판']}],
-      '품질목표':[{name:'품질목표',items:['품질목표 등록','품질목표 달성현황','품질목표 월별추이']}],
-      '심사':[
-        {name:'심사',items:['심사등록','지적사항등록','심사현황','지적사항 조치현황']},
-        {name:'고객 요구사항',items:['고객 요구사항 등록','고객 요구사항 현황']}
-      ],
-      '부적합':[{name:'부적합',items:['부적합등록','시정조치등록','부적합현황']}],
-      '변경관리':[{name:'4M변경',items:['4M변경신청','4M변경현황']}],
-      '계측기':[{name:'계측기',items:['계측기대장','교정이력등록','계측기 교정현황']}],
-      '문서/도면':[
-        {name:'도면',items:['도면등록','도면개정등록','도면개정현황']},
-        {name:'문서',items:['문서관리대장','문서 제·개정등록','문서 유효현황']}
-      ],
-      '추적성':[{name:'추적성',items:['소재LOT등록','성적서등록','추적성조회']}],
-      '관리계획서':[{name:'관리계획서',items:['관리계획서 등록','관리계획서 현황','기준공정 관리계획 커버리지']}],
-      '교육/자격':[
-        {name:'자격',items:['자격종류 등록','사원 자격등록','자격 유효현황']},
-        {name:'교육',items:['교육훈련 등록','사원별 역량현황']}
-      ],
-      '협력업체':[{name:'협력업체',items:['협력업체 평가등록','협력업체 인증서등록','협력업체 등급현황','협력업체 인증현황']}]
-    }
-  },
-  '사용메뉴얼':{
-    secondary:[
-      {name:'사용메뉴얼',icon:'📖'}
-    ],
-    menus:{
-      '사용메뉴얼':[{name:'사용메뉴얼',items:['사용메뉴얼']}]
-    }
-  },
-  '기준정보':{
-    secondary:[
-      {name:'생산/품질',icon:'👥'},
-      {name:'공통',icon:'⚙'}
-    ],
-    menus:{
-      '생산/품질':[
-        {name:'공정관리',items:['가공공정관리','가공 기준공정관리']},
-        {name:'작업지시',items:['작업지시 관리','공정이력카드']}
-      ],
-      '공통':[
-        {name:'사용자',items:['사용자정보']},
-        {name:'공통',items:['공정관리','부품관리','자재등록','설비등록','업체관리','사업부정보','아이템 관리','경비사유','금형타입관리','금형코드 매칭','기계사양관리']},
-        {name:'검사',items:['검사구분','검사항목']},
-        {name:'공지사항',items:['공지사항 등록']},
-        {name:'시스템',items:['DB 동기화','에러로그']},
-        {name:'인사',items:['부서정보','직급정보']},
-        {name:'단가관리',items:['자재단가변동등록','자재단가변동현황','공정단가변동등록','공정단가변동현황']}
-      ]
-    }
-  }
-};
-const MODULES=['영업관리','설계관리','구매관리','조립관리','원가관리','SQ','기준정보','사용메뉴얼'];
-const pageRegistry={
-'가공공정관리':{id:'machining_process_management',file:'machining_process_management.html',title:'가공공정관리'},
-'공정관리':{id:'machining_process_management',file:'machining_process_management.html',title:'가공공정관리'},
-'가공 기준공정관리':{id:'machining_standard_process',file:'machining_standard_process.html',title:'가공 기준공정관리'},
-'작업지시 관리':{id:'work_order_input',file:'work_order_input.html',title:'작업지시 관리'},
-'공정이력카드':{id:'process_history_card',file:'process_history_card.html',title:'공정이력카드'},
-'구매품 입고확정':{id:'purchase_receipt_confirmation',file:'purchase_receipt_confirmation.html',title:'구매품 입고확정'},
-'업체관리':{id:'vendor_management',file:'vendor_management.html',title:'업체 관리'},
-'설비등록':{id:'equipment_registration',file:'equipment_registration.html',title:'설비등록'},
-'자재등록':{id:'material_management',file:'material_management.html',title:'자재등록'},
-'부품관리':{id:'part_management',file:'part_management.html',title:'부품 관리'},
-'사업부정보':{id:'business_division_info',file:'business_division_info.html',title:'사업부 정보'},
-'아이템 관리':{id:'item_management',file:'item_management.html',title:'아이템 관리'},
-'경비사유':{id:'expense_reason_registration',file:'expense_reason_registration.html',title:'경비사유 등록'},
-'금형타입관리':{id:'mold_type_management',file:'mold_type_management.html',title:'금형타입 관리'},
-'기계사양관리':{id:'machine_spec_management',file:'machine_spec_management.html',title:'기계사양 관리'},
-'부서정보':{id:'department_registration',file:'department_registration.html',title:'부서등록'},
-'금형코드 매칭':{id:'mold_code_matching',file:'mold_code_matching.html',title:'금형코드 매칭'},
-'직급정보':{id:'position_info',file:'position_info.html',title:'직급정보'},
-'검사구분':{id:'inspection_category',file:'inspection_category.html',title:'검사구분'},
-'검사실적등록':{id:'inspection_result_input',file:'inspection_result_input.html',title:'검사실적등록'},
-'검사항목':{id:'inspection_item_management',file:'inspection_item_management.html',title:'검사항목'},
-'공지사항 등록':{id:'notice_registration',file:'notice_registration.html',title:'공지사항 등록'},
-'DB 동기화':{id:'db_sync',file:'db_sync.html',title:'DB 동기화'},
-'에러로그':{id:'error_log_inquiry',file:'error_log_inquiry.html',title:'에러로그'},
-'사용자정보':{id:'user_information',file:'user_information.html',title:'사용자정보'},
-'자재단가변동등록':{id:'material_price_change_registration',file:'material_price_change_registration.html',title:'자재단가변동 등록'},
-'자재단가변동현황':{id:'material_price_change_status',file:'material_price_change_status.html',title:'자재단가변동 현황'},
-'공정단가변동등록':{id:'process_price_change_registration',file:'process_price_change_registration.html',title:'공정단가변동 등록'},
-'공정단가변동현황':{id:'process_price_change_status',file:'process_price_change_status.html',title:'가공공정단가변동 현황'},
-'제조원가조회(실시간)':{id:'manufacturing_cost_inquiry',file:'manufacturing_cost_inquiry.html',title:'제조원가 조회'},
-'수주등록':{id:'sale_order_input',file:'sale_order_input.html',title:'수주정보 등록'},
-'수주현황':{id:'sale_order_status',file:'sale_order_status.html',title:'수주현황'},
-'제작계획등록':{id:'sales_plan_input',file:'sales_plan_input.html',title:'제작계획등록'},
-'현황판':{id:'status_board',file:'status_board.html',title:'일평기연 현황판'},
-'제작계획현황':{id:'sales_plan_status',file:'sales_plan_status.html',title:'제작계획현황'},
-'SET발주현황':{id:'set_order_status',file:'set_order_status.html',title:'SET 발주현황'},
-'SET발주입고':{id:'set_order_receipt',file:'set_order_receipt.html',title:'SET발주입고'},
-'경비등록':{id:'expense_registration',file:'expense_registration.html',title:'경비 등록'},
-'경비현황':{id:'expense_status',file:'expense_status.html',title:'경비현황'},
-'설계계획등록':{id:'design_plan_input',file:'design_plan_input.html',title:'설계계획등록'},
-'설계실적등록':{id:'design_result_input',file:'design_result_input.html',title:'설계실적등록'},
-'설계실적현황':{id:'design_result_status_design',file:'design_result_status.html?mode=design',title:'설계실적현황'},
-'설계실적조회':{id:'design_result_inquiry_design',file:'design_result_inquiry.html?mode=design',title:'설계실적조회'},
-'PartList 등록(원재료)':{id:'partlist_material_input',file:'partlist_material_input.html',title:'PartList 등록(원재료)'},
-'PartList 등록(구매품)':{id:'partlist_purchase_input',file:'partlist_purchase_input.html',title:'PartList 등록(구매품)'},
-'PartList 현황':{id:'partlist_status',file:'partlist_status.html',title:'PartList 현황'},
-'SET외주제작등록':{id:'set_order_registration',file:'set_order_registration.html',title:'SET외주제작등록'},
-'가공계획등록':{id:'machining_plan_input',file:'machining_plan_input.html',title:'가공계획등록'},
-'매입현황':{id:'purchase_status',file:'purchase_status.html',title:'매입현황'},
-'조립실적조회':{id:'design_result_inquiry_assembly',file:'design_result_inquiry.html?mode=assembly',title:'조립실적조회'},
-'조립실적현황':{id:'design_result_status_assembly',file:'design_result_status.html?mode=assembly',title:'조립실적현황'},
-'원재료 발주':{id:'material_order_input',file:'material_order_input.html',title:'원재료 발주'},
-'원재료 입고':{id:'material_receipt_input',file:'material_receipt_input.html',title:'원재료 입고'},
-'원재료 입고확정':{id:'material_receipt_confirmation',file:'material_receipt_confirmation.html',title:'원재료 입고확정'},
-'원재료 발주현황':{id:'material_order_status',file:'material_order_status.html',title:'원재료 발주현황'},
-'구매품 발주':{id:'purchase_order_input',file:'purchase_order_input.html',title:'구매품 발주'},
-'구매품 입고':{id:'purchase_receipt_input',file:'purchase_receipt_input.html',title:'구매품 입고'},
-'외주설계발주등록':{id:'outsourced_design_order_input',file:'outsourced_design_order_input.html',title:'외주설계발주등록'},
-'외주설계발주입고':{id:'outsourced_design_receipt_input',file:'outsourced_design_receipt_input.html',title:'외주설계발주입고'},
-'외주설계발주현황':{id:'outsourced_design_order_status',file:'outsourced_design_order_status.html',title:'외주설계발주현황'},
-'PartList 복사':{id:'partlist_copy',file:'partlist_copy.html',title:'PartList 복사'},
-'재고조회':{id:'stock_inquiry',file:'stock_inquiry.html',title:'재고조회'},
-'구매품 발주현황':{id:'purchase_order_status',file:'purchase_order_status.html',title:'구매품 발주현황'},
-'외주가공 발주':{id:'outsourcing_order_input',file:'outsourcing_order_input.html',title:'외주가공 발주'},
-'외주가공 입고':{id:'outsourcing_receipt_input',file:'outsourcing_receipt_input.html',title:'외주가공 입고'},
-'외주가공 입고확정':{id:'outsourcing_receipt_confirmation',file:'outsourcing_receipt_confirmation.html',title:'외주가공입고확정'},
-'외주가공발주현황':{id:'outsourcing_order_status',file:'outsourcing_order_status.html',title:'외주가공 발주현황'},
-'가공구매 진척현황':{id:'machining_purchase_progress',file:'machining_purchase_progress.html',title:'가공구매 진척현황'},
-'조립실적등록':{id:'assembly_result_input',file:'assembly_result_input.html',title:'조립실적등록'},
-'매출현황':{id:'sales_status',file:'sales_status.html',title:'매출현황'},
-'기한관리 알림판':{id:'sq_alert_board',file:'sq_alert_board.html',title:'기한관리 알림판'},
-'입력누락 점검판':{id:'mes_gap_board',file:'mes_gap_board.html',title:'입력누락 점검판'},
-'품질목표 등록':{id:'quality_kpi_target_input',file:'quality_kpi_target_input.html',title:'품질목표 등록'},
-'품질목표 달성현황':{id:'quality_kpi_status',file:'quality_kpi_status.html',title:'품질목표 달성현황'},
-'품질목표 월별추이':{id:'quality_kpi_monthly',file:'quality_kpi_monthly.html',title:'품질목표 월별추이'},
-'문서관리대장':{id:'document_management',file:'document_management.html',title:'문서관리대장'},
-'문서 제·개정등록':{id:'document_revision_input',file:'document_revision_input.html',title:'문서 제·개정등록'},
-'문서 유효현황':{id:'document_status',file:'document_status.html',title:'문서 유효현황'},
-'고객 요구사항 등록':{id:'customer_requirement_input',file:'customer_requirement_input.html',title:'고객 요구사항 등록'},
-'고객 요구사항 현황':{id:'customer_requirement_status',file:'customer_requirement_status.html',title:'고객 요구사항 현황'},
-'심사등록':{id:'quality_audit_input',file:'quality_audit_input.html',title:'심사등록'},
-'지적사항등록':{id:'audit_finding_input',file:'audit_finding_input.html',title:'지적사항등록'},
-'심사현황':{id:'quality_audit_status',file:'quality_audit_status.html',title:'심사현황'},
-'지적사항 조치현황':{id:'audit_finding_status',file:'audit_finding_status.html',title:'지적사항 조치현황'},
-'부적합등록':{id:'nonconformance_input',file:'nonconformance_input.html',title:'부적합등록'},
-'시정조치등록':{id:'corrective_action_input',file:'corrective_action_input.html',title:'시정조치등록'},
-'부적합현황':{id:'nonconformance_status',file:'nonconformance_status.html',title:'부적합현황'},
-'4M변경신청':{id:'change_request_input',file:'change_request_input.html',title:'4M변경신청'},
-'4M변경현황':{id:'change_request_status',file:'change_request_status.html',title:'4M변경현황'},
-'계측기대장':{id:'gauge_management',file:'gauge_management.html',title:'계측기대장'},
-'교정이력등록':{id:'gauge_calibration_input',file:'gauge_calibration_input.html',title:'교정이력등록'},
-'계측기 교정현황':{id:'gauge_calibration_status',file:'gauge_calibration_status.html',title:'계측기 교정현황'},
-'도면등록':{id:'drawing_management',file:'drawing_management.html',title:'도면등록'},
-'도면개정등록':{id:'drawing_revision_input',file:'drawing_revision_input.html',title:'도면개정등록'},
-'도면개정현황':{id:'drawing_revision_status',file:'drawing_revision_status.html',title:'도면개정현황'},
-'소재LOT등록':{id:'material_lot_input',file:'material_lot_input.html',title:'소재LOT등록'},
-'성적서등록':{id:'certificate_input',file:'certificate_input.html',title:'성적서등록'},
-'추적성조회':{id:'traceability_inquiry',file:'traceability_inquiry.html',title:'추적성조회'},
-'관리계획서 등록':{id:'control_plan_input',file:'control_plan_input.html',title:'관리계획서 등록'},
-'관리계획서 현황':{id:'control_plan_status',file:'control_plan_status.html',title:'관리계획서 현황'},
-'기준공정 관리계획 커버리지':{id:'standard_process_control_status',file:'standard_process_control_status.html',title:'기준공정 관리계획 커버리지'},
-'자격종류 등록':{id:'qualification_type_input',file:'qualification_type_input.html',title:'자격종류 등록'},
-'사원 자격등록':{id:'employee_qualification_input',file:'employee_qualification_input.html',title:'사원 자격등록'},
-'자격 유효현황':{id:'qualification_status',file:'qualification_status.html',title:'자격 유효현황'},
-'교육훈련 등록':{id:'training_input',file:'training_input.html',title:'교육훈련 등록'},
-'사원별 역량현황':{id:'employee_competency_status',file:'employee_competency_status.html',title:'사원별 역량현황'},
-'협력업체 평가등록':{id:'vendor_evaluation_input',file:'vendor_evaluation_input.html',title:'협력업체 평가등록'},
-'협력업체 인증서등록':{id:'vendor_certificate_input',file:'vendor_certificate_input.html',title:'협력업체 인증서등록'},
-'협력업체 등급현황':{id:'vendor_grade_status',file:'vendor_grade_status.html',title:'협력업체 등급현황'},
-'협력업체 인증현황':{id:'vendor_certificate_status',file:'vendor_certificate_status.html',title:'협력업체 인증현황'},
-'사용메뉴얼':{id:'user_manual',file:'user_manual.html',title:'사용메뉴얼'}
-};
-let activeModule='', activeSecondary='', activeId='';
-const openTabs=new Map();
-function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function buildModules(){modules.innerHTML=MODULES.filter(m=>{if(m==='사용메뉴얼')return true;const a=window.MES_AUTH;if(!a||!a.session||a.role==='admin'||a.role==='master')return true;
-  return Object.entries(APP[m]?.menus||{}).some(([sec,gs])=>gs.some(g=>g.items.some(n=>a.can(m+'/'+sec+'/'+n,'view'))));
-}).map(m=>`<button class="module ${m===activeModule?'on':''}" onclick="setModule('${m}')">${m}</button>`).join('')}
-function buildSecondary(){
-  const list=APP[activeModule]?.secondary||[];
-  secondaryNav.innerHTML=list.map(x=>`<button class="tool ${x.name===activeSecondary?'on':''}" onclick="setSecondary('${x.name}')"><span class="ico">${x.icon}</span><span>${x.name}</span></button>`).join('');
-}
-/* v23 권한: 조회권한 없는 메뉴 숨김 */
-function canView(path){if((path||'').includes('사용메뉴얼'))return true;const a=window.MES_AUTH;return !a||!a.session?true:a.can(path,'view')}
-function currentGroups(){
-  const gs=APP[activeModule]?.menus?.[activeSecondary]||[];
-  return gs.map(g=>({name:g.name,items:g.items.filter(n=>canView(activeModule+'/'+activeSecondary+'/'+n))}))
-           .filter(g=>g.items.length);
-}
-/* 화면파일 → 메뉴경로 (iframe의 mes_db.js가 권한 판단에 사용) */
-window.MES_MENU_OF=function(file){
-  for(const [mod,cfg] of Object.entries(APP))
-    for(const [sec,groups] of Object.entries(cfg.menus||{}))
-      for(const g of groups)for(const n of g.items)
-        if(pageRegistry[n]?.file===file)return mod+'/'+sec+'/'+n;
-  return null;
-};
-function buildTree(){
-  const gs=currentGroups();
-  if(!gs.length){tree.innerHTML='<div style="padding:16px;color:#7a8793">'+(activeModule?'등록된 하위 메뉴가 없습니다.':'상단에서 업무 메뉴를 선택하세요.')+'</div>';return}
-  tree.innerHTML=gs.map(g=>`<div class="group"><div class="group-title">${g.name}</div>${g.items.map(name=>`<button class="item ${pageRegistry[name]?.id===activeId?'on':''}" onclick="openByName('${name}')">${name}</button>`).join('')}</div>`).join('')
-}
-function setModule(m){
-  activeModule=m;
-  const secs=APP[m]?.secondary||[];
-  activeSecondary=secs[0]?.name||'';
-  buildModules();buildSecondary();buildTree();
-  statusMsg.textContent=`${m} 메뉴를 선택했습니다.`
-}
-function setSecondary(s){activeSecondary=s;buildSecondary();buildTree();statusMsg.textContent=`${activeModule} / ${s}`}
-function slugify(name){const map={'수주등록':'sale_order_input','수주현황':'sale_order_status','구매품 발주':'purchase_order_input','구매품 입고':'purchase_receipt_input','구매품 발주현황':'purchase_order_status','가공계획등록':'machining_plan_input','외주가공 발주':'outsourcing_order_input','외주가공 입고':'outsourcing_receipt_input','외주가공 입고확정':'outsourcing_receipt_confirmation','외주가공발주현황':'outsourcing_order_status','가공구매 진척현황':'machining_purchase_progress','사용자정보':'user_info','검사구분':'inspection_category','직급정보':'position_info','자재단가변동등록':'material_price_change_input','자재단가변동현황':'material_price_change_status','공정단가변동등록':'process_price_change_input','공정단가변동현황':'process_price_change_status'};return map[name]||'pending_'+Math.abs([...name].reduce((a,c)=>((a<<5)-a+c.charCodeAt(0))|0,0))}
-function openByName(name){let p=pageRegistry[name];if(!p){const id=slugify(name);p={id,title:name,file:null};pageRegistry[name]=p}openPage(p)}
-function openPage(p){if(!openTabs.has(p.id))openTabs.set(p.id,p);activeId=p.id;renderTabs();renderStage();buildTree();statusMsg.textContent=p.file?`${p.title} 화면을 열었습니다.`:`${p.title} 화면은 사진 등록 대기중입니다.`}
-function renderTabs(){tabs.innerHTML=[...openTabs.values()].map(p=>`<div class="tab ${p.id===activeId?'on':''}" onclick="activate('${p.id}')"><span class="title">${p.title}</span><button class="x" onclick="closeTab('${p.id}',event)">×</button></div>`).join('');requestAnimationFrame(()=>tabs.querySelector('.tab.on')?.scrollIntoView({inline:'nearest'}))}
-/* 화면 iframe에 공용 우클릭 메뉴/삭제확인 스크립트 자동 주입
-   (각 HTML을 수정하지 않아도 되며, 이미 들어있는 화면은 건너뜀) */
-function injectCtx(f){
- try{
-  const doc=f.contentDocument;
-  if(!doc||!doc.body)return;
-  if(doc.__mesCtxInjected||doc.querySelector('script[src*="mes_ctx.js"]'))return;
-  doc.__mesCtxInjected=1;
-  const s=doc.createElement('script');
-  s.src='mes_ctx.js?v='+APP_VER;   /* 삭제 확인 다이얼로그 */
-  doc.body.appendChild(s);
-  /* v64: 외주 물류이동(보유처·체류일) 모듈 — 해당 화면에서만 스스로 동작한다 */
-  if(!doc.querySelector('script[src*="mes_move.js"]')){
-   const m=doc.createElement('script');
-   m.src='mes_move.js?v='+APP_VER;
-   doc.body.appendChild(m);
-  }
- }catch(e){/* 교차출처(file://)면 무시 — 이때는 각 HTML에 직접 넣어야 함 */}
-}
-/* v44: 새 화면은 DB 로딩이 끝난 뒤 한 번에 보여준다.
-   (이전에는 빈 화면 → 내장 예시자료 → DB자료 순으로 두세 번 바뀌어 보였다) */
-const VREADY=new Set();
-let vwaitTimer=null,pendingId=null;
-function badgeOff(){try{return localStorage.getItem('mes_badge')==='off'}catch(e){return false}}
-function viewReady(f){
-  if(!f||f.tagName!=='IFRAME')return true;
-  try{
-    const d=f.contentDocument,w=f.contentWindow;
-    if(!d||d.readyState!=='complete')return false;
-    if(d.documentElement.classList.contains('mesdb-loading'))return false;
-    if(w.__mesdbBound&&!badgeOff()&&!d.getElementById('mesdb-badge')&&!(w.MESDB&&w.MESDB.syncMaster))return false;
-    return true;
-  }catch(e){return true}
-}
-function makeView(p){
-  if(document.getElementById('view_'+p.id))return;
-  if(p.file){
-    const f=document.createElement('iframe');f.id='view_'+p.id;
-    f.src=p.file+(p.file.includes('?')?'&':'?')+'v='+APP_VER;
-    f.addEventListener('load',()=>injectCtx(f));
-    stage.appendChild(f);
-  }else{
-    const d=document.createElement('div');d.id='view_'+p.id;d.className='placeholder';
-    d.innerHTML=`<div><b>${esc(p.title)}</b><br><br>해당 업무 화면 사진을 주시면 <code>${p.id}.html</code> 형태로 제작해 이 위치에 연결합니다.</div>`;
-    stage.appendChild(d);
-  }
-}
-function swapTo(id){
-  clearTimeout(vwaitTimer);pendingId=null;VREADY.add(id);
-  vwait.classList.remove('on');
-  stage.querySelectorAll('iframe,.placeholder').forEach(x=>x.classList.toggle('on',x.id==='view_'+id));
-}
-function renderStage(){
-  for(const p of openTabs.values())makeView(p);
-  const el=document.getElementById('view_'+activeId);
-  if(!el){vwait.classList.remove('on');return}
-  if(VREADY.has(activeId)||viewReady(el)){swapTo(activeId);return}
-  /* 아직 준비 전 — 이전 화면을 그대로 두고 대기 표시 */
-  pendingId=activeId;vwait.classList.add('on');
-  const t0=Date.now();
-  clearTimeout(vwaitTimer);
-  (function poll(){
-    if(pendingId!==activeId)return;
-    const f=document.getElementById('view_'+activeId);
-    if(!f||viewReady(f)||Date.now()-t0>3000){swapTo(activeId);return}
-    vwaitTimer=setTimeout(poll,60);
-  })();
-}
-function activate(id){activeId=id;renderTabs();renderStage();buildTree()}
-/* v36: 선반입(prefetch) — 클릭 전에 화면 파일을 캐시에 올려 대기시간을 줄인다 */
-const _pf=new Set();
-function prefetch(url){if(!url||_pf.has(url))return;_pf.add(url);
-  try{const l=document.createElement('link');l.rel='prefetch';l.href=url;l.as='document';document.head.appendChild(l)}catch(e){}
-  try{fetch(url,{cache:'force-cache'}).catch(()=>{})}catch(e){}}
-tree.addEventListener('mouseover',e=>{const b=e.target.closest('.item');if(!b)return;
-  const p=pageRegistry[b.textContent.trim()];if(p&&p.file)prefetch(p.file+'?v='+APP_VER)});
-(window.requestIdleCallback||(f=>setTimeout(f,1200)))(()=>{
-  ['mes_db.js?v='+APP_VER,'mes_ctx.js?v='+APP_VER,'mes_lookup.js?v='+APP_VER,'mes_paste.js?v='+APP_VER,'mes_auth.js?v='+APP_VER,'mes_move.js?v='+APP_VER].forEach(prefetch);
-  let i=0;const hot=['sale_order_status.html','purchase_order_input.html','purchase_order_status.html',
-    'material_order_input.html','outsourcing_order_input.html','vendor_management.html','status_board.html'];
-  const step=()=>{if(i>=hot.length)return;prefetch(hot[i++]+'?v='+APP_VER);setTimeout(step,600)};step()});
-function closeTab(id,e){e?.stopPropagation();const ids=[...openTabs.keys()],idx=ids.indexOf(id);openTabs.delete(id);VREADY.delete(id);document.getElementById('view_'+id)?.remove();if(activeId===id){activeId=ids[idx+1]||ids[idx-1]||'';if(!openTabs.has(activeId))activeId=[...openTabs.keys()][0]||''}renderTabs();renderStage();buildTree()}
-function closeActive(){if(activeId)closeTab(activeId)}
-function tick(){const d=new Date();now.textContent=d.toLocaleString('sv-SE',{hour12:false}).replace(',','')}
-buildModules();buildSecondary();buildTree();renderTabs();renderStage();tick();setInterval(tick,1000);
+/* ══════════════════════════════════════════════════════════════════
+   IPMES — 외주가공 물류이동 원장 · 실수량 분할입고 (통합본)
+   1단계 + 3단계를 한 번에 적용한다. 여러 번 실행해도 안전(idempotent).
 
-/* ── v46 화면확대(Ctrl+휠) 대응 ─────────────────────────────
- * 확대하면 상단 메뉴바가 한 줄에 다 안 들어가 잘려 보였다.
- * 메뉴가 아랫줄로 접히도록 바꾸고, 접힌 높이만큼 --top1/--top2 를
- * 실제 높이로 갱신해 좌측 트리·작업영역이 겹치지 않게 한다. */
-(function(){
-  var root=document.documentElement;
-  var h1=document.querySelector('.top1'), h2=document.querySelector('.top2');
-  if(!h1||!h2)return;
-  var last1=0,last2=0,queued=false;
-  function measure(){
-    queued=false;
-    var a=Math.ceil(h1.getBoundingClientRect().height);
-    var b=Math.ceil(h2.getBoundingClientRect().height);
-    if(a&&Math.abs(a-last1)>=1){last1=a;root.style.setProperty('--top1',a+'px')}
-    if(b&&Math.abs(b-last2)>=1){last2=b;root.style.setProperty('--top2',b+'px')}
-  }
-  /* 관측 콜백 안에서 곧바로 스타일을 바꾸면 ResizeObserver 경고가 난다 → 다음 프레임에 한 번만 */
-  function sync(){if(queued)return;queued=true;
-    (window.requestAnimationFrame||setTimeout)(measure)}
-  if(window.ResizeObserver){
-    var ro=new ResizeObserver(sync);
-    ro.observe(h1);ro.observe(h2);
-  }
-  window.addEventListener('resize',sync);
-  document.addEventListener('DOMContentLoaded',measure);
-  /* 메뉴 버튼이 새로 그려질 때(모듈/2차메뉴 전환)도 반영 */
-  var mo=new MutationObserver(function(){requestAnimationFrame(sync)});
-  mo.observe(h1,{childList:true,subtree:true});
-  mo.observe(h2,{childList:true,subtree:true});
-  measure();setTimeout(measure,300);
-})();
+   Supabase SQL Editor 에 통째로 붙여넣고 실행.
+   ※ 실행 전 백업 권장 :
+        create schema if not exists bak_20260908;
+        create table bak_20260908.order_lines as select * from public.order_lines;
+   ══════════════════════════════════════════════════════════════════ */
 
-/* v45: 좌측 메뉴창 폭 조절(드래그) */
-(function(){
-  var KEY='mes_left_w', MIN=180, MAX=700, DEF=300;
-  var root=document.documentElement, sp=document.getElementById('splitter');
-  if(!sp)return;
-  function apply(w){root.style.setProperty('--left',w+'px')}
-  function save(w){try{localStorage.setItem(KEY,String(w))}catch(e){}}
-  function load(){try{var v=parseInt(localStorage.getItem(KEY),10);return isNaN(v)?0:v}catch(e){return 0}}
-  function restore(){
-    if(window.innerWidth<=680){root.style.removeProperty('--left');return}
-    var w=load(), lim=Math.min(MAX,Math.max(MIN,window.innerWidth-320));
-    if(w>=MIN)apply(Math.min(w,lim));
-  }
-  restore();
-  var drag=false;
-  sp.addEventListener('pointerdown',function(e){
-    drag=true;
-    try{sp.setPointerCapture(e.pointerId)}catch(_){}
-    sp.classList.add('drag');document.body.classList.add('resizing');
-    e.preventDefault();
-  });
-  sp.addEventListener('pointermove',function(e){
-    if(!drag)return;
-    var lim=Math.min(MAX,window.innerWidth-320);
-    var w=Math.round(e.clientX);
-    if(w<MIN)w=MIN; if(w>lim)w=lim;
-    apply(w);
-  });
-  function end(e){
-    if(!drag)return; drag=false;
-    try{sp.releasePointerCapture(e.pointerId)}catch(_){}
-    sp.classList.remove('drag');document.body.classList.remove('resizing');
-    var w=parseInt(getComputedStyle(root).getPropertyValue('--left'),10)||DEF;
-    save(w);
-    try{statusMsg.textContent='메뉴 창 폭을 '+w+'px 로 조절했습니다.'}catch(_){}
-  }
-  sp.addEventListener('pointerup',end);
-  sp.addEventListener('pointercancel',end);
-  sp.addEventListener('dblclick',function(){apply(DEF);save(DEF);
-    try{statusMsg.textContent='메뉴 창 폭을 기본값(300px)으로 되돌렸습니다.'}catch(_){}});
-  window.addEventListener('resize',restore);
-})();
+/* ── 0. order_lines 보강 ────────────────────────────────────── */
+alter table public.order_lines add column if not exists receipt_qty numeric;
 
-</script>
-<script>document.write('<script src="mes_auth.js?v='+APP_VER+'"><\/script>')</script>
-<script>window.addEventListener("mes-auth-ready",()=>{try{VREADY.clear();buildModules();buildSecondary();buildTree();renderStage()}catch(e){}});</script>
-</body>
-</html>
+/* ── 1. 이동 원장 ───────────────────────────────────────────── */
+create table if not exists public.outsourcing_moves (
+  move_id                bigint generated by default as identity primary key,
+  line_id                bigint,
+  job_no                 text,
+  part_no                text,
+  machining_process_code text,
+  vendor_name            text,
+  io                     text not null,          -- 출고 / 도착 / 반송 / 입고 / 사내입고
+  move_date              date not null default current_date,
+  out_qty                numeric,
+  in_qty                 numeric,
+  short_qty              numeric not null default 0,
+  reason                 text,
+  remark                 text,
+  worker                 text,
+  source                 text not null default '자동',   -- 자동 / 수동 / QR
+  created_at             timestamptz not null default now()
+);
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname='outsourcing_moves_io_chk') then
+    alter table public.outsourcing_moves add constraint outsourcing_moves_io_chk
+      check (io in ('출고','도착','반송','입고','사내입고'));
+  end if;
+  if not exists (select 1 from pg_constraint where conname='outsourcing_moves_line_fk') then
+    alter table public.outsourcing_moves add constraint outsourcing_moves_line_fk
+      foreign key (line_id) references public.order_lines(line_id) on delete cascade;
+  end if;
+end $$;
+
+comment on table public.outsourcing_moves is
+  '외주가공 물류이동 원장. 상태가 아니라 이벤트를 쌓는다. 잔량·보유처는 여기서 파생한다.';
+
+create unique index if not exists ux_osm_auto
+  on public.outsourcing_moves(line_id, io) where source = '자동';
+create index if not exists ix_osm_line   on public.outsourcing_moves(line_id);
+create index if not exists ix_osm_job    on public.outsourcing_moves(job_no);
+create index if not exists ix_osm_vendor on public.outsourcing_moves(vendor_name);
+create index if not exists ix_osm_date   on public.outsourcing_moves(move_date);
+
+/* ── 2. RLS ─────────────────────────────────────────────────── */
+alter table public.outsourcing_moves enable row level security;
+
+drop policy if exists osm_read  on public.outsourcing_moves;
+drop policy if exists osm_write on public.outsourcing_moves;
+
+create policy osm_read  on public.outsourcing_moves
+  for select to anon, authenticated using (true);
+create policy osm_write on public.outsourcing_moves
+  for all to authenticated using (true) with check (true);
+
+grant select on public.outsourcing_moves to anon, authenticated, service_role;
+grant insert, update, delete on public.outsourcing_moves to authenticated, service_role;
+grant usage, select on sequence public.outsourcing_moves_move_id_seq
+  to authenticated, service_role;
+
+/* ── 3. 트리거 : 발주·입고를 이벤트로 자동 기록 ───────────────
+   이미 입고 이벤트(수동·QR 포함)가 있으면 자동 생성하지 않는다.
+   → RPC 분할입고와 이중 집계되지 않는다.                          */
+create or replace function public.fn_outsourcing_move_sync()
+returns trigger
+language plpgsql
+security definer
+set search_path = 'public'
+as $$
+declare
+  v_out numeric := coalesce(nullif(new.order_qty, 0), 1);
+  v_in  numeric := coalesce(nullif(new.receipt_qty, 0), nullif(new.order_qty, 0), 1);
+begin
+  if coalesce(new.category, '') <> '외주가공' then
+    return new;
+  end if;
+
+  if new.order_date is not null then
+    insert into public.outsourcing_moves
+      (line_id, job_no, part_no, machining_process_code, vendor_name,
+       io, move_date, out_qty, worker, source, remark)
+    values
+      (new.line_id, new.job_no, new.part_no, new.machining_process_code, new.vendor_name,
+       '출고', new.order_date, v_out, new.owner_name, '자동', '발주등록에서 자동 생성')
+    on conflict do nothing;
+  end if;
+
+  if new.status in ('입고', '입고확정') and new.receipt_date is not null then
+    if not exists (select 1 from public.outsourcing_moves
+                    where line_id = new.line_id and io = '입고') then
+      insert into public.outsourcing_moves
+        (line_id, job_no, part_no, machining_process_code, vendor_name,
+         io, move_date, in_qty, worker, source, remark)
+      values
+        (new.line_id, new.job_no, new.part_no, new.machining_process_code, new.vendor_name,
+         '입고', new.receipt_date, v_in, new.owner_name, '자동', '입고등록에서 자동 생성');
+    end if;
+  elsif new.status = '발주' then
+    delete from public.outsourcing_moves
+     where line_id = new.line_id and io = '입고' and source = '자동';
+  end if;
+
+  return new;
+end $$;
+
+drop trigger if exists trg_outsourcing_move_sync on public.order_lines;
+create trigger trg_outsourcing_move_sync
+  after insert or update on public.order_lines
+  for each row execute function public.fn_outsourcing_move_sync();
+
+/* ── 4. 분할입고 RPC ────────────────────────────────────────── */
+create or replace function public.fn_osp_receive(
+  p_line_id bigint,
+  p_qty     numeric,
+  p_date    date    default current_date,
+  p_short   numeric default 0,
+  p_reason  text    default null,
+  p_worker  text    default null,
+  p_source  text    default '수동',
+  p_remark  text    default null
+) returns jsonb
+language plpgsql
+security definer
+set search_path = 'public'
+as $$
+declare
+  l        public.order_lines%rowtype;
+  v_ord    numeric;
+  v_got    numeric;
+  v_new    numeric;
+  v_closed boolean;
+begin
+  select * into l from public.order_lines where line_id = p_line_id;
+  if not found then
+    raise exception '발주라인 %를 찾을 수 없습니다.', p_line_id;
+  end if;
+  if coalesce(l.category, '') <> '외주가공' then
+    raise exception '외주가공 발주라인이 아닙니다. (line_id=%)', p_line_id;
+  end if;
+  if coalesce(p_qty, 0) <= 0 then
+    raise exception '입고수량은 0보다 커야 합니다.';
+  end if;
+
+  v_ord := coalesce(nullif(l.order_qty, 0), 1);
+
+  select coalesce(sum(coalesce(in_qty, 0) + coalesce(short_qty, 0)), 0)
+    into v_got
+    from public.outsourcing_moves
+   where line_id = p_line_id and io in ('입고', '사내입고');
+
+  v_new := v_got + p_qty + coalesce(p_short, 0);
+  if v_new > v_ord then
+    raise exception '누적 입고 %가 발주수량 %를 초과합니다.', v_new, v_ord;
+  end if;
+
+  insert into public.outsourcing_moves
+    (line_id, job_no, part_no, machining_process_code, vendor_name,
+     io, move_date, in_qty, short_qty, reason, remark, worker, source)
+  values
+    (p_line_id, l.job_no, l.part_no, l.machining_process_code, l.vendor_name,
+     '입고', coalesce(p_date, current_date), p_qty, coalesce(p_short, 0),
+     p_reason, p_remark, p_worker, coalesce(p_source, '수동'));
+
+  v_closed := v_new >= v_ord;
+
+  update public.order_lines
+     set receipt_qty  = v_new,
+         receipt_date = case when v_closed then coalesce(p_date, current_date) else null end,
+         status       = case when v_closed then '입고' else '발주' end,
+         updated_at   = now()
+   where line_id = p_line_id;
+
+  return jsonb_build_object(
+    'closed',    v_closed,
+    'in_qty',    v_new,
+    'order_qty', v_ord,
+    'open_qty',  greatest(v_ord - v_new, 0));
+end $$;
+
+/* ── 5. 입고취소 RPC (회차 단위) ────────────────────────────── */
+create or replace function public.fn_osp_receive_cancel(
+  p_line_id bigint,
+  p_move_id bigint default null
+) returns jsonb
+language plpgsql
+security definer
+set search_path = 'public'
+as $$
+declare
+  v_ord numeric;
+  v_new numeric;
+  v_del bigint;
+begin
+  select coalesce(nullif(order_qty, 0), 1) into v_ord
+    from public.order_lines where line_id = p_line_id;
+  if not found then
+    raise exception '발주라인 %를 찾을 수 없습니다.', p_line_id;
+  end if;
+
+  select move_id into v_del
+    from public.outsourcing_moves
+   where line_id = p_line_id and io = '입고'
+     and (p_move_id is null or move_id = p_move_id)
+   order by move_date desc, move_id desc
+   limit 1;
+
+  if v_del is null then
+    raise exception '취소할 입고 기록이 없습니다.';
+  end if;
+
+  delete from public.outsourcing_moves where move_id = v_del;
+
+  select coalesce(sum(coalesce(in_qty, 0) + coalesce(short_qty, 0)), 0)
+    into v_new
+    from public.outsourcing_moves
+   where line_id = p_line_id and io in ('입고', '사내입고');
+
+  update public.order_lines
+     set receipt_qty  = nullif(v_new, 0),
+         receipt_date = null,
+         status       = '발주',
+         updated_at   = now()
+   where line_id = p_line_id;
+
+  return jsonb_build_object('canceled_move', v_del, 'in_qty', v_new,
+                            'open_qty', greatest(v_ord - v_new, 0));
+end $$;
+
+grant execute on function public.fn_osp_receive(bigint, numeric, date, numeric, text, text, text, text)
+  to authenticated, service_role;
+grant execute on function public.fn_osp_receive_cancel(bigint, bigint)
+  to authenticated, service_role;
+
+/* ── 6. 보유처·잔량 뷰 ──────────────────────────────────────── */
+create or replace view public.v_outsourcing_position as
+with agg as (
+  select
+    l.line_id, l.job_no, l.item_name, l.part_no, l.part_name,
+    l.machining_process_code, l.machining_process_name, l.vendor_name,
+    l.order_date, l.required_date, l.receipt_date, l.status,
+    coalesce(nullif(l.order_qty, 0), 1)                                       as order_qty,
+    coalesce(sum(m.in_qty)    filter (where m.io in ('입고','사내입고')), 0)  as in_qty,
+    coalesce(sum(m.short_qty) filter (where m.io in ('도착','입고')), 0)      as short_qty,
+    max(m.move_date)          filter (where m.io = '도착')                    as arrive_date,
+    count(m.move_id) filter (where m.io in ('입고','사내입고'))                as receipt_cnt,
+    count(m.move_id)                                                          as move_cnt
+  from public.order_lines l
+  left join public.outsourcing_moves m on m.line_id = l.line_id
+  where l.category = '외주가공'
+  group by l.line_id
+)
+select
+  a.*,
+  greatest(a.order_qty - a.in_qty - a.short_qty, 0) as open_qty,
+  case
+    when greatest(a.order_qty - a.in_qty - a.short_qty, 0) <= 0 then '사내 (복귀완료)'
+    when a.in_qty > 0 then a.vendor_name || ' (부분보유)'
+    when a.arrive_date is not null then a.vendor_name || ' (작업중)'
+    else coalesce(a.vendor_name, '-') || ' (반출중)'
+  end as holder,
+  case
+    when greatest(a.order_qty - a.in_qty - a.short_qty, 0) <= 0 then '완료'
+    when a.in_qty > 0 then '부분완료'
+    when a.arrive_date is not null then '작업중'
+    else '반출중'
+  end as position_state,
+  case
+    when greatest(a.order_qty - a.in_qty - a.short_qty, 0) <= 0 then null
+    else current_date - a.order_date
+  end as stay_days,
+  (greatest(a.order_qty - a.in_qty - a.short_qty, 0) > 0
+     and a.required_date is not null
+     and a.required_date < current_date) as delayed
+from agg a;
+
+grant select on public.v_outsourcing_position to anon, authenticated, service_role;
+
+comment on view public.v_outsourcing_position is
+  '외주가공 라인별 현재 보유처·잔량·체류일. 가공구매 진척현황 / 외주가공 입고 화면에서 참조.';
+
+/* ── 7. 기존 자료 백필 ──────────────────────────────────────── */
+insert into public.outsourcing_moves
+  (line_id, job_no, part_no, machining_process_code, vendor_name,
+   io, move_date, out_qty, worker, source, remark)
+select l.line_id, l.job_no, l.part_no, l.machining_process_code, l.vendor_name,
+       '출고', l.order_date, coalesce(nullif(l.order_qty,0),1), l.owner_name,
+       '자동', '기존 발주 소급'
+  from public.order_lines l
+ where l.category = '외주가공' and l.order_date is not null
+on conflict do nothing;
+
+insert into public.outsourcing_moves
+  (line_id, job_no, part_no, machining_process_code, vendor_name,
+   io, move_date, in_qty, worker, source, remark)
+select l.line_id, l.job_no, l.part_no, l.machining_process_code, l.vendor_name,
+       '입고', l.receipt_date,
+       coalesce(nullif(l.receipt_qty,0), nullif(l.order_qty,0), 1), l.owner_name,
+       '자동', '기존 입고 소급'
+  from public.order_lines l
+ where l.category = '외주가공'
+   and l.status in ('입고','입고확정')
+   and l.receipt_date is not null
+on conflict do nothing;
+
+/* ── 8. 검증 ────────────────────────────────────────────────── */
+select position_state, count(*) as 건수, sum(order_qty) as 발주수량, sum(open_qty) as 미회수
+  from public.v_outsourcing_position
+ group by position_state
+ order by 1;
