@@ -62,6 +62,8 @@ td.pad0{padding:1px 2px}
 #rbody tr.sel td{background:#dbeaf7;color:var(--ink)}
 #rbody tr.dirty td{background:#fff6e0}
 #rbody tr.dirty.sel td{background:#f6ecd4}
+#pbody tr.unsaved td{color:#7a8794}
+#pbody tr.unsaved .us{font-size:10px;color:#c0392b;border:1px solid #e3b4ae;border-radius:8px;padding:0 5px;margin-left:4px;vertical-align:1px}
 #rbody tr.sel td{box-shadow:inset 0 -2px 0 #2e78bd}
 #rbody tr.sel td:first-child{box-shadow:inset 2px 0 0 #2e78bd,inset 0 -2px 0 #2e78bd}
 #rbody tr.dirty .rname{border-color:#d8a33c}
@@ -86,7 +88,7 @@ function render(){
  countText.textContent=view.length+'건';pbody.innerHTML='';
 }
 let selIdx=-1;
-const PROW=p=>`<tr><td class="c"><input type="checkbox" data-i="${parts.indexOf(p)}" data-row="${p.row_no??''}"></td><td>${esc(p.part_no)}</td><td>${esc(p.part_name)}</td><td class="c">${esc(p.standard_process||'')}</td>${cells(p.steps,12)}</tr>`;
+const PROW=p=>`<tr class="${p.row_no==null?'unsaved':''}" title="${p.row_no==null?'미저장 — PartList 기본값. [저장]하면 가공계획으로 확정됩니다':''}"><td class="c"><input type="checkbox" data-i="${parts.indexOf(p)}" data-row="${p.row_no??''}"></td><td>${esc(p.part_no)}${p.row_no==null?' <span class="us">미저장</span>':''}</td><td>${esc(p.part_name)}</td><td class="c">${esc(p.standard_process||'')}</td>${cells(p.steps,12)}</tr>`;
 const PEMPTY='<tr><td colspan="16" class="c" style="height:100px;color:#8a97a2">이 조의 PartList 부품이 없습니다. 설계관리 &gt; PartList 등록(원재료)에서 해당 조로 부품을 먼저 등록하세요.</td></tr>';
 function pick(i,tr){const r=view[i];if(!r)return;selIdx=i;
  document.querySelectorAll('#hbody tr').forEach((x,k)=>x.classList.toggle('sel',k===i));
@@ -413,24 +415,35 @@ async function loadParts(job,jo){
  parts.length=0;
  if(!(window.MESDB&&MESDB.online)){pbody.innerHTML=PEMPTY;return}
  try{
-  const rs=await MESDB.table('machining_plan_parts')
-    .select(`select=*&job_no=eq.${encodeURIComponent(job)}&process_code=eq.${encodeURIComponent(jo)}&order=row_no`);
+  /* v85: 저장분(machining_plan_parts)과 PartList 를 합쳐 항상 전체 부품을 보여준다.
+     이전에는 저장분이 한 건이라도 있으면 PartList 를 읽지 않아,
+     일부만 저장한 뒤 나머지 부품이 화면에서 사라졌다. */
+  const [rs,pl]=await Promise.all([
+   MESDB.table('machining_plan_parts')
+    .select(`select=*&job_no=eq.${encodeURIComponent(job)}&process_code=eq.${encodeURIComponent(jo)}&order=row_no`),
+   MESDB.table('partlist_materials')
+    .select(`select=part_no,part_name,process_code&job_no=eq.${encodeURIComponent(job)}&order=row_no`)
+    .then(a=>a.filter(x=>(window.MESJO?MESJO.norm(x.process_code):String(x.process_code||''))===jo))
+    .catch(()=>[])]);
   if(_tk!==_partsTok)return;
-  if(rs.length){
-   rs.forEach(r=>parts.push({row_no:r.row_no,job_no:job,part_no:r.part_no,part_name:r.part_name||'',
-     standard_process:r.standard_process||'',steps:Array.isArray(r.steps)?r.steps:[]}));
-  }else{
-   const pl=await MESDB.table('partlist_materials')
-     .select(`select=part_no,part_name,process_code&job_no=eq.${encodeURIComponent(job)}&order=row_no`)
-     .then(a=>a.filter(x=>(window.MESJO?MESJO.norm(x.process_code):String(x.process_code||''))===jo));   /* 그 조의 PartList (옛 A,B,C 도 1,2,3 으로 읽음) */
-   if(_tk!==_partsTok)return;
-   const std=routes[0];
-   pl.forEach(r=>parts.push({row_no:null,job_no:job,part_no:r.part_no,part_name:r.part_name||'',
-     standard_process:std?std.standard_process_name:'',steps:std?std.steps:[]}));
-  }
+  const std=routes[0];
+  const saved=new Map(rs.map(r=>[String(r.part_no||''),r]));
+  const seen=new Set();
+  /* PartList 순서를 기준으로 — 저장된 부품은 저장값, 없는 부품은 기본값 */
+  pl.forEach(r=>{const k=String(r.part_no||'');seen.add(k);const sv=saved.get(k);
+   if(sv)parts.push({row_no:sv.row_no,job_no:job,part_no:sv.part_no,part_name:sv.part_name||r.part_name||'',
+     standard_process:sv.standard_process||'',steps:Array.isArray(sv.steps)?sv.steps:[]});
+   else parts.push({row_no:null,job_no:job,part_no:r.part_no,part_name:r.part_name||'',
+     standard_process:std?std.standard_process_name:'',steps:std?std.steps:[]})});
+  /* PartList 에서 빠졌지만 저장돼 있는 부품도 남긴다 */
+  rs.forEach(r=>{if(seen.has(String(r.part_no||'')))return;
+   parts.push({row_no:r.row_no,job_no:job,part_no:r.part_no,part_name:r.part_name||'',
+     standard_process:r.standard_process||'',steps:Array.isArray(r.steps)?r.steps:[]})});
   pbody.innerHTML=parts.length?parts.map(PROW).join(''):PEMPTY;
   q_job.value=job;
- msg(`${job} ${jo}조 · 부품 ${parts.length}건${parts.some(p=>p.row_no==null)?' (PartList 기준 · 저장하면 가공계획으로 확정)':''}`);
+  const unsaved=parts.filter(p=>p.row_no==null).length;
+  msg(`${job} ${jo}조 · 부품 ${parts.length}건`+
+      (unsaved?(unsaved===parts.length?' (PartList 기준 · 저장하면 가공계획으로 확정)':` (미저장 ${unsaved}건 — 저장 시 함께 확정)`):' (가공계획 확정)'));
  }catch(e){msg('부품 조회 실패: '+String(e.message||e).slice(0,110))}
 }
 </script><script src="mes_sample.js?v=85"></script><script src="mes_scene.js?v=85"></script><script src="mes_demo.js?v=85"></script><script src="mes_db.js?v=85"></script>
