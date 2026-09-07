@@ -3,246 +3,48 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>IPTK MES</title>
+<title>IPTK mes</title>
 <link rel="preconnect" href="https://ipggvrzxfcryzryileuv.supabase.co" crossorigin>
 <link rel="dns-prefetch" href="https://ipggvrzxfcryzryileuv.supabase.co">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
-:root{
-  --side-w:260px; --side-min:56px; --top-h:48px; --tab-h:40px;
-  --ink:#1c2430; --ink-2:#4a5568; --ink-3:#8a94a6;
-  --steel:#1f2733; --steel-2:#28323f; --steel-3:#343f50;
-  --paper:#f1f3f6; --white:#fff; --line:#dfe3ea; --line-2:#303b4c;
-  --amber:#f2a93b; --green:#2fb27c; --red:#e05a4a; --blue:#3b82f6; --gray:#9aa4b5;
-  --r:6px; --shadow:0 8px 24px rgba(20,28,40,.18);
-  font-size:14px;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%}
-body{font-family:Pretendard,-apple-system,"Malgun Gothic","맑은 고딕",sans-serif;color:var(--ink);background:var(--paper);overflow:hidden}
-button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
-input,select{font:inherit}
-::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:#c2c9d4;border-radius:4px}
-
-.app{display:grid;grid-template-columns:1fr;grid-template-rows:var(--top-h) 1fr;height:100vh}
-.top{grid-column:1/-1;display:flex;align-items:center;background:var(--steel);color:#dfe5ee;padding:0 12px 0 0;border-bottom:1px solid var(--line-2);position:relative;z-index:50}
-.main{display:flex;flex-direction:column;min-width:0;min-height:0}
-
-/* top */
-.brand{height:100%;display:flex;align-items:center;gap:10px;padding:0 16px 0 14px;flex-shrink:0;cursor:pointer;border-right:1px solid var(--line-2)}
-.brand .mark{width:28px;height:28px;flex-shrink:0;display:grid;place-items:center;background:var(--amber);color:var(--steel);font-weight:800;border-radius:6px}
-.brand .name{font-weight:700;letter-spacing:.3px;white-space:nowrap;color:#fff;display:flex;align-items:center;gap:8px}
-.brand .name .home-lbl{font-size:14px;color:#fff}
-.brand:hover .name .home-lbl{color:var(--amber)}
-.brand .name small{font-weight:400;color:#8f9bb0}
-
-.top-menu{display:flex;gap:2px;margin-left:8px;height:100%}
-.top-menu>li{position:relative;list-style:none;height:100%;display:flex}
-.top-menu>li>button{padding:0 16px;height:100%;color:#c7cfdb;font-weight:600;font-size:15px;border-bottom:2px solid transparent;white-space:nowrap}
-.top-menu>li:hover>button{color:#fff;border-bottom-color:var(--amber)}
-.top-menu>li.on>button{color:#fff;border-bottom-color:var(--amber)}
-.top-menu>li.pin>button{color:#fff;border-bottom-color:var(--amber);background:var(--steel-2)}
-.top-menu>li.pin .mega{display:flex}
-.mega{position:absolute;top:100%;left:0;display:none;background:var(--white);color:var(--ink);border:1px solid var(--line);border-radius:0 0 var(--r) var(--r);box-shadow:var(--shadow);padding:14px 4px;z-index:60;flex-wrap:wrap;width:max-content;max-width:calc(100vw - 24px);max-height:calc(100vh - var(--top-h) - 12px);overflow-y:auto;overscroll-behavior:contain}
-.top-menu>li:hover .mega{display:flex}
-.mega .col{padding:0 16px 8px;border-right:1px solid var(--line);min-width:150px;align-self:start}
-.mega .col:last-child{border-right:0}
-.mega h4{font-size:14px;color:var(--ink-3);font-weight:600;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--line);white-space:nowrap}
-.mega h5{font-size:12.5px;color:var(--ink-3);font-weight:500;margin:8px 0 2px}
-.mega h5:first-of-type{margin-top:0}
-.mega a{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:14px;color:var(--ink);text-decoration:none;white-space:nowrap}
-.mega a:hover{color:var(--blue)}
-.mega a.active{color:var(--blue);font-weight:600}
-.mega a .star{margin-left:auto;padding-left:14px;color:#c9d0da;opacity:0;font-size:12px}
-.mega a:hover .star{opacity:1}
-.mega a .star.on{opacity:1;color:var(--amber)}
-
-.search{margin-left:auto;position:relative;width:280px}
-.search input{width:100%;height:32px;background:var(--steel-2);border:1px solid var(--line-2);border-radius:var(--r);color:#fff;padding:0 32px 0 34px;outline:0}
-.search input:focus{border-color:var(--amber)}
-.search input::placeholder{color:#7f8aa0}
-.search .ico{position:absolute;left:11px;top:9px;color:#7f8aa0}
-.search kbd{position:absolute;right:8px;top:8px;font:11px Pretendard;color:#7f8aa0;border:1px solid #4a5568;border-radius:4px;padding:1px 5px}
-.search-res{position:absolute;top:36px;left:0;right:0;background:var(--white);color:var(--ink);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);display:none;max-height:360px;overflow:auto;z-index:80}
-.search-res.open{display:block}
-.search-res button{display:flex;justify-content:space-between;width:100%;text-align:left;padding:9px 12px;font-size:14px}
-.search-res button:hover,.search-res button.sel{background:#eef2f8}
-.search-res small{color:var(--ink-3)}
-
-.top-actions{display:flex;align-items:center;gap:4px;margin-left:12px}
-.icon-btn{width:34px;height:34px;border-radius:var(--r);display:grid;place-items:center;color:#c7cfdb;position:relative}
-.icon-btn:hover{background:var(--steel-3);color:#fff}
-.icon-btn.txt{width:auto;padding:0 10px;display:flex;gap:6px;align-items:center;font-size:13px;color:var(--amber);border:1px solid var(--line-2)}
-.icon-btn.txt:hover{color:#fff;border-color:var(--amber)}
-@media (max-width:900px){.icon-btn.txt span{display:none}}
-.ubtn{display:flex;align-items:center;gap:8px;padding:4px 8px 4px 4px;border-radius:var(--r);margin-left:6px}
-.ubtn:hover{background:var(--steel-3)}
-.avatar{width:26px;height:26px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;font-weight:700;font-size:12px}
-.ubtn .txt{text-align:left;line-height:1.15;white-space:nowrap}
-.ubtn .txt b{display:block;color:#fff;font-weight:600}
-.ubtn .txt span{font-size:11px;color:#8f9bb0}
-.user{display:none} /* mes_auth.js 가 채우는 숨김 영역 */
-
-.dd{position:relative}
-.dd-menu{position:absolute;top:calc(100% + 6px);right:0;min-width:200px;background:var(--white);color:var(--ink);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:6px;display:none;z-index:90}
-.dd.open .dd-menu{display:block}
-.dd-menu button,.dd-menu a{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border-radius:4px;text-align:left;text-decoration:none;color:var(--ink)}
-.dd-menu button:hover,.dd-menu a:hover{background:#eef2f8}
-.dd-menu hr{border:0;border-top:1px solid var(--line);margin:6px 0}
-.dd-menu .hd{padding:6px 10px;font-size:11px;color:var(--ink-3)}
-
-/* tabs */
-.tabs{display:flex;align-items:flex-end;height:var(--tab-h);background:#e4e8ee;border-bottom:1px solid var(--line);padding:0 8px;gap:2px;overflow:hidden;flex-shrink:0}
-.tabs-scroll{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0}
-.tabs-scroll::-webkit-scrollbar{display:none}
-.tab{display:flex;align-items:center;gap:8px;height:34px;padding:0 10px 0 12px;background:#d6dce5;border-radius:6px 6px 0 0;color:var(--ink-2);white-space:nowrap;cursor:pointer;border:1px solid transparent;border-bottom:0;font-size:14px;user-select:none}
-.tab:hover{background:#e9edf3}
-.tab.active{background:var(--white);color:var(--ink);border-color:var(--line);font-weight:600;position:relative}
-.tab.active::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;background:var(--white)}
-.tab .x{width:16px;height:16px;border-radius:4px;display:grid;place-items:center;color:var(--ink-3);font-size:14px;line-height:1}
-.tab .x:hover{background:#c8cfda;color:var(--ink)}
-.tabs-act{display:flex;gap:2px;padding-bottom:3px}
-.tabs-act button{width:28px;height:28px;border-radius:4px;color:var(--ink-3);display:grid;place-items:center}
-.tabs-act button:hover{background:#d6dce5;color:var(--ink)}
-.ctx{position:fixed;display:none;background:var(--white);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:5px;min-width:170px;z-index:200}
-.ctx.open{display:block}
-.ctx button{display:block;width:100%;text-align:left;padding:7px 10px;border-radius:4px}
-.ctx button:hover{background:#eef2f8}
-
-/* content */
-.crumb{display:flex;align-items:center;gap:6px;padding:8px 18px;color:var(--ink-3);font-size:13px;background:var(--white);border-bottom:1px solid var(--line)}
-.crumb b{color:var(--ink);font-weight:600}
-.crumb .right{margin-left:auto;display:flex;gap:14px;font-family:ui-monospace,Consolas,monospace;font-size:11px}
-.stage{flex:1;min-height:0;position:relative;background:var(--white)}
-.stage iframe{display:none;width:100%;height:100%;border:0;background:var(--white)}
-.stage iframe.on{display:block}
-.stage .vwait{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(255,255,255,.72);color:var(--ink-2);font-size:13px;z-index:5}
-.stage .vwait.on{display:flex}
-.placeholder{display:none;height:100%;padding:26px 28px}
-.placeholder.on{display:block}
-.ph h1{font-size:20px;font-weight:700;margin-bottom:4px}
-.ph p{color:var(--ink-3);margin-bottom:22px}
-.ph code{background:#e9edf3;padding:2px 6px;border-radius:4px;font-family:ui-monospace,Consolas,monospace;font-size:12px}
-.card{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px}
-
-/* home */
-.home{padding:18px 22px;display:grid;gap:14px;grid-template-columns:repeat(12,1fr);height:100%;overflow:auto;align-content:start}
-.home .card h3{font-size:14px;font-weight:600;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
-.home .card h3 span{font-size:12px;color:var(--ink-3);font-weight:400}
-.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.quick button{border:1px solid var(--line);border-radius:var(--r);padding:12px 8px;display:grid;gap:6px;justify-items:center;font-size:12px;color:var(--ink-2);text-align:center}
-.quick button:hover{border-color:var(--blue);color:var(--blue);background:#f4f8ff}
-.modcard{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-.modcard button{border:1px solid var(--line);border-radius:var(--r);padding:14px 12px;text-align:left;display:grid;gap:4px}
-.modcard button b{font-size:14px}
-.modcard button small{color:var(--ink-3);font-size:11px;line-height:1.4;white-space:normal}
-.modcard button:hover{border-color:var(--blue);background:#f4f8ff}
-.favlist{display:grid;gap:4px}
-.favlist button{display:flex;justify-content:space-between;padding:7px 10px;border-radius:4px;border:1px solid var(--line)}
-.favlist button:hover{border-color:var(--blue);color:var(--blue)}
-.favlist small{color:var(--ink-3)}
-
-.status{height:24px;background:var(--steel);color:#8f9bb0;font-size:11px;display:flex;align-items:center;gap:18px;padding:0 14px;flex-shrink:0}
-.status .dot{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;margin-right:5px}
-.status .r{margin-left:auto}
-
-@media (max-width:1100px){.modcard{grid-template-columns:repeat(2,1fr)}.home>.card{grid-column:span 12!important}}
-@media (max-width:900px){.top-menu,.ubtn .txt{display:none}.search{width:170px}}
+:root{--bar1:42px;--bar2:78px;--top1:42px;--top2:78px;--left:300px;--tabs:32px;--line:#aeb8c2;--blue:#2469a8;--text:#273746}
+*{box-sizing:border-box}html,body{height:100%;margin:0}body{font-family:"Malgun Gothic","맑은 고딕",Arial,sans-serif;font-size:12px;color:var(--text);background:#dfe4e9;overflow:hidden}button{font:inherit;cursor:pointer}
+.top1{position:fixed;inset:0 0 auto 0;min-height:var(--bar1);display:flex;align-items:stretch;flex-wrap:wrap;background:linear-gradient(#fafbfc,#edf1f4);border-bottom:1px solid #b2bdc6;z-index:20}.logo{width:258px;min-height:var(--bar1);display:flex;align-items:center;padding-left:22px;border-right:1px solid #c8d0d7;white-space:nowrap;flex:0 0 auto}.logo img{height:26px;width:auto;display:block}.modules{display:flex;flex-wrap:wrap;flex:1 1 auto;min-width:0}.module{min-height:var(--bar1);min-width:82px;padding:0 12px;border:0;border-right:1px solid #d5dce2;background:transparent;color:#546270;font-weight:700;white-space:nowrap}.module:hover,.module.on{background:#e5edf5;color:#1d568c}.user{margin-left:auto;padding:0 15px;color:#687684;white-space:nowrap;display:flex;align-items:center}.top2{position:fixed;top:var(--top1);left:0;right:0;min-height:var(--bar2);display:flex;align-items:stretch;flex-wrap:wrap;background:linear-gradient(#f8fafb,#edf1f4);border-bottom:1px solid #9eabb6;z-index:19}.tool{width:68px;min-height:var(--bar2);border:0;border-right:1px solid #d1d8de;background:transparent;color:#465665;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}.tool:hover,.tool.on{background:#fff;color:#1d568c}.tool.on{box-shadow:inset 0 -3px 0 #2f73b6}.ico{font-size:22px;color:#214d79;line-height:24px}.tool span:last-child{font-size:11px}.tool.disabled{opacity:.35;cursor:default}.left{position:fixed;top:calc(var(--top1) + var(--top2));left:0;bottom:24px;width:var(--left);background:#f5f7f8;border-right:1px solid #8f9ca8;z-index:18;display:flex;flex-direction:column}.tree{overflow:auto;padding:5px 0 10px;flex:1}.group{margin-bottom:1px}.group-title{padding:4px 8px;font-weight:800;color:#2f4559;display:flex;align-items:center;gap:5px}.group-title::before{content:'⊟';font-size:12px;color:#315c86}.item{display:block;width:100%;border:0;background:transparent;text-align:left;padding:4px 8px 4px 32px;color:#374958;position:relative}.item::before{content:'▣';position:absolute;left:18px;color:#5a7185}.item:hover{background:#e5eef6}.item.on{background:#2e77bd;color:white}.item.on::before{color:white}.workspace{position:fixed;top:calc(var(--top1) + var(--top2));left:var(--left);right:0;bottom:24px;background:#d7dde3;display:flex;flex-direction:column;min-width:0}.tabs{height:var(--tabs);display:flex;align-items:flex-end;gap:2px;padding:3px 5px 0;background:#e3e8ec;border-bottom:1px solid #8d99a5;overflow-x:auto}.tab{height:27px;min-width:126px;max-width:190px;display:flex;align-items:center;padding-left:9px;border:1px solid #9ba8b4;border-bottom:0;background:linear-gradient(#f4f6f8,#dde4e9);color:#5d6b78;white-space:nowrap}.tab.on{background:#fff;color:#244c73;font-weight:800}.tab .title{overflow:hidden;text-overflow:ellipsis}.x{margin-left:auto;width:25px;height:24px;border:0;background:transparent;color:#6d7882}.x:hover{background:#e8ecf0;color:#a22}.stage{flex:1;min-height:0;padding:0;background:#fff}.stage iframe{display:none;width:100%;height:100%;border:0;background:#fff}.stage iframe.on{display:block}.stage{position:relative}.stage .vwait{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(255,255,255,.72);color:#5b6b7a;font-size:13px;z-index:5}.stage .vwait.on{display:flex}.placeholder{display:none;height:100%;align-items:center;justify-content:center;background:#f6f8fa;color:#71808d;font-size:14px}.placeholder.on{display:flex}.status{position:fixed;left:0;right:0;bottom:0;height:24px;z-index:30;display:flex;align-items:center;border-top:1px solid #9aa6b1;background:#e6ebef;padding:0 12px;color:#5f6d78}.status .msg{margin-left:var(--left);padding-left:16px}.status .right{margin-left:auto}.splitter{position:fixed;top:calc(var(--top1) + var(--top2));bottom:24px;left:calc(var(--left) - 3px);width:7px;z-index:19;cursor:col-resize;background:transparent;touch-action:none}.splitter::after{content:'';position:absolute;left:2px;top:50%;transform:translateY(-50%);width:3px;height:40px;border-radius:2px;background:#b9c4ce}.splitter:hover::after{background:#2e77bd}.splitter.drag::after{background:#1d568c;height:100%;top:0;transform:none;width:3px}body.resizing{cursor:col-resize;user-select:none}body.resizing iframe{pointer-events:none}.left,.workspace{transition:none}.mobile{display:none}@media(max-width:900px){:root{--left:220px}.logo{width:208px}.logo img{height:23px}.module{min-width:70px}.user{display:none}}@media(max-width:680px){:root{--left:0px}.left{display:none}.splitter{display:none}.logo{width:auto;padding-left:12px}.logo img{height:20px}.tool{width:56px}.status .msg{margin-left:0}.mobile{display:block}}
 </style>
 </head>
 <body>
-
-<div class="app" id="app">
-  <header class="top">
-    <div class="brand" id="brand" title="홈">
-      <div class="mark">I</div>
-      <div class="name"><span class="home-lbl">⌂ 홈</span><small>IPTK MES</small></div>
-    </div>
-
-    <ul class="top-menu" id="topMenu"></ul>
-
-    <div class="search">
-      <span class="ico">⌕</span>
-      <input id="menuSearch" placeholder="메뉴 검색" autocomplete="off">
-      <kbd>Ctrl K</kbd>
-      <div class="search-res" id="searchRes"></div>
-    </div>
-
-    <div class="top-actions">
-      <button class="icon-btn txt" id="btnReq" title="수정요청게시판">✎<span>수정요청</span></button>
-      <div class="dd" id="ddFav">
-        <button class="icon-btn" title="즐겨찾기">★</button>
-        <div class="dd-menu" id="favMenu"></div>
-      </div>
-      <div class="dd" id="ddUser">
-        <button class="ubtn">
-          <span class="avatar" id="uAv">?</span>
-          <span class="txt"><b id="uName">-</b><span id="uRole">-</span></span>
-        </button>
-        <div class="dd-menu">
-          <div class="hd" id="uHd">IPTK MES</div>
-          <button id="btnPw">비밀번호 변경</button>
-          <hr>
-          <button id="btnLogout">로그아웃</button>
-        </div>
-      </div>
-      <div class="user"></div>
-    </div>
-  </header>
-
-  <section class="main">
-    <div class="tabs">
-      <div class="tabs-scroll" id="tabs"></div>
-      <div class="tabs-act">
-        <button id="tabPrev" title="이전 탭">‹</button>
-        <button id="tabNext" title="다음 탭">›</button>
-        <button id="tabCloseAll" title="모두 닫기">×</button>
-      </div>
-    </div>
-    <div class="ctx" id="tabCtx">
-      <button data-act="refresh">새로고침</button>
-      <button data-act="pin">고정 / 해제</button>
-      <button data-act="others">다른 탭 닫기</button>
-      <button data-act="right">오른쪽 탭 닫기</button>
-      <button data-act="close">닫기</button>
-    </div>
-    <div class="crumb" id="crumb"><span>IPTK MES</span></div>
-    <div class="stage" id="stage"><div class="vwait" id="vwait">화면을 여는 중…</div></div>
-    <div class="status">
-      <span><span class="dot"></span><span id="statusMsg">준비</span></span>
-      <span id="verTxt"></span>
-      <span class="r" id="now"></span>
-    </div>
-  </section>
-</div>
-
+<header class="top1"><div class="logo"><img src="iptk_logo.png?v=v54" alt="IPTK"></div><nav class="modules" id="modules"></nav><div class="user">MES</div></header>
+<section class="top2" id="secondaryNav"></section>
+<aside class="left"><div class="tree" id="tree"></div></aside>
+<div class="splitter" id="splitter" title="드래그: 창 폭 조절 / 더블클릭: 기본값(300px)"></div>
+<main class="workspace"><div class="tabs" id="tabs"></div><div class="stage" id="stage"><div class="vwait" id="vwait">화면을 여는 중…</div></div></main>
+<footer class="status"><span id="now">2026-08-22 10:15:13</span><span class="msg" id="statusMsg">데이터가 조회되었습니다.</span><span class="right">AP0020</span></footer>
 <script>
-const APP_VER='84';
+const APP_VER='64';
 const APP={
   '영업관리':{
     secondary:[
       {name:'수주',icon:'▣'},
       {name:'제작계획',icon:'◴'},
-      {name:'설계외주',icon:'✎'},
-      {name:'조립외주',icon:'◆'},
+      {name:'SET발주',icon:'◆'},
       {name:'경비',icon:'▤'}
     ],
     menus:{
-      '수주':[{name:'수주',items:['수주등록','수주현황','금형진척현황']}],
+      '수주':[{name:'수주',items:['수주등록','수주현황','현황판']}],
       '제작계획':[{name:'제작계획',items:['제작계획등록','제작계획현황']}],
-      /* v73: 일평기연은 외주 발주를 영업에서 관리한다. 제작계획에서 사내/외주를 정한 뒤 여기서 발주·입고 */
-      '설계외주':[{name:'설계외주',items:['외주설계발주등록','외주설계발주입고','외주설계발주현황']}],
-      '조립외주':[{name:'조립외주',items:['SET외주제작등록','SET발주입고','SET발주현황']}],
+      'SET발주':[{name:'SET발주',items:['SET외주제작등록','SET발주입고','SET발주현황']}],
       '경비':[{name:'경비',items:['경비등록','경비현황']}]
     }
   },
   '설계관리':{
     secondary:[
+      {name:'외주설계발주',icon:'✎'},
       {name:'사내설계',icon:'▤'},
       {name:'PARTLIST',icon:'▦'}
     ],
     menus:{
-      '사내설계':[{name:'사내설계',items:['설계계획등록','설계실적등록','설계실적조회']}],
+      '외주설계발주':[{name:'외주설계발주',items:['외주설계발주등록','외주설계발주입고','외주설계발주현황']}],
+      '사내설계':[{name:'사내설계',items:['설계계획등록','설계실적등록','설계실적현황','설계실적조회']}],
       'PARTLIST':[{name:'PARTLIST',items:['PartList 등록(원재료)','PartList 등록(구매품)','PartList 현황','PartList 복사']}]
     }
   },
@@ -270,11 +72,11 @@ const APP={
   },
   '조립관리':{
     secondary:[
-      {name:'사내조립',icon:'⚙'},
+      {name:'조립',icon:'⚙'},
       {name:'검사',icon:'⌕'}
     ],
     menus:{
-      '사내조립':[{name:'사내조립',items:['조립실적등록','조립실적현황','조립실적조회']}],
+      '조립':[{name:'조립',items:['조립실적등록','조립실적현황','조립실적조회']}],
       '검사':[{name:'검사',items:['검사실적등록']}]
     }
   },
@@ -330,7 +132,7 @@ const APP={
       {name:'사용메뉴얼',icon:'📖'}
     ],
     menus:{
-      '사용메뉴얼':[{name:'사용메뉴얼',items:['사용메뉴얼']},{name:'게시판',items:['수정요청게시판']},{name:'조직',items:['조직도']}]
+      '사용메뉴얼':[{name:'사용메뉴얼',items:['사용메뉴얼']}]
     }
   },
   '기준정보':{
@@ -387,22 +189,23 @@ const pageRegistry={
 '공정단가변동등록':{id:'process_price_change_registration',file:'process_price_change_registration.html',title:'공정단가변동 등록'},
 '공정단가변동현황':{id:'process_price_change_status',file:'process_price_change_status.html',title:'가공공정단가변동 현황'},
 '제조원가조회(실시간)':{id:'manufacturing_cost_inquiry',file:'manufacturing_cost_inquiry.html',title:'제조원가 조회'},
-'수주등록':{id:'sale_order_input',file:'sale_order_input.html',title:'수주등록'},
+'수주등록':{id:'sale_order_input',file:'sale_order_input.html',title:'수주정보 등록'},
 '수주현황':{id:'sale_order_status',file:'sale_order_status.html',title:'수주현황'},
 '제작계획등록':{id:'sales_plan_input',file:'sales_plan_input.html',title:'제작계획등록'},
-'금형진척현황':{id:'job_progress_board',file:'job_progress_board.html',title:'수주진척현황'},
-'제작계획현황':{id:'sales_plan_status',file:'sales_plan_status.html',title:'제작진행현황'},
-'SET발주현황':{id:'set_order_status',file:'set_order_status.html',title:'조립외주현황'},
-'SET발주입고':{id:'set_order_receipt',file:'set_order_receipt.html',title:'조립외주입고'},
-'경비등록':{id:'expense_registration',file:'expense_registration.html',title:'경비등록'},
+'현황판':{id:'status_board',file:'status_board.html',title:'일평기연 현황판'},
+'제작계획현황':{id:'sales_plan_status',file:'sales_plan_status.html',title:'제작계획현황'},
+'SET발주현황':{id:'set_order_status',file:'set_order_status.html',title:'SET 발주현황'},
+'SET발주입고':{id:'set_order_receipt',file:'set_order_receipt.html',title:'SET발주입고'},
+'경비등록':{id:'expense_registration',file:'expense_registration.html',title:'경비 등록'},
 '경비현황':{id:'expense_status',file:'expense_status.html',title:'경비현황'},
 '설계계획등록':{id:'design_plan_input',file:'design_plan_input.html',title:'설계계획등록'},
 '설계실적등록':{id:'design_result_input',file:'design_result_input.html',title:'설계실적등록'},
+'설계실적현황':{id:'design_result_status_design',file:'design_result_status.html?mode=design',title:'설계실적현황'},
 '설계실적조회':{id:'design_result_inquiry_design',file:'design_result_inquiry.html?mode=design',title:'설계실적조회'},
 'PartList 등록(원재료)':{id:'partlist_material_input',file:'partlist_material_input.html',title:'PartList 등록(원재료)'},
 'PartList 등록(구매품)':{id:'partlist_purchase_input',file:'partlist_purchase_input.html',title:'PartList 등록(구매품)'},
 'PartList 현황':{id:'partlist_status',file:'partlist_status.html',title:'PartList 현황'},
-'SET외주제작등록':{id:'set_order_registration',file:'set_order_registration.html',title:'조립외주발주'},
+'SET외주제작등록':{id:'set_order_registration',file:'set_order_registration.html',title:'SET외주제작등록'},
 '가공계획등록':{id:'machining_plan_input',file:'machining_plan_input.html',title:'가공계획등록'},
 '매입현황':{id:'purchase_status',file:'purchase_status.html',title:'매입현황'},
 '조립실적조회':{id:'design_result_inquiry_assembly',file:'design_result_inquiry.html?mode=assembly',title:'조립실적조회'},
@@ -413,9 +216,9 @@ const pageRegistry={
 '원재료 발주현황':{id:'material_order_status',file:'material_order_status.html',title:'원재료 발주현황'},
 '구매품 발주':{id:'purchase_order_input',file:'purchase_order_input.html',title:'구매품 발주'},
 '구매품 입고':{id:'purchase_receipt_input',file:'purchase_receipt_input.html',title:'구매품 입고'},
-'외주설계발주등록':{id:'outsourced_design_order_input',file:'outsourced_design_order_input.html',title:'설계외주발주'},
-'외주설계발주입고':{id:'outsourced_design_receipt_input',file:'outsourced_design_receipt_input.html',title:'설계외주입고'},
-'외주설계발주현황':{id:'outsourced_design_order_status',file:'outsourced_design_order_status.html',title:'설계외주현황'},
+'외주설계발주등록':{id:'outsourced_design_order_input',file:'outsourced_design_order_input.html',title:'외주설계발주등록'},
+'외주설계발주입고':{id:'outsourced_design_receipt_input',file:'outsourced_design_receipt_input.html',title:'외주설계발주입고'},
+'외주설계발주현황':{id:'outsourced_design_order_status',file:'outsourced_design_order_status.html',title:'외주설계발주현황'},
 'PartList 복사':{id:'partlist_copy',file:'partlist_copy.html',title:'PartList 복사'},
 '재고조회':{id:'stock_inquiry',file:'stock_inquiry.html',title:'재고조회'},
 '구매품 발주현황':{id:'purchase_order_status',file:'purchase_order_status.html',title:'구매품 발주현황'},
@@ -466,27 +269,25 @@ const pageRegistry={
 '협력업체 인증서등록':{id:'vendor_certificate_input',file:'vendor_certificate_input.html',title:'협력업체 인증서등록'},
 '협력업체 등급현황':{id:'vendor_grade_status',file:'vendor_grade_status.html',title:'협력업체 등급현황'},
 '협력업체 인증현황':{id:'vendor_certificate_status',file:'vendor_certificate_status.html',title:'협력업체 인증현황'},
-'사용메뉴얼':{id:'user_manual',file:'user_manual.html',title:'사용메뉴얼'},
-'수정요청게시판':{id:'mod_request_board',file:'mod_request_board.html',title:'수정요청게시판'},
-'조직도':{id:'org_chart',file:'org_chart.html',title:'조직도'}
+'사용메뉴얼':{id:'user_manual',file:'user_manual.html',title:'사용메뉴얼'}
 };
-const MOD_ICON={'영업관리':'▣','설계관리':'✎','구매관리':'▤','조립관리':'⚙','원가관리':'◴','조직도':'⛶','SQ':'◈','기준정보':'▦','사용메뉴얼':'📖'};
-const MOD_DESC={'영업관리':'수주 · 제작계획 · 설계외주 · 조립외주 · 경비','설계관리':'사내설계 · PARTLIST','구매관리':'원재료 · 구매품 · 가공/외주가공','조립관리':'사내조립 · 검사','원가관리':'제조원가 · 매입/매출 · 재고','SQ':'품질목표 · 심사 · 부적합 · 4M · 계측기 · 문서/도면 · 추적성','기준정보':'공정 · 부품 · 자재 · 설비 · 업체 · 사용자 · 단가','사용메뉴얼':'시스템 사용 안내'};
-const HOME={id:'home',title:'홈',file:null,home:true};
-
-let activeModule='', activeId='', prevId='';
-const openTabs=new Map();  /* id -> page */
-const pinned=new Set(['home']);
-let favs=JSON.parse(localStorage.getItem('ipmes.favs')||'[]');
-const $=s=>document.querySelector(s);
-const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
+let activeModule='', activeSecondary='', activeId='';
+const openTabs=new Map();
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-
-/* ---------- 권한 ---------- */
+function buildModules(){modules.innerHTML=MODULES.filter(m=>{if(m==='사용메뉴얼')return true;const a=window.MES_AUTH;if(!a||!a.session||a.role==='admin'||a.role==='master')return true;
+  return Object.entries(APP[m]?.menus||{}).some(([sec,gs])=>gs.some(g=>g.items.some(n=>a.can(m+'/'+sec+'/'+n,'view'))));
+}).map(m=>`<button class="module ${m===activeModule?'on':''}" onclick="setModule('${m}')">${m}</button>`).join('')}
+function buildSecondary(){
+  const list=APP[activeModule]?.secondary||[];
+  secondaryNav.innerHTML=list.map(x=>`<button class="tool ${x.name===activeSecondary?'on':''}" onclick="setSecondary('${x.name}')"><span class="ico">${x.icon}</span><span>${x.name}</span></button>`).join('');
+}
+/* v23 권한: 조회권한 없는 메뉴 숨김 */
 function canView(path){if((path||'').includes('사용메뉴얼'))return true;const a=window.MES_AUTH;return !a||!a.session?true:a.can(path,'view')}
-function visibleModules(){return MODULES.filter(m=>{if(m==='사용메뉴얼')return true;const a=window.MES_AUTH;if(!a||!a.session||a.role==='admin'||a.role==='master')return true;
-  return Object.entries(APP[m]?.menus||{}).some(([sec,gs])=>gs.some(g=>g.items.some(n=>a.can(m+'/'+sec+'/'+n,'view'))))})}
-function groupsOf(mod,sec){return (APP[mod]?.menus?.[sec]||[]).map(g=>({name:g.name,items:g.items.filter(n=>canView(mod+'/'+sec+'/'+n))})).filter(g=>g.items.length)}
+function currentGroups(){
+  const gs=APP[activeModule]?.menus?.[activeSecondary]||[];
+  return gs.map(g=>({name:g.name,items:g.items.filter(n=>canView(activeModule+'/'+activeSecondary+'/'+n))}))
+           .filter(g=>g.items.length);
+}
 /* 화면파일 → 메뉴경로 (iframe의 mes_db.js가 권한 판단에 사용) */
 window.MES_MENU_OF=function(file){
   for(const [mod,cfg] of Object.entries(APP))
@@ -495,132 +296,46 @@ window.MES_MENU_OF=function(file){
         if(pageRegistry[n]?.file===file)return mod+'/'+sec+'/'+n;
   return null;
 };
-/* 메뉴명 → {mod,sec,group} */
-function locate(name){
-  for(const mod of MODULES)for(const [sec,gs] of Object.entries(APP[mod]?.menus||{}))for(const g of gs)if(g.items.includes(name))return{mod,sec,group:g.name};
-  return null;
+function buildTree(){
+  const gs=currentGroups();
+  if(!gs.length){tree.innerHTML='<div style="padding:16px;color:#7a8793">'+(activeModule?'등록된 하위 메뉴가 없습니다.':'상단에서 업무 메뉴를 선택하세요.')+'</div>';return}
+  tree.innerHTML=gs.map(g=>`<div class="group"><div class="group-title">${g.name}</div>${g.items.map(name=>`<button class="item ${pageRegistry[name]?.id===activeId?'on':''}" onclick="openByName('${name}')">${name}</button>`).join('')}</div>`).join('')
 }
-function flatMenu(){const out=[];for(const mod of visibleModules())for(const sec of (APP[mod]?.secondary||[]))for(const g of groupsOf(mod,sec.name))for(const n of g.items)out.push({name:n,mod,sec:sec.name,group:g.name});return out}
-
-/* ---------- 상단 모듈 메뉴 (메가) ---------- */
-function buildTop(){
-  const ul=$('#topMenu');ul.innerHTML='';
-  visibleModules().forEach(mod=>{
-    const li=el('li',mod===activeModule?'on':'');
-    const b=el('button','',mod);b.onclick=()=>{const was=li.classList.contains('pin');if(was)setModule(mod);else pinModule(mod)};li.appendChild(b);
-    const mega=el('div','mega');let any=false;
-    (APP[mod]?.secondary||[]).forEach(sec=>{
-      const gs=groupsOf(mod,sec.name);if(!gs.length)return;any=true;
-      const col=el('div','col',`<h4>${sec.icon||''} ${esc(sec.name)}</h4>`);
-      gs.forEach(g=>{if(gs.length>1||g.name!==sec.name)col.appendChild(el('h5','',esc(g.name)));
-        g.items.forEach(n=>col.appendChild(menuLink(n)))});
-      mega.appendChild(col);
-    });
-    if(any){li.appendChild(mega);li.onmouseenter=()=>placeMega(li,mega);li.onmouseleave=()=>li.classList.remove('pin')}
-    ul.appendChild(li);
-    if(mod==='원가관리'){const o=el('li',activeId==='org_chart'?'on':'');const ob=el('button','','조직도');ob.onclick=()=>openByName('조직도');o.appendChild(ob);ul.appendChild(o)}
-  });
+function setModule(m){
+  activeModule=m;
+  const secs=APP[m]?.secondary||[];
+  activeSecondary=secs[0]?.name||'';
+  buildModules();buildSecondary();buildTree();
+  statusMsg.textContent=`${m} 메뉴를 선택했습니다.`
 }
-
-/* 메가메뉴가 화면 오른쪽을 넘지 않게 위치 보정 */
-function placeMega(li,mega){
-  if(!mega)return;mega.style.left='0px';mega.style.display='flex';
-  const r=mega.getBoundingClientRect(),vw=window.innerWidth-12;
-  if(r.right>vw)mega.style.left=(vw-r.right)+'px';
-  const lr=li.getBoundingClientRect();if(lr.left+parseFloat(mega.style.left)<12)mega.style.left=(12-lr.left)+'px';
-  mega.style.display='';
-}
-/* ---------- 메뉴 링크 ---------- */
-function buildSide(){}
-/* v74: 메가메뉴 표시명. 화면 고유키(탭·권한·즐겨찾기)는 그대로 두고 메뉴 글자만 짧게 */
-const MENU_LABEL={
-  '수주등록':'수주등록','수주현황':'수주현황','금형진척현황':'수주진척현황',
-  '제작계획등록':'제작계획등록','제작계획현황':'제작진행현황',
-  '외주설계발주등록':'설계외주발주','외주설계발주입고':'설계외주입고','외주설계발주현황':'설계외주현황',
-  'SET외주제작등록':'조립외주발주','SET발주입고':'조립외주입고','SET발주현황':'조립외주현황',
-  '경비등록':'경비등록','경비현황':'경비현황'};
-function menuLink(n){
-  const p=pageRegistry[n];const on=p&&p.id===activeId;
-  const a=el('a',on?'active':'',`<span title="${esc(n)}">${esc(MENU_LABEL[n]||n)}</span><span class="star ${favs.includes(n)?'on':''}" title="즐겨찾기">★</span>`);
-  a.href='#';a.dataset.name=n;a.onclick=e=>{e.preventDefault();openByName(n);document.querySelectorAll('.top-menu>li.pin').forEach(x=>x.classList.remove('pin'))};
-  a.querySelector('.star').onclick=e=>{e.stopPropagation();e.preventDefault();toggleFav(n)};
-  a.onmouseover=()=>{if(p&&p.file)prefetch(p.file+(p.file.includes('?')?'&':'?')+'v='+APP_VER)};
-  return a;
-}
-function setModule(m){activeModule=m;buildTop();statusMsg.textContent=`${m} 메뉴를 선택했습니다.`}
-function pinModule(m){setModule(m);const li=[...document.querySelectorAll('#topMenu>li')].find(x=>x.querySelector('button').textContent===m);if(li){li.classList.add('pin');placeMega(li,li.querySelector('.mega'))}}
-
-/* ---------- 즐겨찾기 ---------- */
-function toggleFav(n){
-  favs=favs.includes(n)?favs.filter(x=>x!==n):[...favs,n];localStorage.setItem('ipmes.favs',JSON.stringify(favs));
-  document.querySelectorAll(`.mega a[data-name="${n}"] .star`).forEach(s=>s.classList.toggle('on',favs.includes(n)));
-  renderFav();const h=document.getElementById('view_home');if(h)h.innerHTML=homeHTML();
-}
-function renderFav(){
-  const m=$('#favMenu');m.innerHTML='<div class="hd">즐겨찾기</div>'+(favs.length?'':'<div class="hd">상단 메뉴 항목의 ★ 를 눌러 추가</div>');
-  favs.forEach(n=>{const loc=locate(n);const b=el('button','',`<span>${esc(n)}</span><small style="margin-left:auto;color:var(--ink-3)">${loc?esc(loc.mod+' › '+loc.sec):''}</small>`);b.onclick=()=>{openByName(n);closeDd()};m.appendChild(b)});
-}
-
-/* ---------- 페이지 열기 ---------- */
-function slugify(name){return 'pending_'+Math.abs([...name].reduce((a,c)=>((a<<5)-a+c.charCodeAt(0))|0,0))}
-function openByName(name){
-  let p=pageRegistry[name];if(!p){p={id:slugify(name),title:name,file:null};pageRegistry[name]=p}
-  const loc=locate(name);if(loc){p.menu=name;p.mod=loc.mod;p.sec=loc.sec;if(loc.mod!==activeModule){activeModule=loc.mod;buildTop()}}
-  openPage(p);
-}
-function openPage(p){if(!openTabs.has(p.id))openTabs.set(p.id,p);if(activeId!==p.id)prevId=activeId;activeId=p.id;renderTabs();renderStage();buildTop();renderCrumb();saveTabs();
-  statusMsg.textContent=p.home?'홈':p.file?`${p.title} 화면을 열었습니다.`:`${p.title} 화면은 준비 중입니다.`}
-function activate(id){if(activeId!==id)prevId=activeId;activeId=id;const p=openTabs.get(id);if(p&&p.mod)activeModule=p.mod;buildTop();renderTabs();renderStage();renderCrumb();saveTabs()}
-function renderCrumb(){
-  const p=openTabs.get(activeId);const c=$('#crumb');
-  if(!p){c.innerHTML='<span>IPTK MES</span>';return}
-  c.innerHTML=`<span>IPTK MES</span>${p.mod?`<span>›</span><span>${esc(p.mod)}</span><span>›</span><span>${esc(p.sec)}</span>`:''}<span>›</span><b>${esc(p.title)}</b><span class="right"><span>${p.file?esc(p.file):''}</span></span>`;
-}
-
-/* ---------- 탭 ---------- */
-function renderTabs(){
-  const bar=$('#tabs');bar.innerHTML='';
-  openTabs.forEach(p=>{
-    const pin=pinned.has(p.id);
-    const d=el('div','tab'+(p.id===activeId?' active':''),`<span>${pin?'📌 ':''}${esc(p.title)}</span>${pin?'':'<span class="x" title="닫기">×</span>'}`);
-    d.onclick=()=>activate(p.id);d.onauxclick=e=>{if(e.button===1)closeTab(p.id)};
-    d.oncontextmenu=e=>{e.preventDefault();showCtx(e,p.id)};
-    const x=d.querySelector('.x');if(x)x.onclick=e=>{e.stopPropagation();closeTab(p.id)};
-    bar.appendChild(d);if(p.id===activeId)requestAnimationFrame(()=>d.scrollIntoView&&d.scrollIntoView({inline:'nearest',block:'nearest'}));
-  });
-}
-function closeTab(id,e){e?.stopPropagation();if(pinned.has(id))return;
-  const ids=[...openTabs.keys()],idx=ids.indexOf(id);if(idx<0)return;
-  openTabs.delete(id);VREADY.delete(id);document.getElementById('view_'+id)?.remove();
-  if(activeId===id){activeId=ids[idx+1]||ids[idx-1]||'';if(!openTabs.has(activeId))activeId=[...openTabs.keys()][0]||''}
-  renderTabs();renderStage();buildTop();renderCrumb();saveTabs()}
-const ctx=$('#tabCtx');let ctxTab=null;
-function showCtx(e,id){ctxTab=id;ctx.style.left=e.clientX+'px';ctx.style.top=e.clientY+'px';ctx.classList.add('open')}
-ctx.querySelectorAll('button').forEach(b=>b.onclick=()=>{
-  const ids=[...openTabs.keys()],i=ids.indexOf(ctxTab),p=openTabs.get(ctxTab);ctx.classList.remove('open');if(!p)return;
-  switch(b.dataset.act){
-    case'refresh':{const v=document.getElementById('view_'+p.id);if(v&&v.tagName==='IFRAME'){VREADY.delete(p.id);v.contentWindow.location.reload()}else if(v&&p.home)v.innerHTML=homeHTML();break}
-    case'pin':if(p.id!=='home'){pinned.has(p.id)?pinned.delete(p.id):pinned.add(p.id)}renderTabs();break;
-    case'others':ids.forEach(x=>{if(x!==p.id)closeTab(x)});break;
-    case'right':ids.slice(i+1).forEach(x=>closeTab(x));break;
-    case'close':closeTab(p.id);break;
-  }
-});
-$('#tabCloseAll').onclick=()=>[...openTabs.keys()].forEach(x=>closeTab(x));
-$('#tabPrev').onclick=()=>{const ids=[...openTabs.keys()],i=ids.indexOf(activeId);if(i>0)activate(ids[i-1])};
-$('#tabNext').onclick=()=>{const ids=[...openTabs.keys()],i=ids.indexOf(activeId);if(i<ids.length-1)activate(ids[i+1])};
-
-/* ---------- 스테이지 (iframe) ---------- */
+function setSecondary(s){activeSecondary=s;buildSecondary();buildTree();statusMsg.textContent=`${activeModule} / ${s}`}
+function slugify(name){const map={'수주등록':'sale_order_input','수주현황':'sale_order_status','구매품 발주':'purchase_order_input','구매품 입고':'purchase_receipt_input','구매품 발주현황':'purchase_order_status','가공계획등록':'machining_plan_input','외주가공 발주':'outsourcing_order_input','외주가공 입고':'outsourcing_receipt_input','외주가공 입고확정':'outsourcing_receipt_confirmation','외주가공발주현황':'outsourcing_order_status','가공구매 진척현황':'machining_purchase_progress','사용자정보':'user_info','검사구분':'inspection_category','직급정보':'position_info','자재단가변동등록':'material_price_change_input','자재단가변동현황':'material_price_change_status','공정단가변동등록':'process_price_change_input','공정단가변동현황':'process_price_change_status'};return map[name]||'pending_'+Math.abs([...name].reduce((a,c)=>((a<<5)-a+c.charCodeAt(0))|0,0))}
+function openByName(name){let p=pageRegistry[name];if(!p){const id=slugify(name);p={id,title:name,file:null};pageRegistry[name]=p}openPage(p)}
+function openPage(p){if(!openTabs.has(p.id))openTabs.set(p.id,p);activeId=p.id;renderTabs();renderStage();buildTree();statusMsg.textContent=p.file?`${p.title} 화면을 열었습니다.`:`${p.title} 화면은 사진 등록 대기중입니다.`}
+function renderTabs(){tabs.innerHTML=[...openTabs.values()].map(p=>`<div class="tab ${p.id===activeId?'on':''}" onclick="activate('${p.id}')"><span class="title">${p.title}</span><button class="x" onclick="closeTab('${p.id}',event)">×</button></div>`).join('');requestAnimationFrame(()=>tabs.querySelector('.tab.on')?.scrollIntoView({inline:'nearest'}))}
+/* 화면 iframe에 공용 우클릭 메뉴/삭제확인 스크립트 자동 주입
+   (각 HTML을 수정하지 않아도 되며, 이미 들어있는 화면은 건너뜀) */
 function injectCtx(f){
  try{
   const doc=f.contentDocument;
   if(!doc||!doc.body)return;
   if(doc.__mesCtxInjected||doc.querySelector('script[src*="mes_ctx.js"]'))return;
   doc.__mesCtxInjected=1;
-  const s=doc.createElement('script');s.src='mes_ctx.js?v='+APP_VER;doc.body.appendChild(s);
- }catch(e){}
+  const s=doc.createElement('script');
+  s.src='mes_ctx.js?v='+APP_VER;   /* 삭제 확인 다이얼로그 */
+  doc.body.appendChild(s);
+  /* v64: 외주 물류이동(보유처·체류일) 모듈 — 해당 화면에서만 스스로 동작한다 */
+  if(!doc.querySelector('script[src*="mes_move.js"]')){
+   const m=doc.createElement('script');
+   m.src='mes_move.js?v='+APP_VER;
+   doc.body.appendChild(m);
+  }
+ }catch(e){/* 교차출처(file://)면 무시 — 이때는 각 HTML에 직접 넣어야 함 */}
 }
-const VREADY=new Set();let vwaitTimer=null,pendingId=null;
+/* v44: 새 화면은 DB 로딩이 끝난 뒤 한 번에 보여준다.
+   (이전에는 빈 화면 → 내장 예시자료 → DB자료 순으로 두세 번 바뀌어 보였다) */
+const VREADY=new Set();
+let vwaitTimer=null,pendingId=null;
 function badgeOff(){try{return localStorage.getItem('mes_badge')==='off'}catch(e){return false}}
 function viewReady(f){
   if(!f||f.tagName!=='IFRAME')return true;
@@ -634,106 +349,133 @@ function viewReady(f){
 }
 function makeView(p){
   if(document.getElementById('view_'+p.id))return;
-  if(p.home){const d=el('div','placeholder',homeHTML());d.id='view_home';stage.appendChild(d);return}
   if(p.file){
     const f=document.createElement('iframe');f.id='view_'+p.id;
     f.src=p.file+(p.file.includes('?')?'&':'?')+'v='+APP_VER;
     f.addEventListener('load',()=>injectCtx(f));
     stage.appendChild(f);
   }else{
-    const d=el('div','placeholder',`<div class="ph"><h1>${esc(p.title)}</h1><p>${esc(p.mod||'')} ${p.sec?'› '+esc(p.sec):''}</p><div class="card" style="max-width:520px">이 화면은 아직 만들어지지 않았습니다.<br><br><code>${esc(p.id)}.html</code> 파일을 만들면 이 자리에 표시됩니다.</div></div>`);
-    d.id='view_'+p.id;stage.appendChild(d);
+    const d=document.createElement('div');d.id='view_'+p.id;d.className='placeholder';
+    d.innerHTML=`<div><b>${esc(p.title)}</b><br><br>해당 업무 화면 사진을 주시면 <code>${p.id}.html</code> 형태로 제작해 이 위치에 연결합니다.</div>`;
+    stage.appendChild(d);
   }
 }
 function swapTo(id){
-  clearTimeout(vwaitTimer);pendingId=null;VREADY.add(id);vwait.classList.remove('on');
+  clearTimeout(vwaitTimer);pendingId=null;VREADY.add(id);
+  vwait.classList.remove('on');
   stage.querySelectorAll('iframe,.placeholder').forEach(x=>x.classList.toggle('on',x.id==='view_'+id));
 }
 function renderStage(){
   for(const p of openTabs.values())makeView(p);
-  const v=document.getElementById('view_'+activeId);
-  if(!v){vwait.classList.remove('on');stage.querySelectorAll('iframe,.placeholder').forEach(x=>x.classList.remove('on'));return}
-  if(VREADY.has(activeId)||viewReady(v)){swapTo(activeId);return}
-  pendingId=activeId;vwait.classList.add('on');const t0=Date.now();clearTimeout(vwaitTimer);
-  (function poll(){if(pendingId!==activeId)return;const f=document.getElementById('view_'+activeId);
-    if(!f||viewReady(f)||Date.now()-t0>3000){swapTo(activeId);return}vwaitTimer=setTimeout(poll,60)})();
+  const el=document.getElementById('view_'+activeId);
+  if(!el){vwait.classList.remove('on');return}
+  if(VREADY.has(activeId)||viewReady(el)){swapTo(activeId);return}
+  /* 아직 준비 전 — 이전 화면을 그대로 두고 대기 표시 */
+  pendingId=activeId;vwait.classList.add('on');
+  const t0=Date.now();
+  clearTimeout(vwaitTimer);
+  (function poll(){
+    if(pendingId!==activeId)return;
+    const f=document.getElementById('view_'+activeId);
+    if(!f||viewReady(f)||Date.now()-t0>3000){swapTo(activeId);return}
+    vwaitTimer=setTimeout(poll,60);
+  })();
 }
-
-/* ---------- 홈 ---------- */
-function homeHTML(){
-  const mods=visibleModules().filter(m=>m!=='사용메뉴얼');
-  const quick=['금형진척현황','수주등록','수주현황','제작계획등록','설계계획등록','가공계획등록','구매품 발주','조립실적등록'];
-  return `<div class="home">
-  <div class="card" style="grid-column:span 8"><h3>업무 모듈 <span>상단 메뉴에 마우스를 올리면 세부 메뉴가 열립니다</span></h3>
-   <div class="modcard">${mods.map(m=>`<button onclick="pinModule('${m}')"><b>${MOD_ICON[m]||'▪'} ${esc(m)}</b><small>${esc(MOD_DESC[m]||'')}</small></button>`).join('')}</div></div>
-  <div class="card" style="grid-column:span 4"><h3>즐겨찾기 <span>★ ${favs.length}</span></h3>
-   <div class="favlist">${favs.length?favs.map(n=>{const l=locate(n);return `<button onclick="openByName('${esc(n)}')"><span>${esc(n)}</span><small>${l?esc(l.mod):''}</small></button>`}).join(''):'<small style="color:var(--ink-3)">상단 메뉴 항목의 ★ 를 눌러 추가</small>'}</div></div>
-  <div class="card" style="grid-column:span 8"><h3>바로가기</h3>
-   <div class="quick">${quick.filter(n=>{const l=locate(n);return l&&canView(l.mod+'/'+l.sec+'/'+n)}).map(n=>`<button onclick="openByName('${esc(n)}')"><span style="font-size:18px">${MOD_ICON[locate(n).mod]}</span>${esc(n)}</button>`).join('')}</div></div>
-  <div class="card" style="grid-column:span 4"><h3>안내</h3>
-   <div style="color:var(--ink-2);line-height:1.7">· <b>Ctrl+K</b> 메뉴 검색<br>· 좌측 상단 <b>⌂ 홈</b> 클릭: 이 홈 화면으로 이동<br>· 상단 메뉴(영업관리 등)에 마우스를 올리면 세부 메뉴가 펼쳐지고, <b>클릭</b>하면 마우스를 떼도 펼쳐진 채로 고정됩니다 (다시 클릭하면 해제)<br>· 열린 화면은 상단에 <b>탭</b>으로 쌓입니다. 탭을 <b>마우스 오른쪽 클릭</b>하면 고정(실수로 닫히지 않게) · 새로고침 · 닫기 메뉴가 나옵니다<br>· 탭을 <b>마우스 휠 버튼</b>으로 누르면 바로 닫힙니다<br>· <button onclick="openByName('사용메뉴얼')" style="color:var(--blue)">사용메뉴얼 열기</button><br>· <button onclick="openByName('수정요청게시판')" style="color:var(--blue)">수정요청게시판 열기</button></div></div>
-  </div>`;
-}
-
-/* ---------- 메뉴 검색 ---------- */
-const sIn=$('#menuSearch'),sRes=$('#searchRes');let sel=0;
-sIn.oninput=()=>{
-  const q=sIn.value.trim().toLowerCase();if(!q){sRes.classList.remove('open');return}
-  const hits=flatMenu().filter(m=>m.name.toLowerCase().includes(q)||m.sec.toLowerCase().includes(q)||m.mod.toLowerCase().includes(q)).slice(0,14);sel=0;
-  sRes.innerHTML=hits.length?hits.map((m,i)=>`<button data-name="${esc(m.name)}" class="${i===0?'sel':''}"><span>${esc(m.name)}</span><small>${esc(m.mod+' › '+m.sec)}</small></button>`).join(''):'<button disabled><small>검색 결과 없음</small></button>';
-  sRes.querySelectorAll('button[data-name]').forEach(b=>b.onclick=()=>pick(b.dataset.name));sRes.classList.add('open');
-};
-function pick(n){openByName(n);sIn.value='';sRes.classList.remove('open');sIn.blur()}
-sIn.onkeydown=e=>{
-  const items=[...sRes.querySelectorAll('button[data-name]')];if(!items.length)return;
-  if(e.key==='ArrowDown')sel=(sel+1)%items.length;else if(e.key==='ArrowUp')sel=(sel-1+items.length)%items.length;
-  else if(e.key==='Enter'){pick(items[sel].dataset.name);return}else if(e.key==='Escape'){sRes.classList.remove('open');sIn.blur();return}else return;
-  e.preventDefault();items.forEach((b,i)=>b.classList.toggle('sel',i===sel));
-};
-document.addEventListener('keydown',e=>{
-  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();sIn.focus();sIn.select()}
-  if(e.key==='Escape'){closeDd();ctx.classList.remove('open');document.querySelectorAll('.top-menu>li.pin').forEach(x=>x.classList.remove('pin'))}
-});
-
-/* ---------- 드롭다운 ---------- */
-function closeDd(){document.querySelectorAll('.dd.open').forEach(d=>d.classList.remove('open'))}
-document.querySelectorAll('.dd>button').forEach(b=>b.onclick=e=>{e.stopPropagation();const d=b.parentElement;const was=d.classList.contains('open');closeDd();if(!was)d.classList.add('open')});
-document.addEventListener('click',e=>{
-  if(!e.target.closest('.dd'))closeDd();if(!e.target.closest('.ctx'))ctx.classList.remove('open');if(!e.target.closest('.search'))sRes.classList.remove('open');if(e.target.isConnected&&!e.target.closest('.top-menu'))document.querySelectorAll('.top-menu>li.pin').forEach(x=>x.classList.remove('pin'));
-});
-$('#brand').onclick=()=>openPage(HOME);
-$('#btnReq').onclick=()=>openByName('수정요청게시판');
-/* 화면(iframe)에서 참조: 메뉴구조 · 현재 탭 */
-window.IPMES={APP,pageRegistry,get active(){return openTabs.get(activeId)||null},get prev(){return openTabs.get(prevId)||null}};
-
-/* ---------- 사용자 (mes_auth.js 연동) ---------- */
-function syncUser(){
-  const a=window.MES_AUTH;const name=a?.name||'게스트';const role=a?.role==='master'?'마스터':a?.role==='admin'?'관리자':a?.session?'사용자':'미로그인';
-  $('#uName').textContent=name;$('#uRole').textContent=role;$('#uAv').textContent=String(name)[0].toUpperCase();$('#uHd').textContent=a?.session?.user?.email||'IPTK MES';
-}
-$('#btnPw').onclick=()=>{closeDd();document.getElementById('pwchg')?.click()};
-$('#btnLogout').onclick=()=>{closeDd();const b=document.getElementById('lgout');if(b)b.click();else{try{localStorage.removeItem('ipmes.session')}catch(e){}location.reload()}};
-
-/* ---------- 선반입 ---------- */
+function activate(id){activeId=id;renderTabs();renderStage();buildTree()}
+/* v36: 선반입(prefetch) — 클릭 전에 화면 파일을 캐시에 올려 대기시간을 줄인다 */
 const _pf=new Set();
 function prefetch(url){if(!url||_pf.has(url))return;_pf.add(url);
   try{const l=document.createElement('link');l.rel='prefetch';l.href=url;l.as='document';document.head.appendChild(l)}catch(e){}
   try{fetch(url,{cache:'force-cache'}).catch(()=>{})}catch(e){}}
+tree.addEventListener('mouseover',e=>{const b=e.target.closest('.item');if(!b)return;
+  const p=pageRegistry[b.textContent.trim()];if(p&&p.file)prefetch(p.file+'?v='+APP_VER)});
 (window.requestIdleCallback||(f=>setTimeout(f,1200)))(()=>{
-  ['mes_db.js?v='+APP_VER,'mes_ctx.js?v='+APP_VER,'mes_lookup.js?v='+APP_VER,'mes_paste.js?v='+APP_VER,'mes_auth.js?v='+APP_VER].forEach(prefetch);
-  let i=0;const hot=['sale_order_status.html','purchase_order_input.html','purchase_order_status.html','material_order_input.html','outsourcing_order_input.html','vendor_management.html','status_board.html'];
+  ['mes_db.js?v='+APP_VER,'mes_ctx.js?v='+APP_VER,'mes_lookup.js?v='+APP_VER,'mes_paste.js?v='+APP_VER,'mes_auth.js?v='+APP_VER,'mes_move.js?v='+APP_VER].forEach(prefetch);
+  let i=0;const hot=['sale_order_status.html','purchase_order_input.html','purchase_order_status.html',
+    'material_order_input.html','outsourcing_order_input.html','vendor_management.html','status_board.html'];
   const step=()=>{if(i>=hot.length)return;prefetch(hot[i++]+'?v='+APP_VER);setTimeout(step,600)};step()});
+function closeTab(id,e){e?.stopPropagation();const ids=[...openTabs.keys()],idx=ids.indexOf(id);openTabs.delete(id);VREADY.delete(id);document.getElementById('view_'+id)?.remove();if(activeId===id){activeId=ids[idx+1]||ids[idx-1]||'';if(!openTabs.has(activeId))activeId=[...openTabs.keys()][0]||''}renderTabs();renderStage();buildTree()}
+function closeActive(){if(activeId)closeTab(activeId)}
+function tick(){const d=new Date();now.textContent=d.toLocaleString('sv-SE',{hour12:false}).replace(',','')}
+buildModules();buildSecondary();buildTree();renderTabs();renderStage();tick();setInterval(tick,1000);
 
-function tick(){now.textContent=new Date().toLocaleString('ko-KR',{dateStyle:'medium',timeStyle:'medium'})}
-verTxt.textContent='APP v'+APP_VER;
-/* 새로고침 시 열린 탭·현재 화면 복원 */
-const TABKEY='ipmes.tabs';
-const keyOf=p=>Object.keys(pageRegistry).find(k=>pageRegistry[k]===p);
-function saveTabs(){try{const names=[...openTabs.values()].filter(p=>!p.home&&p.file).map(keyOf).filter(Boolean);const a=openTabs.get(activeId);sessionStorage.setItem(TABKEY,JSON.stringify({names,active:a&&!a.home?keyOf(a):''}))}catch(e){}}
-function restoreTabs(raw){try{const st=JSON.parse(raw||'null');if(!st||!st.names||!st.names.length)return;st.names.forEach(n=>{if(pageRegistry[n]&&pageRegistry[n].file)openByName(n)});if(st.active&&pageRegistry[st.active])openByName(st.active);else openPage(HOME)}catch(e){}}
-const _tabs=(()=>{try{return sessionStorage.getItem('ipmes.tabs')}catch(e){return null}})();buildTop();renderFav();syncUser();openPage(HOME);restoreTabs(_tabs);tick();setInterval(tick,1000);
+/* ── v46 화면확대(Ctrl+휠) 대응 ─────────────────────────────
+ * 확대하면 상단 메뉴바가 한 줄에 다 안 들어가 잘려 보였다.
+ * 메뉴가 아랫줄로 접히도록 바꾸고, 접힌 높이만큼 --top1/--top2 를
+ * 실제 높이로 갱신해 좌측 트리·작업영역이 겹치지 않게 한다. */
+(function(){
+  var root=document.documentElement;
+  var h1=document.querySelector('.top1'), h2=document.querySelector('.top2');
+  if(!h1||!h2)return;
+  var last1=0,last2=0,queued=false;
+  function measure(){
+    queued=false;
+    var a=Math.ceil(h1.getBoundingClientRect().height);
+    var b=Math.ceil(h2.getBoundingClientRect().height);
+    if(a&&Math.abs(a-last1)>=1){last1=a;root.style.setProperty('--top1',a+'px')}
+    if(b&&Math.abs(b-last2)>=1){last2=b;root.style.setProperty('--top2',b+'px')}
+  }
+  /* 관측 콜백 안에서 곧바로 스타일을 바꾸면 ResizeObserver 경고가 난다 → 다음 프레임에 한 번만 */
+  function sync(){if(queued)return;queued=true;
+    (window.requestAnimationFrame||setTimeout)(measure)}
+  if(window.ResizeObserver){
+    var ro=new ResizeObserver(sync);
+    ro.observe(h1);ro.observe(h2);
+  }
+  window.addEventListener('resize',sync);
+  document.addEventListener('DOMContentLoaded',measure);
+  /* 메뉴 버튼이 새로 그려질 때(모듈/2차메뉴 전환)도 반영 */
+  var mo=new MutationObserver(function(){requestAnimationFrame(sync)});
+  mo.observe(h1,{childList:true,subtree:true});
+  mo.observe(h2,{childList:true,subtree:true});
+  measure();setTimeout(measure,300);
+})();
+
+/* v45: 좌측 메뉴창 폭 조절(드래그) */
+(function(){
+  var KEY='mes_left_w', MIN=180, MAX=700, DEF=300;
+  var root=document.documentElement, sp=document.getElementById('splitter');
+  if(!sp)return;
+  function apply(w){root.style.setProperty('--left',w+'px')}
+  function save(w){try{localStorage.setItem(KEY,String(w))}catch(e){}}
+  function load(){try{var v=parseInt(localStorage.getItem(KEY),10);return isNaN(v)?0:v}catch(e){return 0}}
+  function restore(){
+    if(window.innerWidth<=680){root.style.removeProperty('--left');return}
+    var w=load(), lim=Math.min(MAX,Math.max(MIN,window.innerWidth-320));
+    if(w>=MIN)apply(Math.min(w,lim));
+  }
+  restore();
+  var drag=false;
+  sp.addEventListener('pointerdown',function(e){
+    drag=true;
+    try{sp.setPointerCapture(e.pointerId)}catch(_){}
+    sp.classList.add('drag');document.body.classList.add('resizing');
+    e.preventDefault();
+  });
+  sp.addEventListener('pointermove',function(e){
+    if(!drag)return;
+    var lim=Math.min(MAX,window.innerWidth-320);
+    var w=Math.round(e.clientX);
+    if(w<MIN)w=MIN; if(w>lim)w=lim;
+    apply(w);
+  });
+  function end(e){
+    if(!drag)return; drag=false;
+    try{sp.releasePointerCapture(e.pointerId)}catch(_){}
+    sp.classList.remove('drag');document.body.classList.remove('resizing');
+    var w=parseInt(getComputedStyle(root).getPropertyValue('--left'),10)||DEF;
+    save(w);
+    try{statusMsg.textContent='메뉴 창 폭을 '+w+'px 로 조절했습니다.'}catch(_){}
+  }
+  sp.addEventListener('pointerup',end);
+  sp.addEventListener('pointercancel',end);
+  sp.addEventListener('dblclick',function(){apply(DEF);save(DEF);
+    try{statusMsg.textContent='메뉴 창 폭을 기본값(300px)으로 되돌렸습니다.'}catch(_){}});
+  window.addEventListener('resize',restore);
+})();
+
 </script>
 <script>document.write('<script src="mes_auth.js?v='+APP_VER+'"><\/script>')</script>
-<script>window.addEventListener("mes-auth-ready",()=>{try{VREADY.clear();buildTop();renderFav();syncUser();const h=document.getElementById('view_home');if(h)h.innerHTML=homeHTML();renderStage()}catch(e){}});</script>
+<script>window.addEventListener("mes-auth-ready",()=>{try{VREADY.clear();buildModules();buildSecondary();buildTree();renderStage()}catch(e){}});</script>
 </body>
 </html>
