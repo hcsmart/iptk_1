@@ -38,7 +38,7 @@ td.route{background:#8fdc6b;text-align:center;font-weight:700;color:#20461a}
     <div class="box"><div class="box-title">협력업체리스트</div>
       <div class="searchbar"><input id="venQ" placeholder="Enter text to s"><button onclick="findVendor()">찾기</button><button onclick="clearVendor()">지우기</button></div>
       <div class="tablewrap"><table><thead><tr><th>협력업체</th></tr></thead><tbody id="venBody"></tbody></table></div></div>
-    <div class="box"><div class="box-title">부품별 가공공정 리스트</div><div class="tablewrap"><table style="min-width:640px">
+    <div class="box"><div class="box-title">부품별 가공공정 리스트</div><div class="tablewrap"><table style="min-width:900px">
       <colgroup><col style="width:36px"><col style="width:80px"><col style="width:90px"><col style="width:56px"><col style="width:56px"><col style="width:56px"><col style="width:56px"><col style="width:56px"><col style="width:56px"><col style="width:56px"><col style="width:56px"><col style="width:56px"></colgroup>
       <thead><tr><th></th><th>부품코드</th><th>부품명</th><th>공정1</th><th>공정2</th><th>공정3</th><th>공정4</th><th>공정5</th><th>공정6</th><th>공정7</th><th>공정8</th><th>공정9</th></tr></thead>
       <tbody id="routeBody"></tbody></table></div></div>
@@ -58,12 +58,16 @@ const OWNER=(function(){try{return (window.MES_AUTH||window.parent.MES_AUTH)?.na
 const JOBS=[];
 let VENDORS=[];  /* 협력업체는 마스터에서 로드 (mes_lookup.js) */
 const PROCNAME={};   /* v39: 공정마스터에서 로드 */
+/* v86: 부품별 가공공정 리스트를 공정코드 대신 공정명으로 표기 */
+const _esc=v=>String(v??'').replace(/[&<>"]/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[x]));
+const stepCode=s=>String((s&&typeof s==='object')?(s.process_code||s.code||''):(s??'')).trim();
+const procName=c=>{const k=stepCode(c);if(!k)return'';return PROCNAME[k]||PROCNAME[k.toUpperCase()]||k};
 const ROUTES=[];     /* v39: 선택 제번의 가공공정(machining_plan_parts / PartList)에서 로드 */
 const REQ=[];
 let jobIdx=0,venIdx=6,jobView=[...JOBS],venView=[...VENDORS];
 function renderJobs(){jobBody.innerHTML=jobView.map((j,i)=>`<tr class="${i===jobIdx?'sel':''}" onclick="pickJob(${i})"><td>${j.job}</td><td>${j.item}</td><td class="c">${j.proc}</td><td class="c">${j.procName}</td></tr>`).join('');countText.textContent=`제번 ${jobView.length}건 / 요청 ${REQ.length}건`}
 function renderVendors(){venBody.innerHTML=venView.map((v,i)=>`<tr class="${i===venIdx?'sel':''}" onclick="pickVendor(${i})"><td>${v}</td></tr>`).join('')}
-function renderRoutes(){routeBody.innerHTML=ROUTES.map((r,i)=>`<tr><td class="c"><input type="checkbox" data-i="${i}"></td><td>${r.part}</td><td>${r.name}</td>${r.steps.map(s=>s?`<td class="route">${s}</td>`:'<td></td>').join('')}</tr>`).join('')}
+function renderRoutes(){routeBody.innerHTML=ROUTES.map((r,i)=>`<tr><td class="c"><input type="checkbox" data-i="${i}"></td><td>${_esc(r.part)}</td><td>${_esc(r.name)}</td>${r.steps.map(s=>{const c=stepCode(s);return c?`<td class="route" title="${_esc(c)}">${_esc(procName(c))}</td>`:'<td></td>'}).join('')}</tr>`).join('')}
 function renderReq(){reqBody.innerHTML=REQ.map((r,i)=>`<tr><td class="c">${i+1}</td><td class="c"><input type="checkbox" data-no="${r.no}"></td><td>${r.vendor}</td><td>${r.job}</td><td>${r.item}</td><td class="c">${r.proc}</td><td class="c">${r.procName}</td><td>${r.part}</td><td>${r.partName}</td><td class="c">${r.mp}</td><td>${r.mpName}</td><td class="c"><input value="${r.qty??1}" style="width:52px;text-align:right;padding:1px 4px;border:1px solid #b7c2cb" onclick="event.stopPropagation()" onchange="setQty(${r.no},this.value)"></td><td class="c">${r.odate}</td><td class="c">${r.rdate}</td><td>${r.remark}</td><td class="c">${r.writer}</td></tr>`).join('');countText.textContent=`제번 ${jobView.length}건 / 요청 ${REQ.length}건`}
 /* v85: 발주수량 — 분할반출·부분입고의 기준값 */
 function setQty(no,v){const r=REQ.find(x=>x.no===no);if(!r)return;
@@ -118,7 +122,7 @@ async function _waitDB(){for(let i=0;i<60&&!window.MESDB;i++)await new Promise(r
  if(window.MESDB&&MESDB.ready){try{await MESDB.ready}catch(e){}}}
 async function loadProcNames(){
  try{const ps=await MESDB.table('processes').select('select=process_code,process_name');
-  ps.forEach(p=>{PROCNAME[p.process_code]=p.process_name||''})}catch(e){}
+  ps.forEach(p=>{const c=String(p.process_code||'').trim();if(!c)return;PROCNAME[c]=p.process_name||'';PROCNAME[c.toUpperCase()]=p.process_name||''})}catch(e){}
 }
 async function loadJobs(){
  await _waitDB();if(!_online()){msg('DB 미연결 - 제번리스트를 불러올 수 없습니다.');return}
@@ -141,14 +145,14 @@ async function loadRoutes(){
     .select(`select=*&job_no=eq.${encodeURIComponent(j.job)}&order=row_no`);
   if(rs.length){
    rs.forEach(r=>ROUTES.push({part:r.part_no,name:r.part_name||'',
-     steps:(Array.isArray(r.steps)?r.steps:[]).slice(0,9)}));
+     steps:(Array.isArray(r.steps)?r.steps:[]).map(stepCode).filter(Boolean).slice(0,9)}));
   }else{
    /* 2순위: PartList 부품 × 기준공정(가공 기준공정관리 1번) */
    const [pm,std]=await Promise.all([
      MESDB.table('partlist_materials').select(`select=part_no,part_name,process_code&job_no=eq.${encodeURIComponent(j.job)}&order=row_no`),
      MESDB.table('machining_standard_routes').select('select=*&order=standard_process_no&limit=1')]);
    const steps=(std&&std[0]&&Array.isArray(std[0].steps))?std[0].steps:[];
-   pm.forEach(r=>ROUTES.push({part:r.part_no,name:r.part_name||'',steps:steps.slice(0,9)}));
+   pm.forEach(r=>ROUTES.push({part:r.part_no,name:r.part_name||'',steps:steps.map(stepCode).filter(Boolean).slice(0,9)}));
    if(pm.length&&!steps.length)msg('기준공정(가공 기준공정관리)이 없어 공정이 비어 있습니다.');
   }
   renderRoutes();
@@ -157,15 +161,15 @@ async function loadRoutes(){
 }
 window.MES={search,save,exportCsv,setMessage:msg,reload:loadJobs};
 </script>
-<script src="mes_sample.js?v=85"></script><script src="mes_scene.js?v=85"></script><script src="mes_demo.js?v=85"></script><script src="mes_db.js?v=85"></script>
+<script src="mes_sample.js?v=86"></script><script src="mes_scene.js?v=86"></script><script src="mes_demo.js?v=86"></script><script src="mes_db.js?v=86"></script>
 <script>
 /* v39: JOBS/ROUTES 는 page_state 스냅샷이 아니라 실데이터에서 매번 로드한다.
    (스냅샷에 갇혀 신규 수주가 안 뜨던 문제) */
 REQ.length=0;if(typeof renderReq==='function')renderReq();
 loadJobs();
 </script>
-<script src="mes_ctx.js?v=85"></script>
-<script src="mes_lookup.js?v=85"></script>
+<script src="mes_ctx.js?v=86"></script>
+<script src="mes_lookup.js?v=86"></script>
 <script>
 /* 협력업체 목록: 하드코딩 → 마스터 직결 */
 (async function loadVendors(){
@@ -185,8 +189,8 @@ window.MESLOOK_RELOAD_VENDORS=async()=>{MESLOOK.invalidate('vendor_outsourcing')
  if(typeof venView!=='undefined')venView=[...VENDORS];
  if(typeof renderVendors==='function')renderVendors();};
 </script>
-<script src="mes_price.js?v=85"></script>
-<script src="mes_vendorcheck.js?v=85"></script>
+<script src="mes_price.js?v=86"></script>
+<script src="mes_vendorcheck.js?v=86"></script>
 <script>
 function sampleFill(){
   if(window.MESDEMO)return MESDEMO.run('outsourcing_order_input',{});
