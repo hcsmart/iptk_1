@@ -44,7 +44,7 @@ tr.rdone td{color:#8b98a3}
       <div class="tablewrap"><table><thead><tr><th>협력업체</th></tr></thead><tbody id="venBody"></tbody></table></div></div>
     <div class="box"><div class="box-title">부품별 가공공정 리스트</div><div class="tablewrap"><table style="min-width:900px">
       <colgroup><col style="width:36px"><col style="width:80px"><col style="width:90px"><col style="width:56px"><col style="width:56px"><col style="width:56px"><col style="width:56px"><col style="width:56px"><col style="width:56px"><col style="width:56px"><col style="width:56px"><col style="width:56px"></colgroup>
-      <thead><tr><th></th><th>부품코드</th><th>부품명</th><th>공정1</th><th>공정2</th><th>공정3</th><th>공정4</th><th>공정5</th><th>공정6</th><th>공정7</th><th>공정8</th><th>공정9</th></tr></thead>
+      <thead><tr><th></th><th style="width:46px">조</th><th>부품코드</th><th>부품명</th><th>공정1</th><th>공정2</th><th>공정3</th><th>공정4</th><th>공정5</th><th>공정6</th><th>공정7</th><th>공정8</th><th>공정9</th></tr></thead>
       <tbody id="routeBody"></tbody></table></div></div>
   </section>
   <div class="midbar"><span class="label">입고요구일</span><input id="reqDate" class="field" type="date"><button class="btn" onclick="pushDown()">⬇ 요청추가</button><button class="btn" onclick="pullUp()">⬆ 요청삭제</button></div>
@@ -65,6 +65,9 @@ const PROCNAME={};   /* v39: 공정마스터에서 로드 */
 /* v86: 부품별 가공공정 리스트를 공정코드 대신 공정명으로 표기 */
 const _esc=v=>String(v??'').replace(/[&<>"]/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[x]));
 const stepCode=s=>String((s&&typeof s==='object')?(s.process_code||s.code||''):(s??'')).trim();
+/* v90: 조(공정)는 숫자로 통일 — 옛 A/B/C 코드가 남아 있으면 1/2/3 으로 환산한다 */
+const joNum=v=>{try{return window.MESJO?MESJO.norm(v):String(v??'').trim()}catch(e){return String(v??'').trim()}};
+const joName=(jo,q)=>String(jo||'')+'/'+Math.max(1,Number(q)||1);
 const procName=c=>{const k=stepCode(c);if(!k)return'';return PROCNAME[k]||PROCNAME[k.toUpperCase()]||k};
 /* v87: 이중발주 방지 — 이미 발주(미확정)됐거나 구매요청에 올라간 공정은 다시 선택할 수 없다 */
 const ORDERED=new Map();                                   /* '품번|가공공정|업체' → 상태 */
@@ -103,6 +106,7 @@ function renderRoutes(){
       :(used?`${used}개 공정은 이미 발주(요청)되어 제외됩니다`:'');
   return `<tr class="${dis?'rdone':''}"${tip?` title="${_esc(tip)}"`:''}>`+
    `<td class="c"><input type="checkbox" data-i="${i}"${dis?' disabled':''}></td>`+
+   `<td class="c">${_esc(r.jo?r.jo+'조':'')}</td>`+
    `<td>${_esc(r.part)}${used?`<span class="tagd">${dis?'발주완료':used+'공정 발주됨'}</span>`:''}</td>`+
    `<td>${_esc(r.name)}</td>`+
    (r.steps||[]).map(s=>{const c=stepCode(s);if(!c)return '<td></td>';
@@ -129,7 +133,7 @@ picks.forEach(p=>{
  const all=(p.steps||[]).map(stepCode).filter(Boolean), open=openSteps(p);
  _skipStep+=all.length-open.length;
  if(!open.length){_skipPart++;return}
- open.forEach(mp=>{REQ.push({no:REQ.length?Math.max(...REQ.map(r=>r.no))+1:1,vendor:curVendor(),job:j.job,item:j.item,proc:j.proc,procName:j.procName,part:p.part,partName:p.name,mp,mpName:procName(mp),qty:1,odate:new Date().toISOString().slice(0,10),rdate:d,remark:'',writer:OWNER,price:0,amount:0});_added++});
+ open.forEach(mp=>{REQ.push({no:REQ.length?Math.max(...REQ.map(r=>r.no))+1:1,vendor:curVendor(),job:j.job,item:j.item,proc:(p.jo||j.proc||'1'),procName:joName(p.jo||j.proc||'1',j.setQty||1),part:p.part,partName:p.name,mp,mpName:procName(mp),qty:1,odate:new Date().toISOString().slice(0,10),rdate:d,remark:'',writer:OWNER,price:0,amount:0});_added++});
 });
 if(!_added){renderRoutes();return msg(`선택한 부품은 이미 발주(요청)된 공정뿐입니다. 이중발주를 막기 위해 추가하지 않았습니다.`)}
 /* v39: 가공공정 단가를 자동 조회해 발주금액을 채운다 (없으면 제조원가 외주가공비가 0) */
@@ -181,7 +185,7 @@ async function loadJobs(){
  try{
   const rs=await MESDB.table('job_pool').select('select=*&order=row_no');
   JOBS.length=0;
-  rs.forEach(r=>JOBS.push({job:r.job_no,item:r.item_name||'',proc:'A',procName:'1/1'}));
+  rs.forEach(r=>JOBS.push({job:r.job_no,item:r.item_name||'',proc:'1',procName:'1/'+Math.max(1,Math.trunc(Number(r.set_qty))||1),setQty:Math.max(1,Math.trunc(Number(r.set_qty))||1)}));
   jobView=[...JOBS];jobIdx=JOBS.length?0:-1;renderJobs();
   msg(JOBS.length?`제번 ${JOBS.length}건을 조회했습니다.`:'등록된 수주가 없습니다. 영업관리 > 수주등록을 먼저 하세요.');
   await loadRoutes();
@@ -195,7 +199,7 @@ async function loadRoutes(){
   let rs=await MESDB.table('machining_plan_parts')
     .select(`select=*&job_no=eq.${encodeURIComponent(j.job)}&order=row_no`);
   if(rs.length){
-   rs.forEach(r=>ROUTES.push({part:r.part_no,name:r.part_name||'',
+   rs.forEach(r=>ROUTES.push({part:r.part_no,name:r.part_name||'',jo:joNum(r.process_code),
      steps:(Array.isArray(r.steps)?r.steps:[]).map(stepCode).filter(Boolean).slice(0,9)}));
   }else{
    /* 2순위: PartList 부품 × 기준공정(가공 기준공정관리 1번) */
@@ -203,7 +207,7 @@ async function loadRoutes(){
      MESDB.table('partlist_materials').select(`select=part_no,part_name,process_code&job_no=eq.${encodeURIComponent(j.job)}&order=row_no`),
      MESDB.table('machining_standard_routes').select('select=*&order=standard_process_no&limit=1')]);
    const steps=(std&&std[0]&&Array.isArray(std[0].steps))?std[0].steps:[];
-   pm.forEach(r=>ROUTES.push({part:r.part_no,name:r.part_name||'',steps:steps.map(stepCode).filter(Boolean).slice(0,9)}));
+   pm.forEach(r=>ROUTES.push({part:r.part_no,name:r.part_name||'',jo:joNum(r.process_code),steps:steps.map(stepCode).filter(Boolean).slice(0,9)}));
    if(pm.length&&!steps.length)msg('기준공정(가공 기준공정관리)이 없어 공정이 비어 있습니다.');
   }
   await loadOrdered(j.job);
@@ -214,15 +218,15 @@ async function loadRoutes(){
 }
 window.MES={search,save,exportCsv,setMessage:msg,reload:loadJobs};
 </script>
-<script src="mes_sample.js?v=89"></script><script src="mes_scene.js?v=89"></script><script src="mes_demo.js?v=89"></script><script src="mes_db.js?v=89"></script>
+<script src="mes_sample.js?v=90"></script><script src="mes_scene.js?v=90"></script><script src="mes_demo.js?v=90"></script><script src="mes_db.js?v=90"></script>
 <script>
 /* v39: JOBS/ROUTES 는 page_state 스냅샷이 아니라 실데이터에서 매번 로드한다.
    (스냅샷에 갇혀 신규 수주가 안 뜨던 문제) */
 REQ.length=0;if(typeof renderReq==='function')renderReq();
 loadJobs();
 </script>
-<script src="mes_ctx.js?v=89"></script>
-<script src="mes_lookup.js?v=89"></script>
+<script src="mes_ctx.js?v=90"></script>
+<script src="mes_lookup.js?v=90"></script>
 <script>
 /* 협력업체 목록: 하드코딩 → 마스터 직결 */
 (async function loadVendors(){
@@ -244,8 +248,8 @@ window.MESLOOK_RELOAD_VENDORS=async()=>{MESLOOK.invalidate('vendor_outsourcing')
  if(typeof renderVendors==='function')renderVendors();
  if(typeof renderRoutes==='function')renderRoutes();};
 </script>
-<script src="mes_price.js?v=89"></script>
-<script src="mes_vendorcheck.js?v=89"></script>
+<script src="mes_price.js?v=90"></script>
+<script src="mes_vendorcheck.js?v=90"></script>
 <script>
 function sampleFill(){
   if(window.MESDEMO)return MESDEMO.run('outsourcing_order_input',{});

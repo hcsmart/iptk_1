@@ -40,14 +40,14 @@ table{border-collapse:collapse;width:100%;table-layout:fixed}th,td{height:24px;p
         <div class="cap">원본</div>
         <div class="lab">제 번</div><div class="cell"><input id="srcJob" class="field" placeholder="원본 제번"></div>
         <div class="lab">품 명</div><div class="cell"><input id="srcItem" class="field" placeholder="원본 품명"></div>
-        <div class="lab">공정</div><div class="cell"><select id="srcProc" class="field"><option value="">전체</option><option>A</option><option>B</option><option>C</option><option>D</option></select></div>
+        <div class="lab">공정</div><div class="cell"><select id="srcProc" class="field" data-nocombo><option value="">전체</option></select></div>
       </div>
       <div class="arrowrow">⬇</div>
       <div class="line">
         <div class="cap">복사본</div>
         <div class="lab">제 번</div><div class="cell"><input id="dstJob" class="field" placeholder="복사할 제번"></div>
         <div class="lab">품 명</div><div class="cell"><input id="dstItem" class="field" placeholder="복사할 품명"></div>
-        <div class="lab">공정</div><div class="cell"><select id="dstProc" class="field"><option value=""></option><option>A</option><option>B</option><option>C</option><option>D</option></select></div>
+        <div class="lab">공정</div><div class="cell"><select id="dstProc" class="field" data-nocombo><option value=""></option></select></div>
       </div>
     </div>
     <div class="actions"><button class="btn primary" onclick="copyPartList()">⧉ 복사</button><button class="btn" onclick="sampleFill()" title="화면 순서대로 시연하며 등록요점을 설명합니다.">▶ 등록예제</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button></div>
@@ -102,13 +102,32 @@ async function copyPartList(){
   }catch(e){const m=String(e.message||e);
     msg(/무결성|foreign key/i.test(m)?'복사 실패: 등록되지 않은 제번입니다.':'복사 실패: '+m.slice(0,120))}
 }
+/* v90: 공정(조)은 제번의 세트수만큼 숫자로 채운다 */
+async function fillProc(id,jobId,blank){
+ const sel=document.getElementById(id),jb=document.getElementById(jobId);
+ if(!sel)return;const keep=sel.value;let q=1;
+ try{for(let i=0;i<40&&!window.MESJO;i++)await new Promise(r=>setTimeout(r,50));
+  if(window.MESJO&&jb&&jb.value.trim())q=await MESJO.qty(jb.value.trim());}catch(e){}
+ const cs=Array.from({length:q},(_,i)=>String(i+1));
+ sel.innerHTML=`<option value="">${blank}</option>`+cs.map(c=>`<option value="${c}">${c}조</option>`).join('');
+ if(cs.includes(keep))sel.value=keep;
+}
+function wireProc(){
+ [['srcProc','srcJob','전체'],['dstProc','dstJob','']].forEach(([s,j,b])=>{
+  const jb=document.getElementById(j);
+  if(jb&&!jb.__joWire){jb.__joWire=1;jb.addEventListener('change',()=>fillProc(s,j,b))}
+  fillProc(s,j,b);
+ });
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wireProc);else wireProc();
+setTimeout(wireProc,1200);
 function reset(){dstJob.value='';dstItem.value='';dstProc.value='';msg('복사본 입력값을 초기화했습니다.')}
 function msg(t){message.textContent=t}
 renderLog();window.MES={save:copyPartList,setMessage:msg};
 </script>
-<script src="mes_sample.js?v=67"></script><script src="mes_scene.js?v=67"></script><script src="mes_demo.js?v=67"></script><script src="mes_db.js?v=67"></script>
+<script src="mes_sample.js?v=90"></script><script src="mes_scene.js?v=90"></script><script src="mes_demo.js?v=90"></script><script src="mes_db.js?v=90"></script>
 <script>MESDB.bind("partlist_copy",()=>({LOG}));</script>
-<script src="mes_ctx.js?v=67"></script>
+<script src="mes_ctx.js?v=90"></script>
 <script>
 function sampleFill(){
   if(window.MESDEMO)return MESDEMO.run('partlist_copy',{});
