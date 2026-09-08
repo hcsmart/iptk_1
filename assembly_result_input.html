@@ -49,7 +49,7 @@
       <div class="entry">
         <span class="label">작업시간</span><input id="minutes" class="field" type="number" min="0" placeholder="분">
         <span class="label">작업일</span><input id="workDate" class="field" type="date">
-        <span class="label">작업자</span><select id="worker" class="field"></select>
+        <span class="label">작업자</span><input id="worker" class="field" list="workerList" placeholder="직접입력 또는 목록에서 선택" autocomplete="off"><datalist id="workerList"></datalist>
       </div>
       <div class="entrybtns">
         <button class="btn sm primary" onclick="addResult()">실적 등록</button><button class="btn" onclick="sampleFill()" title="화면 순서대로 시연하며 등록요점을 설명합니다.">▶ 등록예제</button>
@@ -130,15 +130,16 @@ async function addResult(){
  const j=jobView[jobIdx];if(!j)return msg('제번을 선택하세요.');
  const s=STEPS[stepIdx];if(!s)return msg('세부공정을 선택하세요.');
  const m=Number(minutes.value);if(!m||m<=0)return msg('작업시간(분)을 입력하세요.');
+ const wk=worker.value.trim();if(!wk)return msg('작업자를 입력하거나 목록에서 선택하세요.');
  if(!online())return msg('DB 미연결 상태에서는 실적을 등록할 수 없습니다.');
  try{
   /* v39: row_no 는 DB identity 가 채운다 (수동 max+1 은 동시 저장 시 PK 충돌) */
   await MESDB.table('design_results').upsert({
-   work_type:'조립',worker_name:worker.value||null,job_no:j.job,process_code:s.mp||null,
+   work_type:'조립',worker_name:wk,job_no:j.job,process_code:s.mp||null,
    machining_process_code:s.mp||null,machining_process_name:s.mpName||null,
    work_date:workDate.value||new Date().toISOString().slice(0,10),work_minutes:m},'row_no');
   minutes.value='';await loadResults();
-  msg(`${worker.value} 실적 ${m}분을 등록했습니다. (조립실적현황/조회에 즉시 반영)`);
+  msg(`${wk} 실적 ${m}분을 등록했습니다. (조립실적현황/조회에 즉시 반영)`);
  }catch(e){const t=String(e.message||e);
   msg(/무결성|foreign key/i.test(t)?'등록 실패: 등록되지 않은 제번입니다.':'등록 실패: '+t.slice(0,110))}
 }
@@ -201,7 +202,10 @@ async function inspectionSheet(){
 }
 function exportCsv(){const k=key(),list=RESULTS[k]||[];const out=[['제번','가공공정코드','작업자','작업일자','작업시간(분)'],...list.map(r=>[jobView[jobIdx]?.job,STEPS[stepIdx].mp,r.worker,r.date,r.min])];const csv='\ufeff'+out.map(a=>a.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='assembly_result_input.csv';a.click();URL.revokeObjectURL(a.href)}
 function msg(t){message.textContent=t}
-worker.innerHTML=WORKERS.map(w=>`<option>${w}</option>`).join('');workDate.value='2026-08-22';
+/* 작업자: 사용자정보(사원 마스터)에서 목록을 받아 datalist 로 제안하고, 없는 이름은 직접 입력해도 된다 */
+function fillWorkers(){workerList.innerHTML=WORKERS.map(w=>`<option value="${String(w).replace(/"/g,'&quot;')}"></option>`).join('')}
+const renderWorkers=fillWorkers;
+fillWorkers();workDate.value=new Date().toISOString().slice(0,10);
 renderJobs();renderSteps();renderResults();window.MES={search,save:addResult,exportCsv,setMessage:msg,reload:loadJobs};loadJobs();
 </script>
 <script src="mes_sample.js?v=67"></script><script src="mes_scene.js?v=67"></script><script src="mes_demo.js?v=67"></script><script src="mes_db.js?v=67"></script>
