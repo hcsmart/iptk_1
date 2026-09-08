@@ -73,6 +73,14 @@ let WORKERS=[];  /* 작업자는 사원 마스터에서 로드 */
 const RESULTS={};
 let jobIdx=0,stepIdx=0,jobView=[...JOBS];
 function key(){return `${jobView[jobIdx]?.job}|${STEPS[stepIdx]?.mp}`}
+/* 제번 확보: 목록 인덱스가 어긋났거나 렌더 타이밍이 엇갈려도 화면에 보이는 제번을 쓴다.
+   (버튼마다 '제번을 선택하세요' 만 뜨고 진행이 막히던 문제) */
+function curJob(){
+ const j=jobView[jobIdx]||jobView[0]||JOBS[jobIdx]||JOBS[0];
+ if(j)return j;
+ const t=(jobQ.value||'').trim();
+ return t?{job:t,item:'',insp:0}:null;
+}
 function renderJobs(){jobBody.innerHTML=jobView.map((j,i)=>`<tr class="${i===jobIdx?'sel':''}" onclick="pickJob(${i})"><td>${j.job}</td><td>${j.item}</td><td class="c">${j.due}</td><td class="c">${j.s1}</td><td class="c">${j.cust}</td><td class="r">${j.insp??''}</td></tr>`).join('');countText.textContent=`제번 ${jobView.length}건`}
 function renderSteps(){if(!STEPS.length){procBody.innerHTML='<tr><td colspan="6" class="c" style="color:#8b98a4">세부공정이 없습니다. 아래에서 공정을 고르고 [＋ 세부공정 추가]를 누르세요.</td></tr>';return}
 procBody.innerHTML=STEPS.map((s,i)=>`<tr class="${i===stepIdx?'sel':''}" onclick="pickStep(${i})"><td class="c">${i===stepIdx?'▶':''}</td><td class="c">${s.done?'완료':''}</td><td class="c">${s.mp}</td><td>${s.mpName}</td><td class="r">${s.min??''}</td><td class="r">${s.rate==null?'':s.rate+'%'}</td></tr>`).join('')}
@@ -101,7 +109,7 @@ async function loadJobs(){
  }catch(e){msg('제번 조회 실패: '+String(e.message||e).slice(0,110))}
 }
 async function loadSteps(){
- const j=jobView[jobIdx];STEPS.length=0;
+ const j=curJob();STEPS.length=0;
  if(!j||!online()){renderSteps();renderResults();return}
  try{
   let rs=await MESDB.table('assembly_steps').select(`select=*&job_no=eq.${encodeURIComponent(j.job)}&order=row_no`);
@@ -116,7 +124,7 @@ async function loadSteps(){
  }catch(e){renderSteps()}
 }
 async function loadResults(){
- const j=jobView[jobIdx];
+ const j=curJob();
  for(const k in RESULTS)delete RESULTS[k];
  if(!j||!online()){renderSteps();renderResults();return}
  try{
@@ -140,11 +148,12 @@ async function loadProcs(){
  addProc.innerHTML=PROCS.map(p=>`<option value="${p.process_code}">${p.process_code} · ${p.process_name}${p.process_group?' ('+p.process_group+')':''}</option>`).join('');
 }
 async function addStep(){
- const j=jobView[jobIdx];if(!j)return msg('제번을 먼저 선택하세요.');
- const code=addProc.value;if(!code)return msg('추가할 공정을 선택하세요.');
+ const j=curJob();if(!j)return msg('제번을 먼저 선택하세요.');
+ let code=(addProc.value||'').trim();
+ if(!code){code=(prompt('공정 목록이 비어 있습니다. 추가할 공정코드를 직접 입력하세요. (예: AS)')||'').trim();if(!code)return msg('추가할 공정을 선택하거나 입력하세요.')}
  if(STEPS.some(x=>x.mp===code))return msg(`${code} 는 이미 세부공정 리스트에 있습니다.`);
  if(!online())return msg('DB 미연결 상태에서는 추가할 수 없습니다.');
- const p=PROCS.find(x=>x.process_code===code)||{};
+ const p=PROCS.find(x=>x.process_code===code)||{process_name:code};
  try{
   await MESDB.table('assembly_steps').insertOne({job_no:j.job,machining_process_code:code,
    machining_process_name:p.process_name||'',step_completed:false});
@@ -152,7 +161,7 @@ async function addStep(){
  }catch(e){msg('세부공정 추가 실패: '+String(e.message||e).slice(0,110))}
 }
 async function delStep(){
- const j=jobView[jobIdx],s2=STEPS[stepIdx];
+ const j=curJob(),s2=STEPS[stepIdx];
  if(!j||!s2)return msg('삭제할 세부공정을 선택하세요.');
  if(s2.row==null)return msg('아직 저장되지 않은 세부공정입니다.');
  const list=RESULTS[key()]||[];
@@ -163,7 +172,7 @@ async function delStep(){
  }catch(e){msg('삭제 실패: '+String(e.message||e).slice(0,110))}
 }
 async function addResult(){
- const j=jobView[jobIdx];if(!j)return msg('제번을 선택하세요.');
+ const j=curJob();if(!j)return msg('제번을 선택하세요.');
  const s=STEPS[stepIdx];if(!s)return msg(STEPS.length?'세부공정을 선택하세요.':'세부공정이 없습니다. 공정을 고르고 [＋ 세부공정 추가]를 먼저 누르세요.');
  const m=Number(minutes.value);if(!m||m<=0)return msg('작업시간(분)을 입력하세요.');
  const wk=worker.value.trim();if(!wk)return msg('작업자를 입력하거나 목록에서 선택하세요.');
@@ -188,8 +197,8 @@ async function delResult(){
  }catch(e){msg('삭제 실패: '+String(e.message||e).slice(0,110))}
 }
 async function completeStep(){
- const j=jobView[jobIdx],s=STEPS[stepIdx];
- if(!j||!s)return msg('세부공정을 선택하세요.');
+ const j=curJob(),s=STEPS[stepIdx];
+ if(!j||!s)return msg(STEPS.length?'세부공정을 선택하세요.':'세부공정이 없습니다. 공정을 고르고 [＋ 세부공정 추가]를 먼저 누르세요.');
  if(!online())return msg('DB 미연결 상태에서는 완료 처리할 수 없습니다.');
  try{
   let row=s.row;
@@ -204,7 +213,7 @@ async function completeStep(){
  }catch(e){msg('완료 처리 실패: '+String(e.message||e).slice(0,110))}
 }
 async function completeAssembly(){
- const j=jobView[jobIdx];if(!j)return msg('제번을 선택하세요.');
+ const j=curJob();if(!j)return msg('제번을 선택하세요.');
  const open=STEPS.filter(s=>!s.done);
  if(open.length&&!confirm(`미완료 세부공정 ${open.length}건이 남아 있습니다.\n${j.job} 조립을 완료 처리하시겠습니까?`))return;
  if(!online())return msg('DB 미연결 상태에서는 완료 처리할 수 없습니다.');
@@ -216,7 +225,7 @@ async function completeAssembly(){
  }catch(e){msg('완료 처리 실패: '+String(e.message||e).slice(0,110))}
 }
 async function inspectionSheet(){
- const j=jobView[jobIdx];if(!j)return msg('제번을 선택하세요.');
+ const j=curJob();if(!j)return msg('제번을 선택하세요.');
  if(!online())return msg('DB 미연결 상태에서는 검사시트를 작성할 수 없습니다.');
  try{
   const cur=await MESDB.table('assembly_jobs').select(`select=inspection_count&job_no=eq.${encodeURIComponent(j.job)}&limit=1`);
