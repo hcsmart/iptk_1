@@ -29,7 +29,7 @@
       (document.head||document.documentElement).appendChild(lk)}catch(e){}
 })();
 
-const MES_VER='v65';window.MES_VER=MES_VER;
+const MES_VER='v66';window.MES_VER=MES_VER;
 const CFG={url:'https://ipggvrzxfcryzryileuv.supabase.co',key:'sb_publishable_CHO-dAOU00HNwno52255mg_H3C1_vew'};
 function tok(){try{return (window.MES_AUTH||window.parent.MES_AUTH)?.token||null}catch(e){return null}}
 const H=()=>({'apikey':CFG.key,'Authorization':'Bearer '+(tok()||CFG.key),'Content-Type':'application/json'});
@@ -399,17 +399,27 @@ async function lines(opt){
   const q=['select=*','order=line_id',`category=eq.${encodeURIComponent(opt.category)}`];
   if(opt.statuses&&opt.statuses.length)q.push(`status=in.(${opt.statuses.map(encodeURIComponent).join(',')})`);
   const take=()=>{snap=new Map(arr().filter(r=>r._id).map(r=>[r._id,JSON.stringify(r)]))};
-  try{
-    const rows=await MESDB.table('order_lines').select(q.join('&'));
-    const a=arr();a.length=0;a.push(...rows.map(r=>toS(r,map)));
-    online=true;
-    /* v39: 화면 렌더 오류가 DB 연결 상태까지 죽이지 않도록 격리한다.
-       (이전에는 render 예외 → catch → online=false → syncLines 미등록 → 저장 불능) */
-    try{(opt.render||window.render||(()=>{}))()}catch(e){console.warn('MESDB.lines render',e.message);
-      badge('화면 표시 오류(자료는 정상 로드)','#f57c00')}
-    take();
-    badge(`DB: order_lines ${opt.category} ${rows.length}건`,'#2e7d32');window.__mesdbReady&&window.__mesdbReady();
-  }catch(e){online=false;badge('DB 미연결(로컬)','#9e9e9e');console.warn('MESDB.lines',e.message);window.__mesdbReady&&window.__mesdbReady();return}
+  /* v88: 최초 로드와 재조회를 같은 함수로. 화면이 열려 있는 동안 다른 화면에서 생긴
+     발주/입고를 [조회] 나 mes-data-changed 알림으로 즉시 다시 읽어온다. */
+  async function load(){
+    try{
+      const rows=await MESDB.table('order_lines').select(q.join('&'));
+      const a=arr();a.length=0;a.push(...rows.map(r=>toS(r,map)));
+      online=true;
+      /* v39: 화면 렌더 오류가 DB 연결 상태까지 죽이지 않도록 격리한다.
+         (이전에는 render 예외 → catch → online=false → syncLines 미등록 → 저장 불능) */
+      try{(opt.render||window.render||(()=>{}))()}catch(e){console.warn('MESDB.lines render',e.message);
+        badge('화면 표시 오류(자료는 정상 로드)','#f57c00')}
+      take();
+      badge(`DB: order_lines ${opt.category} ${rows.length}건`,'#2e7d32');window.__mesdbReady&&window.__mesdbReady();
+      return rows.length;
+    }catch(e){online=false;badge('DB 미연결(로컬)','#9e9e9e');console.warn('MESDB.lines',e.message);window.__mesdbReady&&window.__mesdbReady();return -1}
+  }
+  /* 저장 대기 중인 편집이 있으면 덮어쓰지 않는다 */
+  const dirty=()=>arr().some(r=>!r._id||snap.get(r._id)!==JSON.stringify(r));
+  window.MESDB.reloadLines=async()=>{if(dirty())return -1;return load()};
+  if(await load()===-1)return;
+  try{MESDB.onChange('order_lines',()=>{if(!dirty())load()})}catch(e){}
 
   async function sync(){
     if(!online)return;

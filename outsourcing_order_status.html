@@ -57,16 +57,25 @@ function within(v,a,b){if(!a&&!b)return true;if(!v)return false;return (!a||v>=a
 function render(){body.innerHTML=view.map((r,i)=>`<tr onclick="sel(this)"><td class="c">${i+1}</td><td class="c"><span class="tag t-${r.st}">${r.st}</span></td><td>${r.vendor}</td><td>${r.job}</td><td>${r.item}</td><td class="c">${r.proc}</td><td class="c">${r.procName}</td><td>${r.part}</td><td>${r.partName}</td><td class="c">${r.mp}</td><td class="c">${r.odate}</td><td class="c">${r.edate}</td><td class="c">${r.idate}</td><td class="c">${r.cdate}</td><td class="r">${money(r.quote)}</td><td class="r">${money(r.fix)}</td></tr>`).join('');
 sumQuote.textContent=money(view.reduce((a,r)=>a+r.quote,0));sumFix.textContent=money(view.reduce((a,r)=>a+r.fix,0));countText.textContent=`${view.length}건`}
 function sel(tr){document.querySelectorAll('#body tr').forEach(x=>x.classList.remove('sel'));tr.classList.add('sel')}
-function search(){const st=document.querySelector('input[name=st]:checked').value;const j=jobQ.value.trim().toLowerCase(),it=itemQ.value.trim().toLowerCase(),v=vendorQ.value.trim().toLowerCase();
+/* v88: [조회] 는 DB 를 다시 읽고 나서 거른다 — 다른 화면에서 새로 생긴 발주가 바로 보인다 */
+function search(){
+ if(window.MESDB&&MESDB.reloadLines){
+  MESDB.reloadLines().then(n=>{_filterNow();if(n===-1&&typeof msg==='function')msg('저장하지 않은 입력이 있어 새로고침을 건너뛰었습니다. 먼저 [▣ 저장] 하세요.')})
+   .catch(()=>_filterNow());
+  return;
+ }
+ _filterNow();
+}
+function _filterNow(){const st=document.querySelector('input[name=st]:checked').value;const j=jobQ.value.trim().toLowerCase(),it=itemQ.value.trim().toLowerCase(),v=vendorQ.value.trim().toLowerCase();
 view=rows.filter(r=>(st==='전체'||r.st===st)&&(!j||r.job.toLowerCase().includes(j))&&(!it||r.item.toLowerCase().includes(it))&&(!v||r.vendor.toLowerCase().includes(v))&&within(r.edate,ed1.value,ed2.value)&&within(r.idate,id1.value,id2.value)&&within(r.cdate,cd1.value,cd2.value));
 render();msg(`${st} 기준 ${view.length}건을 조회했습니다.`)}
 function exportCsv(){const out=[['구분','협력업체','제번','품명','공정','공정명','품번','부품명','가공공정','발주일','입고예정일','입고일','입고확정일','견적가','확정가'],...view.map(r=>[r.st,r.vendor,r.job,r.item,r.proc,r.procName,r.part,r.partName,r.mp,r.odate,r.edate,r.idate,r.cdate,r.quote,r.fix])];const csv='\ufeff'+out.map(a=>a.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='outsourcing_order_status.csv';a.click();URL.revokeObjectURL(a.href);msg('EXCEL(CSV) 파일을 생성했습니다.')}
 function msg(t){message.textContent=t}
 render();window.MES={search,exportCsv,setMessage:msg};
 </script>
-<script src="mes_db.js?v=87"></script>
+<script src="mes_db.js?v=88"></script>
 <script>MESDB.lines({page:"outsourcing_order_status",category:"외주가공",statuses:[],map:{"no": {"col": "line_id", "type": "num"}, "vendor": "vendor_name", "job": "job_no", "item": "item_name", "proc": "process_code", "procName": "process_name", "part": "part_no", "partName": "part_name", "st": {"col": "status", "type": "status"}, "mp": "machining_process_code", "odate": {"col": "order_date", "type": "date"}, "edate": {"col": "required_date", "type": "date"}, "idate": {"col": "receipt_date", "type": "date"}, "cdate": {"col": "confirm_date", "type": "date"}, "quote": {"col": "quote_price", "type": "num"}, "fix": {"col": "confirm_price", "type": "num"}},get:()=>rows,render:()=>{view=[...rows];render()}});</script>
-<script src="mes_lookup.js?v=87"></script>
+<script src="mes_lookup.js?v=88"></script>
 <script>
 /* v86: 협력업체 — 기준정보(업체 관리)의 외주가공 협력사를 드롭다운으로 선택 */
 async function loadVendorSel(){
@@ -95,6 +104,6 @@ async function loadVendorSel(){
 }
 loadVendorSel();setTimeout(loadVendorSel,1500);
 </script>
-<script src="mes_ctx.js?v=87"></script>
+<script src="mes_ctx.js?v=88"></script>
 </body>
 </html>

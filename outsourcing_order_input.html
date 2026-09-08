@@ -159,7 +159,7 @@ async function dupCheck(cat,job,rows){
 }
 async function save(){if(!REQ.length)return msg('저장할 발주 자료가 없습니다.');if(!window.MESDB||!MESDB.online){msg(`외주가공 발주 ${REQ.length}건을 저장했습니다. (DB 미연결 - 로컬)`);return}try{
  const dup=await dupCheck('외주가공',REQ[0].job,REQ);if(dup.length)return msg(`이미 발주(미입고) 된 공정이 있습니다: ${[...new Set(dup.map(r=>r.part+'/'+r.mp))].join(', ')} — 요청 리스트에서 제외하세요.`);
- await MESDB.newLines(REQ.map(r=>({category:'외주가공',status:'발주',vendor_name:r.vendor,job_no:r.job,item_name:r.item||null,process_code:r.proc,process_name:r.procName,part_no:r.part,part_name:r.partName,machining_process_code:r.mp,machining_process_name:r.mpName||null,order_qty:Number(r.qty)||1,unit_price:Number(r.price)||null,quote_price:Number(r.amount)||null,order_date:r.odate||null,required_date:r.rdate||null,owner_name:r.writer||null,remark:r.remark||null})));const n=REQ.length;const _j=REQ[0].job;REQ.length=0;renderReq();await loadOrdered(_j);renderRoutes();msg(`외주가공 발주 ${n}건을 DB에 등록했습니다. 입고등록 화면에서 확인하세요.`)}catch(e){msg('DB 등록 실패: '+e.message.slice(0,120))}}
+ await MESDB.newLines(REQ.map(r=>({category:'외주가공',status:'발주',vendor_name:r.vendor,job_no:r.job,item_name:r.item||null,process_code:r.proc,process_name:r.procName,part_no:r.part,part_name:r.partName,machining_process_code:r.mp,machining_process_name:r.mpName||null,order_qty:Number(r.qty)||1,unit_price:Number(r.price)||null,quote_price:Number(r.amount)||null,order_date:r.odate||null,required_date:r.rdate||null,owner_name:r.writer||null,remark:r.remark||null})));const n=REQ.length;const _j=REQ[0].job;REQ.length=0;renderReq();try{MESDB.notify&&MESDB.notify(['order_lines'])}catch(e){}await loadOrdered(_j);renderRoutes();msg(`외주가공 발주 ${n}건을 DB에 등록했습니다. 입고등록 화면에서 확인하세요.`)}catch(e){msg('DB 등록 실패: '+e.message.slice(0,120))}}
 function exportCsv(){const out=[['협력업체','제번','공정','품번','부품명','가공공정코드','가공공정','수량','발주월','입고요구월','작성자'],...REQ.map(r=>[r.vendor,r.job,r.proc,r.part,r.partName,r.mp,r.mpName,r.qty??1,r.odate,r.rdate,r.writer])];const csv='\ufeff'+out.map(a=>a.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='outsourcing_order_input.csv';a.click();URL.revokeObjectURL(a.href)}
 function msg(t){message.textContent=t}
 reqDate.value=new Date(Date.now()+12*864e5).toISOString().slice(0,10);
@@ -214,15 +214,15 @@ async function loadRoutes(){
 }
 window.MES={search,save,exportCsv,setMessage:msg,reload:loadJobs};
 </script>
-<script src="mes_sample.js?v=87"></script><script src="mes_scene.js?v=87"></script><script src="mes_demo.js?v=87"></script><script src="mes_db.js?v=87"></script>
+<script src="mes_sample.js?v=88"></script><script src="mes_scene.js?v=88"></script><script src="mes_demo.js?v=88"></script><script src="mes_db.js?v=88"></script>
 <script>
 /* v39: JOBS/ROUTES 는 page_state 스냅샷이 아니라 실데이터에서 매번 로드한다.
    (스냅샷에 갇혀 신규 수주가 안 뜨던 문제) */
 REQ.length=0;if(typeof renderReq==='function')renderReq();
 loadJobs();
 </script>
-<script src="mes_ctx.js?v=87"></script>
-<script src="mes_lookup.js?v=87"></script>
+<script src="mes_ctx.js?v=88"></script>
+<script src="mes_lookup.js?v=88"></script>
 <script>
 /* 협력업체 목록: 하드코딩 → 마스터 직결 */
 (async function loadVendors(){
@@ -244,8 +244,8 @@ window.MESLOOK_RELOAD_VENDORS=async()=>{MESLOOK.invalidate('vendor_outsourcing')
  if(typeof renderVendors==='function')renderVendors();
  if(typeof renderRoutes==='function')renderRoutes();};
 </script>
-<script src="mes_price.js?v=87"></script>
-<script src="mes_vendorcheck.js?v=87"></script>
+<script src="mes_price.js?v=88"></script>
+<script src="mes_vendorcheck.js?v=88"></script>
 <script>
 function sampleFill(){
   if(window.MESDEMO)return MESDEMO.run('outsourcing_order_input',{});

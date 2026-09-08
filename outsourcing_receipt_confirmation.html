@@ -57,7 +57,16 @@ sumQuote.textContent=money(view.reduce((a,r)=>a+r.quote,0));sumFix.textContent=m
 function pick(e,no){if(e.target.tagName==='INPUT')return;const cb=document.querySelector(`#body input[data-no="${no}"]`);if(cb){cb.checked=!cb.checked;summary()}}
 function selected(){const ids=[...document.querySelectorAll('#body input:checked')].map(x=>Number(x.dataset.no));return rows.filter(r=>ids.includes(r.no))}
 function summary(){const s=selected();total.value=money(s.reduce((a,r)=>a+r.quote,0));selectedText.textContent=`선택 ${s.length}건`;document.querySelectorAll('#body tr').forEach(tr=>tr.classList.toggle('sel',!!tr.querySelector('input:checked')))}
-function search(){const v=vendorQ.value.trim().toLowerCase(),j=jobQ.value.trim().toLowerCase(),it=itemQ.value.trim().toLowerCase(),m=doneMode();view=rows.filter(r=>(m==='완료'?r.status==='확정':r.status!=='확정')&&(!v||r.vendor.toLowerCase().includes(v))&&(!j||r.job.toLowerCase().includes(j))&&(!it||(r.item||'').toLowerCase().includes(it)));render();msg(`${m} 기준 ${view.length}건을 조회했습니다.`)}
+/* v88: [조회] 는 DB 를 다시 읽고 나서 거른다 — 다른 화면에서 새로 생긴 발주가 바로 보인다 */
+function search(){
+ if(window.MESDB&&MESDB.reloadLines){
+  MESDB.reloadLines().then(n=>{_filterNow();if(n===-1&&typeof msg==='function')msg('저장하지 않은 입력이 있어 새로고침을 건너뛰었습니다. 먼저 [▣ 저장] 하세요.')})
+   .catch(()=>_filterNow());
+  return;
+ }
+ _filterNow();
+}
+function _filterNow(){const v=vendorQ.value.trim().toLowerCase(),j=jobQ.value.trim().toLowerCase(),it=itemQ.value.trim().toLowerCase(),m=doneMode();view=rows.filter(r=>(m==='완료'?r.status==='확정':r.status!=='확정')&&(!v||r.vendor.toLowerCase().includes(v))&&(!j||r.job.toLowerCase().includes(j))&&(!it||(r.item||'').toLowerCase().includes(it)));render();msg(`${m} 기준 ${view.length}건을 조회했습니다.`)}
 const numv=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
 function applyNego(){const s=selected();if(!s.length)return msg('네고율을 적용할 행을 선택하세요.');const rate=Math.max(0,Math.min(100,Number(nego.value)||0));s.forEach(r=>r.rate=rate);render();s.forEach(r=>{const cb=document.querySelector(`#body input[data-no="${r.no}"]`);if(cb)cb.checked=true});summary();msg(`${s.length}건에 네고율 ${numv(rate).toFixed(2)}%를 적용했습니다.`)}
 let dirty=false;   /* v62 */
@@ -77,9 +86,9 @@ function exportCsv(){const out=[['제번','품명','공정','품번','부품명'
 function msg(t){message.textContent=t}
 confirmDate.value=new Date().toISOString().slice(0,10);render();window.MES={search,save,exportCsv,setMessage:msg};
 </script>
-<script src="mes_sample.js?v=87"></script><script src="mes_scene.js?v=87"></script><script src="mes_demo.js?v=87"></script><script src="mes_db.js?v=87"></script>
+<script src="mes_sample.js?v=88"></script><script src="mes_scene.js?v=88"></script><script src="mes_demo.js?v=88"></script><script src="mes_db.js?v=88"></script>
 <script>MESDB.lines({page:"outsourcing_receipt_confirmation",category:"외주가공",statuses:["입고", "입고확정"],map:{"no": {"col": "line_id", "type": "num"}, "vendor": "vendor_name", "job": "job_no", "item": "item_name", "proc": "process_code", "procName": "process_name", "part": "part_no", "partName": "part_name", "mp": "machining_process_code", "mpName": "machining_process_name", "odate": {"col": "order_date", "type": "date"}, "idate": {"col": "receipt_date", "type": "date"}, "cdate": {"col": "confirm_date", "type": "date"}, "quote": {"col": "quote_price", "type": "num"}, "rate": {"col": "nego_rate", "type": "num"}, "fix": {"col": "confirm_price", "type": "num"}, "status": {"col": "status", "type": "status"}},get:()=>rows,render:()=>{view=[...rows];search()}});</script>
-<script src="mes_lookup.js?v=87"></script>
+<script src="mes_lookup.js?v=88"></script>
 <script>
 /* v86: 협력업체 — 기준정보(업체 관리)의 외주가공 협력사를 드롭다운으로 선택 */
 async function loadVendorSel(){
@@ -108,7 +117,7 @@ async function loadVendorSel(){
 }
 loadVendorSel();setTimeout(loadVendorSel,1500);
 </script>
-<script src="mes_ctx.js?v=87"></script>
+<script src="mes_ctx.js?v=88"></script>
 <script>
 function sampleFill(){
   if(window.MESDEMO)return MESDEMO.run('outsourcing_receipt_confirmation',{});

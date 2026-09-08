@@ -71,7 +71,16 @@ async function ospRpc(fn,body){
  try{return JSON.parse(t)}catch(e){return null}
 }
 function pick(e,which,no){if(e.target.tagName==='INPUT')return;const box=which==='wait'?waitBody:inBody;const cb=box.querySelector(`input[data-no="${no}"]`);if(cb)cb.checked=!cb.checked}
-function search(){const v=vendorQ.value.trim().toLowerCase(),j=jobQ.value.trim().toLowerCase(),it=itemQ.value.trim().toLowerCase(),p=procQ.value,pt=partQ.value.trim().toLowerCase();
+/* v88: [조회] 는 DB 를 다시 읽고 나서 거른다 — 다른 화면에서 새로 생긴 발주가 바로 보인다 */
+function search(){
+ if(window.MESDB&&MESDB.reloadLines){
+  MESDB.reloadLines().then(n=>{_filterNow();if(n===-1&&typeof msg==='function')msg('저장하지 않은 입력이 있어 새로고침을 건너뛰었습니다. 먼저 [▣ 저장] 하세요.')})
+   .catch(()=>_filterNow());
+  return;
+ }
+ _filterNow();
+}
+function _filterNow(){const v=vendorQ.value.trim().toLowerCase(),j=jobQ.value.trim().toLowerCase(),it=itemQ.value.trim().toLowerCase(),p=procQ.value,pt=partQ.value.trim().toLowerCase();
 view=rows.filter(r=>!IN.some(x=>x.no===r.no)&&(!v||r.vendor.toLowerCase().includes(v))&&(!j||r.job.toLowerCase().includes(j))&&(!it||(r.item||'').toLowerCase().includes(it))&&(!p||r.proc===p)&&(!pt||r.part.toLowerCase().includes(pt)));
 renderWait();msg(`입고 처리 대기 ${view.length}건을 조회했습니다.`)}
 function pushDown(){const ids=[...waitBody.querySelectorAll('input:checked')].map(x=>Number(x.dataset.no));if(!ids.length)return msg('입고할 행을 선택하세요.');const d=inDate.value||new Date().toISOString().slice(0,10);
@@ -97,6 +106,7 @@ async function save(){if(!IN.length)return msg('저장할 입고 자료가 없�
  for(let i=rows.length-1;i>=0;i--)if(closedIds.includes(rows[i].no))rows.splice(i,1);
  IN.length=0;search();renderIn();
  if(window.MESMOVE)MESMOVE.invalidate();
+ try{MESDB.notify&&MESDB.notify(['order_lines'])}catch(e){}
  msg(`외주가공 입고 반영 — 복귀완료 ${closedIds.length}건`+
      (partial?` · 부분입고 ${partial}건 (잔량은 대기목록에 남습니다)`:'')+
      '. 입고확정 화면에서 확정하세요.')}catch(e){msg('DB 반영 실패: '+e.message.slice(0,120))}}
@@ -104,9 +114,9 @@ function exportCsv(){const out=[['제번','공정','품번','부품명','가공�
 function msg(t){message.textContent=t}
 inDate.value=new Date().toISOString().slice(0,10);renderWait();renderIn();window.MES={search,save,exportCsv,setMessage:msg};
 </script>
-<script src="mes_sample.js?v=87"></script><script src="mes_scene.js?v=87"></script><script src="mes_demo.js?v=87"></script><script src="mes_db.js?v=87"></script>
+<script src="mes_sample.js?v=88"></script><script src="mes_scene.js?v=88"></script><script src="mes_demo.js?v=88"></script><script src="mes_db.js?v=88"></script>
 <script>MESDB.lines({page:"outsourcing_receipt_input",category:"외주가공",statuses:["발주"],map:{"no": {"col": "line_id", "type": "num"}, "vendor": "vendor_name", "job": "job_no", "item": "item_name", "proc": "process_code", "procName": "process_name", "part": "part_no", "partName": "part_name", "mp": "machining_process_code", "mpName": "machining_process_name", "odate": {"col": "order_date", "type": "date"}, "edate": {"col": "required_date", "type": "date"}, "ord": {"col": "order_qty", "type": "num"}, "got": {"col": "receipt_qty", "type": "num"}},get:()=>rows,render:()=>{view=[...rows];renderWait();renderIn();}});</script>
-<script src="mes_lookup.js?v=87"></script>
+<script src="mes_lookup.js?v=88"></script>
 <script>
 /* v86: 협력업체 — 기준정보(업체 관리)의 외주가공 협력사를 드롭다운으로 선택 */
 async function loadVendorSel(){
@@ -135,7 +145,7 @@ async function loadVendorSel(){
 }
 loadVendorSel();setTimeout(loadVendorSel,1500);
 </script>
-<script src="mes_ctx.js?v=87"></script>
+<script src="mes_ctx.js?v=88"></script>
 <script>
 function sampleFill(){
   if(window.MESDEMO)return MESDEMO.run('outsourcing_receipt_input',{});
