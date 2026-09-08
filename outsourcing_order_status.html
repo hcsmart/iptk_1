@@ -37,7 +37,7 @@ tfoot th{position:sticky;bottom:0;background:linear-gradient(#e6eef5,#d3e0ea)}
     <div class="frow">
       <span class="label">제 번</span><input id="jobQ" class="field" style="width:180px">
       <span class="label">품 명</span><input id="itemQ" class="field" style="width:180px">
-      <span class="label">협력업체</span><input id="vendorQ" class="field" style="width:180px">
+      <span class="label">협력업체</span><select id="vendorQ" class="field" data-combo style="width:180px"><option value="">전체</option></select>
       <button class="btn" onclick="search()">⌕ 조회</button>
     </div>
   </section>
@@ -64,8 +64,37 @@ function exportCsv(){const out=[['구분','협력업체','제번','품명','공�
 function msg(t){message.textContent=t}
 render();window.MES={search,exportCsv,setMessage:msg};
 </script>
-<script src="mes_db.js?v=67"></script>
+<script src="mes_db.js?v=86"></script>
 <script>MESDB.lines({page:"outsourcing_order_status",category:"외주가공",statuses:[],map:{"no": {"col": "line_id", "type": "num"}, "vendor": "vendor_name", "job": "job_no", "item": "item_name", "proc": "process_code", "procName": "process_name", "part": "part_no", "partName": "part_name", "st": {"col": "status", "type": "status"}, "mp": "machining_process_code", "odate": {"col": "order_date", "type": "date"}, "edate": {"col": "required_date", "type": "date"}, "idate": {"col": "receipt_date", "type": "date"}, "cdate": {"col": "confirm_date", "type": "date"}, "quote": {"col": "quote_price", "type": "num"}, "fix": {"col": "confirm_price", "type": "num"}},get:()=>rows,render:()=>{view=[...rows];render()}});</script>
-<script src="mes_ctx.js?v=67"></script>
+<script src="mes_lookup.js?v=86"></script>
+<script>
+/* v86: 협력업체 — 기준정보(업체 관리)의 외주가공 협력사를 드롭다운으로 선택 */
+async function loadVendorSel(){
+ const sel=document.getElementById('vendorQ');if(!sel||sel.tagName!=='SELECT')return;
+ const keepV=sel.value;
+ let n=0;
+ try{
+  for(let i=0;i<40&&!window.MESLOOK;i++)await new Promise(r=>setTimeout(r,50));
+  if(window.MESLOOK){
+   await MESLOOK.fillSelect(sel,'vendor_outsourcing',{keep:['전체'],
+     value:r=>r.vendor_name||'',label:r=>r.vendor_name||''});
+   n=sel.options.length-1;
+  }
+ }catch(e){}
+ if(n<=0){   /* 마스터가 비어 있으면 조회된 발주자료의 업체로 대체 */
+  try{
+   const src=(typeof rows!=='undefined'&&Array.isArray(rows))?rows:[];
+   const vs=[...new Set(src.map(r=>r.vendor).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
+   sel.innerHTML='<option value="">전체</option>'+vs.map(v=>`<option>${String(v).replace(/[<>&"]/g,'')}</option>`).join('');
+   n=vs.length;
+  }catch(e){}
+ }
+ if([...sel.options].some(o=>o.value===keepV))sel.value=keepV;
+ if(!sel.__vwire){sel.__vwire=1;sel.addEventListener('change',()=>{try{search()}catch(e){}})}
+ if(!n&&typeof msg==='function')msg('협력업체 마스터가 비어 있습니다. 기준정보 > 업체 관리에서 외주가공 업체를 등록하세요.');
+}
+loadVendorSel();setTimeout(loadVendorSel,1500);
+</script>
+<script src="mes_ctx.js?v=86"></script>
 </body>
 </html>

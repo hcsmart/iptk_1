@@ -24,7 +24,7 @@ tfoot th{position:sticky;bottom:0;background:linear-gradient(#e6eef5,#d3e0ea)}
     <div class="opts"><label><input type="radio" name="done" value="미완료" checked onchange="search()"> 미완료</label><label><input type="radio" name="done" value="완료" onchange="search()"> 완료</label></div>
   </div>
   <section class="filters">
-    <span class="label">협력업체</span><input id="vendorQ" class="field" style="width:190px">
+    <span class="label">협력업체</span><select id="vendorQ" class="field" data-combo style="width:190px"><option value="">전체</option></select>
     <span class="label">제 번</span><input id="jobQ" class="field" style="width:190px">
     <span class="label">품명</span><input id="itemQ" class="field" style="width:190px">
     <button class="btn" onclick="search()">⌕ 조회</button>
@@ -77,9 +77,38 @@ function exportCsv(){const out=[['제번','품명','공정','품번','부품명'
 function msg(t){message.textContent=t}
 confirmDate.value=new Date().toISOString().slice(0,10);render();window.MES={search,save,exportCsv,setMessage:msg};
 </script>
-<script src="mes_sample.js?v=67"></script><script src="mes_scene.js?v=67"></script><script src="mes_demo.js?v=67"></script><script src="mes_db.js?v=67"></script>
+<script src="mes_sample.js?v=86"></script><script src="mes_scene.js?v=86"></script><script src="mes_demo.js?v=86"></script><script src="mes_db.js?v=86"></script>
 <script>MESDB.lines({page:"outsourcing_receipt_confirmation",category:"외주가공",statuses:["입고", "입고확정"],map:{"no": {"col": "line_id", "type": "num"}, "vendor": "vendor_name", "job": "job_no", "item": "item_name", "proc": "process_code", "procName": "process_name", "part": "part_no", "partName": "part_name", "mp": "machining_process_code", "mpName": "machining_process_name", "odate": {"col": "order_date", "type": "date"}, "idate": {"col": "receipt_date", "type": "date"}, "cdate": {"col": "confirm_date", "type": "date"}, "quote": {"col": "quote_price", "type": "num"}, "rate": {"col": "nego_rate", "type": "num"}, "fix": {"col": "confirm_price", "type": "num"}, "status": {"col": "status", "type": "status"}},get:()=>rows,render:()=>{view=[...rows];search()}});</script>
-<script src="mes_ctx.js?v=67"></script>
+<script src="mes_lookup.js?v=86"></script>
+<script>
+/* v86: 협력업체 — 기준정보(업체 관리)의 외주가공 협력사를 드롭다운으로 선택 */
+async function loadVendorSel(){
+ const sel=document.getElementById('vendorQ');if(!sel||sel.tagName!=='SELECT')return;
+ const keepV=sel.value;
+ let n=0;
+ try{
+  for(let i=0;i<40&&!window.MESLOOK;i++)await new Promise(r=>setTimeout(r,50));
+  if(window.MESLOOK){
+   await MESLOOK.fillSelect(sel,'vendor_outsourcing',{keep:['전체'],
+     value:r=>r.vendor_name||'',label:r=>r.vendor_name||''});
+   n=sel.options.length-1;
+  }
+ }catch(e){}
+ if(n<=0){   /* 마스터가 비어 있으면 조회된 발주자료의 업체로 대체 */
+  try{
+   const src=(typeof rows!=='undefined'&&Array.isArray(rows))?rows:[];
+   const vs=[...new Set(src.map(r=>r.vendor).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
+   sel.innerHTML='<option value="">전체</option>'+vs.map(v=>`<option>${String(v).replace(/[<>&"]/g,'')}</option>`).join('');
+   n=vs.length;
+  }catch(e){}
+ }
+ if([...sel.options].some(o=>o.value===keepV))sel.value=keepV;
+ if(!sel.__vwire){sel.__vwire=1;sel.addEventListener('change',()=>{try{search()}catch(e){}})}
+ if(!n&&typeof msg==='function')msg('협력업체 마스터가 비어 있습니다. 기준정보 > 업체 관리에서 외주가공 업체를 등록하세요.');
+}
+loadVendorSel();setTimeout(loadVendorSel,1500);
+</script>
+<script src="mes_ctx.js?v=86"></script>
 <script>
 function sampleFill(){
   if(window.MESDEMO)return MESDEMO.run('outsourcing_receipt_confirmation',{});
