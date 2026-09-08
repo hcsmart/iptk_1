@@ -217,7 +217,7 @@ input,select{font:inherit}
 </div>
 
 <script>
-const APP_VER='92';
+const APP_VER='93';
 const APP={
   '영업관리':{
     secondary:[
@@ -518,7 +518,7 @@ function buildTop(){
     });
     if(any){li.appendChild(mega);li.onmouseenter=()=>placeMega(li,mega);li.onmouseleave=()=>li.classList.remove('pin')}
     ul.appendChild(li);
-    if(mod==='원가관리'){const o=el('li',activeId==='org_chart'?'on':'');const ob=el('button','','조직도');ob.onclick=()=>openByName('조직도');o.appendChild(ob);ul.appendChild(o)}
+    /* 조직도는 상단메뉴에서 숨긴다 (사용메뉴얼 › 조직 › 조직도 로 접근) */
   });
 }
 
