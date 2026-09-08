@@ -40,7 +40,11 @@
     <div class="box"><div class="box-title">세부공정 리스트</div><div class="tablewrap"><table>
       <colgroup><col style="width:38px"><col style="width:14%"><col style="width:20%"><col style="width:30%"><col style="width:18%"><col style="width:18%"></colgroup>
       <thead><tr><th></th><th>완료여부</th><th>가공공정코드</th><th>가공공정명</th><th>작업시간(분)</th><th>조립진척(%)</th></tr></thead>
-      <tbody id="procBody"></tbody></table></div></div>
+      <tbody id="procBody"></tbody></table></div>
+      <div class="entry" style="grid-template-columns:64px 1fr auto">
+        <span class="label">공 정</span><select id="addProc" class="field"></select>
+        <span style="display:flex;gap:4px"><button class="btn sm primary" onclick="addStep()">＋ 세부공정 추가</button><button class="btn sm warn" onclick="delStep()">세부공정 삭제</button></span>
+      </div></div>
     <div class="box"><div class="box-title">설계/조립 실적등록</div>
       <div class="tablewrap"><table>
         <colgroup><col style="width:34%"><col style="width:36%"><col style="width:30%"></colgroup>
@@ -70,7 +74,8 @@ const RESULTS={};
 let jobIdx=0,stepIdx=0,jobView=[...JOBS];
 function key(){return `${jobView[jobIdx]?.job}|${STEPS[stepIdx]?.mp}`}
 function renderJobs(){jobBody.innerHTML=jobView.map((j,i)=>`<tr class="${i===jobIdx?'sel':''}" onclick="pickJob(${i})"><td>${j.job}</td><td>${j.item}</td><td class="c">${j.due}</td><td class="c">${j.s1}</td><td class="c">${j.cust}</td><td class="r">${j.insp??''}</td></tr>`).join('');countText.textContent=`제번 ${jobView.length}건`}
-function renderSteps(){procBody.innerHTML=STEPS.map((s,i)=>`<tr class="${i===stepIdx?'sel':''}" onclick="pickStep(${i})"><td class="c">${i===stepIdx?'▶':''}</td><td class="c">${s.done?'완료':''}</td><td class="c">${s.mp}</td><td>${s.mpName}</td><td class="r">${s.min??''}</td><td class="r">${s.rate==null?'':s.rate+'%'}</td></tr>`).join('')}
+function renderSteps(){if(!STEPS.length){procBody.innerHTML='<tr><td colspan="6" class="c" style="color:#8b98a4">세부공정이 없습니다. 아래에서 공정을 고르고 [＋ 세부공정 추가]를 누르세요.</td></tr>';return}
+procBody.innerHTML=STEPS.map((s,i)=>`<tr class="${i===stepIdx?'sel':''}" onclick="pickStep(${i})"><td class="c">${i===stepIdx?'▶':''}</td><td class="c">${s.done?'완료':''}</td><td class="c">${s.mp}</td><td>${s.mpName}</td><td class="r">${s.min??''}</td><td class="r">${s.rate==null?'':s.rate+'%'}</td></tr>`).join('')}
 function renderResults(){const list=RESULTS[key()]||[];resultBody.innerHTML=list.length?list.map((r,i)=>`<tr onclick="selResult(${i})" class="${r._sel?'sel':''}"><td>${r.worker}</td><td class="c">${r.date}</td><td class="r">${r.min}</td></tr>`).join(''):'<tr><td colspan="3" class="c" style="color:#8b98a4">실적 없음</td></tr>'}
 function pickJob(i){jobIdx=i;if(typeof loadSteps==='function')setTimeout(loadSteps,0);stepIdx=0;renderJobs();renderSteps();renderResults();msg(`${jobView[i].job} 세부공정을 조회했습니다.`)}
 function pickStep(i){stepIdx=i;renderSteps();renderResults();msg(`세부공정 ${STEPS[i].mp} (${STEPS[i].mpName}) 선택`)}
@@ -126,9 +131,40 @@ async function loadResults(){
   renderSteps();renderResults();
  }catch(e){renderSteps();renderResults()}
 }
+/* 세부공정 원본: assembly_steps → 없으면 설계 세부공정 승계 → 그래도 없으면 여기서 직접 추가한다.
+   공정 목록은 기준정보 > 공정(processes) 마스터를 그대로 쓴다. */
+let PROCS=[];
+async function loadProcs(){
+ await waitDB();if(!online())return;
+ try{PROCS=await MESDB.table('processes').select('select=process_code,process_name,process_group,sort_order&order=process_group,sort_order,process_code')||[]}catch(e){PROCS=[]}
+ addProc.innerHTML=PROCS.map(p=>`<option value="${p.process_code}">${p.process_code} · ${p.process_name}${p.process_group?' ('+p.process_group+')':''}</option>`).join('');
+}
+async function addStep(){
+ const j=jobView[jobIdx];if(!j)return msg('제번을 먼저 선택하세요.');
+ const code=addProc.value;if(!code)return msg('추가할 공정을 선택하세요.');
+ if(STEPS.some(x=>x.mp===code))return msg(`${code} 는 이미 세부공정 리스트에 있습니다.`);
+ if(!online())return msg('DB 미연결 상태에서는 추가할 수 없습니다.');
+ const p=PROCS.find(x=>x.process_code===code)||{};
+ try{
+  await MESDB.table('assembly_steps').insertOne({job_no:j.job,machining_process_code:code,
+   machining_process_name:p.process_name||'',step_completed:false});
+  await loadSteps();msg(`${j.job} 세부공정에 ${code} (${p.process_name||''}) 을 추가했습니다.`);
+ }catch(e){msg('세부공정 추가 실패: '+String(e.message||e).slice(0,110))}
+}
+async function delStep(){
+ const j=jobView[jobIdx],s2=STEPS[stepIdx];
+ if(!j||!s2)return msg('삭제할 세부공정을 선택하세요.');
+ if(s2.row==null)return msg('아직 저장되지 않은 세부공정입니다.');
+ const list=RESULTS[key()]||[];
+ if(list.length)return msg(`실적 ${list.length}건이 등록된 세부공정입니다. 실적을 먼저 삭제하세요.`);
+ if(!confirm(`세부공정 ${s2.mp} (${s2.mpName}) 을 삭제할까요?`))return;
+ try{await MESDB.table('assembly_steps').delete({row_no:s2.row});
+  stepIdx=0;await loadSteps();msg(`세부공정 ${s2.mp} 을 삭제했습니다.`);
+ }catch(e){msg('삭제 실패: '+String(e.message||e).slice(0,110))}
+}
 async function addResult(){
  const j=jobView[jobIdx];if(!j)return msg('제번을 선택하세요.');
- const s=STEPS[stepIdx];if(!s)return msg('세부공정을 선택하세요.');
+ const s=STEPS[stepIdx];if(!s)return msg(STEPS.length?'세부공정을 선택하세요.':'세부공정이 없습니다. 공정을 고르고 [＋ 세부공정 추가]를 먼저 누르세요.');
  const m=Number(minutes.value);if(!m||m<=0)return msg('작업시간(분)을 입력하세요.');
  const wk=worker.value.trim();if(!wk)return msg('작업자를 입력하거나 목록에서 선택하세요.');
  if(!online())return msg('DB 미연결 상태에서는 실적을 등록할 수 없습니다.');
@@ -206,7 +242,7 @@ function msg(t){message.textContent=t}
 function fillWorkers(){workerList.innerHTML=WORKERS.map(w=>`<option value="${String(w).replace(/"/g,'&quot;')}"></option>`).join('')}
 const renderWorkers=fillWorkers;
 fillWorkers();workDate.value=new Date().toISOString().slice(0,10);
-renderJobs();renderSteps();renderResults();window.MES={search,save:addResult,exportCsv,setMessage:msg,reload:loadJobs};loadJobs();
+renderJobs();renderSteps();renderResults();window.MES={search,save:addResult,exportCsv,setMessage:msg,reload:loadJobs};loadJobs();loadProcs();
 </script>
 <script src="mes_sample.js?v=67"></script><script src="mes_scene.js?v=67"></script><script src="mes_demo.js?v=67"></script><script src="mes_db.js?v=67"></script>
 <script>MESDB.bind("assembly_result_input",()=>({JOBS,STEPS,WORKERS}));</script>
