@@ -102,6 +102,16 @@ async function pushDown(){const j=jobView[jobIdx];if(!j)return;const picks=[...b
  if(!vens.length)return msg('협력업체리스트에서 발주할 업체를 체크하세요.');
  const d=reqDate.value||new Date().toISOString().slice(0,10);
  const combos=[];for(const v of vens)for(const b of picks)combos.push({v,b});
+ /* 중복 방지: 같은 업체·제번·공정·품번이 이미 요청 리스트에 있으면 추가하지 않는다.
+    수량을 늘리려면 리스트의 발주수량 칸에서 수정한다. */
+ const RK=(v,jb,pr,pt)=>[v,jb,pr,pt].join('|');
+ const have=new Set(REQ.map(r=>RK(r.vendor,r.job,r.proc,r.part)));
+ const dup=[];
+ for(let i=combos.length-1;i>=0;i--){
+  const k=RK(combos[i].v,j.job,j.proc,combos[i].b.part);
+  if(have.has(k)){dup.unshift(combos[i].b.part);combos.splice(i,1)}else have.add(k);
+ }
+ if(!combos.length)return msg(`이미 요청 리스트에 있어 추가하지 않았습니다: ${[...new Set(dup)].join(', ')} — 수량은 발주수량 칸에서 수정하세요.`);
  combos.forEach(({v,b})=>{const dims=String(b.spec).split(/[*xX×]/).map(Number);REQ.push({no:REQ.length?Math.max(...REQ.map(r=>r.no))+1:1,vendor:v,job:j.job,proc:j.proc,part:b.part,name:b.name,mat:b.mat,design:b.spec,th:dims[0]||null,w:dims[1]||null,l:dims[2]||null,qty:b.qty,ord:b.qty,wt:null,stdPrice:0,buyPrice:0,price:0,amount:0,odate:new Date().toISOString().slice(0,10),rdate:d,att:b.att,remark:''})});
  /* v39: 중량(설계치수 기준)과 자재 단가를 자동 산출해 발주금액을 채운다.
     금액이 없으면 입고확정을 해도 제조원가에 원재료비가 0으로 잡힌다. */
@@ -120,7 +130,7 @@ async function pushDown(){const j=jobView[jobIdx];if(!j)return;const picks=[...b
  renderReq();
  const tot=REQ.reduce((a,r)=>a+(Number(r.amount)||0),0);
  const noPrice=REQ.filter(r=>!r.amount).length;
- msg(`${combos.length}건을 구매요청 리스트에 추가했습니다. 발주금액 합계 ${tot.toLocaleString('ko-KR')}원`+
+ msg(`${combos.length}건을 구매요청 리스트에 추가했습니다.${dup.length?` (중복 ${dup.length}건 제외)`:''} 발주금액 합계 ${tot.toLocaleString('ko-KR')}원`+
    (noPrice?` (단가 미등록 ${noPrice}건 - 자재단가변동등록 확인)`:'')+
   (REQ.some(r=>r.priceNote&&r.priceNote!=='일치')?
    ` (대체단가 적용: ${[...new Set(REQ.filter(r=>r.priceNote&&r.priceNote!=='일치').map(r=>r.priceNote))].join(', ')})`:''));}

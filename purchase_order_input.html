@@ -100,6 +100,16 @@ async function pushDown(){const j=jobView[jobIdx];if(!j)return;const picks=[...b
  if(!vens.length)return msg('협력업체리스트에서 발주할 업체를 체크하세요.');
  const d=reqDate.value||new Date().toISOString().slice(0,10);
  const combos=[];for(const v of vens)for(const b of picks)combos.push({v,b});
+ /* 중복 방지: 같은 업체·제번·공정·품번이 이미 요청 리스트에 있으면 추가하지 않는다.
+    수량을 늘리려면 리스트의 발주수량 칸에서 수정한다. */
+ const RK=(v,jb,pr,pt)=>[v,jb,pr,pt].join('|');
+ const have=new Set(REQ.map(r=>RK(r.vendor,r.job,r.proc,r.part)));
+ const dup=[];
+ for(let i=combos.length-1;i>=0;i--){
+  const k=RK(combos[i].v,j.job,j.proc,combos[i].b.part);
+  if(have.has(k)){dup.unshift(combos[i].b.part);combos.splice(i,1)}else have.add(k);
+ }
+ if(!combos.length)return msg(`이미 요청 리스트에 있어 추가하지 않았습니다: ${[...new Set(dup)].join(', ')} — 수량은 발주수량 칸에서 수정하세요.`);
  combos.forEach(({v,b})=>REQ.push({no:REQ.length?Math.max(...REQ.map(r=>r.no))+1:1,vendor:v,job:j.job,proc:j.proc,part:b.part,name:b.name,mat:b.mat,spec:b.spec,qty:b.qty,ord:b.qty,odate:new Date().toISOString().slice(0,10),rdate:d,att:b.att,remark:'',owner:OWNER,stdPrice:0,buyPrice:0,amount:0}));
  /* v39: 자재단가 마스터에 등록된 품목이면 매입가를 자동으로 채운다. */
  if(window.MESPRICE){
@@ -113,7 +123,7 @@ async function pushDown(){const j=jobView[jobIdx];if(!j)return;const picks=[...b
  renderReq();
  const tot=REQ.reduce((a,r)=>a+(Number(r.amount)||0),0);
  const noPrice=REQ.filter(r=>!r.amount).length;
- msg(`${combos.length}건을 구매요청 리스트에 추가했습니다. 발주금액 합계 ${tot.toLocaleString('ko-KR')}원`+
+ msg(`${combos.length}건을 구매요청 리스트에 추가했습니다.${dup.length?` (중복 ${dup.length}건 제외)`:''} 발주금액 합계 ${tot.toLocaleString('ko-KR')}원`+
    (noPrice?` (단가 미입력 ${noPrice}건 - 매입가를 직접 입력하세요)`:''));}
 function pullUp(){const ids=[...reqBody.querySelectorAll('input:checked')].map(x=>Number(x.dataset.no));if(!ids.length)return msg('삭제할 요청 행을 선택하세요.');for(let i=REQ.length-1;i>=0;i--)if(ids.includes(REQ[i].no))REQ.splice(i,1);renderReq();msg(`${ids.length}건을 삭제했습니다.`)}
 /* v62: 같은 제번·품번·업체(외주가공은 가공공정 포함)의 미입고 발주가 있으면 중복 등록 차단 */
