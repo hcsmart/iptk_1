@@ -29,7 +29,7 @@
       (document.head||document.documentElement).appendChild(lk)}catch(e){}
 })();
 
-const MES_VER='v69';window.MES_VER=MES_VER;
+const MES_VER='v70';window.MES_VER=MES_VER;
 const CFG={url:'https://ipggvrzxfcryzryileuv.supabase.co',key:'sb_publishable_CHO-dAOU00HNwno52255mg_H3C1_vew'};
 function tok(){try{return (window.MES_AUTH||window.parent.MES_AUTH)?.token||null}catch(e){return null}}
 const H=()=>({'apikey':CFG.key,'Authorization':'Bearer '+(tok()||CFG.key),'Content-Type':'application/json'});
@@ -401,7 +401,10 @@ async function lines(opt){
   const take=()=>{snap=new Map(arr().filter(r=>r._id).map(r=>[r._id,JSON.stringify(r)]))};
   /* v88: 최초 로드와 재조회를 같은 함수로. 화면이 열려 있는 동안 다른 화면에서 생긴
      발주/입고를 [조회] 나 mes-data-changed 알림으로 즉시 다시 읽어온다. */
+  let loading=false;
   async function load(){
+    if(loading)return -2;                      /* v92: 재진입 차단 (렌더 콜백이 다시 조회를 부르는 경우) */
+    loading=true;
     try{
       const rows=await MESDB.table('order_lines').select(q.join('&'));
       const a=arr();a.length=0;a.push(...rows.map(r=>toS(r,map)));
@@ -414,6 +417,7 @@ async function lines(opt){
       badge(`DB: order_lines ${opt.category} ${rows.length}건`,'#2e7d32');window.__mesdbReady&&window.__mesdbReady();
       return rows.length;
     }catch(e){online=false;badge('DB 미연결(로컬)','#9e9e9e');console.warn('MESDB.lines',e.message);window.__mesdbReady&&window.__mesdbReady();return -1}
+    finally{loading=false}
   }
   /* 저장 대기 중인 편집이 있으면 덮어쓰지 않는다 */
   const dirty=()=>arr().some(r=>!r._id||snap.get(r._id)!==JSON.stringify(r));
