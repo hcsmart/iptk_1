@@ -1240,9 +1240,9 @@ window.MESCTX={confirm:dlgConfirm};
 (function(){
  if(window.__mesSavePop)return; window.__mesSavePop=1;
  /* 저장 성공 · 입고 처리 완료(구매품/원재료/외주가공/세트/설계외주) */
- const OK=/저장(했습니다|되었습니다|하였습니다|\s*완료)|저장됨|입고[^.]*?처리했습니다|입고 반영 — 완료/;
+ const OK=/저장(했습니다|되었습니다|하였습니다|\s*완료)|저장됨|입고[^.]*?처리했습니다|입고확정했습니다|입고 반영 — 완료/;
  /* 실패·미저장·안내(행 선택/입력 요구·재시도 요구)·취소·삭제 문구는 팝업 없음 */
- const NG=/않|실패|미연결|오류|취소|안 됨|안됨|불가|중복|삭제|다시|먼저|선택하세요|입력하세요|반영 중/;
+ const NG=/않|실패|미연결|오류|취소|안 됨|안됨|불가|중복|삭제|다시|먼저|선택하세요|입력하세요|반영 중|취소 내용/;
  let tm=0;
  function ensure(){
   if(document.getElementById('messave-style'))return;
@@ -1271,7 +1271,7 @@ window.MESCTX={confirm:dlgConfirm};
   ensure();
   const bg=document.createElement('div');bg.id='messave-bg';
   bg.innerHTML=`<div id="messave" role="alertdialog" aria-modal="true">
-    <div class="t">${/입고/.test(t)?'입고 완료':'저장 완료'}</div>
+    <div class="t">${/입고확정했습니다/.test(t)?'입고확정 완료':/입고/.test(t)?'입고 완료':'저장 완료'}</div>
     <div class="bd"><span class="ic">✓</span><span class="tx"></span></div>
     <div class="bt"><button type="button">확인</button></div></div>`;
   bg.querySelector('.tx').textContent=t;
