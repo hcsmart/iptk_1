@@ -1234,3 +1234,64 @@ window.MESCTX={confirm:dlgConfirm};
  st.textContent='.foot .msg,.foot .sp,.msg{color:#1360a8!important;font-weight:600}';
  (document.head||document.documentElement).appendChild(st);
 })();
+/* ── v94: 저장 완료 팝업 (전 화면 공용) ──────────────────────────────
+   하단 상태줄(#message)에 저장 성공 문구가 뜨면 [확인] 팝업을 함께 띄운다.
+   실패·미저장·안내 문구는 종전처럼 하단 표시만 하고 팝업은 띄우지 않는다. */
+(function(){
+ if(window.__mesSavePop)return; window.__mesSavePop=1;
+ const OK=/저장(했습니다|되었습니다|하였습니다|\s*완료)|저장됨/;
+ const NG=/않|실패|미연결|오류|취소|안 됨|안됨|하세요|불가|중복|삭제/;
+ let tm=0;
+ function ensure(){
+  if(document.getElementById('messave-style'))return;
+  const st=document.createElement('style');st.id='messave-style';
+  st.textContent=`
+#messave-bg{position:fixed;inset:0;z-index:100001;background:rgba(20,28,35,.38);display:flex;
+ align-items:center;justify-content:center;font:12px/1.6 'Malgun Gothic',맑은 고딕,sans-serif}
+#messave{min-width:300px;max-width:440px;background:#fff;border:1px solid #7f8f9c;
+ box-shadow:0 6px 24px rgba(0,0,0,.3)}
+#messave .t{height:30px;display:flex;align-items:center;padding:0 12px;color:#fff;
+ background:linear-gradient(#4f7d5f,#2e5d3e);font-weight:700}
+#messave .bd{padding:18px;display:flex;gap:10px;align-items:flex-start;color:#22303a}
+#messave .ic{flex:0 0 auto;width:22px;height:22px;border-radius:50%;background:#2e7d32;color:#fff;
+ display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+#messave .tx{font-size:13px;font-weight:600;word-break:break-all;white-space:pre-wrap;padding-top:1px}
+#messave .bt{padding:10px 14px 14px;display:flex;justify-content:flex-end;background:#f7f9fa;
+ border-top:1px solid #e3e9ed}
+#messave button{height:29px;min-width:88px;border:1px solid #9ba8b4;cursor:pointer;
+ background:linear-gradient(#fff,#dfe6eb);font:12px 'Malgun Gothic',맑은 고딕,sans-serif;font-weight:700}
+#messave button:hover{background:#fff}
+#messave button:focus{outline:2px solid #2f6fb5;outline-offset:1px}`;
+  (document.head||document.documentElement).appendChild(st);
+ }
+ function pop(t){
+  if(document.getElementById('messave-bg'))return;   /* 이미 떠 있으면 중복 금지 */
+  ensure();
+  const bg=document.createElement('div');bg.id='messave-bg';
+  bg.innerHTML=`<div id="messave" role="alertdialog" aria-modal="true">
+    <div class="t">저장 완료</div>
+    <div class="bd"><span class="ic">✓</span><span class="tx"></span></div>
+    <div class="bt"><button type="button">확인</button></div></div>`;
+  bg.querySelector('.tx').textContent=t;
+  document.body.appendChild(bg);
+  const btn=bg.querySelector('button');
+  const key=e=>{if(e.key==='Enter'||e.key==='Escape'){e.preventDefault();e.stopPropagation();close()}};
+  function close(){bg.remove();document.removeEventListener('keydown',key,true)}
+  btn.onclick=close;
+  bg.onclick=e=>{if(e.target===bg)close()};
+  document.addEventListener('keydown',key,true);
+  try{btn.focus()}catch(e){}
+ }
+ function check(t){
+  t=String(t||'').trim();
+  if(!t)return;
+  if(OK.test(t)&&!NG.test(t)){clearTimeout(tm);tm=setTimeout(()=>pop(t),80)}  /* 연속 갱신은 마지막 문구만 */
+ }
+ function watch(){
+  const m=document.getElementById('message');
+  if(!m||m.__mesSave)return; m.__mesSave=1;
+  new MutationObserver(()=>check(m.textContent)).observe(m,{childList:true,characterData:true,subtree:true});
+ }
+ watch();
+ new MutationObserver(()=>watch()).observe(document.documentElement,{childList:true,subtree:true});
+})();
