@@ -131,6 +131,7 @@ async function save(){
  for(let i=IN.length-1;i>=0;i--)if(!keep.has(IN[i].no))IN.splice(i,1);
  renderIn();
  if(window.MESMOVE)MESMOVE.invalidate();
+ try{MESDB.dropCache&&MESDB.dropCache('order_lines')}catch(e){}   /* v101: RPC 는 REST 를 안 거쳐 조회 캐시가 남는다 */
  try{MESDB.notify&&MESDB.notify(['order_lines'])}catch(e){}
  try{await (MESDB.reloadLines?MESDB.reloadLines():Promise.resolve())}catch(e){}
  _filterNow();

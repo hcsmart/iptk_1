@@ -29,7 +29,7 @@
       (document.head||document.documentElement).appendChild(lk)}catch(e){}
 })();
 
-const MES_VER='v72';window.MES_VER=MES_VER;
+const MES_VER='v73';window.MES_VER=MES_VER;
 const CFG={url:'https://ipggvrzxfcryzryileuv.supabase.co',key:'sb_publishable_CHO-dAOU00HNwno52255mg_H3C1_vew'};
 function tok(){try{return (window.MES_AUTH||window.parent.MES_AUTH)?.token||null}catch(e){return null}}
 const H=()=>({'apikey':CFG.key,'Authorization':'Bearer '+(tok()||CFG.key),'Content-Type':'application/json'});
@@ -119,7 +119,7 @@ async function rest_(path,opt={}){
  * 화면이 직접 부르는 notify 와 겹쳐도 무해하다. */
 const autoNotify=(name,p)=>p.then(r=>{try{window.MESDB.notify&&window.MESDB.notify([name])}catch(e){}return r});
 const table=name=>({
-  select:(q='select=*')=>rest(`${name}?${q}`),
+  select:(q='select=*',o)=>{if(o&&o.fresh)xdrop(name);return rest(`${name}?${q}`)},
   upsert:(rows,onConflict)=>{const a=Array.isArray(rows)?rows:[rows];const keys=[];for(const r of a)for(const k in r)if(!keys.includes(k))keys.push(k);
     const norm=a.map(r=>{const o={};for(const k of keys)o[k]=(r[k]===undefined?null:r[k]);return o});
     return autoNotify(name,rest(`${name}${onConflict?'?on_conflict='+onConflict:''}`,{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(norm)}))},
@@ -376,6 +376,8 @@ function onChange(tables,fn){
   window.addEventListener('unload',()=>{try{host.removeEventListener('mes-data-changed',h)}catch(e){}});
 }
 window.MESDB.notify=notify; window.MESDB.onChange=onChange;
+/* v73: 화면이 REST 를 거치지 않고(직접 fetch·RPC) 자료를 바꿨을 때 조회 캐시를 비우는 통로 */
+window.MESDB.dropCache=t=>{try{xdrop(t||'rpc')}catch(e){}};
 })();
 
 /* ── v18: 발주→입고→입고확정 라인 (order_lines) ─────────────────────
@@ -414,7 +416,7 @@ async function lines(opt){
     if(loading)return -2;                      /* v92: 재진입 차단 (렌더 콜백이 다시 조회를 부르는 경우) */
     loading=true;
     try{
-      const rows=await MESDB.table('order_lines').select(q.join('&'));
+      const rows=await MESDB.table('order_lines').select(q.join('&'),{fresh:true});   /* v73: [조회]·자동갱신은 캐시를 건너뛴다 */
       const a=arr();a.length=0;a.push(...rows.map(r=>toS(r,map)));
       online=true;
       /* v39: 화면 렌더 오류가 DB 연결 상태까지 죽이지 않도록 격리한다.
