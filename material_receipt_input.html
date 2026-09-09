@@ -63,7 +63,16 @@ function passFilter(r){
 }
 function applyFilter(){view=rows.filter(passFilter)}
 function search(){applyFilter();render();msg(`검색 결과 ${view.length}건입니다.${showDone.checked?'':' (입고완료 건은 숨김)'}`)}
-function applyReceipt(){dirty=true;const s=selected();if(!s.length)return msg('입고 처리할 행을 선택하세요.');const d=inDate.value||new Date().toISOString().slice(0,10);s.forEach(r=>{r.idate=d;if(r.inQty===''||r.inQty==null||Number(r.inQty)===0)r.inQty=Number(r.ord)||0;/* v62: 입고수량 미입력 = 발주수량 */r.amt=(Number(r.price)||0)*(Number(r.inQty)||0);r.status='입고'});render();msg(`${s.length}건을 ${d} 입고 처리했습니다.`)}
+/* v95: 입고처리 = 즉시 DB 반영. 처리된 행은 대기 목록에서 빠지고 완료 팝업이 뜬다 ([입고완료 포함] 을 켜면 다시 보임). DB 미연결이면 종전처럼 화면만 바꾸고 [저장] 으로 반영. */
+async function applyReceipt(){const s=selected();if(!s.length)return msg('입고 처리할 행을 선택하세요.');const d=inDate.value||new Date().toISOString().slice(0,10);
+ s.forEach(r=>{r.idate=d;if(r.inQty===''||r.inQty==null||Number(r.inQty)===0)r.inQty=Number(r.ord)||0;/* v62: 입고수량 미입력 = 발주수량 */r.amt=(Number(r.price)||0)*(Number(r.inQty)||0);r.status='입고'});dirty=true;
+ if(!window.MESDB||!MESDB.online){render();return msg(`${s.length}건을 ${d} 입고 처리했습니다. (DB 미연결 - 로컬, [저장]으로 반영)`)}
+ msg('입고 반영 중…');
+ try{await MESDB.syncLines()}catch(e){}
+ let rl=0;try{rl=MESDB.reloadLines?await MESDB.reloadLines():0}catch(e){rl=-1}
+ if(rl===-1){render();return msg('입고 처리 저장 실패: DB 반영이 되지 않았습니다. [저장]을 다시 눌러주세요.')}
+ dirty=false;applyFilter();render();
+ msg(`${s.length}건을 ${d} 입고 처리했습니다. (DB 저장 완료${showDone.checked?'':' - 대기 목록에서 제외'}) 검사실적등록에서 검사하세요.`)}
 function cancelReceipt(){dirty=true;const s=selected();if(!s.length)return msg('입고취소할 행을 선택하세요.');s.forEach(r=>{r.idate='';r.amt=0;r.status='대기'});render();msg(`${s.length}건의 입고를 취소했습니다.`)}
 async function cancelOrder(){const s=selected();if(!s.length)return msg('발주취소할 행을 선택하세요.');const done=s.filter(r=>r.status&&r.status!=='대기');if(done.length)return msg(`입고·확정된 ${done.length}건은 발주취소할 수 없습니다. 입고취소 후 진행하세요.`);if(!confirm(`발주 ${s.length}건을 취소(삭제)합니다. 되돌릴 수 없습니다. 계속할까요?`))return;const ids=s.map(r=>r.no);if(window.MESDB&&MESDB.online){try{await MESDB.delLines(ids)}catch(e){return msg('발주취소 실패: '+String(e.message||e).slice(0,120))}}for(let i=rows.length-1;i>=0;i--)if(ids.includes(rows[i].no))rows.splice(i,1);view=view.filter(r=>!ids.includes(r.no));render();msg(`${ids.length}건의 발주를 취소했습니다.${(window.MESDB&&MESDB.online)?' (DB 삭제 완료)':' (DB 미연결 - 로컬)'}`)}
 async function save(){const applied=rows.filter(r=>r.status==='입고').length;
