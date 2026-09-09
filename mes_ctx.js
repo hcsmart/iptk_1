@@ -285,11 +285,14 @@ window.MESCTX={confirm:dlgConfirm};
    for(let c=0;c<n;c++){const p=textPx(cellText(cs[c]),font)+PAD;if(p>w[c])w[c]=p}
   }
   for(let c=0;c<n;c++)w[c]=Math.round(Math.max(MIN,Math.min(MAX,w[c])));
+  /* v104: 배치 편집에서 저장한 열 폭은 그대로 쓰고, 남는 폭 배분에서도 뺀다 */
+  const fixed=hs.map(h=>{try{const s=window.MESLAYOUT&&h.dataset.leCol&&MESLAYOUT.state[h.dataset.leId];return (s&&s.width)?Number(s.width):0}catch(e){return 0}});
+  for(let c=0;c<n;c++)if(fixed[c])w[c]=fixed[c];
   let sum=w.reduce((a,b)=>a+b,0);
   const avail=(wrap.clientWidth||0)-2;
-  if(avail>0&&sum<avail){                       /* 남는 폭은 넓은 열에 비례 배분 */
-   const extra=avail-sum;
-   for(let c=0;c<n;c++)w[c]=Math.round(w[c]+extra*(w[c]/sum));
+  if(avail>0&&sum<avail){                       /* 남는 폭은 넓은 열(고정 열 제외)에 비례 배분 */
+   const extra=avail-sum,free=w.reduce((a,b,c)=>a+(fixed[c]?0:b),0);
+   if(free>0)for(let c=0;c<n;c++)if(!fixed[c])w[c]=Math.round(w[c]+extra*(w[c]/free));
    sum=w.reduce((a,b)=>a+b,0);
   }
   hs.forEach((h,c)=>{h.style.width=w[c]+'px'});
@@ -675,6 +678,9 @@ window.MESCTX={confirm:dlgConfirm};
  *   [입력칸 자유 이동] v103: 입력칸(라벨과 한 묶음)을 끌어서 다른 칸 위에 놓으면 자리 바꿈,
  *                빈 곳에 놓으면 그 자리로 자유 이동. 원래 자리는 빈 칸(placeholder)으로 남겨 나머지 배치가 흐트러지지 않는다.
  *                [원래 자리] 버튼으로 되돌린다. 위치는 버튼과 같은 pos_x/pos_y 에 저장.
+ *   [표 열 폭]   v104: 표 머리글(th)을 길게 누르면 그 열 선택 → 오른쪽 핸들 또는 폭 입력으로 열 폭 조절.
+ *                열은 '표(블록/id)+머리글 글자' 로 식별해 저장하므로 열이 추가돼도 유지된다.
+ *   리스트제목은 .ph/.hd/.cap/.caption 외에 .grid-title/.box-title/.sheet-head 도 인식한다 (v104).
  *   폭·높이·위치는 모두 5px 단위로 맞춰진다.
  * 바꾼 배치는 ui_layout(user_key='*') 에 저장되어 전 사용자에게 적용된다.
  * 편집은 마스터(role='master')만 가능. 일반 사용자는 적용만 받는다. */
@@ -687,6 +693,8 @@ window.MESCTX={confirm:dlgConfirm};
  body.mes-le-on input:not([type=checkbox]):not([type=radio]),body.mes-le-on select,body.mes-le-on textarea,body.mes-le-on .mescb{cursor:move!important}
  body.mes-le-on .mes-le-head{cursor:move!important}
  body.mes-le-on button:not(#mesleBar button){cursor:move!important}
+ body.mes-le-on th[data-le-col]{cursor:col-resize!important}
+ th.mes-le-sel{outline-offset:-2px}
  .mes-le-free{z-index:30}
  .mes-le-ph{visibility:hidden;pointer-events:none}
  body.mes-le-on .mes-le-ph{visibility:visible;outline:1px dashed #c9d3dc;outline-offset:-1px;background:repeating-linear-gradient(45deg,#f7f9fb,#f7f9fb 6px,#eef2f5 6px,#eef2f5 12px)}
@@ -705,7 +713,7 @@ window.MESCTX={confirm:dlgConfirm};
  (document.head||document.documentElement).appendChild(st);
 
  const FQ='input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not(.mescb-in),select,textarea';
- const HSEL='.ph,.hd,.cap,.caption';                     /* 리스트/패널 제목 줄 */
+ const HSEL='.ph,.hd,.cap,.caption,.grid-title,.box-title,.sheet-head';   /* 리스트/패널 제목 줄 (v104 확장) */
  const NOZONE='#mesleBar,.mescb-pop,#meslk,#mesdlg';
  const auth=()=>{try{return window.MES_AUTH||window.parent.MES_AUTH||null}catch(e){return window.MES_AUTH||null}};
  const KEY='*';                                /* 전 사용자 공통 */
@@ -752,7 +760,7 @@ window.MESCTX={confirm:dlgConfirm};
   return (c.textContent||'').replace(/\s+/g,' ').trim().slice(0,40)}
  function tagBlocks(){
   const used=new Set();
-  document.querySelectorAll('[data-le-id]').forEach(b=>used.add(b.dataset.leId));
+  document.querySelectorAll('[data-le-id]:not([data-le-col])').forEach(b=>used.add(b.dataset.leId));
   document.querySelectorAll(HSEL).forEach(h=>{
    if(h.closest(NOZONE))return;
    const box=h.parentElement;
@@ -816,6 +824,28 @@ window.MESCTX={confirm:dlgConfirm};
   const s=S[el.id];if(s&&s.width)setWidth(el,s.width);
  }
 
+ /* ── v104: 표 열 폭 ── */
+ const isCol=el=>!!(el&&el.dataset&&el.dataset.leCol);
+ const thText=th=>(th.textContent||'').replace(/\s+/g,' ').trim().slice(0,30);
+ function tableKey(t){if(t.id)return 'tbl#'+t.id;const b=t.closest('[data-le-id]:not([data-le-col])');if(b)return b.dataset.leId;
+  const all=[...document.querySelectorAll('table')].filter(x=>!x.closest(NOZONE));return 'tbl@'+all.indexOf(t)}
+ function tagCols(){
+  document.querySelectorAll('table').forEach(t=>{
+   if(t.closest(NOZONE)||t.closest('#mesleBar'))return;
+   const hr=t.tHead?[...t.tHead.rows].pop():t.rows[0];if(!hr)return;
+   const ths=[...hr.cells].filter(c=>c.tagName==='TH');if(!ths.length)return;
+   const key=tableKey(t),seen={};
+   ths.forEach((th,i)=>{if(th.dataset.leCol)return;const tx=thText(th);let id='col:'+key+':'+(tx||'#'+i);
+    if(seen[id]||document.querySelector(`[data-le-id="${id.replace(/"/g,'&quot;')}"]`))id+='#'+i;seen[id]=1;
+    th.dataset.leId=id;th.dataset.leCol='1'});
+  });
+ }
+ const thOf=t=>{if(!t||t.nodeType!==1)return null;if(t.closest(NOZONE))return null;
+  const th=t.closest('th');return (th&&th.dataset.leCol)?th:null};
+ function setColW(th,w){th.style.width=w+'px';th.style.minWidth=w+'px';th.style.maxWidth=w+'px';
+  const t=th.closest('table');if(t&&t.style.minWidth&&/px$/.test(t.style.minWidth)){t.style.minWidth='0'}}   /* 표 최소폭이 열 폭을 되돌리지 않게 */
+ function applyCols(){tagCols();document.querySelectorAll('th[data-le-col]').forEach(th=>{const s=S[th.dataset.leId];if(s&&s.width)setColW(th,s.width)})}
+
  /* ── 적용 ── */
  const S={};                                   /* elem_id → {width, height, ord} */
  function setWidth(el,w){
@@ -850,7 +880,7 @@ window.MESCTX={confirm:dlgConfirm};
  function applyBlocks(){
   tagBlocks();
   const groups=new Set();
-  document.querySelectorAll('[data-le-id]').forEach(b=>{const s=S[b.dataset.leId];
+  document.querySelectorAll('[data-le-id]:not([data-le-col])').forEach(b=>{const s=S[b.dataset.leId];
    if(s&&s.ord!=null&&b.parentElement)groups.add(b.parentElement)});
   groups.forEach(p=>{
    const kids=[...p.children].filter(c=>c.dataset&&c.dataset.leId&&S[c.dataset.leId]&&S[c.dataset.leId].ord!=null);
@@ -861,7 +891,7 @@ window.MESCTX={confirm:dlgConfirm};
    sorted.forEach((c,i)=>p.insertBefore(c,marks[i]));
    marks.forEach(m=>m.remove());
   });
-  document.querySelectorAll('[data-le-id]:not([data-le-btn])').forEach(b=>{const s=S[b.dataset.leId];if(!s)return;
+  document.querySelectorAll('[data-le-id]:not([data-le-btn]):not([data-le-col])').forEach(b=>{const s=S[b.dataset.leId];if(!s)return;
    if(s.width)setBlkW(b,s.width);if(s.height)setBlkH(b,s.height)});
  }
  function applyButtons(){
@@ -876,7 +906,7 @@ window.MESCTX={confirm:dlgConfirm};
    const g=gridOf(el);if(!g||done.has(g.grid))return;
    const gs=gridsOf(g.grid);gs.forEach(x=>done.add(x));applyOrder(gs)});
   document.querySelectorAll(FQ).forEach(el=>{const s=el.id&&S[el.id];if(s&&s.width)setWidth(el,s.width)});
-  applyBlocks();applyButtons();
+  applyBlocks();applyButtons();applyCols();
   document.querySelectorAll(FQ).forEach(el=>{const s=el.id&&S[el.id];if(s&&s.x!=null&&s.y!=null&&!el.__leFree)try{setFieldPos(el,s.x,s.y)}catch(e){}});   /* v103 */
  }
  let COLS='elem_id,width,height,ord,pos_x,pos_y';
@@ -919,8 +949,8 @@ window.MESCTX={confirm:dlgConfirm};
    `<button data-a="save">▤ 저장</button><button data-a="reset">초기화</button><button data-a="close">닫기(Esc)</button>`+
    `<span class="tip">핸들 드래그=크기 · 다른 칸/제목에 놓기=자리 바꿈 · 빈 곳에 놓기=자유 이동 (5px 단위)</span>`;
   const wi=bar.querySelector('.w'),hi=bar.querySelector('.h');
-  const applyW=()=>{if(!sel)return;const v=snap(Math.max(60,Math.min(2400,Math.round(Number(wi.value)||0))));
-   if(!v)return;wi.value=v;isBtn(sel)?(sel.style.width=v+'px',sel.style.minWidth='0'):selBlk?setBlkW(sel,v):setWidth(sel,v);
+  const applyW=()=>{if(!sel)return;const v=snap(Math.max(isCol(sel)?30:60,Math.min(2400,Math.round(Number(wi.value)||0))));
+   if(!v)return;wi.value=v;isBtn(sel)?(sel.style.width=v+'px',sel.style.minWidth='0'):isCol(sel)?setColW(sel,v):selBlk?setBlkW(sel,v):setWidth(sel,v);
    S[EID(sel)]=Object.assign(S[EID(sel)]||{},{width:v});mark(EID(sel));place()};
   const applyH=()=>{if(!sel||!selBlk)return;const v=snap(Math.max(60,Math.min(2000,Math.round(Number(hi.value)||0))));
    if(!v)return;hi.value=v;setBlkH(sel,v);
@@ -943,7 +973,7 @@ window.MESCTX={confirm:dlgConfirm};
   document.body.appendChild(bar);
   hand=document.createElement('div');hand.id='mesleH';hand.style.display='none';document.body.appendChild(hand);
   hand.addEventListener('mousedown',e=>{if(!sel)return;e.preventDefault();e.stopPropagation();
-   drag={mode:'size',el:sel,blk:selBlk,btn:isBtn(sel),x0:e.clientX,w0:visual(sel).getBoundingClientRect().width}});
+   drag={mode:'size',el:sel,blk:selBlk,btn:isBtn(sel),col:isCol(sel),x0:e.clientX,w0:visual(sel).getBoundingClientRect().width}});
   handV=document.createElement('div');handV.id='mesleV';handV.style.display='none';document.body.appendChild(handV);
   handV.addEventListener('mousedown',e=>{if(!sel||!selBlk)return;e.preventDefault();e.stopPropagation();
    drag={mode:'sizeh',el:sel,y0:e.clientY,h0:sel.getBoundingClientRect().height}});
@@ -957,14 +987,14 @@ window.MESCTX={confirm:dlgConfirm};
   sel=el;selBlk=!!blk;
   if(bar){bar.classList.toggle('blk',!!blk);bar.classList.toggle('btn',!blk&&(isBtn(el)||isFld(el)))}
   if(el){visual(el).classList.add('mes-le-sel');
-   if(bar){bar.querySelector('.id').textContent=(blk||isBtn(el))?EID(el):'#'+el.id;
+   if(bar){bar.querySelector('.id').textContent=(blk||isBtn(el)||isCol(el))?EID(el).replace(/^col:.*?:/,'열: '):'#'+el.id;
     if(!blk&&(isBtn(el)||isFld(el))){const p=posOf(el);const xi=bar.querySelector('.x'),yi=bar.querySelector('.y');if(xi)xi.value=snap(p.x);if(yi)yi.value=snap(p.y)}
     const r=visual(el).getBoundingClientRect();
     const wi=bar.querySelector('.w');if(wi)wi.value=snap(r.width);
     const hi=bar.querySelector('.h');if(hi)hi.value=snap(r.height)}
    place()}
   else{if(hand)hand.style.display='none';if(handV)handV.style.display='none'}}
- function enter(el,blk){if(!isMaster())return;if(!on){on=true;document.body.classList.add('mes-le-on');ui();tagBlocks();tagButtons()}select(el,blk)}
+ function enter(el,blk){if(!isMaster())return;if(!on){on=true;document.body.classList.add('mes-le-on');ui();tagBlocks();tagButtons();tagCols()}select(el,blk)}
  function exit(){if(dirty.size&&!confirm('저장하지 않은 변경이 '+dirty.size+'건 있습니다. 저장하지 않고 닫을까요?'))return;
   dirty.clear();on=false;document.body.classList.remove('mes-le-on');select(null);
   if(bar){bar.remove();bar=null}if(hand){hand.remove();hand=null}if(handV){handV.remove();handV=null}drag=null}
@@ -973,12 +1003,13 @@ window.MESCTX={confirm:dlgConfirm};
  document.addEventListener('mousedown',e=>{
   if(e.button!==0)return;
   if(e.target.closest('#mesleBar,#mesleH,#mesleV'))return;
-  const el=srcOf(e.target),bt=el?null:btnOf(e.target),bk=(el||bt)?null:blkOf(e.target);
+  const el=srcOf(e.target),bt=el?null:btnOf(e.target),cl=(el||bt)?null:thOf(e.target),bk=(el||bt||cl)?null:blkOf(e.target);
   const freeDrag=b=>{const p=posOf(b);return{mode:'free',el:b,x0:e.clientX,y0:e.clientY,px:p.x,py:p.y,moved:false}};
   if(on){
    e.preventDefault();e.stopPropagation();
    if(el&&el.id){select(el,false);const p=posOf(el);drag={mode:'move',el,x0:e.clientX,y0:e.clientY,px:p.x,py:p.y,moved:false,over:null,was:isFree(el)};return}
    if(bt){select(bt,false);drag=freeDrag(bt);return}
+   if(cl){select(cl,false);hint('오른쪽 핸들을 끌거나 폭을 입력하세요 — 열 폭');return}
    if(bk){select(bk,true);drag={mode:'bmove',el:bk,x0:e.clientX,y0:e.clientY,moved:false,over:null};return}
    return;
   }
@@ -991,6 +1022,8 @@ window.MESCTX={confirm:dlgConfirm};
   /* v81: 리스트제목 길게 누르기 → 블록(패널) 편집 */
   if(bk){press={el:bk,x:e.clientX,y:e.clientY,t:setTimeout(()=>{press=null;enter(bk,true);
     drag={mode:'bmove',el:bk,x0:e.clientX,y0:e.clientY,moved:false,over:null}},600)};return}
+  /* v104: 표 머리글 길게 누르기 → 열 폭 편집 */
+  if(cl){press={el:cl,x:e.clientX,y:e.clientY,t:setTimeout(()=>{press=null;enter(cl,false);hint('오른쪽 핸들을 끌거나 폭을 입력하세요 — 열 폭')},600)};return}
   /* v83: 버튼 길게 누르기 → 자유 이동 (놓기 전까지 버튼 동작은 막는다) */
   if(bt){press={el:bt,x:e.clientX,y:e.clientY,t:setTimeout(()=>{press=null;swallow=true;enter(bt,false);
     if(on)drag=freeDrag(bt)},600)}}
@@ -1005,8 +1038,8 @@ window.MESCTX={confirm:dlgConfirm};
    const x=snap(Math.max(0,drag.px+e.clientX-drag.x0)),y=snap(Math.max(0,drag.py+e.clientY-drag.y0));
    setPos(drag.el,x,y);S[EID(drag.el)]=Object.assign(S[EID(drag.el)]||{},{x,y});place();
    const xi=bar&&bar.querySelector('.x'),yi=bar&&bar.querySelector('.y');if(xi)xi.value=x;if(yi)yi.value=y;hint(`위치 ${x}, ${y}`);return}
-  if(drag.mode==='size'){const w=snap(Math.max(drag.btn?40:60,Math.min(2400,Math.round(drag.w0+e.clientX-drag.x0))));
-   drag.btn?(drag.el.style.width=w+'px',drag.el.style.minWidth='0'):drag.blk?setBlkW(drag.el,w):setWidth(drag.el,w);
+  if(drag.mode==='size'){const w=snap(Math.max(drag.btn?40:drag.col?30:60,Math.min(2400,Math.round(drag.w0+e.clientX-drag.x0))));
+   drag.btn?(drag.el.style.width=w+'px',drag.el.style.minWidth='0'):drag.col?setColW(drag.el,w):drag.blk?setBlkW(drag.el,w):setWidth(drag.el,w);
    S[EID(drag.el)]=Object.assign(S[EID(drag.el)]||{},{width:w});place();
    const wi=bar&&bar.querySelector('.w');if(wi)wi.value=w;hint('폭 '+w+'px');return}
   if(drag.mode==='sizeh'){const h=snap(Math.max(60,Math.min(2000,Math.round(drag.h0+e.clientY-drag.y0))));
@@ -1071,10 +1104,10 @@ window.MESCTX={confirm:dlgConfirm};
  document.addEventListener('keydown',e=>{if(on&&e.key==='Escape'){e.preventDefault();e.stopPropagation();exit()}},true);
  window.addEventListener('scroll',place,true);window.addEventListener('resize',place);
 
-  const boot=()=>{tagBlocks();tagButtons();load()};
+  const boot=()=>{tagBlocks();tagButtons();tagCols();load()};
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
- setTimeout(()=>{tagBlocks();tagButtons()},900);setTimeout(()=>{tagBlocks();tagButtons()},2000);
- window.MESLAYOUT={apply:applyAll,state:S,edit:enter,exit,blocks:tagBlocks,buttons:tagButtons};
+ setTimeout(()=>{tagBlocks();tagButtons();tagCols()},900);setTimeout(()=>{tagBlocks();tagButtons();tagCols()},2000);
+ window.MESLAYOUT={apply:applyAll,state:S,edit:enter,exit,blocks:tagBlocks,buttons:tagButtons,cols:tagCols};
 })();
 
 /* ── v82: 공정(조) 공통 레이어 ───────────────────────────────────────
