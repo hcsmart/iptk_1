@@ -681,13 +681,13 @@ window.MESCTX={confirm:dlgConfirm};
  *   [표 열 폭]   v104: 표 머리글(th)을 길게 누르면 그 열 선택 → 오른쪽 핸들 또는 폭 입력으로 열 폭 조절.
  *                열은 '표(블록/id)+머리글 글자' 로 식별해 저장하므로 열이 추가돼도 유지된다.
  *   리스트제목은 .ph/.hd/.cap/.caption 외에 .grid-title/.box-title/.sheet-head 도 인식한다 (v104).
- *   폭·높이·위치는 모두 5px 단위로 맞춰진다.
+ *   폭·높이·위치는 1px 단위 (v105, 종전 5px).
  * 바꾼 배치는 ui_layout(user_key='*') 에 저장되어 전 사용자에게 적용된다.
  * 편집은 마스터(role='master')만 가능. 일반 사용자는 적용만 받는다. */
 (function(){
  const PAGE=(location.pathname.split('/').pop()||'').replace(/\.html?$/,'');
  if(!PAGE||PAGE==='index')return;
- const SNAP=5,snap=v=>Math.round(v/SNAP)*SNAP;
+ const SNAP=1,snap=v=>Math.round(v/SNAP)*SNAP;
  const st=document.createElement('style');
  st.textContent=`
  body.mes-le-on input:not([type=checkbox]):not([type=radio]),body.mes-le-on select,body.mes-le-on textarea,body.mes-le-on .mescb{cursor:move!important}
@@ -943,11 +943,11 @@ window.MESCTX={confirm:dlgConfirm};
   if(bar)return;
   bar=document.createElement('div');bar.id='mesleBar';
   bar.innerHTML=`<b>배치 편집(전체 공통)</b><span class="id"></span>`+
-   `<span>폭</span><input type="number" class="w" min="60" max="2400" step="5" title="선택한 칸/블록의 폭(px, 5단위). 입력 후 Enter"><span>px</span>`+
-   `<span class="hbox"><span>높이</span><input type="number" class="h" min="60" max="2000" step="5" title="선택한 블록의 높이(px, 5단위). 입력 후 Enter"><span>px</span></span>`+
-   `<span class="pbox"><span>X</span><input type="number" class="x" min="0" max="4000" step="5" title="버튼 위치 X(px, 5단위). 입력 후 Enter"><span>Y</span><input type="number" class="y" min="0" max="4000" step="5" title="버튼 위치 Y(px, 5단위). 입력 후 Enter"><button data-a="home" title="원래 자리로 되돌립니다">제자리</button></span>`+
+   `<span>폭</span><input type="number" class="w" min="60" max="2400" step="1" title="선택한 칸/블록의 폭(px). 입력 후 Enter"><span>px</span>`+
+   `<span class="hbox"><span>높이</span><input type="number" class="h" min="60" max="2000" step="1" title="선택한 블록의 높이(px). 입력 후 Enter"><span>px</span></span>`+
+   `<span class="pbox"><span>X</span><input type="number" class="x" min="0" max="4000" step="1" title="위치 X(px). 입력 후 Enter"><span>Y</span><input type="number" class="y" min="0" max="4000" step="1" title="위치 Y(px). 입력 후 Enter"><button data-a="home" title="원래 자리로 되돌립니다">제자리</button></span>`+
    `<button data-a="save">▤ 저장</button><button data-a="reset">초기화</button><button data-a="close">닫기(Esc)</button>`+
-   `<span class="tip">핸들 드래그=크기 · 다른 칸/제목에 놓기=자리 바꿈 · 빈 곳에 놓기=자유 이동 (5px 단위)</span>`;
+   `<span class="tip">핸들 드래그=크기 · 다른 칸/제목에 놓기=자리 바꿈 · 빈 곳에 놓기=자유 이동 (1px 단위)</span>`;
   const wi=bar.querySelector('.w'),hi=bar.querySelector('.h');
   const applyW=()=>{if(!sel)return;const v=snap(Math.max(isCol(sel)?30:60,Math.min(2400,Math.round(Number(wi.value)||0))));
    if(!v)return;wi.value=v;isBtn(sel)?(sel.style.width=v+'px',sel.style.minWidth='0'):isCol(sel)?setColW(sel,v):selBlk?setBlkW(sel,v):setWidth(sel,v);
