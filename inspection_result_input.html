@@ -64,7 +64,7 @@ tr.sel{background:#d8e9f7}
         <div class="label">업체</div><input id="fVen" class="field" readonly>
         <div class="label">검사구분</div><input id="fCat" class="field" readonly>
         <div class="label">검사일</div><input id="fDate" class="field" type="date">
-        <div class="label">검사자</div><select id="fInsp" class="field"></select><span id="inspNote" style="font-size:11px;color:#8a6100;margin-left:6px"></span>
+        <div class="label">검사자</div><div style="display:flex;align-items:center;gap:6px;min-width:0"><select id="fInsp" class="field" style="flex:1 1 auto;min-width:0"></select><span id="inspNote" class="note" style="font-size:11px;color:#8a6100;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></span></div>
         <div class="label">로트수량</div><input id="fLot" class="field r" type="number" min="0">
         <div class="label">샘플수량</div><input id="fSample" class="field r" type="number" min="0">
         <div class="label">불량수량</div><input id="fDefect" class="field r" type="number" min="0" value="0">
@@ -224,7 +224,7 @@ async function saveInspection(quiet){
     if(fJud.value==='합격'||fJud.value==='특채')l.status='입고확정';
     else if(fJud.value==='불합격'){l.status='발주';l.receipt_date=null}
     renderTgt(); if(!quiet)msg('검사 결과를 저장했습니다. (DB 미연결 - 로컬)');
-    return;
+    return true;
   }
   try{
     const ex=resultOf(l);
@@ -247,6 +247,7 @@ async function saveInspection(quiet){
     renderTgt();
     const auto=await autoIssued(no);
     if(!quiet)msg(`검사 결과를 저장했습니다. 판정 ${head.judgement}${head.action_taken?' → '+head.action_taken:''}${auto}`);
+    return true;
   }catch(e){msg('저장 실패: '+e.message.slice(0,140))}
 }
 
@@ -257,9 +258,11 @@ async function passLine(){
   sheet.forEach(s=>{if(s.result==='대기')s.result='OK'});
   fJud.value='합격'; fDefect.value=0; renderSheet();
   const jobP=view[sel].job_no;
-  await saveInspection(true);
+  if(!await saveInspection(true))return;
   const noP=resultOf(view[sel])?.inspection_no;
-  msg(`${jobP} 합격 처리했습니다. 발주라인이 입고확정으로 넘어갔습니다.${await autoIssued(noP)}`);
+  const okT=`${jobP} 합격 처리했습니다.\n발주라인이 입고확정으로 넘어갔습니다.${await autoIssued(noP)}`;
+  msg(okT.replace(/\n/g,' '));
+  window.MESPOP?MESPOP.ok(okT,'합격/입고확정 완료'):alert(okT);   /* v108: 완료 팝업 */
   if(onlyWait.checked)search();
 }
 async function failLine(){
@@ -270,9 +273,11 @@ async function failLine(){
   sheet.forEach(s=>{if(s.result==='대기')s.result='NG'});
   renderSheet();
   const job=view[sel].job_no;
-  await saveInspection(true);
+  if(!await saveInspection(true))return;
   const no=resultOf(view[sel])?.inspection_no;
-  msg(`${job} 불합격 처리했습니다. 발주라인이 발주 상태로 롤백되었습니다.${await autoIssued(no)}`);
+  const ngT=`${job} 불합격 처리했습니다.\n발주라인이 발주 상태로 롤백되고 반품 처리됩니다.${await autoIssued(no)}`;
+  msg(ngT.replace(/\n/g,' '));
+  window.MESPOP?MESPOP.warn(ngT,'불합격/반품 처리'):alert(ngT);   /* v108: 완료 팝업 */
   if(onlyWait.checked)search();
 }
 

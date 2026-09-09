@@ -684,6 +684,7 @@ window.MESCTX={confirm:dlgConfirm};
  *   v106: 블록·열은 왼쪽 핸들로도 폭을 조절한다 (화면 오른쪽 끝에 붙은 블록은 오른쪽 핸들을 잡을 수 없었다).
  *         핸들은 항상 화면 안에 보이도록 위치를 보정한다. 블록 높이를 키우면 고정 높이의 부모 줄도 함께 늘어난다.
  *   [라벨]       v107: 라벨(제번·품명 같은 글자)을 길게 눌러 단독으로 자유 이동. 오른쪽 핸들=폭. 저장 키 'lab:글자'.
+ *   [알림글]     v108: 하단 상태문·안내문(.msg/.hint/.note/.right/.tip)도 라벨처럼 길게 눌러 이동. 저장 키 'msg:#아이디'.
  *   폭·높이·위치는 1px 단위 (v105, 종전 5px).
  * 바꾼 배치는 ui_layout(user_key='*') 에 저장되어 전 사용자에게 적용된다.
  * 편집은 마스터(role='master')만 가능. 일반 사용자는 적용만 받는다. */
@@ -838,6 +839,15 @@ window.MESCTX={confirm:dlgConfirm};
    if(l.querySelector('input,select,textarea,button'))return;          /* 체크박스를 감싼 label 은 제외 */
    const tx=(l.textContent||'').replace(/\s+/g,' ').trim().slice(0,30);if(!tx)return;
    let id='lab:'+tx,n=2;while(used.has(id))id='lab:'+tx+'#'+(n++);
+   used.add(id);l.dataset.leId=id;l.dataset.leLab='1'});
+  /* v108: 알림글(.msg/.hint/.note/.right/.tip 안내문)도 길게 눌러 자유 이동·폭 조절.
+   * 문구가 수시로 바뀌므로 저장 키는 id 우선('msg:#아이디'), 없으면 첫 글자. */
+  document.querySelectorAll('.msg,.hint,.note,.right,.tip').forEach(l=>{
+   if(l.dataset.leId||l.closest(NOZONE)||l.closest('#mesleBar,table,thead'))return;
+   if(l.querySelector('input,select,textarea,button'))return;
+   const key=l.id?('msg:#'+l.id):('msg:'+(l.textContent||'').replace(/\s+/g,' ').trim().slice(0,30));
+   if(key==='msg:')return;
+   let id=key,n=2;while(used.has(id))id=key+'#'+(n++);
    used.add(id);l.dataset.leId=id;l.dataset.leLab='1'});
  }
  const labOf=t=>{if(!t||t.nodeType!==1)return null;if(t.closest(NOZONE))return null;
@@ -1015,7 +1025,7 @@ window.MESCTX={confirm:dlgConfirm};
   sel=el;selBlk=!!blk;
   if(bar){bar.classList.toggle('blk',!!blk);bar.classList.toggle('btn',!blk&&(isBtn(el)||isFld(el)||isLabEl(el)))}
   if(el){visual(el).classList.add('mes-le-sel');
-   if(bar){bar.querySelector('.id').textContent=(blk||isBtn(el)||isCol(el)||isLabEl(el))?EID(el).replace(/^col:.*?:/,'열: ').replace(/^lab:/,'라벨: '):'#'+el.id;
+   if(bar){bar.querySelector('.id').textContent=(blk||isBtn(el)||isCol(el)||isLabEl(el))?EID(el).replace(/^col:.*?:/,'열: ').replace(/^lab:/,'라벨: ').replace(/^msg:/,'알림글: '):'#'+el.id;
     if(!blk&&(isBtn(el)||isFld(el)||isLabEl(el))){const p=posOf(el);const xi=bar.querySelector('.x'),yi=bar.querySelector('.y');if(xi)xi.value=snap(p.x);if(yi)yi.value=snap(p.y)}
     const r=visual(el).getBoundingClientRect();
     const wi=bar.querySelector('.w');if(wi)wi.value=snap(r.width);
@@ -1384,17 +1394,23 @@ window.MESCTX={confirm:dlgConfirm};
 #messave button{height:29px;min-width:88px;border:1px solid #9ba8b4;cursor:pointer;
  background:linear-gradient(#fff,#dfe6eb);font:12px 'Malgun Gothic',맑은 고딕,sans-serif;font-weight:700}
 #messave button:hover{background:#fff}
-#messave button:focus{outline:2px solid #2f6fb5;outline-offset:1px}`;
+#messave button:focus{outline:2px solid #2f6fb5;outline-offset:1px}
+#messave.ng .t{background:linear-gradient(#a14b4b,#7d2f2f)}
+#messave.ng .ic{background:#c62828}`;
   (document.head||document.documentElement).appendChild(st);
  }
- function pop(t){
+ function pop(t,o){
+  o=o||{};
   if(document.getElementById('messave-bg'))return;   /* 이미 떠 있으면 중복 금지 */
   ensure();
   const bg=document.createElement('div');bg.id='messave-bg';
   bg.innerHTML=`<div id="messave" role="alertdialog" aria-modal="true">
-    <div class="t">${/입고확정했습니다/.test(t)?'입고확정 완료':/입고/.test(t)?'입고 완료':'저장 완료'}</div>
-    <div class="bd"><span class="ic">✓</span><span class="tx"></span></div>
+    <div class="t"></div>
+    <div class="bd"><span class="ic"></span><span class="tx"></span></div>
     <div class="bt"><button type="button">확인</button></div></div>`;
+  if(o.kind==='ng')bg.firstElementChild.classList.add('ng');
+  bg.querySelector('.t').textContent=o.title||(/입고확정했습니다/.test(t)?'입고확정 완료':/입고/.test(t)?'입고 완료':'저장 완료');
+  bg.querySelector('.ic').textContent=o.kind==='ng'?'✕':'✓';
   bg.querySelector('.tx').textContent=t;
   document.body.appendChild(bg);
   const btn=bg.querySelector('button');
@@ -1405,6 +1421,8 @@ window.MESCTX={confirm:dlgConfirm};
   document.addEventListener('keydown',key,true);
   try{btn.focus()}catch(e){}
  }
+ /* v108: 화면에서 직접 띄우는 공용 팝업 — MESPOP.ok(문구,제목) / MESPOP.warn(문구,제목) */
+ window.MESPOP={ok:(t,title)=>pop(String(t||''),{title}),warn:(t,title)=>pop(String(t||''),{title,kind:'ng'})};
  function check(t){
   t=String(t||'').trim();
   if(!t)return;
