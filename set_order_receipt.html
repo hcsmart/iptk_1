@@ -11,7 +11,7 @@
 .searchbar{height:26px;display:flex;gap:4px;align-items:center;padding:0 4px;border-bottom:1px solid var(--line2);background:#f6f8fa}.searchbar input{flex:1;height:21px;border:1px solid #b7c2cb;padding:0 4px}.searchbar button{height:21px;border:1px solid #9ca9b5;background:linear-gradient(#fff,#e2e8ed)}
 .tablewrap{flex:1;min-height:0;overflow:auto}table{border-collapse:collapse;width:100%;table-layout:fixed}th,td{height:24px;padding:0 5px;border-right:1px solid var(--line2);border-bottom:1px solid var(--line2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}th{position:sticky;top:0;z-index:2;text-align:center;background:linear-gradient(#dbe9f4,#c7d9e8);color:#405266;font-weight:700}tbody tr:hover td{background:#edf6fd}tbody tr.sel td{background:#2e78bd;color:#fff}.c{text-align:center}.r{text-align:right}
 .movebar{display:flex;justify-content:flex-end;gap:6px;padding:0 14px}
-.btn{height:28px;min-width:70px;border:1px solid #9ca9b5;background:linear-gradient(#fff,#dfe6eb)}.btn:hover{background:#fff}.btn.primary{background:linear-gradient(#f9ffff,#d2e7f6);color:#1e5e91}
+.btn{height:28px;min-width:70px;border:1px solid #9ca9b5;background:linear-gradient(#fff,#dfe6eb)}.btn:hover{background:#fff}.btn.primary{background:linear-gradient(#f9ffff,#d2e7f6);color:#1e5e91}.btn.confirm{background:linear-gradient(#fff3f7,#f3c3d5);color:#a8235a;border-color:#d38aa6;font-weight:700}.btn.confirm:hover{background:linear-gradient(#fff,#f7d3e0)}
 .foot{height:42px;display:flex;align-items:center;padding:5px 14px;border-top:1px solid var(--line);background:#eef2f5;gap:5px}.msg{margin-left:10px;color:#687784}.foot .right{margin-left:auto;color:#7c8993}
 input.cell{width:100%;height:20px;border:1px solid #cbd4dc;padding:0 3px;text-align:right}
 @media(max-width:900px){.top,.bottom{grid-template-columns:1fr;height:auto}.title h1{font-size:18px}}
@@ -53,7 +53,7 @@ input.cell{width:100%;height:20px;border:1px solid #cbd4dc;padding:0 3px;text-al
       <thead><tr><th>No</th><th></th><th>제번</th><th>조수</th><th>협력업체</th><th>입고일</th><th>진척</th><th>입고금액</th><th>검수자</th><th>비고</th></tr></thead>
       <tbody id="rcpBody"></tbody></table></div></div>
   </section>
-  <footer class="foot"><button class="btn" onclick="search()">⌕ 검색</button><button class="btn primary" onclick="receive()">▣ 입고처리</button><button class="btn" onclick="sampleFill()" title="화면 순서대로 시연하며 등록요점을 설명합니다.">▶ 등록예제</button><button class="btn" onclick="cancelReceipt()">↶ 입고취소</button><button class="btn" onclick="cancelOrder()">✕ 발주취소</button><button class="btn" onclick="exportCsv()">▤ EXCEL</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">입고할 발주를 선택한 뒤 입고일·진척률을 입력하고 입고처리 하세요.</span><span class="right" id="countText"></span></footer>
+  <footer class="foot"><button class="btn" onclick="search()">⌕ 검색</button><button class="btn confirm" onclick="receive()">▣ 입고처리</button><button class="btn" onclick="sampleFill()" title="화면 순서대로 시연하며 등록요점을 설명합니다.">▶ 등록예제</button><button class="btn" onclick="cancelReceipt()">↶ 입고취소</button><button class="btn" onclick="cancelOrder()">✕ 발주취소</button><button class="btn" onclick="exportCsv()">▤ EXCEL</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">입고할 발주를 선택한 뒤 입고일·진척률을 입력하고 입고처리 하세요.</span><span class="right" id="countText"></span></footer>
 </div>
 <script>
 /* v77: 조립외주입고 — 설계외주입고와 같은 진척률·입고이력 방식으로 재작성.
