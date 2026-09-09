@@ -683,6 +683,7 @@ window.MESCTX={confirm:dlgConfirm};
  *   리스트제목은 .ph/.hd/.cap/.caption 외에 .grid-title/.box-title/.sheet-head 도 인식한다 (v104).
  *   v106: 블록·열은 왼쪽 핸들로도 폭을 조절한다 (화면 오른쪽 끝에 붙은 블록은 오른쪽 핸들을 잡을 수 없었다).
  *         핸들은 항상 화면 안에 보이도록 위치를 보정한다. 블록 높이를 키우면 고정 높이의 부모 줄도 함께 늘어난다.
+ *   [라벨]       v107: 라벨(제번·품명 같은 글자)을 길게 눌러 단독으로 자유 이동. 오른쪽 핸들=폭. 저장 키 'lab:글자'.
  *   폭·높이·위치는 1px 단위 (v105, 종전 5px).
  * 바꾼 배치는 ui_layout(user_key='*') 에 저장되어 전 사용자에게 적용된다.
  * 편집은 마스터(role='master')만 가능. 일반 사용자는 적용만 받는다. */
@@ -696,6 +697,7 @@ window.MESCTX={confirm:dlgConfirm};
  body.mes-le-on .mes-le-head{cursor:move!important}
  body.mes-le-on button:not(#mesleBar button){cursor:move!important}
  body.mes-le-on th[data-le-col]{cursor:col-resize!important}
+ body.mes-le-on [data-le-lab]{cursor:move!important}
  th.mes-le-sel{outline-offset:-2px}
  .mes-le-free{z-index:30}
  .mes-le-ph{visibility:hidden;pointer-events:none}
@@ -762,7 +764,7 @@ window.MESCTX={confirm:dlgConfirm};
   return (c.textContent||'').replace(/\s+/g,' ').trim().slice(0,40)}
  function tagBlocks(){
   const used=new Set();
-  document.querySelectorAll('[data-le-id]:not([data-le-col])').forEach(b=>used.add(b.dataset.leId));
+  document.querySelectorAll('[data-le-id]:not([data-le-col]):not([data-le-lab])').forEach(b=>used.add(b.dataset.leId));
   document.querySelectorAll(HSEL).forEach(h=>{
    if(h.closest(NOZONE))return;
    const box=h.parentElement;
@@ -796,13 +798,14 @@ window.MESCTX={confirm:dlgConfirm};
   el.style.position='absolute';el.style.left=x+'px';el.style.top=y+'px';el.style.margin='0';el.classList.add('mes-le-free')}
  function clearPos(el){if(!el.__leHome)return;const h=el.__leHome;el.style.position=h.pos;el.style.left=h.left;el.style.top=h.top;el.style.zIndex=h.z;el.classList.remove('mes-le-free');el.__leHome=null}
  /* 버튼(또는 입력칸 묶음의 첫 요소)의 현재 위치를 ROOT 기준 좌표로 */
- function posOf(el){const a=(isFld(el)?unitOf(el)[0]:el).getBoundingClientRect(),b=ROOT().getBoundingClientRect();return{x:a.left-b.left+ROOT().scrollLeft,y:a.top-b.top+ROOT().scrollTop}}
+ function posOf(el){const a=((isFld(el)||isLabEl(el))?unitOf(el)[0]:el).getBoundingClientRect(),b=ROOT().getBoundingClientRect();return{x:a.left-b.left+ROOT().scrollLeft,y:a.top-b.top+ROOT().scrollTop}}
 
  /* ── v103: 입력칸 자유 이동 ── */
  const isFld=el=>!!(el&&el.nodeType===1&&el.matches&&el.matches(FQ));
  /* 함께 움직이는 묶음: [라벨, 칸] (그리드면 셀 단위, 아니면 요소 단위) */
- function unitOf(el){const g=gridOf(el);const cell=g?g.cell:visual(el);
-  const lab=cell.previousElementSibling;return isLab(lab)?[lab,cell]:[cell]}
+ function unitOf(el){if(isLabEl(el))return [el];                    /* v107: 라벨은 단독 이동 */
+  const g=gridOf(el);const cell=g?g.cell:visual(el);
+  const lab=cell.previousElementSibling;return (isLab(lab)&&!lab.__leFree)?[lab,cell]:[cell]}
  const isFree=el=>!!(el&&el.__leFree);
  function setFieldPos(el,x,y){
   const r=ROOT();if(getComputedStyle(r).position==='static')r.style.position='relative';
@@ -825,6 +828,20 @@ window.MESCTX={confirm:dlgConfirm};
   el.__leFree=null;
   const s=S[el.id];if(s&&s.width)setWidth(el,s.width);
  }
+
+ /* ── v107: 라벨 ── */
+ const isLabEl=el=>!!(el&&el.dataset&&el.dataset.leLab);
+ function tagLabels(){
+  const used=new Set();document.querySelectorAll('[data-le-id]').forEach(b=>used.add(b.dataset.leId));
+  document.querySelectorAll('.label,.lab,.lb,label').forEach(l=>{
+   if(l.dataset.leId||!isLab(l)||l.closest(NOZONE)||l.closest('#mesleBar,table,thead'))return;
+   if(l.querySelector('input,select,textarea,button'))return;          /* 체크박스를 감싼 label 은 제외 */
+   const tx=(l.textContent||'').replace(/\s+/g,' ').trim().slice(0,30);if(!tx)return;
+   let id='lab:'+tx,n=2;while(used.has(id))id='lab:'+tx+'#'+(n++);
+   used.add(id);l.dataset.leId=id;l.dataset.leLab='1'});
+ }
+ const labOf=t=>{if(!t||t.nodeType!==1)return null;if(t.closest(NOZONE))return null;
+  const l=t.closest('[data-le-lab]');return l||null};
 
  /* ── v104: 표 열 폭 ── */
  const isCol=el=>!!(el&&el.dataset&&el.dataset.leCol);
@@ -884,7 +901,7 @@ window.MESCTX={confirm:dlgConfirm};
  function applyBlocks(){
   tagBlocks();
   const groups=new Set();
-  document.querySelectorAll('[data-le-id]:not([data-le-col])').forEach(b=>{const s=S[b.dataset.leId];
+  document.querySelectorAll('[data-le-id]:not([data-le-col]):not([data-le-lab])').forEach(b=>{const s=S[b.dataset.leId];
    if(s&&s.ord!=null&&b.parentElement)groups.add(b.parentElement)});
   groups.forEach(p=>{
    const kids=[...p.children].filter(c=>c.dataset&&c.dataset.leId&&S[c.dataset.leId]&&S[c.dataset.leId].ord!=null);
@@ -895,7 +912,7 @@ window.MESCTX={confirm:dlgConfirm};
    sorted.forEach((c,i)=>p.insertBefore(c,marks[i]));
    marks.forEach(m=>m.remove());
   });
-  document.querySelectorAll('[data-le-id]:not([data-le-btn]):not([data-le-col])').forEach(b=>{const s=S[b.dataset.leId];if(!s)return;
+  document.querySelectorAll('[data-le-id]:not([data-le-btn]):not([data-le-col]):not([data-le-lab])').forEach(b=>{const s=S[b.dataset.leId];if(!s)return;
    if(s.width)setBlkW(b,s.width);if(s.height)setBlkH(b,s.height)});
  }
  function applyButtons(){
@@ -910,8 +927,10 @@ window.MESCTX={confirm:dlgConfirm};
    const g=gridOf(el);if(!g||done.has(g.grid))return;
    const gs=gridsOf(g.grid);gs.forEach(x=>done.add(x));applyOrder(gs)});
   document.querySelectorAll(FQ).forEach(el=>{const s=el.id&&S[el.id];if(s&&s.width)setWidth(el,s.width)});
-  applyBlocks();applyButtons();applyCols();
+  applyBlocks();applyButtons();applyCols();tagLabels();
   document.querySelectorAll(FQ).forEach(el=>{const s=el.id&&S[el.id];if(s&&s.x!=null&&s.y!=null&&!el.__leFree)try{setFieldPos(el,s.x,s.y)}catch(e){}});   /* v103 */
+  document.querySelectorAll('[data-le-lab]').forEach(l=>{const s=S[l.dataset.leId];if(!s)return;if(s.width){l.style.width=s.width+'px';l.style.minWidth='0'}
+   if(s.x!=null&&s.y!=null&&!l.__leFree)try{setFieldPos(l,s.x,s.y)}catch(e){}});   /* v107 */
  }
  let COLS='elem_id,width,height,ord,pos_x,pos_y';
  async function load(){
@@ -953,8 +972,8 @@ window.MESCTX={confirm:dlgConfirm};
    `<button data-a="save">▤ 저장</button><button data-a="reset">초기화</button><button data-a="close">닫기(Esc)</button>`+
    `<span class="tip">핸들 드래그=크기 · 다른 칸/제목에 놓기=자리 바꿈 · 빈 곳에 놓기=자유 이동 (1px 단위)</span>`;
   const wi=bar.querySelector('.w'),hi=bar.querySelector('.h');
-  const applyW=()=>{if(!sel)return;const v=snap(Math.max(isCol(sel)?30:60,Math.min(2400,Math.round(Number(wi.value)||0))));
-   if(!v)return;wi.value=v;isBtn(sel)?(sel.style.width=v+'px',sel.style.minWidth='0'):isCol(sel)?setColW(sel,v):selBlk?setBlkW(sel,v):setWidth(sel,v);
+  const applyW=()=>{if(!sel)return;const v=snap(Math.max((isCol(sel)||isLabEl(sel))?30:60,Math.min(2400,Math.round(Number(wi.value)||0))));
+   if(!v)return;wi.value=v;(isBtn(sel)||isLabEl(sel))?(sel.style.width=v+'px',sel.style.minWidth='0'):isCol(sel)?setColW(sel,v):selBlk?setBlkW(sel,v):setWidth(sel,v);
    S[EID(sel)]=Object.assign(S[EID(sel)]||{},{width:v});mark(EID(sel));place()};
   const applyH=()=>{if(!sel||!selBlk)return;const v=snap(Math.max(60,Math.min(2000,Math.round(Number(hi.value)||0))));
    if(!v)return;hi.value=v;setBlkH(sel,v);
@@ -977,7 +996,7 @@ window.MESCTX={confirm:dlgConfirm};
   document.body.appendChild(bar);
   hand=document.createElement('div');hand.id='mesleH';hand.style.display='none';document.body.appendChild(hand);
   hand.addEventListener('mousedown',e=>{if(!sel)return;e.preventDefault();e.stopPropagation();
-   drag={mode:'size',el:sel,blk:selBlk,btn:isBtn(sel),col:isCol(sel),x0:e.clientX,w0:visual(sel).getBoundingClientRect().width}});
+   drag={mode:'size',el:sel,blk:selBlk,btn:isBtn(sel)||isLabEl(sel),col:isCol(sel),x0:e.clientX,w0:visual(sel).getBoundingClientRect().width}});
   handL=document.createElement('div');handL.id='mesleL';handL.style.display='none';document.body.appendChild(handL);
   handL.addEventListener('mousedown',e=>{if(!sel||!(selBlk||isCol(sel)))return;e.preventDefault();e.stopPropagation();
    drag={mode:'size',left:true,el:sel,blk:selBlk,btn:isBtn(sel),col:isCol(sel),x0:e.clientX,w0:visual(sel).getBoundingClientRect().width}});
@@ -994,16 +1013,16 @@ window.MESCTX={confirm:dlgConfirm};
  function select(el,blk){
   if(sel)visual(sel).classList.remove('mes-le-sel');
   sel=el;selBlk=!!blk;
-  if(bar){bar.classList.toggle('blk',!!blk);bar.classList.toggle('btn',!blk&&(isBtn(el)||isFld(el)))}
+  if(bar){bar.classList.toggle('blk',!!blk);bar.classList.toggle('btn',!blk&&(isBtn(el)||isFld(el)||isLabEl(el)))}
   if(el){visual(el).classList.add('mes-le-sel');
-   if(bar){bar.querySelector('.id').textContent=(blk||isBtn(el)||isCol(el))?EID(el).replace(/^col:.*?:/,'열: '):'#'+el.id;
-    if(!blk&&(isBtn(el)||isFld(el))){const p=posOf(el);const xi=bar.querySelector('.x'),yi=bar.querySelector('.y');if(xi)xi.value=snap(p.x);if(yi)yi.value=snap(p.y)}
+   if(bar){bar.querySelector('.id').textContent=(blk||isBtn(el)||isCol(el)||isLabEl(el))?EID(el).replace(/^col:.*?:/,'열: ').replace(/^lab:/,'라벨: '):'#'+el.id;
+    if(!blk&&(isBtn(el)||isFld(el)||isLabEl(el))){const p=posOf(el);const xi=bar.querySelector('.x'),yi=bar.querySelector('.y');if(xi)xi.value=snap(p.x);if(yi)yi.value=snap(p.y)}
     const r=visual(el).getBoundingClientRect();
     const wi=bar.querySelector('.w');if(wi)wi.value=snap(r.width);
     const hi=bar.querySelector('.h');if(hi)hi.value=snap(r.height)}
    place()}
   else{if(hand)hand.style.display='none';if(handV)handV.style.display='none';if(handL)handL.style.display='none'}}
- function enter(el,blk){if(!isMaster())return;if(!on){on=true;document.body.classList.add('mes-le-on');ui();tagBlocks();tagButtons();tagCols()}select(el,blk)}
+ function enter(el,blk){if(!isMaster())return;if(!on){on=true;document.body.classList.add('mes-le-on');ui();tagBlocks();tagButtons();tagCols();tagLabels()}select(el,blk)}
  function exit(){if(dirty.size&&!confirm('저장하지 않은 변경이 '+dirty.size+'건 있습니다. 저장하지 않고 닫을까요?'))return;
   dirty.clear();on=false;document.body.classList.remove('mes-le-on');select(null);
   if(bar){bar.remove();bar=null}if(hand){hand.remove();hand=null}if(handV){handV.remove();handV=null}if(handL){handL.remove();handL=null}drag=null}
@@ -1012,13 +1031,15 @@ window.MESCTX={confirm:dlgConfirm};
  document.addEventListener('mousedown',e=>{
   if(e.button!==0)return;
   if(e.target.closest('#mesleBar,#mesleH,#mesleV,#mesleL'))return;
-  const el=srcOf(e.target),bt=el?null:btnOf(e.target),cl=(el||bt)?null:thOf(e.target),bk=(el||bt||cl)?null:blkOf(e.target);
+  const el=srcOf(e.target),bt=el?null:btnOf(e.target),cl=(el||bt)?null:thOf(e.target),lb=(el||bt||cl)?null:labOf(e.target),bk=(el||bt||cl||lb)?null:blkOf(e.target);
+  const labDrag=l=>{const p=posOf(l);return{mode:'move',el:l,x0:e.clientX,y0:e.clientY,px:p.x,py:p.y,moved:false,over:null,was:isFree(l),lab:true}};
   const freeDrag=b=>{const p=posOf(b);return{mode:'free',el:b,x0:e.clientX,y0:e.clientY,px:p.x,py:p.y,moved:false}};
   if(on){
    e.preventDefault();e.stopPropagation();
    if(el&&el.id){select(el,false);const p=posOf(el);drag={mode:'move',el,x0:e.clientX,y0:e.clientY,px:p.x,py:p.y,moved:false,over:null,was:isFree(el)};return}
    if(bt){select(bt,false);drag=freeDrag(bt);return}
    if(cl){select(cl,false);hint('오른쪽 핸들을 끌거나 폭을 입력하세요 — 열 폭');return}
+   if(lb){select(lb,false);drag=labDrag(lb);return}
    if(bk){select(bk,true);drag={mode:'bmove',el:bk,x0:e.clientX,y0:e.clientY,moved:false,over:null};return}
    return;
   }
@@ -1031,6 +1052,8 @@ window.MESCTX={confirm:dlgConfirm};
   /* v81: 리스트제목 길게 누르기 → 블록(패널) 편집 */
   if(bk){press={el:bk,x:e.clientX,y:e.clientY,t:setTimeout(()=>{press=null;enter(bk,true);
     drag={mode:'bmove',el:bk,x0:e.clientX,y0:e.clientY,moved:false,over:null}},600)};return}
+  /* v107: 라벨 길게 누르기 → 단독 자유 이동 */
+  if(lb){press={el:lb,x:e.clientX,y:e.clientY,t:setTimeout(()=>{press=null;enter(lb,false);drag=labDrag(lb)},600)};return}
   /* v104: 표 머리글 길게 누르기 → 열 폭 편집 */
   if(cl){press={el:cl,x:e.clientX,y:e.clientY,t:setTimeout(()=>{press=null;enter(cl,false);hint('오른쪽 핸들을 끌거나 폭을 입력하세요 — 열 폭')},600)};return}
   /* v83: 버튼 길게 누르기 → 자유 이동 (놓기 전까지 버튼 동작은 막는다) */
@@ -1068,7 +1091,7 @@ window.MESCTX={confirm:dlgConfirm};
    const t=blkOf(pt);
    drag.over=(t&&t!==drag.el&&t.parentElement===drag.el.parentElement)?t:null;
   }else{
-   const t=srcOf(pt);
+   const t=drag.lab?null:srcOf(pt);
    /* 떠 있는 칸은 그리드 밖이라 원래 자리표시자 기준으로 판정 */
    const a=(drag.el.__leFree?gridOfNode(drag.el.__leFree.nodes[drag.el.__leFree.nodes.length-1].ph):gridOf(drag.el)),b=t&&t.id&&t!==drag.el&&!isFree(t)?gridOf(t):null;
    drag.over=(b&&a&&sameGroup(a.grid,b.grid)&&pairOf(b.cell).length===pairOf(a.cell).length)?t:null;
@@ -1085,7 +1108,7 @@ window.MESCTX={confirm:dlgConfirm};
    if(d.el.__leFree)d.el.__leFree.nodes.forEach(o=>o.n.style.pointerEvents='');
    if(!d.moved)return;
    if(!d.over){                                     /* 빈 곳에 놓음 → 자유 이동 확정 */
-    S[d.el.id]=Object.assign(S[d.el.id]||{},{x:d.at.x,y:d.at.y});place();mark(d.el.id);hint('입력칸을 옮겼습니다 — [저장]을 누르세요');return}
+    S[EID(d.el)]=Object.assign(S[EID(d.el)]||{},{x:d.at.x,y:d.at.y});place();mark(EID(d.el));hint((d.lab?'라벨':'입력칸')+'을 옮겼습니다 — [저장]을 누르세요');return}
    clearFieldPos(d.el);S[d.el.id]=Object.assign(S[d.el.id]||{},{x:null,y:null});   /* 칸 위에 놓음 → 제자리로 돌린 뒤 자리 바꿈 */
   }
   if(!d.over)return;
@@ -1113,9 +1136,9 @@ window.MESCTX={confirm:dlgConfirm};
  document.addEventListener('keydown',e=>{if(on&&e.key==='Escape'){e.preventDefault();e.stopPropagation();exit()}},true);
  window.addEventListener('scroll',place,true);window.addEventListener('resize',place);
 
-  const boot=()=>{tagBlocks();tagButtons();tagCols();load()};
+  const boot=()=>{tagBlocks();tagButtons();tagCols();tagLabels();load()};
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
- setTimeout(()=>{tagBlocks();tagButtons();tagCols()},900);setTimeout(()=>{tagBlocks();tagButtons();tagCols()},2000);
+ setTimeout(()=>{tagBlocks();tagButtons();tagCols();tagLabels()},900);setTimeout(()=>{tagBlocks();tagButtons();tagCols();tagLabels()},2000);
  window.MESLAYOUT={apply:applyAll,state:S,edit:enter,exit,blocks:tagBlocks,buttons:tagButtons,cols:tagCols};
 })();
 
