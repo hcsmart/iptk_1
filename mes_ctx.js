@@ -1166,22 +1166,25 @@ window.MESCTX={confirm:dlgConfirm};
   if(IDPAT.test(id))return true;
   return /^제\s*번$/.test(labelText(el).replace(/\s+/g,' ').trim());
  }
+ /* v99: 빈 결과는 캐시하지 않는다 (첫 ping 실패 순간에 한 번 비면 그 화면은 끝까지 콤보가 안 붙던 문제).
+  *       정산완료 제번은 목록에서 뺀다 — 진행 중인 제번만 고르게. */
  let JOBS=null,loading=null;
  async function jobs(){
-  if(JOBS)return JOBS;if(loading)return loading;
+  if(JOBS&&JOBS.length)return JOBS;if(loading)return loading;
   loading=(async()=>{
-   for(let i=0;i<80&&!window.MESDB;i++)await new Promise(r=>setTimeout(r,50));
-   if(window.MESDB&&MESDB.ready){try{await MESDB.ready}catch(e){}}
-   if(!(window.MESDB&&MESDB.online))return (JOBS=[]);
    try{
+    for(let i=0;i<80&&!window.MESDB;i++)await new Promise(r=>setTimeout(r,50));
+    if(!window.MESDB)return [];
+    if(MESDB.ready){try{await MESDB.ready}catch(e){}}
     const [pool,so]=await Promise.all([
      MESDB.table('job_pool').select('select=job_no,item_name,customer_name,order_date&order=order_date.desc.nullslast'),
      MESDB.table('sale_orders').select('select=job_no,completion_date')]);
     const done=new Set();(so||[]).forEach(r=>{if(r.completion_date)done.add(r.job_no)});
-    JOBS=(pool||[]).map(r=>({job:r.job_no,
-      sub:[r.item_name,r.customer_name].filter(Boolean).join(' · ')+(done.has(r.job_no)?' · 정산완료':'')}));
-   }catch(e){JOBS=[]}
-   return JOBS;
+    JOBS=(pool||[]).filter(r=>!done.has(r.job_no)).map(r=>({job:r.job_no,
+      sub:[r.item_name,r.customer_name].filter(Boolean).join(' · ')}));
+    return JOBS;
+   }catch(e){JOBS=null;return []}
+   finally{loading=null}
   })();
   return loading;
  }
@@ -1207,11 +1210,14 @@ window.MESCTX={confirm:dlgConfirm};
   if(!el.title)el.title='등록된 제번 목록입니다. 글자를 입력하면 걸러집니다.';
   el.addEventListener('change',()=>{const v=(el.value||'').trim();if(v&&list.some(r=>r.job===v))fire(el)});
  }
+ let retry=0;
  async function scan(root){
   const els=[...((root&&root.querySelectorAll?root:document).querySelectorAll('input'))].filter(el=>{
    try{return isJobBox(el)}catch(e){return false}});
   if(!els.length)return;
-  const list=await jobs();if(!list.length)return;
+  const list=await jobs();
+  if(!list.length){if(retry<8){retry++;setTimeout(()=>scan(document),1000*retry)}return}   /* v99: 연결이 늦으면 최대 8회 재시도 */
+  retry=0;
   els.forEach(el=>{try{attach(el,list)}catch(e){}});
   try{window.MESCOMBO&&MESCOMBO.scan()}catch(e){}   /* 목록형 콤보 UI 로 승격 */
  }

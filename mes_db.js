@@ -29,7 +29,7 @@
       (document.head||document.documentElement).appendChild(lk)}catch(e){}
 })();
 
-const MES_VER='v71';window.MES_VER=MES_VER;
+const MES_VER='v72';window.MES_VER=MES_VER;
 const CFG={url:'https://ipggvrzxfcryzryileuv.supabase.co',key:'sb_publishable_CHO-dAOU00HNwno52255mg_H3C1_vew'};
 function tok(){try{return (window.MES_AUTH||window.parent.MES_AUTH)?.token||null}catch(e){return null}}
 const H=()=>({'apikey':CFG.key,'Authorization':'Bearer '+(tok()||CFG.key),'Content-Type':'application/json'});
@@ -111,6 +111,7 @@ async function rest_(path,opt={}){
              +(opt.body?'\n\n[body]\n'+String(opt.body).slice(0,1500):'')});
     throw new Error(msg);
   }
+  online=true;   /* v72(MES): 실제 요청이 성공했으면 연결 상태로 본다 (첫 ping 실패로 화면 전체가 미연결로 남던 문제) */
   const t=await r.text();return t?JSON.parse(t):null}
 /* v72: 쓰기가 끝나면 해당 테이블 변경을 자동으로 알린다.
  * 화면마다 MESDB.notify() 를 직접 부르게 했더니 빠뜨린 화면이 많아
@@ -187,7 +188,14 @@ MESDB.canSave=()=>{const a=MESDB.auth();if(!a)return true;const m=MESDB.pageMenu
     const iv=setInterval(()=>{if(apply()||++n>60)clearInterval(iv)},200)};   /* 최대 12초 대기 */
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
-MESDB.ping=async()=>{try{await rest('page_state?select=page&limit=1');online=true}catch(e){online=false}return online};MESDB.ready=MESDB.ping();
+/* v72(MES): 첫 연결 확인 — 로그인 토큰이 아직 없으면 잠깐 기다리고, 실패해도 몇 번 더 시도한다.
+ * (종전엔 화면이 열리는 순간 한 번만 ping → 토큰 준비 전이거나 잠깐 끊기면 그 화면은 끝까지 '미연결') */
+MESDB.ping=async()=>{const sl=ms=>new Promise(r=>setTimeout(r,ms));
+  for(let i=0;i<7;i++){
+    if(!tok()&&i<4){await sl(300);continue}
+    try{await rest('page_state?select=page&limit=1');online=true;return true}
+    catch(e){online=false;if(i<6)await sl(400*(i+1))}
+  }return online};MESDB.ready=MESDB.ping();
 })();
 
 /* ── v17: 마스터 화면 ↔ 정규화 테이블 직결 ──────────────────────────
