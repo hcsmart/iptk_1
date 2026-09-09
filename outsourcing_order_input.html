@@ -13,8 +13,17 @@
 .box{border:1px solid var(--line);display:flex;flex-direction:column;min-height:0;background:#fff}.box-title{height:24px;display:flex;align-items:center;justify-content:center;background:linear-gradient(#deebf5,#caddea);border-bottom:1px solid var(--line);font-weight:700;color:#536677}
 .searchbar{height:26px;display:flex;gap:4px;align-items:center;padding:0 4px;border-bottom:1px solid var(--line2);background:#f6f8fa}.searchbar input{flex:1;height:21px;border:1px solid #b7c2cb;padding:0 4px;min-width:0}.searchbar button{height:21px;border:1px solid #9ca9b5;background:linear-gradient(#fff,#e2e8ed)}
 .tablewrap{flex:1;min-height:0;overflow:auto}table{border-collapse:collapse;width:100%;table-layout:fixed}th,td{height:24px;padding:0 5px;border-right:1px solid var(--line2);border-bottom:1px solid var(--line2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}th{position:sticky;top:0;z-index:2;text-align:center;background:linear-gradient(#dbe9f4,#c7d9e8);color:#405266;font-weight:700}tbody tr:hover td{background:#edf6fd}tbody tr.sel td{background:#2e78bd;color:#fff}.c{text-align:center}.r{text-align:right}
-td.route{background:#8fdc6b;text-align:center;font-weight:700;color:#20461a}
-td.route.used{background:#dfe4e8;color:#8b98a3;text-decoration:line-through;font-weight:400}
+td.route{text-align:center;font-weight:400;color:#8b98a3;background:#fff;white-space:nowrap}
+td.route .st{display:block;font-size:10px;line-height:13px;border-radius:7px;margin-top:1px;padding:0 4px}
+td.route.s-next{background:#8fdc6b;color:#20461a;font-weight:700;cursor:pointer}
+td.route.s-next .st{background:#2e7d32;color:#fff}
+td.route.s-ext{background:#dff5d3;color:#2c5a24;cursor:pointer}
+td.route.s-pick{background:#5cb85c;color:#fff;font-weight:700;cursor:pointer}
+td.route.s-req{background:#efe5f7;color:#5a3a7a}td.route.s-req .st{background:#8e6bb0;color:#fff}
+td.route.s-out{background:#ffe9d1;color:#7a4a12;font-weight:700}td.route.s-out .st{background:#e07a1f;color:#fff}
+td.route.s-in{background:#dbeaf8;color:#1a4f7a;font-weight:700}td.route.s-in .st{background:#2f6fb5;color:#fff}
+td.route.s-done{background:#e6e9ec;color:#7d8993}td.route.s-done .st{background:#8b98a3;color:#fff}
+.legend{font-size:11px;color:#5a6b7a;margin-left:8px;font-weight:400}.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin:0 3px 0 8px;vertical-align:-1px}
 tr.rdone{background:#f4f6f8;color:#8b98a3}
 tr.rdone td{color:#8b98a3}
 .tagd{display:inline-block;margin-left:6px;padding:0 5px;border:1px solid #b7c2cb;border-radius:8px;background:#fff;font-size:11px;color:#5a6b7a;font-weight:400}
@@ -42,7 +51,7 @@ tr.rdone td{color:#8b98a3}
     <div class="box"><div class="box-title">협력업체리스트</div>
       <div class="searchbar"><input id="venQ" placeholder="Enter text to s"><button onclick="findVendor()">찾기</button><button onclick="clearVendor()">지우기</button></div>
       <div class="tablewrap"><table><thead><tr><th>협력업체</th></tr></thead><tbody id="venBody"></tbody></table></div></div>
-    <div class="box"><div class="box-title">부품별 가공공정 리스트</div><div class="tablewrap"><table style="min-width:900px">
+    <div class="box"><div class="box-title">부품별 가공공정 리스트<span class="legend"><i style="background:#8fdc6b"></i>다음 공정(클릭)<i style="background:#8e6bb0"></i>요청<i style="background:#e07a1f"></i>출고<i style="background:#2f6fb5"></i>입고<i style="background:#8b98a3"></i>완료</span></div><div class="tablewrap"><table style="min-width:900px">
       <colgroup><col style="width:36px"><col style="width:80px"><col style="width:90px"><col style="width:56px"><col style="width:56px"><col style="width:56px"><col style="width:56px"><col style="width:56px"><col style="width:56px"><col style="width:56px"><col style="width:56px"><col style="width:56px"></colgroup>
       <thead><tr><th></th><th style="width:46px">조</th><th>부품코드</th><th>부품명</th><th>공정1</th><th>공정2</th><th>공정3</th><th>공정4</th><th>공정5</th><th>공정6</th><th>공정7</th><th>공정8</th><th>공정9</th></tr></thead>
       <tbody id="routeBody"></tbody></table></div></div>
@@ -50,7 +59,7 @@ tr.rdone td{color:#8b98a3}
   <div class="midbar"><span class="label">입고요구일</span><input id="reqDate" class="field" type="date"><button class="btn" onclick="pushDown()">⬇ 요청추가</button><button class="btn" onclick="pullUp()">⬆ 요청삭제</button></div>
   <div class="reqbox"><div class="box-title">구매요청 리스트</div><div class="tablewrap"><table>
     <colgroup><col style="width:40px"><col style="width:38px"><col style="width:110px"><col style="width:110px"><col style="width:120px"><col style="width:50px"><col style="width:60px"><col style="width:70px"><col style="width:150px"><col style="width:100px"><col style="width:120px"><col style="width:64px"><col style="width:92px"><col style="width:100px"><col style="width:90px"><col style="width:80px"></colgroup>
-    <thead><tr><th>No</th><th>선택</th><th>협력업체</th><th>제번</th><th>품명</th><th>공정</th><th>공정명</th><th>품번</th><th>부품명</th><th>가공공정코드</th><th>가공공정</th><th>수량</th><th>발주월</th><th>입고요구월</th><th>비고</th><th>작성자</th></tr></thead>
+    <thead><tr><th>No</th><th>선택</th><th>협력업체</th><th>제번</th><th>품명</th><th>공정</th><th>공정명</th><th>품번</th><th>부품명</th><th>순번</th><th>가공공정코드</th><th>가공공정</th><th>수량</th><th>발주월</th><th>입고요구월</th><th>비고</th><th>작성자</th></tr></thead>
     <tbody id="reqBody"></tbody>
   </table></div></div>
   <footer class="foot"><button class="btn" onclick="search()">⌕ 검색</button><button class="btn primary" onclick="save()">▣ 저장</button><button class="btn" onclick="sampleFill()" title="화면 순서대로 시연하며 등록요점을 설명합니다.">▶ 등록예제</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫 기</button><span class="msg" id="message">제번·협력업체를 고르고 가공공정을 내려 외주가공 발주를 등록합니다.</span><span class="right" id="countText"></span></footer>
@@ -69,52 +78,89 @@ const stepCode=s=>String((s&&typeof s==='object')?(s.process_code||s.code||''):(
 const joNum=v=>{try{return window.MESJO?MESJO.norm(v):String(v??'').trim()}catch(e){return String(v??'').trim()}};
 const joName=(jo,q)=>String(jo||'')+'/'+Math.max(1,Number(q)||1);
 const procName=c=>{const k=stepCode(c);if(!k)return'';return PROCNAME[k]||PROCNAME[k.toUpperCase()]||k};
-/* v87: 이중발주 방지 — 이미 발주(미확정)됐거나 구매요청에 올라간 공정은 다시 선택할 수 없다 */
-const ORDERED=new Map();                                   /* '품번|가공공정|업체' → 상태 */
-const okey=(pt,mp,vd)=>[pt||'',mp||'',vd||''].join('|');
+/* v97: 공정 순차 진행 — 부품의 가공공정은 공정1→2→3… 순서로 서로 다른 외주처에 발주한다.
+ *  상태(업체 무관, 부품+공정순번 기준): '' 미발주 · 요청(구매요청 리스트) · 출고(발주됨=외주처 반출) · 입고 · 완료(입고확정)
+ *  다음 공정은 직전 공정이 입고/완료일 때만 발주할 수 있다. 같은 업체가 연속 공정을 할 때는 셀을 눌러 범위를 넓힌다. */
+const ORDERED=new Map();                                   /* '품번|순번' → {st,vendor}  (순번 없는 옛 라인은 '품번|공정코드') */
+const okey=(pt,k)=>[pt||'',k||''].join('|');
+const ST_DB={'발주':'출고','입고':'입고','입고확정':'완료'};
 async function loadOrdered(job){
  ORDERED.clear();
  if(!job||!(window.MESDB&&MESDB.online))return;
  try{
   const ex=await MESDB.table('order_lines')
-    .select(`select=part_no,vendor_name,machining_process_code,status&category=eq.${encodeURIComponent('외주가공')}&job_no=eq.${encodeURIComponent(job)}`);
-  (ex||[]).forEach(e=>{const st=String(e.status||'');
-   if(st==='발주'||st==='입고')ORDERED.set(okey(e.part_no,e.machining_process_code,e.vendor_name),st)});
+    .select(`select=line_id,part_no,vendor_name,machining_process_code,step_no,status&category=eq.${encodeURIComponent('외주가공')}&job_no=eq.${encodeURIComponent(job)}&order=line_id`);
+  (ex||[]).forEach(e=>{const st=ST_DB[String(e.status||'')];if(!st)return;
+   const k=e.step_no?okey(e.part_no,'#'+e.step_no):okey(e.part_no,e.machining_process_code);
+   ORDERED.set(k,{st,vendor:e.vendor_name||''})});   /* 같은 키가 여럿이면 최신 line_id 가 남는다 */
  }catch(e){}
 }
 const curVendor=()=>venView[venIdx]||'';
-function stepState(part,mp){
- if(!mp)return '';
- const v=curVendor();
- const st=ORDERED.get(okey(part,mp,v));
- if(st)return st==='입고'?'입고':'발주';
- return REQ.some(r=>r.part===part&&r.mp===mp&&r.vendor===v)?'요청':'';
+/* 부품 r 의 i번째(0-based) 공정 상태 */
+function stepInfo(r,i){
+ const c=stepCode((r.steps||[])[i]);if(!c)return {st:'',vendor:''};
+ let o=ORDERED.get(okey(r.part,'#'+(i+1)));
+ if(!o){o=ORDERED.get(okey(r.part,c));if(o&&(r.steps||[]).findIndex(s=>stepCode(s)===c)!==i)o=null}  /* 옛 라인(순번 없음)은 첫 동일코드 공정에만 */
+ if(o)return o;
+ const q=REQ.find(x=>x.part===r.part&&x.sn===i+1);
+ return q?{st:'요청',vendor:q.vendor}:{st:'',vendor:''};
 }
-function openSteps(r){return (r.steps||[]).map(stepCode).filter(c=>c&&!stepState(r.part,c))}
+const stepState=(r,i)=>stepInfo(r,i).st;
+const RECV=st=>st==='입고'||st==='완료';
+/* 다음 발주 가능 공정 index (없으면 -1). 직전 공정이 출고/요청이면 대기(-2) */
+function nextStep(r){
+ const n=(r.steps||[]).map(stepCode).filter(Boolean).length;
+ for(let i=0;i<n;i++){const st=stepState(r,i);
+  if(st==='')return (i===0||RECV(stepState(r,i-1)))?i:-2;
+ }
+ return -1;
+}
+/* 선택: 부품 index → 다음 공정부터 몇 개 (연속 공정을 같은 업체에 줄 때 확장) */
+const PICK=new Map();
+function pickSteps(r){const nx=nextStep(r);if(nx<0)return [];const n=(r.steps||[]).map(stepCode).filter(Boolean).length;
+ let cnt=Math.max(1,PICK.get(ROUTES.indexOf(r))||1),out=[];
+ for(let i=nx;i<n&&out.length<cnt;i++){if(stepState(r,i)!=='')break;out.push(i)}return out}
+function pickCell(ri,i){const r=ROUTES[ri];if(!r)return;const nx=nextStep(r);if(nx<0||i<nx)return;
+ for(let k=nx;k<=i;k++)if(stepState(r,k)!=='')return;
+ const cur=PICK.get(ri)||0, want=i-nx+1;
+ if(cur===want&&want===1){PICK.delete(ri)}else PICK.set(ri,want);
+ renderRoutes();
+ const cnt=PICK.get(ri)||0;
+ msg(cnt?`${r.part}: 공정${nx+1}${cnt>1?'~'+(nx+cnt):''} (${pickSteps(r).map(k=>procName(r.steps[k])).join(' → ')}) 를 ${curVendor()||'선택 업체'}에 발주 요청 준비`:`${r.part} 선택 해제`)}
+function pickRow(ri,on){if(on){if(!PICK.has(ri))PICK.set(ri,1)}else PICK.delete(ri);renderRoutes()}
 const ROUTES=[];     /* v39: 선택 제번의 가공공정(machining_plan_parts / PartList)에서 로드 */
 const REQ=[];
 let jobIdx=0,venIdx=6,jobView=[...JOBS],venView=[...VENDORS];
 function renderJobs(){jobBody.innerHTML=jobView.map((j,i)=>`<tr class="${i===jobIdx?'sel':''}" onclick="pickJob(${i})"><td>${j.job}</td><td>${j.item}</td><td class="c">${j.proc}</td><td class="c">${j.procName}</td></tr>`).join('');countText.textContent=`제번 ${jobView.length}건 / 요청 ${REQ.length}건`}
 function renderVendors(){venBody.innerHTML=venView.map((v,i)=>`<tr class="${i===venIdx?'sel':''}" onclick="pickVendor(${i})"><td>${v}</td></tr>`).join('')}
 function renderRoutes(){
- const v=curVendor();
- routeBody.innerHTML=ROUTES.map((r,i)=>{
-  const all=(r.steps||[]).map(stepCode).filter(Boolean);
-  const open=openSteps(r),used=all.length-open.length;
-  const dis=all.length>0&&open.length===0;
-  const tip=dis?`${v||'선택 업체'} 발주(요청) 완료 — 이중발주 방지를 위해 선택할 수 없습니다`
-      :(used?`${used}개 공정은 이미 발주(요청)되어 제외됩니다`:'');
-  return `<tr class="${dis?'rdone':''}"${tip?` title="${_esc(tip)}"`:''}>`+
-   `<td class="c"><input type="checkbox" data-i="${i}"${dis?' disabled':''}></td>`+
+ routeBody.innerHTML=ROUTES.map((r,ri)=>{
+  const codes=(r.steps||[]).map(stepCode).filter(Boolean), n=codes.length;
+  const nx=nextStep(r), picks=PICK.has(ri)?pickSteps(r):[];
+  const done=codes.filter((c,i)=>stepState(r,i)==='완료').length;
+  const allDone=n>0&&nx===-1&&codes.every((c,i)=>RECV(stepState(r,i)));
+  const wait=nx===-2;
+  const dis=n===0||nx<0;
+  const tag=n===0?'':allDone?'<span class="tagd">전공정 완료</span>':wait?`<span class="tagd">공정${codes.findIndex((c,i)=>stepState(r,i)==='')} ${stepState(r,codes.findIndex((c,i)=>stepState(r,i)==='')-1)} 대기</span>`:nx>0?`<span class="tagd">${nx}/${n} 진행</span>`:'';
+  const tip=allDone?'모든 가공공정이 입고되었습니다':wait?'직전 공정이 아직 입고되지 않아 다음 공정을 발주할 수 없습니다':'';
+  return `<tr class="${dis&&n?'rdone':''}"${tip?` title="${_esc(tip)}"`:''}>`+
+   `<td class="c"><input type="checkbox" data-i="${ri}"${dis?' disabled':''}${picks.length?' checked':''} onchange="pickRow(${ri},this.checked)"></td>`+
    `<td class="c">${_esc(r.jo?r.jo+'조':'')}</td>`+
-   `<td>${_esc(r.part)}${used?`<span class="tagd">${dis?'발주완료':used+'공정 발주됨'}</span>`:''}</td>`+
+   `<td>${_esc(r.part)}${tag}</td>`+
    `<td>${_esc(r.name)}</td>`+
-   (r.steps||[]).map(s=>{const c=stepCode(s);if(!c)return '<td></td>';
-     const st=stepState(r.part,c);
-     return `<td class="route${st?' used':''}" title="${_esc(c+(st?' · 이미 '+st:''))}">${_esc(procName(c))}</td>`}).join('')+
+   (r.steps||[]).map((s,i)=>{const c=stepCode(s);if(!c)return '<td></td>';
+     const o=stepInfo(r,i),st=o.st;
+     let cls='',lab='';
+     if(st==='요청'){cls='s-req';lab='요청'}else if(st==='출고'){cls='s-out';lab='출고'}else if(st==='입고'){cls='s-in';lab='입고'}else if(st==='완료'){cls='s-done';lab='완료'}
+     else if(picks.includes(i)){cls='s-pick';lab=i===nx?'▶ 선택':'선택'}
+     else if(i===nx){cls='s-next';lab='▶ 다음'}
+     else if(nx>=0&&i>nx){cls='s-ext'}
+     const click=(cls==='s-next'||cls==='s-ext'||cls==='s-pick')?` onclick="pickCell(${ri},${i})"`:'';
+     const t=`공정${i+1} ${c}`+(o.vendor?` · ${o.vendor}`:'')+(st?` · ${st}`:cls==='s-ext'?' · 클릭하면 다음 공정부터 여기까지 같은 업체에 발주':'');
+     return `<td class="route ${cls}" title="${_esc(t)}"${click}>${_esc(procName(c))}${lab?`<span class="st">${lab}</span>`:''}</td>`}).join('')+
    `</tr>`}).join('');
 }
-function renderReq(){reqBody.innerHTML=REQ.map((r,i)=>`<tr><td class="c">${i+1}</td><td class="c"><input type="checkbox" data-no="${r.no}"></td><td>${r.vendor}</td><td>${r.job}</td><td>${r.item}</td><td class="c">${r.proc}</td><td class="c">${r.procName}</td><td>${r.part}</td><td>${r.partName}</td><td class="c">${r.mp}</td><td>${r.mpName}</td><td class="c"><input value="${r.qty??1}" style="width:52px;text-align:right;padding:1px 4px;border:1px solid #b7c2cb" onclick="event.stopPropagation()" onchange="setQty(${r.no},this.value)"></td><td class="c">${r.odate}</td><td class="c">${r.rdate}</td><td>${r.remark}</td><td class="c">${r.writer}</td></tr>`).join('');countText.textContent=`제번 ${jobView.length}건 / 요청 ${REQ.length}건`}
+function renderReq(){reqBody.innerHTML=REQ.map((r,i)=>`<tr><td class="c">${i+1}</td><td class="c"><input type="checkbox" data-no="${r.no}"></td><td>${r.vendor}</td><td>${r.job}</td><td>${r.item}</td><td class="c">${r.proc}</td><td class="c">${r.procName}</td><td>${r.part}</td><td>${r.partName}</td><td class="c">${r.sn||""}${r.snOf?"/"+r.snOf:""}</td><td class="c">${r.mp}</td><td>${r.mpName}</td><td class="c"><input value="${r.qty??1}" style="width:52px;text-align:right;padding:1px 4px;border:1px solid #b7c2cb" onclick="event.stopPropagation()" onchange="setQty(${r.no},this.value)"></td><td class="c">${r.odate}</td><td class="c">${r.rdate}</td><td>${r.remark}</td><td class="c">${r.writer}</td></tr>`).join('');countText.textContent=`제번 ${jobView.length}건 / 요청 ${REQ.length}건`}
 /* v85: 발주수량 — 분할반출·부분입고의 기준값 */
 function setQty(no,v){const r=REQ.find(x=>x.no===no);if(!r)return;
  const q=Math.max(1,Math.round(Number(String(v).replace(/[^0-9.]/g,''))||1));
@@ -127,44 +173,57 @@ function pickVendor(i){venIdx=i;renderVendors();renderRoutes();msg(`협력업체
 function findVendor(){const q=venQ.value.trim().toLowerCase();venView=VENDORS.filter(v=>!q||v.toLowerCase().includes(q));venIdx=0;renderVendors()}
 function clearVendor(){venQ.value='';venView=[...VENDORS];venIdx=0;renderVendors()}
 function search(){const j=jobQ.value.trim().toLowerCase(),it=itemQ.value.trim().toLowerCase();jobView=JOBS.filter(x=>(!j||x.job.toLowerCase().includes(j))&&(!it||(x.item||'').toLowerCase().includes(it)));jobIdx=0;renderJobs();msg(`제번 ${jobView.length}건을 조회했습니다.`)}
-async function pushDown(){const j=jobView[jobIdx];if(!j)return;const picks=[...routeBody.querySelectorAll('input:checked')].map(x=>ROUTES[Number(x.dataset.i)]);if(!picks.length)return msg('부품별 가공공정에서 발주할 부품을 선택하세요.');const d=reqDate.value||new Date(Date.now()+12*864e5).toISOString().slice(0,10);
-let _skipPart=0,_skipStep=0,_added=0;
-picks.forEach(p=>{
- const all=(p.steps||[]).map(stepCode).filter(Boolean), open=openSteps(p);
- _skipStep+=all.length-open.length;
- if(!open.length){_skipPart++;return}
- open.forEach(mp=>{REQ.push({no:REQ.length?Math.max(...REQ.map(r=>r.no))+1:1,vendor:curVendor(),job:j.job,item:j.item,proc:(p.jo||j.proc||'1'),procName:joName(p.jo||j.proc||'1',j.setQty||1),part:p.part,partName:p.name,mp,mpName:procName(mp),qty:1,odate:new Date().toISOString().slice(0,10),rdate:d,remark:'',writer:OWNER,price:0,amount:0});_added++});
-});
-if(!_added){renderRoutes();return msg(`선택한 부품은 이미 발주(요청)된 공정뿐입니다. 이중발주를 막기 위해 추가하지 않았습니다.`)}
-/* v39: 가공공정 단가를 자동 조회해 발주금액을 채운다 (없으면 제조원가 외주가공비가 0) */
-if(window.MESPRICE){
- for(const r of REQ){
-  if(r.amount)continue;
-  /* v40: 발주일 시점에 적용시작된 공정단가 */
-  const hit=await MESPRICE.process(r.mp,r.vendor,{asOf:r.odate});
-  r.price=hit?hit.price:0;
-  r.amount=(r.price||0)*(Number(r.qty)||1);
+async function pushDown(){const j=jobView[jobIdx];if(!j)return;
+ const picks=[...routeBody.querySelectorAll('input:checked')].map(x=>Number(x.dataset.i)).filter(ri=>ROUTES[ri]);
+ if(!picks.length)return msg('부품별 가공공정에서 발주할 부품(다음 공정)을 선택하세요.');
+ if(!curVendor())return msg('협력업체를 선택하세요.');
+ const d=reqDate.value||new Date(Date.now()+12*864e5).toISOString().slice(0,10);
+ let _added=0,_skip=[];
+ picks.forEach(ri=>{const p=ROUTES[ri];const idx=pickSteps(p);
+  if(!idx.length){_skip.push(p.part);return}
+  const n=(p.steps||[]).map(stepCode).filter(Boolean).length;
+  idx.forEach(i=>{const mp=stepCode(p.steps[i]);
+   REQ.push({no:REQ.length?Math.max(...REQ.map(r=>r.no))+1:1,vendor:curVendor(),job:j.job,item:j.item,proc:(p.jo||j.proc||'1'),procName:joName(p.jo||j.proc||'1',j.setQty||1),part:p.part,partName:p.name,sn:i+1,snOf:n,mp,mpName:procName(mp),qty:1,odate:new Date().toISOString().slice(0,10),rdate:d,remark:'',writer:OWNER,price:0,amount:0});_added++});
+  PICK.delete(ri);
+ });
+ if(!_added){renderRoutes();return msg('선택한 부품은 지금 발주할 수 있는 공정이 없습니다. (직전 공정 입고 대기 또는 전공정 완료)')}
+ /* v39: 가공공정 단가를 자동 조회해 발주금액을 채운다 (없으면 제조원가 외주가공비가 0) */
+ if(window.MESPRICE){
+  for(const r of REQ){
+   if(r.amount)continue;
+   const hit=await MESPRICE.process(r.mp,r.vendor,{asOf:r.odate});   /* v40: 발주일 시점 단가 */
+   r.price=hit?hit.price:0;
+   r.amount=(r.price||0)*(Number(r.qty)||1);
+  }
  }
-}
-renderReq();
-const tot=REQ.reduce((a,r)=>a+(Number(r.amount)||0),0);
-const noPrice=REQ.filter(r=>!r.amount).length;
-renderRoutes();
-msg(`${picks.length-_skipPart}개 부품 ${_added}공정을 구매요청 리스트에 추가했습니다. 발주금액 합계 ${tot.toLocaleString('ko-KR')}원`+
- (_skipStep?` · 기발주(요청) ${_skipStep}공정 제외`:'')+
- (noPrice?` (단가 미등록 ${noPrice}건 - 공정단가변동등록 확인)`:''));}
+ renderReq();
+ const tot=REQ.reduce((a,r)=>a+(Number(r.amount)||0),0);
+ const noPrice=REQ.filter(r=>!r.amount).length;
+ renderRoutes();
+ msg(`${picks.length-_skip.length}개 부품 ${_added}공정을 구매요청 리스트에 추가했습니다. 발주금액 합계 ${tot.toLocaleString('ko-KR')}원`+
+  (_skip.length?` · 발주 불가 ${_skip.length}건 제외`:'')+
+  (noPrice?` (단가 미등록 ${noPrice}건 - 공정단가변동등록 확인)`:''));}
 function pullUp(){const ids=[...reqBody.querySelectorAll('input:checked')].map(x=>Number(x.dataset.no));if(!ids.length)return msg('삭제할 요청 행을 선택하세요.');for(let i=REQ.length-1;i>=0;i--)if(ids.includes(REQ[i].no))REQ.splice(i,1);renderReq();renderRoutes();msg(`${ids.length}건을 삭제했습니다.`)}
 /* v62: 같은 제번·품번·업체(외주가공은 가공공정 포함)의 미입고 발주가 있으면 중복 등록 차단 */
+/* v97: 저장 직전 DB 재확인 — (1) 같은 부품·공정순번이 이미 발주/입고 중이면 차단 (업체 무관), (2) 직전 순번이 입고/입고확정이 아니면 차단 */
 async function dupCheck(cat,job,rows){
- const ex=await MESDB.table('order_lines').select(`select=part_no,vendor_name,machining_process_code&category=eq.${encodeURIComponent(cat)}&status=eq.발주&job_no=eq.${encodeURIComponent(job)}`);
- const key=(p,v,m)=>[p||'',v||'',cat==='외주가공'?(m||''):''].join('|');
- const have=new Set((ex||[]).map(e=>key(e.part_no,e.vendor_name,e.machining_process_code)));
- return rows.filter(r=>have.has(key(r.part,r.vendor,r.mp)));
+ const ex=await MESDB.table('order_lines').select(`select=part_no,machining_process_code,step_no,status&category=eq.${encodeURIComponent(cat)}&job_no=eq.${encodeURIComponent(job)}&order=line_id`);
+ const st=new Map();(ex||[]).forEach(e=>{if(!ST_DB[e.status])return;st.set(okey(e.part_no,e.step_no?'#'+e.step_no:e.machining_process_code),ST_DB[e.status])});
+ const bad=[];
+ for(const r of rows){
+  const me=st.get(okey(r.part,'#'+r.sn))||st.get(okey(r.part,r.mp));
+  if(me&&me!=='완료'){bad.push(`${r.part} 공정${r.sn} 이미 ${me}`);continue}
+  if(r.sn>1&&!rows.some(x=>x.part===r.part&&x.sn===r.sn-1)){
+   const prev=st.get(okey(r.part,'#'+(r.sn-1)));
+   if(!RECV(prev||''))bad.push(`${r.part} 공정${r.sn-1} ${prev||'미발주'} (입고 후 발주 가능)`);
+  }
+ }
+ return bad;
 }
 async function save(){if(!REQ.length)return msg('저장할 발주 자료가 없습니다.');if(!window.MESDB||!MESDB.online){msg(`외주가공 발주 ${REQ.length}건을 저장했습니다. (DB 미연결 - 로컬)`);return}try{
- const dup=await dupCheck('외주가공',REQ[0].job,REQ);if(dup.length)return msg(`이미 발주(미입고) 된 공정이 있습니다: ${[...new Set(dup.map(r=>r.part+'/'+r.mp))].join(', ')} — 요청 리스트에서 제외하세요.`);
- await MESDB.newLines(REQ.map(r=>({category:'외주가공',status:'발주',vendor_name:r.vendor,job_no:r.job,item_name:r.item||null,process_code:r.proc,process_name:r.procName,part_no:r.part,part_name:r.partName,machining_process_code:r.mp,machining_process_name:r.mpName||null,order_qty:Number(r.qty)||1,unit_price:Number(r.price)||null,quote_price:Number(r.amount)||null,order_date:r.odate||null,required_date:r.rdate||null,owner_name:r.writer||null,remark:r.remark||null})));const n=REQ.length;const _j=REQ[0].job;REQ.length=0;renderReq();try{MESDB.notify&&MESDB.notify(['order_lines'])}catch(e){}await loadOrdered(_j);renderRoutes();msg(`외주가공 발주 ${n}건을 DB에 등록했습니다. 입고등록 화면에서 확인하세요.`)}catch(e){msg('DB 등록 실패: '+e.message.slice(0,120))}}
-function exportCsv(){const out=[['협력업체','제번','공정','품번','부품명','가공공정코드','가공공정','수량','발주월','입고요구월','작성자'],...REQ.map(r=>[r.vendor,r.job,r.proc,r.part,r.partName,r.mp,r.mpName,r.qty??1,r.odate,r.rdate,r.writer])];const csv='\ufeff'+out.map(a=>a.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='outsourcing_order_input.csv';a.click();URL.revokeObjectURL(a.href)}
+ const dup=await dupCheck('외주가공',REQ[0].job,REQ);if(dup.length)return msg(`발주할 수 없는 공정이 있습니다: ${[...new Set(dup)].join(', ')} — 요청 리스트에서 제외하세요.`);
+ await MESDB.newLines(REQ.map(r=>({category:'외주가공',status:'발주',vendor_name:r.vendor,job_no:r.job,item_name:r.item||null,process_code:r.proc,process_name:r.procName,part_no:r.part,part_name:r.partName,machining_process_code:r.mp,machining_process_name:r.mpName||null,step_no:Number(r.sn)||null,order_qty:Number(r.qty)||1,unit_price:Number(r.price)||null,quote_price:Number(r.amount)||null,order_date:r.odate||null,required_date:r.rdate||null,owner_name:r.writer||null,remark:r.remark||null})));const n=REQ.length;const _j=REQ[0].job;REQ.length=0;renderReq();try{MESDB.notify&&MESDB.notify(['order_lines'])}catch(e){}await loadOrdered(_j);renderRoutes();PICK.clear();msg(`외주가공 발주 ${n}건을 DB에 등록했습니다. (공정 리스트에 출고 표시) 입고 후 다음 공정을 발주하세요.`)}catch(e){msg('DB 등록 실패: '+e.message.slice(0,120))}}
+function exportCsv(){const out=[['협력업체','제번','공정','품번','부품명','순번','가공공정코드','가공공정','수량','발주월','입고요구월','작성자'],...REQ.map(r=>[r.vendor,r.job,r.proc,r.part,r.partName,(r.sn||'')+(r.snOf?'/'+r.snOf:''),r.mp,r.mpName,r.qty??1,r.odate,r.rdate,r.writer])];const csv='\ufeff'+out.map(a=>a.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='outsourcing_order_input.csv';a.click();URL.revokeObjectURL(a.href)}
 function msg(t){message.textContent=t}
 reqDate.value=new Date(Date.now()+12*864e5).toISOString().slice(0,10);
 renderJobs();renderVendors();renderRoutes();renderReq();
@@ -212,8 +271,9 @@ async function loadRoutes(){
   }
   await loadOrdered(j.job);
   renderRoutes();
-  const _blk=ROUTES.filter(r=>(r.steps||[]).length&&!openSteps(r).length).length;
-  msg(`${j.job} 부품별 가공공정 ${ROUTES.length}건을 조회했습니다.`+(_blk?` · ${curVendor()} 기발주 ${_blk}건은 선택 불가`:''));
+  PICK.clear();
+  const _w=ROUTES.filter(r=>nextStep(r)===-2).length,_d=ROUTES.filter(r=>(r.steps||[]).length&&nextStep(r)===-1).length;
+  msg(`${j.job} 부품별 가공공정 ${ROUTES.length}건을 조회했습니다.`+(_w?` · 입고 대기 ${_w}건`:'')+(_d?` · 전공정 완료 ${_d}건`:''));
  }catch(e){renderRoutes();msg('가공공정 조회 실패: '+String(e.message||e).slice(0,110))}
 }
 window.MES={search,save,exportCsv,setMessage:msg,reload:loadJobs};
