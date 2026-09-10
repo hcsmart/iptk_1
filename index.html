@@ -114,8 +114,8 @@ input,select{font:inherit}
 .crumb b{color:var(--ink);font-weight:600}
 .crumb .right{margin-left:auto;display:flex;gap:14px;font-family:ui-monospace,Consolas,monospace;font-size:11px}
 .stage{flex:1;min-height:0;position:relative;background:var(--white)}
-.stage iframe{display:none;width:100%;height:100%;border:0;background:var(--white)}
-.stage iframe.on{display:block}
+.stage iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:var(--white);visibility:hidden;pointer-events:none;z-index:0}
+.stage iframe.on{visibility:visible;pointer-events:auto;z-index:1}
 .stage .vwait{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(255,255,255,.72);color:var(--ink-2);font-size:13px;z-index:5}
 .stage .vwait.on{display:flex}
 .placeholder{display:none;height:100%;padding:26px 28px}
@@ -217,7 +217,7 @@ input,select{font:inherit}
 </div>
 
 <script>
-const APP_VER='108';
+const APP_VER='109';
 const APP={
   '영업관리':{
     secondary:[

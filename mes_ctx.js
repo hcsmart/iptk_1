@@ -1436,3 +1436,22 @@ window.MESCTX={confirm:dlgConfirm};
  watch();
  new MutationObserver(()=>watch()).observe(document.documentElement,{childList:true,subtree:true});
 })();
+
+/* ── v109: 실제 화면 폭 단계를 html[data-mw] 로 알린다 (전 화면 공용) ──────────
+   탭 iframe 이 감춰진 상태로 로드되면 폭 0 으로 미디어쿼리가 굳어 입력폼이 1열로
+   남는 일이 있다. ResizeObserver 로 실측한 폭 단계를 속성으로 내보내, 화면이
+   미디어쿼리 대신(또는 함께) html[data-mw="lg"] .formgrid 같은 선택자를 쓸 수 있게 한다.
+   xs<680 · sm 680~939 · md 940~1239 · lg 1240~1799 · xl>=1800 */
+(function(){
+ if(window.__mesMW)return; window.__mesMW=1;
+ const B=[[1800,'xl'],[1240,'lg'],[940,'md'],[680,'sm'],[0,'xs']];
+ const set=()=>{const w=document.documentElement.clientWidth||window.innerWidth||0;
+  if(!w)return;                                     /* 폭 0(감춰진 상태)에서는 판정 보류 */
+  const b=(B.find(x=>w>=x[0])||B[B.length-1])[1];
+  if(document.documentElement.dataset.mw!==b)document.documentElement.dataset.mw=b};
+ set();
+ try{new ResizeObserver(set).observe(document.documentElement)}catch(e){}
+ window.addEventListener('resize',set);
+ document.addEventListener('visibilitychange',set);
+ [200,800,1600].forEach(t=>setTimeout(set,t));
+})();
