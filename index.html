@@ -217,7 +217,7 @@ input,select{font:inherit}
 </div>
 
 <script>
-const APP_VER='111';
+const APP_VER='112';
 const APP={
   '영업관리':{
     secondary:[
@@ -263,7 +263,7 @@ const APP={
       ],
       '가공':[
         {name:'가공',items:['가공계획등록','공정이력카드']},
-        {name:'외주가공',items:['외주가공 발주','외주가공 입고','외주가공 입고확정']},
+        {name:'외주가공',items:['외주가공 발주','외주가공 입고','외주가공 입고확정','외주가공 QR스캔']},
         {name:'현황',items:['외주가공발주현황','가공구매 진척현황','외주가공 파이프라인']}
       ]
     }
@@ -426,6 +426,7 @@ const pageRegistry={
 '외주가공발주현황':{id:'outsourcing_order_status',file:'outsourcing_order_status.html',title:'외주가공 발주현황'},
 '가공구매 진척현황':{id:'machining_purchase_progress',file:'machining_purchase_progress.html',title:'가공구매 진척현황'},
 '외주가공 파이프라인':{id:'outsourcing_pipeline_board',file:'outsourcing_pipeline_board.html',title:'외주가공 파이프라인'},
+'외주가공 QR스캔':{id:'mobile_scan',file:'mobile_scan.html',title:'외주가공 QR 스캔'},
 '조립실적등록':{id:'assembly_result_input',file:'assembly_result_input.html',title:'조립실적등록'},
 '매출현황':{id:'sales_status',file:'sales_status.html',title:'매출현황'},
 '기한관리 알림판':{id:'sq_alert_board',file:'sq_alert_board.html',title:'기한관리 알림판'},
@@ -639,6 +640,7 @@ function makeView(p){
   if(p.home){const d=el('div','placeholder',homeHTML());d.id='view_home';stage.appendChild(d);return}
   if(p.file){
     const f=document.createElement('iframe');f.id='view_'+p.id;
+    f.setAttribute('allow','camera');  /* v112: QR스캔 등 iframe 안 카메라 허용 */
     f.src=p.file+(p.file.includes('?')?'&':'?')+'v='+APP_VER;
     f.addEventListener('load',()=>injectCtx(f));
     stage.appendChild(f);
