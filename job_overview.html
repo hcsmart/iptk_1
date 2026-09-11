@@ -1,0 +1,502 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>제번 종합현황</title><style>
+:root{
+ --bg:#eef2f7;--card:#fff;--line:#dbe3ec;--line2:#e8edf3;
+ --ink:#243342;--ink2:#5a6b7c;--ink3:#8d9aa8;
+ --blue:#2f75b5;--blue2:#eaf3fb;--blued:#1d5a92;
+ --done:#2f7d4f;--doneb:#e4f2ea;--run:#d97a00;--runb:#fdf1dd;
+ --wait:#9aa7b3;--waitb:#f1f4f7;--late:#c0392b;--lateb:#fbecea;
+ --sh:0 1px 3px rgba(30,45,60,.08),0 4px 14px rgba(30,45,60,.06);
+ --sh2:0 6px 24px rgba(20,35,55,.16);
+ --r:10px;
+}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{font-family:Pretendard,-apple-system,"Malgun Gothic","맑은 고딕",sans-serif;font-size:13px;color:var(--ink);background:var(--bg)}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+.num{font-variant-numeric:tabular-nums}
+
+/* ── 상단 바 ─────────────────────────── */
+.top{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.92);backdrop-filter:blur(6px);
+ border-bottom:1px solid var(--line);padding:10px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.top h1{margin:0;font-size:18px;font-weight:800;letter-spacing:-.02em}
+.top h1 small{font-weight:500;font-size:11px;color:var(--ink3);margin-left:8px}
+.seg{display:flex;background:#e9eef4;border-radius:9px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;border-radius:7px;padding:6px 14px;font-weight:700;color:var(--ink2)}
+.seg button.on{background:#fff;color:var(--blued);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.srch{position:relative;flex:1;min-width:140px;max-width:320px}
+.srch input{width:100%;height:33px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:0 10px 0 30px;outline:0}
+.srch input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(47,117,181,.14)}
+.srch:before{content:'⌕';position:absolute;left:10px;top:6px;color:var(--ink3);font-size:15px}
+.tbtn{height:33px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:0 12px;font-weight:600;color:var(--ink2)}
+.tbtn:hover{border-color:var(--blue);color:var(--blued)}
+.tbtn.on{background:var(--blue);border-color:var(--blued);color:#fff}
+.live{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink3);margin-left:auto}
+.live i{width:8px;height:8px;border-radius:50%;background:#c3cdd6}
+.live.on i{background:#37b26a;box-shadow:0 0 0 3px rgba(55,178,106,.2);animation:pulse 2.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+
+/* ── 본문 ────────────────────────────── */
+.wrap{padding:14px 16px 30px;max-width:1500px;margin:0 auto}
+.hide{display:none!important}
+
+/* ── ① 대시보드 ──────────────────────── */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--card);border:1px solid var(--line2);border-radius:var(--r);padding:13px 15px;box-shadow:var(--sh);cursor:pointer;transition:transform .12s}
+.kpi:hover{transform:translateY(-2px)}
+.kpi small{display:block;color:var(--ink3);font-weight:600;font-size:11.5px}
+.kpi b{display:block;font-size:26px;font-weight:800;margin-top:3px;letter-spacing:-.02em}
+.kpi span{font-size:11px;color:var(--ink3)}
+.kpi.warn b{color:var(--run)}.kpi.bad b{color:var(--late)}.kpi.ok b{color:var(--done)}.kpi.info b{color:var(--blued)}
+.dgrid{display:grid;grid-template-columns:1.15fr .85fr;gap:12px}
+.panel{background:var(--card);border:1px solid var(--line2);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden}
+.panel h3{margin:0;padding:11px 15px;font-size:13.5px;border-bottom:1px solid var(--line2);display:flex;align-items:center;gap:8px}
+.panel h3 span{margin-left:auto;font-size:11px;color:var(--ink3);font-weight:500}
+.plist{max-height:430px;overflow:auto}
+.prow{display:flex;align-items:center;gap:10px;padding:10px 15px;border-bottom:1px solid var(--line2);cursor:pointer}
+.prow:hover{background:var(--blue2)}
+.prow:last-child{border-bottom:0}
+.prow .j{font-weight:800;color:var(--blued);min-width:108px}
+.prow .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink2)}
+.dchip{font-size:11px;font-weight:800;border-radius:12px;padding:3px 9px;white-space:nowrap}
+.dchip.bad{background:var(--lateb);color:var(--late)}
+.dchip.warn{background:var(--runb);color:var(--run)}
+.dchip.ok{background:var(--doneb);color:var(--done)}
+.dchip.mut{background:var(--waitb);color:var(--ink3)}
+.obar{padding:6px 15px 14px}
+.orow{display:flex;align-items:center;gap:10px;padding:7px 0;cursor:pointer}
+.orow:hover .ol{text-decoration:underline}
+.ol{width:44px;font-weight:700;font-size:12.5px}
+.otrack{flex:1;height:16px;background:var(--waitb);border-radius:8px;overflow:hidden}
+.otrack i{display:block;height:100%;border-radius:8px;min-width:2px}
+.ocnt{width:36px;text-align:right;font-weight:800}
+.mini-empty{padding:34px;text-align:center;color:var(--ink3)}
+
+/* ── ② 칸반 보드 ─────────────────────── */
+.kb{display:flex;gap:10px;overflow-x:auto;padding-bottom:12px;scroll-snap-type:x proximity}
+.kcol{flex:0 0 218px;scroll-snap-align:start;background:#e7edf4;border-radius:var(--r);display:flex;flex-direction:column;max-height:calc(100vh - 175px)}
+.kcol.hot{background:#f3e9e0}
+.khead{padding:10px 12px 8px;display:flex;align-items:center;gap:7px;position:sticky;top:0}
+.khead b{font-size:13px}
+.khead .cnt{margin-left:auto;background:#fff;border-radius:10px;font-size:11px;font-weight:800;padding:2px 8px;color:var(--ink2)}
+.kbody{overflow-y:auto;padding:2px 8px 10px;display:flex;flex-direction:column;gap:7px}
+.kcard{background:#fff;border-radius:8px;border:1px solid var(--line2);box-shadow:0 1px 2px rgba(0,0,0,.06);padding:9px 11px;cursor:pointer;transition:transform .1s}
+.kcard:hover{transform:translateY(-2px);box-shadow:var(--sh)}
+.kcard.late{border-left:3px solid var(--late)}
+.kcard .j{font-weight:800;color:var(--blued);font-size:13px}
+.kcard .t{color:var(--ink2);font-size:11.5px;margin:2px 0 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kfoot{display:flex;align-items:center;gap:6px}
+.mbar{flex:1;height:5px;background:var(--waitb);border-radius:3px;overflow:hidden}
+.mbar i{display:block;height:100%;background:linear-gradient(90deg,#5aa0d8,#2f75b5);border-radius:3px}
+.kfoot .p{font-size:10.5px;font-weight:800;color:var(--ink2)}
+.own{font-size:10px;font-weight:800;color:#fff;border-radius:9px;padding:2px 7px;background:#5b6e7d;white-space:nowrap}
+.own.영업{background:#2f6ea5}.own.설계{background:#7a4fa3}.own.구매{background:#1f7a63}
+.own.가공{background:#a8621b}.own.조립{background:#39627f}.own.품질{background:#9c3b52}
+
+/* ── ③ 리스트 ────────────────────────── */
+.lrow{background:var(--card);border:1px solid var(--line2);border-radius:var(--r);box-shadow:var(--sh);
+ padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:14px;cursor:pointer;flex-wrap:wrap;transition:transform .1s}
+.lrow:hover{transform:translateY(-2px)}
+.lrow.late{border-left:4px solid var(--late)}
+.lrow .j{font-size:16px;font-weight:800;color:var(--blued);min-width:118px}
+.lrow .t{font-weight:600;min-width:0;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lrow .c{color:var(--ink3);font-size:12px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dots{display:flex;gap:4px;margin-left:auto}
+.dot{width:16px;height:16px;border-radius:50%;background:var(--waitb);border:1px solid var(--line);position:relative}
+.dot.done{background:var(--done);border-color:var(--done)}
+.dot.run{background:var(--run);border-color:var(--run);box-shadow:0 0 0 3px rgba(217,122,0,.18)}
+.dot:hover:after{content:attr(data-n);position:absolute;bottom:130%;left:50%;transform:translateX(-50%);
+ background:#243342;color:#fff;font-size:10px;padding:3px 7px;border-radius:5px;white-space:nowrap;z-index:5}
+.lbar{width:120px;height:8px;background:var(--waitb);border-radius:4px;overflow:hidden}
+.lbar i{display:block;height:100%;background:linear-gradient(90deg,#5aa0d8,#2f75b5)}
+.lpct{width:40px;text-align:right;font-weight:800;font-size:13px}
+.empty{padding:70px;text-align:center;color:var(--ink3);background:#fff;border-radius:var(--r);border:1px dashed var(--line)}
+
+/* ── 상세 패널 (드릴다운) ─────────────── */
+.ov{position:fixed;inset:0;background:rgba(20,32,45,.42);z-index:50;opacity:0;pointer-events:none;transition:opacity .18s}
+.ov.on{opacity:1;pointer-events:auto}
+.dt{position:fixed;top:0;right:0;bottom:0;width:min(620px,100%);background:#f7f9fb;z-index:51;box-shadow:var(--sh2);
+ transform:translateX(102%);transition:transform .22s ease;display:flex;flex-direction:column}
+.dt.on{transform:none}
+.dhead{background:#fff;border-bottom:1px solid var(--line);padding:16px 20px 14px}
+.dh1{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.dh1 .j{font-size:21px;font-weight:800;color:var(--blued)}
+.dh1 .x{margin-left:auto;border:0;background:#eef2f6;border-radius:8px;width:32px;height:32px;font-size:15px;color:var(--ink2)}
+.dh1 .x:hover{background:#e2e8ee}
+.dh2{color:var(--ink2);margin-top:3px;font-size:13.5px}
+.dh3{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap;align-items:center}
+.dnext{display:flex;align-items:center;gap:9px;background:var(--blue2);border:1px solid #cfe2f2;border-radius:9px;padding:8px 12px;margin-top:11px}
+.dnext .tx{font-weight:700;color:#1d4f7e;flex:1;font-size:13px}
+.dnext .go{border:0;background:var(--blue);color:#fff;border-radius:7px;height:29px;padding:0 12px;font-weight:700;font-size:12px}
+.dnext .go:hover{background:var(--blued)}
+.dbody{flex:1;overflow-y:auto;padding:16px 20px 26px}
+.cost{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.cbox{background:#fff;border:1px solid var(--line2);border-radius:9px;padding:10px 12px}
+.cbox small{display:block;color:var(--ink3);font-size:11px;font-weight:600}
+.cbox b{font-size:16px;letter-spacing:-.01em}
+/* 타임라인 */
+.tl{position:relative;padding-left:26px}
+.tl:before{content:'';position:absolute;left:9px;top:8px;bottom:8px;width:2px;background:var(--line)}
+.tli{position:relative;margin-bottom:10px}
+.tli .nd{position:absolute;left:-26px;top:4px;width:20px;height:20px;border-radius:50%;background:#fff;
+ border:2px solid var(--wait);display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;z-index:1}
+.tli.done .nd{background:var(--done);border-color:var(--done)}
+.tli.done .nd:after{content:'✓'}
+.tli.run .nd{background:var(--run);border-color:var(--run);box-shadow:0 0 0 4px rgba(217,122,0,.18)}
+.tli.run .nd:after{content:'●';font-size:7px}
+.tcard{background:#fff;border:1px solid var(--line2);border-radius:9px;padding:10px 13px}
+.tli.run .tcard{border-color:#eccb9a;background:#fffdf7}
+.tli.wait .tcard{opacity:.62}
+.tt{display:flex;align-items:baseline;gap:8px}
+.tt b{font-size:13.5px}
+.tt .st{font-size:11px;font-weight:800;margin-left:auto}
+.tli.done .st{color:var(--done)}.tli.run .st{color:var(--run)}.tli.wait .st{color:var(--ink3)}
+.tsub{color:var(--ink2);font-size:12.5px;margin-top:4px;line-height:1.55}
+.tsub em{font-style:normal;color:var(--ink3)}
+.tsub .ng{color:var(--late);font-weight:700}
+.dfoot{background:#fff;border-top:1px solid var(--line);padding:10px 20px;display:flex;gap:8px}
+.dfoot .tbtn{flex:1}
+
+/* ── 반응형 ─────────────────────────── */
+@media(max-width:900px){
+ .dgrid{grid-template-columns:1fr}
+ .lrow .c{display:none}
+ .dots .dot{width:13px;height:13px}
+ .top h1 small{display:none}
+}
+@media(max-width:620px){
+ .wrap{padding:10px 10px 24px}
+ .top{padding:8px 10px}
+ .seg button{padding:6px 10px;font-size:12px}
+ .kpi b{font-size:21px}
+ .lrow{gap:8px;padding:11px 12px}
+ .lrow .j{font-size:14px;min-width:96px}
+ .lrow .t{max-width:100%;flex:1 1 100%;order:5}
+ .dots{margin-left:0}
+ .lbar{width:70px}
+ .kcol{flex-basis:200px}
+ .cost{grid-template-columns:1fr 1fr}
+}
+</style></head><body>
+
+<div class="top">
+ <h1>제번 종합현황<small>영업 → 설계 → 구매 → 가공 → 조립 → 납품</small></h1>
+ <div class="seg" id="seg">
+  <button data-v="dash" class="on" onclick="setView('dash')">대시보드</button>
+  <button data-v="board" onclick="setView('board')">보드</button>
+  <button data-v="list" onclick="setView('list')">리스트</button>
+ </div>
+ <div class="srch"><input id="q" placeholder="제번 · 품명 · 고객사 검색" oninput="apply()"></div>
+ <button class="tbtn" id="bOpen" onclick="toggleOpen()">진행중만</button>
+ <button class="tbtn" onclick="load(true)">⟳</button>
+ <span class="live" id="live"><i></i><span id="liveTx">연결 확인중</span></span>
+</div>
+
+<div class="wrap">
+ <!-- ① 대시보드 -->
+ <section id="vDash">
+  <div class="kpis" id="kpis"></div>
+  <div class="dgrid">
+   <div class="panel"><h3>⚠ 지연 · 납기 임박<span>클릭하면 제번 상세가 열립니다</span></h3><div class="plist" id="hotList"></div></div>
+   <div class="panel"><h3>다음 조치 담당별<span>클릭 시 보드로 이동</span></h3><div class="obar" id="ownBar"></div>
+    <h3 style="border-top:1px solid var(--line2)">단계별 체류<span>현재 머무는 단계</span></h3><div class="obar" id="stgBar"></div></div>
+  </div>
+ </section>
+
+ <!-- ② 칸반 보드 -->
+ <section id="vBoard" class="hide"><div class="kb" id="kb"></div></section>
+
+ <!-- ③ 리스트 -->
+ <section id="vList" class="hide"><div id="lst"></div></section>
+</div>
+
+<!-- 상세 드릴다운 -->
+<div class="ov" id="ov" onclick="closeDetail()"></div>
+<aside class="dt" id="dt" aria-hidden="true">
+ <div class="dhead">
+  <div class="dh1"><span class="j" id="dJob"></span><span id="dDue"></span><button class="x" onclick="closeDetail()">✕</button></div>
+  <div class="dh2" id="dSub"></div>
+  <div class="dh3" id="dTags"></div>
+  <div class="dnext" id="dNext"></div>
+ </div>
+ <div class="dbody">
+  <div class="cost" id="dCost"></div>
+  <div class="tl" id="dTl"></div>
+ </div>
+ <div class="dfoot">
+  <button class="tbtn" onclick="copyLink()">🔗 링크 복사</button>
+  <button class="tbtn" onclick="closeDetail()">닫기</button>
+ </div>
+</aside>
+
+<script>
+/* ═══ 데이터 정의 ═══ */
+const STAGES=[
+ {k:'order',n:'수주',owner:'영업'},{k:'plan',n:'제작계획',owner:'영업'},
+ {k:'design',n:'설계',owner:'설계'},{k:'partlist',n:'PartList',owner:'설계'},
+ {k:'purchase',n:'구매',owner:'구매'},{k:'machining',n:'가공',owner:'가공'},
+ {k:'assembly',n:'조립',owner:'조립'},{k:'inspect',n:'검사',owner:'품질'},
+ {k:'tryout',n:'T/O',owner:'품질'},{k:'delivery',n:'납품',owner:'영업'}
+];
+const OWNERS=['영업','설계','구매','가공','조립','품질'];
+const OWNC={영업:'#2f6ea5',설계:'#7a4fa3',구매:'#1f7a63',가공:'#a8621b',조립:'#39627f',품질:'#9c3b52'};
+
+/* 오프라인 미리보기용 예시 데이터 (DB 연결 시 자동 대체) */
+const SAMPLE=[
+ {job_no:'IP26-041',product_name:'DR FRT 이너패널 금형',customer_name:'일평기연',progress_pct:78,next_owner:'조립',next_step:'조립 세부공정 진행 (5/8)',next_screen:'조립실적등록',delivery_days_left:6,has_plan:true,design_outsourced:false,dsg_steps:6,dsg_done_steps:6,dsg_results:14,pl_mat:12,pl_pur:9,buy_ord:21,buy_rcv:21,buy_cfm:21,mac_ord:8,mac_cfm:8,wo_cnt:5,wo_done:5,asm_steps:8,asm_done_steps:5,set_ord:0,set_rcv:0,insp_cnt:2,insp_ng:0,st_order:'done',st_plan:'done',st_design:'done',st_partlist:'done',st_purchase:'done',st_machining:'done',st_assembly:'run',st_inspect:'run',st_tryout:'wait',st_delivery:'wait',s1_planned_date:'2026-09-15',delivery_planned_date:'2026-09-17',design_start_date:'2026-07-02',design_end_date:'2026-07-21',design_manager:'김설계',machining_start_date:'2026-08-01',machining_end_date:'2026-08-29',machining_manager:'박가공',assembly_start_date:'2026-09-01',assembly_end_date:'2026-09-14',assembly_manager:'이조립',sales_manager:'최영업',order_price:185000000,target_price:148000000,profit_rate_pct:20.0},
+ {job_no:'IP26-038',product_name:'RR DR 아우터 트림 금형',customer_name:'세일공업',progress_pct:42,next_owner:'구매',next_step:'구매품 입고확정 4건 대기',next_screen:'구매품입고확정',delivery_days_left:-3,delivery_overdue:true,has_plan:true,design_outsourced:true,design_vendor:'대성설계',od_cnt:2,od_pct:100,pl_mat:9,pl_pur:14,buy_ord:18,buy_rcv:16,buy_cfm:14,mac_ord:6,mac_cfm:2,wo_cnt:4,wo_done:1,asm_steps:7,asm_done_steps:0,insp_cnt:0,insp_ng:0,st_order:'done',st_plan:'done',st_design:'done',st_partlist:'done',st_purchase:'run',st_machining:'run',st_assembly:'wait',st_inspect:'wait',st_tryout:'wait',st_delivery:'wait',s1_planned_date:'2026-09-05',s1_overdue:true,delivery_planned_date:'2026-09-08',design_manager:'-',machining_manager:'박가공',sales_manager:'최영업',order_price:96000000,target_price:81000000,profit_rate_pct:15.6},
+ {job_no:'IP26-045',product_name:'후드 힌지 브라켓 프레스금형',customer_name:'진양오일씰',progress_pct:12,next_owner:'설계',next_step:'설계 세부공정 진행 (1/5)',next_screen:'설계실적등록',delivery_days_left:44,has_plan:true,design_outsourced:false,dsg_steps:5,dsg_done_steps:1,dsg_results:2,pl_mat:0,pl_pur:0,buy_ord:0,buy_cfm:0,mac_ord:0,mac_cfm:0,wo_cnt:0,wo_done:0,asm_steps:0,asm_done_steps:0,insp_cnt:0,insp_ng:0,st_order:'done',st_plan:'done',st_design:'run',st_partlist:'wait',st_purchase:'wait',st_machining:'wait',st_assembly:'wait',st_inspect:'wait',st_tryout:'wait',st_delivery:'wait',s1_planned_date:'2026-10-20',delivery_planned_date:'2026-10-25',design_start_date:'2026-09-04',design_end_date:'2026-09-25',design_manager:'김설계',sales_manager:'최영업',order_price:58000000,target_price:47000000,profit_rate_pct:19.0},
+ {job_no:'IP26-032',product_name:'시트 사이드 프레임 금형',customer_name:'일진',progress_pct:100,next_owner:'',next_step:'',delivery_days_left:null,has_plan:true,design_outsourced:false,dsg_steps:6,dsg_done_steps:6,pl_mat:10,pl_pur:11,buy_ord:19,buy_cfm:19,mac_ord:7,mac_cfm:7,wo_cnt:5,wo_done:5,asm_steps:8,asm_done_steps:8,insp_cnt:3,insp_ng:0,st_order:'done',st_plan:'done',st_design:'done',st_partlist:'done',st_purchase:'done',st_machining:'done',st_assembly:'done',st_inspect:'done',st_tryout:'done',st_delivery:'done',s1_completed_date:'2026-08-20',delivery_completed_date:'2026-08-26',delivery_planned_date:'2026-08-28',sales_manager:'최영업',order_price:132000000,target_price:104000000,profit_rate_pct:21.2},
+ {job_no:'IP26-046',product_name:'배터리 케이스 하부 금형',customer_name:'일평기연',progress_pct:4,next_owner:'영업',next_step:'제작계획 등록 필요',next_screen:'제작계획등록',delivery_days_left:71,has_plan:false,insp_cnt:0,insp_ng:0,st_order:'done',st_plan:'wait',st_design:'wait',st_partlist:'wait',st_purchase:'wait',st_machining:'wait',st_assembly:'wait',st_inspect:'wait',st_tryout:'wait',st_delivery:'wait',delivery_planned_date:'2026-11-21',sales_manager:'최영업',order_price:210000000,target_price:168000000,profit_rate_pct:20.0},
+ {job_no:'IP26-043',product_name:'펜더 서포트 금형 (SET외주)',customer_name:'세일공업',progress_pct:63,next_owner:'품질',next_step:'검사실적 부적합 1건 처리',next_screen:'검사실적등록',delivery_days_left:2,has_plan:true,design_outsourced:false,dsg_steps:4,dsg_done_steps:4,pl_mat:6,pl_pur:8,buy_ord:14,buy_cfm:14,mac_ord:5,mac_cfm:5,wo_cnt:3,wo_done:3,set_ord:1,set_rcv:1,asm_steps:0,asm_done_steps:0,insp_cnt:2,insp_ng:1,st_order:'done',st_plan:'done',st_design:'done',st_partlist:'done',st_purchase:'done',st_machining:'done',st_assembly:'done',st_inspect:'run',st_tryout:'wait',st_delivery:'wait',s1_planned_date:'2026-09-12',delivery_planned_date:'2026-09-13',assembly_manager:'-',sales_manager:'최영업',order_price:74000000,target_price:60000000,profit_rate_pct:18.9}
+];
+
+/* ═══ 상태 ═══ */
+let rows=[...SAMPLE],view=[],curView='dash',onlyOpen=true,curJob=null;
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const n0=v=>Number(v||0);
+const won=v=>n0(v)?n0(v).toLocaleString('ko-KR')+'원':'-';
+const d10=v=>v?String(v).slice(0,10):'-';
+const online=()=>!!(window.MESDB&&MESDB.online);
+const hereIdx=r=>{const i=STAGES.findIndex(s=>(r['st_'+s.k]||'wait')!=='done');return i<0?STAGES.length:i};
+const isLate=r=>!!(r.s1_overdue||r.delivery_overdue);
+
+/* ═══ 조회 ═══ */
+async function load(manual){
+ if(!online()&&window.MESDB&&MESDB.ready){try{await MESDB.ready}catch(e){}}
+ if(!online()){setLive(false);apply();return}
+ try{
+  const rs=await MESDB.table('job_progress_view').select('select=*&order=job_no'+(manual?'&':''),manual?{fresh:true}:undefined);
+  rows=rs||[];setLive(true);apply();
+  if(curJob){const r=rows.find(x=>x.job_no===curJob);if(r)fillDetail(r)}
+ }catch(e){setLive(false)}
+}
+function setLive(on){
+ const el=document.getElementById('live');
+ el.classList.toggle('on',!!on);
+ document.getElementById('liveTx').textContent=on?'실시간 연결':'예시 데이터';
+}
+
+/* ═══ 필터 ═══ */
+function apply(){
+ const q=document.getElementById('q').value.trim().toLowerCase();
+ view=rows.filter(r=>{
+  if(onlyOpen&&r.st_delivery==='done')return false;
+  if(q&&!((r.job_no||'')+' '+(r.product_name||r.item_name||'')+' '+(r.customer_name||'')).toLowerCase().includes(q))return false;
+  return true;
+ });
+ const dd=r=>r.delivery_days_left==null?99999:Number(r.delivery_days_left);
+ view.sort((a,b)=>dd(a)-dd(b));
+ render();
+}
+function toggleOpen(){onlyOpen=!onlyOpen;document.getElementById('bOpen').classList.toggle('on',!onlyOpen);
+ document.getElementById('bOpen').textContent=onlyOpen?'진행중만':'완료포함';apply()}
+
+/* ═══ 뷰 전환 ═══ */
+function setView(v){
+ curView=v;
+ document.querySelectorAll('#seg button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+ vDash.classList.toggle('hide',v!=='dash');
+ vBoard.classList.toggle('hide',v!=='board');
+ vList.classList.toggle('hide',v!=='list');
+ try{history.replaceState(null,'','#'+v+(curJob?'/'+encodeURIComponent(curJob):''))}catch(e){}
+ render();
+}
+
+/* ═══ 공통 조각 ═══ */
+function dueChip(r){
+ if(r.st_delivery==='done')return '<span class="dchip ok">납품완료</span>';
+ const d=r.delivery_days_left;
+ if(d==null)return '<span class="dchip mut">납기 미지정</span>';
+ const k=Number(d);
+ return `<span class="dchip ${k<0?'bad':k<=7?'warn':'mut'}">${k<0?'D+'+(-k):'D-'+k}</span>`;
+}
+function stageSub(r,k){
+ if(k==='design')return r.design_outsourced?`외주 ${Math.round(n0(r.od_pct))}%`:(n0(r.dsg_steps)?`${n0(r.dsg_done_steps)}/${n0(r.dsg_steps)}`:'');
+ if(k==='partlist')return (n0(r.pl_mat)+n0(r.pl_pur))?`${n0(r.pl_mat)+n0(r.pl_pur)}건`:'';
+ if(k==='purchase')return n0(r.buy_ord)?`${n0(r.buy_cfm)}/${n0(r.buy_ord)}`:'';
+ if(k==='machining')return (n0(r.mac_ord)+n0(r.wo_cnt))?`${n0(r.mac_cfm)+n0(r.wo_done)}/${n0(r.mac_ord)+n0(r.wo_cnt)}`:'';
+ if(k==='assembly')return n0(r.asm_steps)?`${n0(r.asm_done_steps)}/${n0(r.asm_steps)}`:(n0(r.set_ord)?'SET외주':'');
+ if(k==='inspect')return n0(r.insp_cnt)?(n0(r.insp_ng)?`부적합 ${n0(r.insp_ng)}`:`${n0(r.insp_cnt)}건`):'';
+ if(k==='tryout')return r.s1_completed_date?d10(r.s1_completed_date).slice(5):'';
+ if(k==='delivery')return r.delivery_completed_date?d10(r.delivery_completed_date).slice(5):'';
+ return '';
+}
+
+/* ═══ ① 대시보드 ═══ */
+function renderDash(){
+ const open=rows.filter(r=>r.st_delivery!=='done');
+ const late=open.filter(isLate);
+ const soon=open.filter(r=>!isLate(r)&&r.delivery_days_left!=null&&Number(r.delivery_days_left)<=7);
+ const ng=open.reduce((a,r)=>a+n0(r.insp_ng),0);
+ const avg=open.length?Math.round(open.reduce((a,r)=>a+n0(r.progress_pct),0)/open.length):0;
+ const doneCnt=rows.length-open.length;
+ document.getElementById('kpis').innerHTML=
+  kpi('진행중 제번',open.length,'건 진행','info','list')
+  +kpi('지연',late.length,'T/O·납기 초과',late.length?'bad':'ok','list')
+  +kpi('7일 내 납기',soon.length,'건 임박',soon.length?'warn':'ok','list')
+  +kpi('검사 부적합',ng,'건 미처리',ng?'bad':'ok','list')
+  +kpi('평균 진척',avg+'%',`완료 ${doneCnt}건 별도`,'info','board');
+ /* 지연·임박 리스트 */
+ const hot=[...late,...soon].sort((a,b)=>n0(a.delivery_days_left??999)-n0(b.delivery_days_left??999));
+ document.getElementById('hotList').innerHTML=hot.length?hot.map(r=>
+  `<div class="prow" onclick="openDetail('${esc(r.job_no)}')">
+    <span class="j">${esc(r.job_no)}</span>
+    <span class="t">${esc(r.product_name||r.item_name||'')}</span>
+    ${r.next_owner?`<span class="own ${esc(r.next_owner)}">${esc(r.next_owner)}</span>`:''}
+    ${dueChip(r)}
+   </div>`).join('')
+  :'<div class="mini-empty">지연·임박 제번이 없습니다 👍</div>';
+ /* 담당별 */
+ const max1=Math.max(1,...OWNERS.map(o=>open.filter(r=>r.next_owner===o).length));
+ document.getElementById('ownBar').innerHTML=OWNERS.map(o=>{
+  const c=open.filter(r=>r.next_owner===o).length;
+  return `<div class="orow" onclick="setView('board')"><span class="ol">${o}</span>
+   <span class="otrack"><i style="width:${Math.round(c/max1*100)}%;background:${OWNC[o]}"></i></span>
+   <span class="ocnt num">${c}</span></div>`}).join('');
+ /* 단계별 체류 */
+ const cnts=STAGES.map((s,i)=>open.filter(r=>hereIdx(r)===i).length);
+ const max2=Math.max(1,...cnts);
+ document.getElementById('stgBar').innerHTML=STAGES.map((s,i)=>cnts[i]?
+  `<div class="orow" onclick="setView('board')"><span class="ol">${s.n}</span>
+   <span class="otrack"><i style="width:${Math.round(cnts[i]/max2*100)}%;background:#2f75b5"></i></span>
+   <span class="ocnt num">${cnts[i]}</span></div>`:'').join('')||'<div class="mini-empty">진행중 제번이 없습니다</div>';
+}
+const kpi=(t,v,s,cls,go)=>`<div class="kpi ${cls}" onclick="setView('${go}')"><small>${t}</small><b class="num">${v}</b><span>${s}</span></div>`;
+
+/* ═══ ② 칸반 보드 ═══ */
+function renderBoard(){
+ const cols=STAGES.map((s,i)=>({...s,items:view.filter(r=>r.st_delivery!=='done'&&hereIdx(r)===i)}));
+ const doneItems=view.filter(r=>r.st_delivery==='done');
+ let html=cols.map(c=>col(c.n,c.items,c.items.some(isLate))).join('');
+ if(doneItems.length)html+=col('✔ 완료',doneItems,false);
+ document.getElementById('kb').innerHTML=html||'<div class="empty">표시할 제번이 없습니다.</div>';
+}
+function col(name,items,hot){
+ return `<div class="kcol${hot?' hot':''}"><div class="khead"><b>${name}</b><span class="cnt num">${items.length}</span></div>
+  <div class="kbody">${items.map(r=>`
+   <div class="kcard${isLate(r)?' late':''}" onclick="openDetail('${esc(r.job_no)}')">
+    <div style="display:flex;align-items:center;gap:6px"><span class="j">${esc(r.job_no)}</span><span style="margin-left:auto">${dueChip(r)}</span></div>
+    <div class="t">${esc(r.product_name||r.item_name||'')}</div>
+    <div class="kfoot"><span class="mbar"><i style="width:${n0(r.progress_pct)}%"></i></span>
+     <span class="p num">${n0(r.progress_pct)}%</span>
+     ${r.next_owner?`<span class="own ${esc(r.next_owner)}">${esc(r.next_owner)}</span>`:''}</div>
+   </div>`).join('')||'<div style="padding:14px;text-align:center;color:var(--ink3);font-size:11px">없음</div>'}</div></div>`;
+}
+
+/* ═══ ③ 리스트 ═══ */
+function renderList(){
+ document.getElementById('lst').innerHTML=view.length?view.map(r=>{
+  const hi=hereIdx(r);
+  return `<div class="lrow${isLate(r)?' late':''}" onclick="openDetail('${esc(r.job_no)}')">
+   <span class="j">${esc(r.job_no)}</span>
+   <span class="t">${esc(r.product_name||r.item_name||'')}</span>
+   <span class="c">${esc(r.customer_name||'')}</span>
+   <span class="dots">${STAGES.map((s,i)=>{
+     const v=r['st_'+s.k]||'wait';
+     return `<span class="dot ${v==='done'?'done':i===hi?'run':''}" data-n="${s.n} · ${v==='done'?'완료':i===hi?'진행':'대기'}"></span>`}).join('')}</span>
+   <span class="lbar"><i style="width:${n0(r.progress_pct)}%"></i></span>
+   <span class="lpct num">${n0(r.progress_pct)}%</span>
+   ${dueChip(r)}
+  </div>`}).join('')
+ :'<div class="empty">조회 결과가 없습니다.</div>';
+}
+
+function render(){
+ if(curView==='dash')renderDash();
+ else if(curView==='board')renderBoard();
+ else renderList();
+}
+
+/* ═══ 상세 드릴다운 ═══ */
+function openDetail(job){
+ const r=rows.find(x=>x.job_no===job);if(!r)return;
+ curJob=job;fillDetail(r);
+ document.getElementById('ov').classList.add('on');
+ document.getElementById('dt').classList.add('on');
+ try{history.replaceState(null,'','#'+curView+'/'+encodeURIComponent(job))}catch(e){}
+}
+function closeDetail(){
+ curJob=null;
+ document.getElementById('ov').classList.remove('on');
+ document.getElementById('dt').classList.remove('on');
+ try{history.replaceState(null,'','#'+curView)}catch(e){}
+}
+function fillDetail(r){
+ document.getElementById('dJob').textContent=r.job_no;
+ document.getElementById('dDue').innerHTML=dueChip(r);
+ document.getElementById('dSub').textContent=[(r.product_name||r.item_name||''),(r.customer_name||'')].filter(Boolean).join(' · ');
+ document.getElementById('dTags').innerHTML=
+  (r.has_plan===false?'<span class="dchip mut">계획 미등록</span>':r.design_outsourced?'<span class="dchip mut">설계 외주</span>':'<span class="dchip mut">설계 사내</span>')
+  +(r.s1_overdue?'<span class="dchip bad">T/O 지연</span>':'')
+  +(n0(r.insp_ng)?`<span class="dchip bad">부적합 ${n0(r.insp_ng)}</span>`:'')
+  +`<span class="dchip mut num">진척 ${n0(r.progress_pct)}%</span>`;
+ document.getElementById('dNext').innerHTML=r.next_owner?
+  `<span class="own ${esc(r.next_owner)}">${esc(r.next_owner)}</span><span class="tx">${esc(r.next_step||'')}</span>`
+  +(r.next_screen?`<button class="go" onclick="goScreen('${esc(r.next_screen)}')">↗ ${esc(r.next_screen)}</button>`:'')
+  :'<span class="own" style="background:#2f7d4f">완료</span><span class="tx">전 공정이 완료되었습니다.</span>';
+ document.getElementById('dCost').innerHTML=
+  `<div class="cbox"><small>수주가</small><b class="num">${won(r.order_price)}</b></div>
+   <div class="cbox"><small>목표원가</small><b class="num">${won(r.target_price)}</b></div>
+   <div class="cbox"><small>목표 이익률</small><b class="num">${r.profit_rate_pct==null?'-':Number(r.profit_rate_pct).toFixed(1)+'%'}</b></div>`;
+ const hi=hereIdx(r);
+ document.getElementById('dTl').innerHTML=STAGES.map((s,i)=>{
+  const v=r['st_'+s.k]||'wait';
+  const cls=v==='done'?'done':i===hi?'run':'wait';
+  return `<div class="tli ${cls}"><span class="nd"></span><div class="tcard">
+   <div class="tt"><b>${s.n}</b><em style="font-size:11px;color:var(--ink3)">${s.owner}</em>
+    <span class="st">${v==='done'?'완료':i===hi?'진행중':'대기'}</span></div>
+   <div class="tsub">${tlSub(r,s.k)}</div></div></div>`;
+ }).join('');
+}
+function tlSub(r,k){
+ const seg=a=>a.filter(Boolean).join(' <em>·</em> ');
+ if(k==='order')return seg([`고객 ${esc(r.customer_name||'-')}`,`영업 ${esc(r.sales_manager||'-')}`]);
+ if(k==='plan')return r.has_plan===false?'제작계획 미등록':seg([`설계 ${r.design_outsourced?'외주':'사내'}`,`납기 ${d10(r.delivery_planned_date)}`]);
+ if(k==='design')return r.design_outsourced
+  ?seg([`외주 · ${esc(r.design_vendor||'업체 미지정')}`,`발주 ${n0(r.od_cnt)}건`,`진척 ${Math.round(n0(r.od_pct))}%`])
+  :seg([`세부공정 ${n0(r.dsg_done_steps)}/${n0(r.dsg_steps)}`,`실적 ${n0(r.dsg_results)}건`,`${d10(r.design_start_date)} ~ ${d10(r.design_end_date)}`,`담당 ${esc(r.design_manager||'-')}`]);
+ if(k==='partlist')return seg([`원재료 ${n0(r.pl_mat)}건`,`구매품 ${n0(r.pl_pur)}건`]);
+ if(k==='purchase')return seg([`발주 ${n0(r.buy_ord)}`,`입고 ${n0(r.buy_rcv)}`,`확정 ${n0(r.buy_cfm)}`,
+   n0(r.buy_ord)-n0(r.buy_cfm)>0?`<span class="ng">미확정 ${n0(r.buy_ord)-n0(r.buy_cfm)}건</span>`:'']);
+ if(k==='machining')return seg([`외주 확정 ${n0(r.mac_cfm)}/${n0(r.mac_ord)}`,`작업지시 ${n0(r.wo_done)}/${n0(r.wo_cnt)}`,`${d10(r.machining_start_date)} ~ ${d10(r.machining_end_date)}`,`담당 ${esc(r.machining_manager||'-')}`]);
+ if(k==='assembly')return seg([n0(r.set_ord)?`SET외주 ${n0(r.set_rcv)}/${n0(r.set_ord)}`:'',`세부공정 ${n0(r.asm_done_steps)}/${n0(r.asm_steps)}`,`${d10(r.assembly_start_date)} ~ ${d10(r.assembly_end_date)}`,`담당 ${esc(r.assembly_manager||'-')}`]);
+ if(k==='inspect')return seg([`검사 ${n0(r.insp_cnt)}건`,n0(r.insp_ng)?`<span class="ng">부적합 ${n0(r.insp_ng)}건</span>`:'부적합 없음']);
+ if(k==='tryout')return seg([`예정 ${d10(r.s1_planned_date)}`,`완료 ${d10(r.s1_completed_date)}`,r.s1_overdue?'<span class="ng">지연</span>':'']);
+ if(k==='delivery')return seg([`예정 ${d10(r.delivery_planned_date)}`,`완료 ${d10(r.delivery_completed_date)}`]);
+ return '';
+}
+function goScreen(name){
+ try{if(window.parent&&window.parent.openByName){window.parent.openByName(name);return}}catch(e){}
+ alert(name+' 화면을 좌측 메뉴에서 열어주세요.');
+}
+function copyLink(){
+ if(!curJob)return;
+ const u=location.origin+location.pathname+'?job='+encodeURIComponent(curJob);
+ (navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(
+  ()=>alert('링크를 복사했습니다.\n'+u),
+  ()=>prompt('아래 링크를 복사하세요.',u));
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDetail()});
+
+/* ═══ 시작 · 딥링크 · 자동갱신 ═══ */
+(function init(){
+ const h=location.hash.replace('#','').split('/');
+ if(['dash','board','list'].includes(h[0]))curView=h[0];
+ setView(curView);
+ apply();
+ const p=new URLSearchParams(location.search).get('job')||(h[1]?decodeURIComponent(h[1]):'');
+ setTimeout(()=>{load().then?load().then(()=>{if(p)openDetail(p)}):0},250);
+ if(p)setTimeout(()=>openDetail(p),900);
+ /* 다른 화면 저장 → 자동 갱신 (조회 버튼 불필요) */
+ let t=null;const go=()=>{clearTimeout(t);t=setTimeout(()=>load(true),400)};
+ const bind=()=>{if(window.MESDB&&MESDB.onChange){MESDB.onChange(
+  ['sale_orders','sales_plans','order_lines','design_plans','design_plan_steps','design_results',
+   'partlist_materials','partlist_purchases','assembly_jobs','assembly_steps','work_order_details',
+   'inspection_results','set_order_lines','expenses'],go);return true}return false};
+ if(!bind()){let n=0;const iv=setInterval(()=>{if(bind()||++n>40)clearInterval(iv)},100)}
+ setInterval(()=>{if(online())load()},300000);
+})();
+window.MES=Object.assign(window.MES||{},{search:()=>load(true),reload:()=>load(true)});
+</script>
+<script src="mes_db.js?v=110"></script>
+</body></html>
