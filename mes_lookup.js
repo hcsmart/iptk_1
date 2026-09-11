@@ -17,7 +17,7 @@
  */
 (function(){
 if(window.MESLOOK)return;
-const VER='68';   /* 팝업 제목 옆에 표시된다. 화면에 v68 이 안 보이면 옛 파일이 캐시된 것 */
+const VER='69';   /* 팝업 제목 옆에 표시된다. 화면에 v69 가 안 보이면 옛 파일이 캐시된 것 */
 
 /* ── v60 마스터 인라인 CRUD 정의 ───────────────────────────────────
  * crud 가 있는 kind 는 조회 팝업 하단에 [등록][수정][삭제][기준정보] 가 붙는다.
@@ -160,7 +160,7 @@ async function fillSelect(sel,kind,opt={}){
 const css=`
 #meslk-mask{position:fixed;inset:0;background:rgba(20,28,35,.38);z-index:9500;display:none;align-items:center;justify-content:center;font:12px 'Malgun Gothic',맑은 고딕,sans-serif}
 #meslk-mask.on{display:flex}
-#meslk{width:540px;min-width:340px;max-width:94vw;max-height:78vh;background:#fff;border:1px solid #7f8f9c;box-shadow:0 6px 24px rgba(0,0,0,.3);display:flex;flex-direction:column;color:#22303a}
+#meslk{width:540px;min-width:340px;max-width:94vw;max-height:88vh;background:#fff;border:1px solid #7f8f9c;box-shadow:0 6px 24px rgba(0,0,0,.3);display:flex;flex-direction:column;color:#22303a}
 #meslk .hd{height:30px;display:flex;align-items:center;padding:0 6px 0 12px;color:#fff;background:linear-gradient(#5f7f9f,#3f5f7d);font-weight:700}
 #meslk .hd .ver{margin-left:8px;font-weight:400;font-size:11px;opacity:.72}
 #meslk .x{margin-left:auto;width:24px;height:22px;border:0;background:transparent;color:#fff;cursor:pointer;font:inherit}
@@ -168,7 +168,7 @@ const css=`
 #meslk .bar input[type=text]{flex:1;height:24px;border:1px solid #b9c3cb;padding:0 6px;font:inherit}
 #meslk .bar label{white-space:nowrap;color:#4d5c69}
 #meslk .cnt{color:#6d7b88;white-space:nowrap}
-#meslk .bd{flex:1;overflow:auto;min-height:150px}
+#meslk .bd{flex:1;overflow:auto;min-height:220px}
 /* v40: 열폭을 글자 기준으로 산출해 <col> 로 지정한다 (기존 width:100% 균등분배 → 코드열이 과하게 넓어짐) */
 #meslk table{width:100%;border-collapse:collapse;table-layout:fixed}
 #meslk th{position:sticky;top:0;background:linear-gradient(#e9eef3,#f5f7f9);border-bottom:1px solid #c3ccd4;height:24px;padding:0 7px;text-align:left;font-weight:700}
@@ -190,9 +190,10 @@ const css=`
 /* v60 인라인 CRUD */
 #meslk .btn.ghost{color:#2c6ca8;border-color:#9cb5cb;background:linear-gradient(#fff,#eaf2f8)}
 /* 창 높이(78vh)를 넘지 않도록: 편집 패널은 필요하면 스스로 줄어들고 안에서 스크롤된다 */
-#meslk .ed{display:none;border-top:1px solid #cfd9e0;background:#f8fafc;flex:0 1 auto;max-height:44vh;overflow:auto}
+#meslk .ed{display:none;border-top:1px solid #cfd9e0;background:#f8fafc;flex:0 1 auto;max-height:38vh;overflow:auto}
 #meslk .ed.on{display:block}
-#meslk.editing .bd{flex:1 1 0;min-height:64px}
+/* v69: 등록/수정 폼이 열려도 업체 목록이 8행쯤 보이게 (기존 min-height:64px → 2행만 보임) */
+#meslk.editing .bd{flex:1 1 0;min-height:210px}
 #meslk .hd,#meslk .bar,#meslk .ft{flex:0 0 auto}
 #meslk .edhd{padding:6px 10px;font-weight:700;color:#37506a;background:#eaf1f7;border-bottom:1px solid #dbe3ea}
 #meslk .edgrid{display:grid;grid-template-columns:78px minmax(0,1fr) 78px minmax(0,1fr);gap:5px 7px;padding:8px 10px;align-items:center}
