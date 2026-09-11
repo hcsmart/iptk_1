@@ -148,7 +148,7 @@ async function dupCheck(cat,job,rows){
 }
 async function save(){if(!REQ.length)return msg('저장할 구매요청이 없습니다.');if(!window.MESDB||!MESDB.online){msg(`구매요청 ${REQ.length}건을 저장했습니다. (DB 미연결 - 로컬)`);return}try{const j=jobView[jobIdx]||{};
  const dup=await dupCheck('원재료',j.job,REQ);if(dup.length)return msg(`이미 발주(미입고) 된 품번이 있습니다: ${[...new Set(dup.map(r=>r.part))].join(', ')} — 요청 리스트에서 제외하거나 입고 후 재발주하세요.`);
- await MESDB.newLines(REQ.map(r=>({category:'원재료',status:'발주',vendor_name:r.vendor,job_no:r.job,item_name:j.item||null,process_code:r.proc,part_no:r.part,part_name:r.name,material:r.mat,spec:r.design,order_qty:Number(r.ord)||null,unit_price:Number(r.buyPrice||r.price)||null,quote_price:Number(r.amount)||null,confirm_price:Number(r.amount)||null,order_date:r.odate||null,required_date:r.rdate||null,remark:r.remark||null})));const n=REQ.length;REQ.length=0;renderReq();msg(`원재료 발주 ${n}건을 DB에 등록했습니다. 발주현황/입고등록 화면에서 확인하세요.`)}catch(e){msg('DB 등록 실패: '+e.message.slice(0,120))}}
+ await MESDB.newLines(REQ.map(r=>({category:'원재료',status:'발주',vendor_name:r.vendor,job_no:r.job,item_name:j.item||null,process_code:r.proc,part_no:r.part,part_name:r.name,material:r.mat,spec:r.design,order_qty:Number(r.ord)||null,unit_price:Number(r.buyPrice||r.price)||null,quote_price:Number(r.amount)||null,confirm_price:Number(r.amount)||null,order_date:r.odate||null,required_date:r.rdate||null,remark:r.remark||null})));const n=REQ.length;REQ.length=0;renderReq();/* v112: [저장] 클릭 0.4초 뒤 자동저장이 발주 완료보다 먼저 돌아 옛 요청이 page_state 에 남았다 → 비운 뒤 한 번 더 저장 트리거 */try{document.dispatchEvent(new Event('change'))}catch(e){}msg(`원재료 발주 ${n}건을 DB에 등록했습니다. 발주현황/입고등록 화면에서 확인하세요.`)}catch(e){msg('DB 등록 실패: '+e.message.slice(0,120))}}
 function printOrder(){const ids=[...reqBody.querySelectorAll('input:checked')].map(x=>Number(x.dataset.no));const rows=ids.length?REQ.filter(r=>ids.includes(r.no)):REQ.slice(0,1);if(!rows.length)return msg('출력할 행이 없습니다.');const j=jobView[jobIdx]||JOBS[0];const v=rows[0].vendor;
 docArea.innerHTML=`<h2>원재료 발주서</h2>
 <table class="info"><tr><td>발　신 : (주)일평기연</td></tr><tr><td>작성자 : ${OWNER}</td></tr><tr><td>수　신 : ${v}</td></tr><tr><td>F A X : 031-295-9047</td></tr></table>
@@ -199,7 +199,7 @@ window.MES={search,save,exportCsv,setMessage:msg,print:printOrder};loadJobs();
 /* v22: 구매요청 리스트는 화면을 열 때 빈 작업공간으로 시작 (샘플 잔존분이 저장되는 것 방지) */
 REQ.length=0;/*v22*/if(typeof renderReq==='function')renderReq();
 </script>
-<script src="mes_ctx.js?v=92"></script>
+<script src="mes_ctx.js?v=112"></script>
 <script src="mes_lookup.js?v=92"></script>
 <script>
 /* 협력업체 목록: 하드코딩 → 마스터 직결 */

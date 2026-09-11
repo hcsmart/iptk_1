@@ -288,6 +288,12 @@ window.MESCTX={confirm:dlgConfirm};
   /* v104: 배치 편집에서 저장한 열 폭은 그대로 쓰고, 남는 폭 배분에서도 뺀다 */
   const fixed=hs.map(h=>{try{const s=window.MESLAYOUT&&h.dataset.leCol&&MESLAYOUT.state[h.dataset.leId];return (s&&s.width)?Number(s.width):0}catch(e){return 0}});
   for(let c=0;c<n;c++)if(fixed[c])w[c]=fixed[c];
+  /* v112: 화면이 <colgroup> 으로 열폭을 px 로 지정해 두었으면 그 값을 기준으로 삼는다.
+     (글자폭 계산값과 colgroup 이 어긋나면 고정 2열의 left(--c1) 가 실제 1열 폭과 달라져 빈 칸이 생겼다) */
+  const cg=[...tb.querySelectorAll('colgroup col')];
+  const cgw=cg.length===n?cg.map(c=>/px$/.test(c.style.width||'')?parseFloat(c.style.width):0):[];
+  const useCg=cgw.length===n&&cgw.every(x=>x>0);
+  if(useCg)for(let c=0;c<n;c++)if(!fixed[c])w[c]=Math.round(cgw[c]);
   let sum=w.reduce((a,b)=>a+b,0);
   const avail=(wrap.clientWidth||0)-2;
   if(avail>0&&sum<avail){                       /* 남는 폭은 넓은 열(고정 열 제외)에 비례 배분 */
@@ -296,6 +302,7 @@ window.MESCTX={confirm:dlgConfirm};
    sum=w.reduce((a,b)=>a+b,0);
   }
   hs.forEach((h,c)=>{h.style.width=w[c]+'px'});
+  if(useCg)cg.forEach((c,i)=>{c.style.width=w[i]+'px'});   /* v112: col 폭도 같은 값으로 — 실제 렌더 폭 = --c1 */
   tb.style.width=sum+'px';tb.style.minWidth=sum+'px';tb.style.tableLayout='fixed';
   tb.style.setProperty('--c1',w[0]+'px');
   return {w,sum,avail};
