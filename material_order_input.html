@@ -31,6 +31,7 @@
 
 /* v80: 요청 리스트 안의 편집 가능한 단가칸 */
 input.cell{width:100%;height:20px;border:1px solid #cbd4dc;padding:0 3px;text-align:right;font:inherit}
+input.cell[type=date]{min-width:118px;text-align:center;padding:0 2px}
 </style>
 </head>
 <body>
@@ -50,7 +51,7 @@ input.cell{width:100%;height:20px;border:1px solid #cbd4dc;padding:0 3px;text-al
       <colgroup><col style="width:38px"><col style="width:15%"><col style="width:18%"><col style="width:14%"><col style="width:23%"><col style="width:10%"><col style="width:12%"></colgroup>
       <thead><tr><th></th><th>품번</th><th>부품명</th><th>재질</th><th>규격</th><th>수량</th><th>첨부</th></tr></thead><tbody id="bomBody"></tbody></table></div></div>
   </section>
-  <div class="midbar"><span class="label">입고요구일</span><input id="reqDate" class="field" type="date"><button class="btn" onclick="pushDown()">⬇ 요청추가</button><button class="btn" onclick="pullUp()">⬆ 요청삭제</button></div>
+  <div class="midbar"><span class="label">입고요구일</span><input id="reqDate" class="field" type="date" onchange="applyRdate()" title="날짜를 바꾸면 아래 리스트에서 체크한 행에 일괄 적용됩니다"><button class="btn" onclick="pushDown()">⬇ 요청추가</button><button class="btn" onclick="pullUp()">⬆ 요청삭제</button></div>
   <div class="reqbox"><div class="box-title">구매요청 리스트</div><div class="tablewrap"><table>
     <colgroup><col style="width:40px"><col style="width:38px"><col style="width:100px"><col style="width:100px"><col style="width:50px"><col style="width:70px"><col style="width:120px"><col style="width:66px"><col style="width:130px"><col style="width:66px"><col style="width:66px"><col style="width:66px"><col style="width:56px"><col style="width:70px"><col style="width:70px"><col style="width:86px"><col style="width:86px"><col style="width:96px"><col style="width:88px"><col style="width:88px"><col style="width:56px"><col style="width:90px"></colgroup>
     <thead><tr><th>No</th><th>선택</th><th>협력업체</th><th>제번</th><th>공정</th><th>품번</th><th>부품명</th><th>재질</th><th>설계치수</th><th>두께/Ø</th><th>가로</th><th>세로</th><th>수량</th><th>발주수량</th><th>총중량</th><th>기준단가</th><th>매입단가</th><th>매입금액</th><th>발주일</th><th>입고요구일</th><th>첨부</th><th>비고</th></tr></thead>
@@ -83,12 +84,15 @@ function toggleAllVendors(on){VENDORS.forEach(v=>on?VENSEL.add(v):VENSEL.delete(
 function renderVendors(){venBody.innerHTML=VENDORS.map((v,i)=>`<tr class="${VENSEL.has(v)?'sel':''}" onclick="pickVendor(${i})"><td class="c"><input type="checkbox" ${VENSEL.has(v)?'checked':''} onclick="event.stopPropagation();pickVendor(${i})"></td><td>${v}</td></tr>`).join('');
  const all=document.getElementById('venAll');if(all)all.checked=VENDORS.length>0&&VENDORS.every(v=>VENSEL.has(v))}
 function renderBom(){const b=jobView[jobIdx]?.bom||[];bomBody.innerHTML=b.length?b.map((r,i)=>`<tr><td class="c"><input type="checkbox" checked data-i="${i}"></td><td>${r.part}</td><td>${r.name}</td><td class="c">${r.mat}</td><td>${r.spec}</td><td class="r">${r.qty}</td><td class="c">${r.att}</td></tr>`).join(''):'<tr><td colspan="7" class="c" style="color:#8b98a4">자재표가 없습니다.</td></tr>'}
-function renderReq(){reqBody.innerHTML=REQ.map((r,i)=>`<tr onclick="this.classList.toggle('sel')"><td class="c">${i+1}</td><td class="c"><input type="checkbox" data-no="${r.no}"></td><td>${r.vendor}</td><td>${r.job}</td><td class="c">${r.proc}</td><td>${r.part}</td><td>${r.name}</td><td class="c">${r.mat}</td><td>${r.design}</td><td class="r">${n(r.th)}</td><td class="r">${n(r.w)}</td><td class="r">${n(r.l)}</td><td class="r">${r.qty??''}</td><td class="r">${r.ord??''}</td><td class="r">${r.wt==null||r.wt===''?'':Number(r.wt).toFixed(2)}</td><td class="r">${money(r.stdPrice)}</td><td class="r"><input class="cell" value="${r.buyPrice??0}" onclick="event.stopPropagation()" onchange="setBuy(${r.no},this.value)" title="매입단가를 고치면 매입금액이 다시 계산됩니다"></td><td class="r">${money(r.amount)}</td><td class="c">${r.odate}</td><td class="c">${r.rdate}</td><td class="c">${r.att}</td><td>${r.remark}</td></tr>`).join('');sumQty.textContent=REQ.reduce((a,r)=>a+(r.qty||0),0);sumOrd.textContent=REQ.reduce((a,r)=>a+(r.ord||0),0);
+function renderReq(){reqBody.innerHTML=REQ.map((r,i)=>`<tr onclick="this.classList.toggle('sel')"><td class="c">${i+1}</td><td class="c"><input type="checkbox" data-no="${r.no}"></td><td>${r.vendor}</td><td>${r.job}</td><td class="c">${r.proc}</td><td>${r.part}</td><td>${r.name}</td><td class="c">${r.mat}</td><td>${r.design}</td><td class="r">${n(r.th)}</td><td class="r">${n(r.w)}</td><td class="r">${n(r.l)}</td><td class="r">${r.qty??''}</td><td class="r">${r.ord??''}</td><td class="r">${r.wt==null||r.wt===''?'':Number(r.wt).toFixed(2)}</td><td class="r">${money(r.stdPrice)}</td><td class="r"><input class="cell" value="${r.buyPrice??0}" onclick="event.stopPropagation()" onchange="setBuy(${r.no},this.value)" title="매입단가를 고치면 매입금액이 다시 계산됩니다"></td><td class="r">${money(r.amount)}</td><td class="c">${r.odate}</td><td class="c"><input class="cell" type="date" value="${r.rdate||''}" onclick="event.stopPropagation()" onchange="setRdate(${r.no},this.value)" title="이 행의 입고요구일을 수정합니다"></td><td class="c">${r.att}</td><td>${r.remark}</td></tr>`).join('');sumQty.textContent=REQ.reduce((a,r)=>a+(r.qty||0),0);sumOrd.textContent=REQ.reduce((a,r)=>a+(r.ord||0),0);
  sumWt.textContent=REQ.reduce((a,r)=>a+(Number(r.wt)||0),0).toFixed(2);
  sumAmt.textContent=money(REQ.reduce((a,r)=>a+(Number(r.amount)||0),0))}
 const money=v=>Number(v||0).toLocaleString('ko-KR');
 /* v80: 매입단가를 고치면 매입금액을 다시 계산한다 (중량 기준, 없으면 발주수량 기준) */
 function calcAmt(r){const base=Number(r.wt)||Number(r.ord)||Number(r.qty)||1;r.amount=Math.round((Number(r.buyPrice)||0)*base);return r.amount}
+/* v112: 구매요청 리스트에서 입고요구일 직접 수정 (요청삭제 후 재추가 불필요) */
+function applyRdate(){const d=reqDate.value;if(!d)return;const ids=[...reqBody.querySelectorAll('input[type=checkbox]:checked')].map(x=>Number(x.dataset.no));if(!ids.length)return;let n=0;REQ.forEach(r=>{if(ids.includes(r.no)){r.rdate=d;n++}});if(n){renderReq();msg(`체크한 ${n}건의 입고요구일을 ${d}로 일괄 수정했습니다.`)}}
+function setRdate(no,v){const r=REQ.find(x=>x.no===no);if(!r)return;r.rdate=v||r.rdate;msg(`${r.part} 입고요구일을 ${r.rdate}로 수정했습니다.`)}
 function setBuy(no,v){const r=REQ.find(x=>x.no===no);if(!r)return;
  r.buyPrice=Number(String(v).replace(/[^0-9.-]/g,''))||0;r.price=r.buyPrice;calcAmt(r);renderReq();
  msg(`${r.part} 매입단가 ${money(r.buyPrice)}원 · 매입금액 ${money(r.amount)}원`)}
