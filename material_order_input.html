@@ -101,7 +101,7 @@ function pickVendor(i){const v=VENDORS[i];if(v==null)return;
  if(VENSEL.has(v))VENSEL.delete(v);else VENSEL.add(v);
  venIdx=i;renderVendors();
  const ps=pickedVendors();msg(ps.length?`협력업체 ${ps.length}개 선택: ${ps.join(', ')}`:'협력업체 선택 없음')}
-function search(){const j=jobQ.value.trim().toLowerCase(),it=itemQ.value.trim().toLowerCase();jobView=JOBS.filter(x=>(!j||x.job.toLowerCase().includes(j))&&(!it||(x.item||'').toLowerCase().includes(it)));jobIdx=0;renderJobs();renderBom();msg(`제번 ${jobView.length}건을 조회했습니다.`)}
+function search(){const j=jobQ.value.trim().toLowerCase(),it=itemQ.value.trim().toLowerCase();jobView=JOBS.filter(x=>(!j||x.job.toLowerCase().includes(j))&&(!it||(x.item||'').toLowerCase().includes(it)));jobIdx=0;renderJobs();renderBom();renderReq();msg(`제번 ${jobView.length}건을 조회했습니다.`+(REQ.length?` · 구매요청 리스트에 ${REQ.length}건이 남아 있습니다.`:''))}
 async function pushDown(){const j=jobView[jobIdx];if(!j)return;const picks=[...bomBody.querySelectorAll('input:checked')].map(x=>j.bom[Number(x.dataset.i)]);if(!picks.length)return msg('자재표에서 발주할 품번을 선택하세요.');const vens=pickedVendors();
  if(!vens.length)return msg('협력업체리스트에서 발주할 업체를 체크하세요.');
  const d=reqDate.value||new Date().toISOString().slice(0,10);
@@ -115,7 +115,7 @@ async function pushDown(){const j=jobView[jobIdx];if(!j)return;const picks=[...b
   const k=RK(combos[i].v,j.job,j.proc,combos[i].b.part);
   if(have.has(k)){dup.unshift(combos[i].b.part);combos.splice(i,1)}else have.add(k);
  }
- if(!combos.length)return msg(`이미 요청 리스트에 있어 추가하지 않았습니다: ${[...new Set(dup)].join(', ')} — 수량은 발주수량 칸에서 수정하세요.`);
+ if(!combos.length){renderReq();return msg(`이미 요청 리스트에 있어 추가하지 않았습니다: ${[...new Set(dup)].join(', ')} — 아래 구매요청 리스트에서 수량·입고요구일을 수정하거나 [요청삭제] 후 다시 추가하세요.`)};
  combos.forEach(({v,b})=>{const dims=String(b.spec).split(/[*xX×]/).map(Number);REQ.push({no:REQ.length?Math.max(...REQ.map(r=>r.no))+1:1,vendor:v,job:j.job,proc:j.proc,part:b.part,name:b.name,mat:b.mat,design:b.spec,th:dims[0]||null,w:dims[1]||null,l:dims[2]||null,qty:b.qty,ord:b.qty,wt:null,stdPrice:0,buyPrice:0,price:0,amount:0,odate:new Date().toISOString().slice(0,10),rdate:d,att:b.att,remark:''})});
  /* v39: 중량(설계치수 기준)과 자재 단가를 자동 산출해 발주금액을 채운다.
     금액이 없으면 입고확정을 해도 제조원가에 원재료비가 0으로 잡힌다. */
