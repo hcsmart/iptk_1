@@ -53,7 +53,7 @@
       <div class="entry">
         <span class="label">작업시간</span><input id="minutes" class="field" type="number" min="0" placeholder="분">
         <span class="label">작업일</span><input id="workDate" class="field" type="date">
-        <span class="label">작업자</span><input id="worker" class="field" list="workerList" placeholder="직접입력 또는 목록에서 선택" autocomplete="off"><datalist id="workerList"></datalist>
+        <span class="label">작업자</span><input id="worker" class="field" list="workerList" placeholder="사용자정보에서 선택" autocomplete="off"><datalist id="workerList"></datalist>
       </div>
       <div class="entrybtns">
         <button class="btn sm primary" onclick="addResult()">실적 등록</button><button class="btn" onclick="sampleFill()" title="화면 순서대로 시연하며 등록요점을 설명합니다.">▶ 등록예제</button>
@@ -175,7 +175,8 @@ async function addResult(){
  const j=curJob();if(!j)return msg('제번을 선택하세요.');
  const s=STEPS[stepIdx];if(!s)return msg(STEPS.length?'세부공정을 선택하세요.':'세부공정이 없습니다. 공정을 고르고 [＋ 세부공정 추가]를 먼저 누르세요.');
  const m=Number(minutes.value);if(!m||m<=0)return msg('작업시간(분)을 입력하세요.');
- const wk=worker.value.trim();if(!wk)return msg('작업자를 입력하거나 목록에서 선택하세요.');
+ const wk=worker.value.trim();if(!wk)return msg('작업자를 선택하세요. (기준정보 › 사용자정보에 등록된 사용중 계정만 가능)');
+ if(WORKERS.length&&!WORKERS.includes(wk))return msg(`'${wk}' 은(는) 사용자정보에 없는 작업자입니다. 목록에서 선택하거나 기준정보 › 사용자정보에 먼저 등록하세요.`);
  if(!online())return msg('DB 미연결 상태에서는 실적을 등록할 수 없습니다.');
  try{
   /* v39: row_no 는 DB identity 가 채운다 (수동 max+1 은 동시 저장 시 PK 충돌) */
@@ -254,16 +255,36 @@ fillWorkers();workDate.value=new Date().toISOString().slice(0,10);
 renderJobs();renderSteps();renderResults();window.MES={search,save:addResult,exportCsv,setMessage:msg,reload:loadJobs};loadJobs();loadProcs();
 </script>
 <script src="mes_sample.js?v=67"></script><script src="mes_scene.js?v=67"></script><script src="mes_demo.js?v=67"></script><script src="mes_db.js?v=67"></script>
-<script>MESDB.bind("assembly_result_input",()=>({JOBS,STEPS,WORKERS}));</script>
+<script>/* v113: WORKERS 는 기준정보(사용자정보)에서 매번 새로 읽는다 — 스냅샷에 넣으면 옛 이름이 복원된다 */
+MESDB.bind("assembly_result_input",()=>({JOBS,STEPS}));</script>
 <script src="mes_ctx.js?v=67"></script>
 <script src="mes_lookup.js?v=67"></script>
 <script>
+/* v113: 작업자는 기준정보 '사용자정보'(users) 의 사용중 계정만 쓴다.
+   MESLOOK 이 실패하면 users 를 직접 읽어 폴백한다. 로드 후 목록에 없는 입력값은 비운다. */
+async function loadWorkers(){
+ let list=[];
+ try{list=await MESLOOK.names('employee')}catch(e){}
+ if(!list.length){
+  try{
+   const rs=await MESDB.table('users').select('select=user_id,name,is_active&order=name');
+   list=(rs||[]).filter(r=>r.name&&String(r.name).trim()&&r.user_id&&r.is_active===true&&String(r.user_id)!=='hcsmart')
+                .map(r=>String(r.name).trim());
+  }catch(e){}
+ }
+ list=[...new Set(list.filter(Boolean))];
+ WORKERS.length=0;WORKERS.push(...list);
+ fillWorkers();
+ const w=document.getElementById('worker');
+ if(w&&w.value&&WORKERS.length&&!WORKERS.includes(w.value.trim())){w.value='';}
+ return WORKERS;
+}
 (async function(){
- try{
-  WORKERS.length=0;WORKERS.push(...await MESLOOK.names('employee'));
-  if(typeof renderWorkers==='function')renderWorkers();
-  if(typeof fillWorkers==='function')fillWorkers();
- }catch(e){}
+ for(let i=0;i<60&&!window.MESDB;i++)await new Promise(r=>setTimeout(r,50));
+ if(window.MESDB&&MESDB.ready){try{await MESDB.ready}catch(e){}}
+ await loadWorkers();
+ /* 기준정보에서 사용자정보가 바뀌면 목록을 다시 읽는다 */
+ try{MESDB.onChange&&MESDB.onChange(['users'],()=>loadWorkers())}catch(e){}
 })();
 </script>
 <script>
