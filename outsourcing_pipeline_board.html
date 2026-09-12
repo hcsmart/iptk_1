@@ -84,6 +84,9 @@ button,input,select{font:inherit;color:inherit}button{cursor:pointer}
 .stp.out .bx{border-color:var(--out);background:var(--outb)}
 .stp.out small{color:var(--out)}
 .stp.req .bx{border-style:dashed;opacity:.72}
+.stp.plan .bx{border-style:dashed;border-color:#c7d1da;background:#fafbfc;opacity:.9}
+.stp.plan small{color:#a3aeb8}
+.stp.plan .bx b{color:#8d9aa8;font-weight:600}
 .stp.req small{color:var(--ink3)}
 .stp.ready .bx{border-color:var(--blue);border-style:solid;opacity:1;box-shadow:0 0 0 3px rgba(47,117,181,.14)}
 .stp.ready small{color:var(--blued)}
@@ -128,13 +131,14 @@ button,input,select{font:inherit;color:inherit}button{cursor:pointer}
 </style></head><body>
 
 <div class="top">
- <h1>외주가공 파이프라인<small>공정 순차 발주 · 요청→발주→입고→확정</small></h1>
+ <h1>외주가공 파이프라인<small>가공계획 전체 부품 · 미발주→발주→입고→확정</small></h1>
  <div class="seg" id="seg">
   <button data-v="pipe" class="on" onclick="setView('pipe')">부품 파이프라인</button>
   <button data-v="vendor" onclick="setView('vendor')">업체 보드</button>
  </div>
  <div class="srch"><input id="q" placeholder="제번 · 품번 · 업체 · 공정 검색" oninput="apply()"></div>
  <button class="tbtn red" id="bLate" onclick="toggleLate()">⚠ 지연만</button>
+ <button class="tbtn" id="bPlan" onclick="togglePlan()" title="가공계획에는 있으나 아직 발주하지 않은 공정이 남은 부품만 봅니다">⬚ 미발주만</button>
  <button class="tbtn" id="bOpen" onclick="toggleOpen()">진행중만</button>
  <button class="tbtn" onclick="load(true)">⟳</button>
  <span class="live" id="live"><i></i><span id="liveTx">연결 확인중</span></span>
@@ -168,40 +172,75 @@ const SAMPLE=[
  {line_id:11,job_no:'IP26-043',part_no:'P-1043-02',process_code:'MC',step_no:2,machining_process_code:'연마',vendor_name:'서진연마',status:'입고확정',quote_price:190000,confirm_date:'2026-09-06',required_date:'2026-09-05'}
 ];
 
-let lines=[...SAMPLE],parts=[],view=[],curView='pipe',fLate=false,onlyOpen=true,open=new Set();
+let lines=[...SAMPLE],parts=[],view=[],curView='pipe',fLate=false,fPlan=false,onlyOpen=true,open=new Set();
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const n0=v=>Number(v||0);
 const won=v=>n0(v).toLocaleString('ko-KR');
 const d5=v=>v?String(v).slice(5,10):'';
 const online=()=>!!(window.MESDB&&MESDB.online);
 
-/* ═══ 조회 ═══ */
+/* ═══ 조회 ═══
+ * order_lines(발주된 외주가공) + machining_plan_parts(가공계획의 전체 부품·공정)를 합쳐
+ * 아직 발주하지 않은 부품·공정도 '미발주'로 보여준다. */
+let PLAN=[];
+const stepCode=x=>String((x&&typeof x==='object')?(x.process_code||x.code||''):(x??'')).trim();
+const PROCN={};
 async function load(manual){
  if(!online()&&window.MESDB&&MESDB.ready){try{await MESDB.ready}catch(e){}}
  if(!online()){setLive(false);build();apply();return}
+ const o=manual?{fresh:true}:undefined;
  try{
-  const rs=await MESDB.table('order_lines').select('select=*&category=eq.외주가공&order=job_no,part_no,step_no,line_id',manual?{fresh:true}:undefined);
-  lines=rs||[];setLive(true);build();apply();
+  const [rs,pl]=await Promise.all([
+   MESDB.table('order_lines').select('select=*&category=eq.외주가공&order=job_no,part_no,step_no,line_id',o),
+   MESDB.table('machining_plan_parts').select('select=job_no,part_no,part_name,process_code,steps,row_no&order=job_no,row_no',o).catch(()=>[])
+  ]);
+  lines=rs||[];PLAN=pl||[];
+  if(!Object.keys(PROCN).length){
+   try{(await MESDB.table('processes').select('select=process_code,process_name'))
+     .forEach(p=>{const c=String(p.process_code||'').trim();if(c)PROCN[c.toUpperCase()]=p.process_name||''})}catch(e){}
+  }
+  setLive(true);build();apply();
  }catch(e){setLive(false)}
 }
+const pName=c=>PROCN[String(c||'').trim().toUpperCase()]||String(c||'');
 function setLive(on){
  document.getElementById('live').classList.toggle('on',!!on);
  document.getElementById('liveTx').textContent=on?'실시간 연결':'예시 데이터';
 }
 
-/* ═══ 부품 단위 그룹 (제번+품번, step_no 순) ═══ */
+/* ═══ 부품 단위 그룹 (제번+품번, step_no 순) ═══
+ * 가공계획에 등록된 부품·공정을 뼈대로 만들고, 발주된 라인을 순번에 맞춰 덮어쓴다.
+ * 계획에 없지만 발주만 있는 부품도 그대로 포함한다. */
 function build(){
  const g=new Map();
+ const key=(j,p)=>(j||'')+'|'+(p||'');
+ /* 1) 가공계획의 전체 부품·공정 = 미발주(plan) 자리 */
+ for(const pl of PLAN){
+  const codes=(Array.isArray(pl.steps)?pl.steps:[]).map(stepCode).filter(Boolean);
+  if(!codes.length)continue;
+  const k=key(pl.job_no,pl.part_no);
+  if(!g.has(k))g.set(k,{job:pl.job_no||'',part:pl.part_no||'',partName:pl.part_name||'',proc:pl.process_code||'',steps:[],planned:true});
+  const t=g.get(k);
+  codes.forEach((c,i)=>{t.steps[i]={plan:true,job_no:pl.job_no,part_no:pl.part_no,part_name:pl.part_name||'',
+    machining_process_code:c,step_no:i+1,status:'',vendor_name:'',required_date:null}});
+ }
+ /* 2) 실제 발주 라인으로 덮어쓴다 (순번 없으면 뒤에 붙인다) */
  for(const l of lines){
-  const k=(l.job_no||'')+'|'+(l.part_no||'');
-  if(!g.has(k))g.set(k,{job:l.job_no||'',part:l.part_no||'',proc:l.process_code||'',steps:[]});
-  g.get(k).steps.push(l);
+  const k=key(l.job_no,l.part_no);
+  if(!g.has(k))g.set(k,{job:l.job_no||'',part:l.part_no||'',partName:l.part_name||'',proc:l.process_code||'',steps:[],planned:false});
+  const t=g.get(k);
+  if(!t.partName&&l.part_name)t.partName=l.part_name;
+  const i=n0(l.step_no)-1;
+  if(i>=0)t.steps[i]=l; else t.steps.push(l);
  }
  parts=[...g.values()];
  for(const p of parts){
+  p.steps=p.steps.filter(Boolean);
   p.steps.sort((a,b)=>n0(a.step_no)-n0(b.step_no)||n0(a.line_id)-n0(b.line_id));
+  p.planN=p.steps.filter(l=>l.plan).length;          /* 아직 발주 안 한 공정 수 */
+  p.ordered=p.steps.length-p.planN;
   p.doneN=p.steps.filter(l=>stOf(l.status)==='done').length;
-  p.allDone=p.doneN===p.steps.length;
+  p.allDone=p.steps.length>0&&p.doneN===p.steps.length;
   p.late=p.steps.some(isLate);
   /* 발주 가능 지점: 직전 공정이 입고/입고확정일 때만 다음 발주 (첫 공정은 항상 가능) */
   p.readyIdx=-1;
@@ -224,8 +263,9 @@ function apply(){
  view=parts.filter(p=>{
   if(onlyOpen&&p.allDone)return false;
   if(fLate&&!p.late)return false;
+  if(fPlan&&!p.planN)return false;              /* 미발주 공정이 남은 부품만 */
   if(q){
-   const hay=(p.job+' '+p.part+' '+p.proc+' '+p.steps.map(l=>(l.vendor_name||'')+' '+(l.machining_process_code||'')).join(' ')).toLowerCase();
+   const hay=(p.job+' '+p.part+' '+(p.partName||'')+' '+p.proc+' '+p.steps.map(l=>(l.vendor_name||'')+' '+(l.machining_process_code||'')+' '+pName(l.machining_process_code)).join(' ')).toLowerCase();
    if(!hay.includes(q))return false;
   }
   return true;
@@ -234,6 +274,7 @@ function apply(){
  render();
 }
 function toggleLate(){fLate=!fLate;document.getElementById('bLate').classList.toggle('on',fLate);apply()}
+function togglePlan(){fPlan=!fPlan;document.getElementById('bPlan').classList.toggle('on',fPlan);apply()}
 function toggleOpen(){onlyOpen=!onlyOpen;const b=document.getElementById('bOpen');
  b.classList.toggle('on',!onlyOpen);b.textContent=onlyOpen?'진행중만':'완료포함';apply()}
 function setView(v){
@@ -247,15 +288,17 @@ function setView(v){
 /* ═══ 요약 스트립 ═══ */
 function renderSum(){
  const ls=parts.flatMap(p=>p.steps);
- const c=k=>ls.filter(l=>stOf(l.status)===k).length;
+ const c=k=>ls.filter(l=>!l.plan&&stOf(l.status)===k).length;
+ const planN=ls.filter(l=>l.plan).length;
  const late=ls.filter(isLate).length;
- const amt=l=>n0(l.confirm_price)||n0(l.quote_price);
+ const amt=l=>l.plan?0:(n0(l.confirm_price)||n0(l.quote_price));
  const tot=ls.reduce((a,l)=>a+amt(l),0);
  const done=ls.filter(l=>stOf(l.status)==='done').reduce((a,l)=>a+amt(l),0);
  const rate=tot?Math.round(done*1000/tot)/10:0;
  document.getElementById('sum').innerHTML=
   `<span class="pill">부품 <b class="num">${parts.length}</b></span>`
   +`<span class="pill">공정 <b class="num">${ls.length}</b></span>`
+  +`<span class="pill req">미발주 <b class="num">${planN}</b></span>`
   +`<span class="pill req">요청 <b class="num">${c('req')}</b></span>`
   +`<span class="pill out">발주 <b class="num">${c('out')}</b></span>`
   +`<span class="pill in">입고 <b class="num">${c('in')}</b></span>`
@@ -269,13 +312,16 @@ function stepBox(l,i,p){
  const st=stOf(l.status);
  const ready=(i===p.readyIdx);
  const lt=isLate(l);
- const dtx=st==='done'?('확정 '+d5(l.confirm_date||l.receipt_date)):
+ const plan=!!l.plan;                       /* 가공계획에만 있고 아직 발주 안 한 공정 */
+ const dtx=plan?'미발주':
+  st==='done'?('확정 '+d5(l.confirm_date||l.receipt_date)):
   st==='in'?('입고 '+d5(l.receipt_date)):
   ('납기 '+(d5(l.required_date)||'-'));
- return `<div class="stp ${ST[st].cls}${ready?' ready':''}${lt?' lt':''}"><div class="bx">
-  <small>공정${n0(l.step_no)||i+1} · ${lt?'지연':ready?'발주가능':ST[st].n}</small>
-  <b>${esc(l.machining_process_code||l.process_code||'-')}</b>
-  <span class="vd">${esc(l.vendor_name||'업체 미지정')}</span>
+ const code=l.machining_process_code||l.process_code||'-';
+ return `<div class="stp ${ST[st].cls}${plan?' plan':''}${ready?' ready':''}${lt?' lt':''}"><div class="bx">
+  <small>공정${n0(l.step_no)||i+1} · ${lt?'지연':ready?'발주가능':plan?'계획':ST[st].n}</small>
+  <b>${esc(pName(code)||code)}</b>
+  <span class="vd">${esc(plan?'—':(l.vendor_name||'업체 미지정'))}</span>
   <span class="dtx">${esc(dtx)}</span>
  </div></div>`;
 }
@@ -289,12 +335,13 @@ function renderPipe(){
   html+=ps.map(p=>{
    const key=p.job+'|'+p.part;
    const segs=p.steps.map(l=>{const st=stOf(l.status);
-    const col=st==='done'?'var(--done)':st==='in'?'var(--in)':st==='out'?'var(--out)':'transparent';
+    const col=l.plan?'transparent':st==='done'?'var(--done)':st==='in'?'var(--in)':st==='out'?'var(--out)':'transparent';
     return `<i style="flex:1;background:${col}"></i>`}).join('');
    return `<div class="pcard${p.late?' late':''}">
     <div class="phead" onclick="toggle('${esc(key)}')">
-     <span class="pn">${esc(p.part)}</span><span class="pc">${esc(p.proc)}</span>
+     <span class="pn">${esc(p.part)}</span><span class="pc">${esc(p.partName||'')}${p.proc?' · '+esc(p.proc):''}</span>
      ${p.late?'<span class="dchip bad">지연</span>':p.readyIdx>=0?'<span class="dchip mut" style="background:var(--blue2);color:var(--blued)">발주가능</span>':''}
+     ${p.planN?`<span class="dchip mut" title="가공계획에는 있으나 아직 발주하지 않은 공정">미발주 ${p.planN}</span>`:''}
      <span class="stpro"><span class="sb">${segs}</span><span class="tx num">${p.doneN}/${p.steps.length}</span>
       ${p.allDone?'<span class="dchip ok">완료</span>':p.due?`<span class="dchip ${String(p.due)<today?'bad':'mut'}">납기 ${d5(p.due)}</span>`:''}</span>
     </div>
@@ -308,8 +355,9 @@ function pdet(p){
  return `<div class="pdet"><table>
   <tr><th>공정</th><th>가공공정</th><th>업체</th><th>상태</th><th>납기</th><th>입고일</th><th>확정일</th><th>금액</th></tr>
   ${p.steps.map((l,i)=>{const st=stOf(l.status);
-   return `<tr><td class="c">공정${n0(l.step_no)||i+1}</td><td>${esc(l.machining_process_code||l.process_code||'-')}</td>
-   <td>${esc(l.vendor_name||'-')}</td><td class="c"><span class="stag ${ST[st].cls}">${isLate(l)?'지연':ST[st].n}</span></td>
+   const code=l.machining_process_code||l.process_code||'-';
+   return `<tr><td class="c">공정${n0(l.step_no)||i+1}</td><td>${esc(pName(code)||code)}</td>
+   <td>${esc(l.plan?'-':(l.vendor_name||'-'))}</td><td class="c"><span class="stag ${ST[st].cls}">${l.plan?'미발주':isLate(l)?'지연':ST[st].n}</span></td>
    <td class="c">${esc(String(l.required_date||'').slice(0,10)||'-')}</td>
    <td class="c">${esc(String(l.receipt_date||'').slice(0,10)||'-')}</td>
    <td class="c">${esc(String(l.confirm_date||'').slice(0,10)||'-')}</td>
@@ -327,6 +375,7 @@ function renderVendor(){
  /* 발주 가능(요청) 대기열 */
  const ready=[];
  for(const p of view){if(p.readyIdx>=0)ready.push({l:p.steps[p.readyIdx],p})}
+ ready.sort((a,b)=>String(a.p.job+a.p.part).localeCompare(String(b.p.job+b.p.part)));
  const cols=[...g.entries()].sort((a,b)=>b[1].length-a[1].length);
  let html=cols.map(([v,items])=>{
   const lateN=items.filter(x=>isLate(x.l)).length;
@@ -343,7 +392,7 @@ function kcard(x,isReady){
  return `<div class="kcard${lt?' late':''}">
   <div class="l1"><b>${esc(p.job)}</b><span style="font-size:11px;color:var(--ink2)">${esc(p.part)}</span>
    <span class="stag ${isReady?'out':ST[st].cls}" ${isReady?'style="background:var(--blue2);color:var(--blued)"':''}>${isReady?'발주요망':lt?'지연':ST[st].n}</span></div>
-  <div class="l2">공정${n0(l.step_no)} · ${esc(l.machining_process_code||l.process_code||'-')}${isReady&&l.vendor_name?' · '+esc(l.vendor_name):''}</div>
+  <div class="l2">공정${n0(l.step_no)} · ${esc(pName(l.machining_process_code||l.process_code)||'-')}${isReady&&l.vendor_name?' · '+esc(l.vendor_name):''}</div>
   <div class="l3">납기 ${esc(String(l.required_date||'').slice(0,10)||'-')}${st==='in'?' · 입고 '+d5(l.receipt_date):''}</div>
  </div>`;
 }
