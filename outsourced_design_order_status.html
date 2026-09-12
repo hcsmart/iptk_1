@@ -69,7 +69,7 @@ async function loadRows(){
 }
 function within(v,a,b){if(!a&&!b)return true;if(!v)return false;return (!a||v>=a)&&(!b||v<=b)}
 function render(){selIdx=-1;body.innerHTML=view.map((r,i)=>`<tr onclick="sel(this,${i})" ondblclick="sel(this,${i});detail(${i})" title="더블클릭하면 입고 이력을 봅니다"><td class="c">${i+1}</td><td>${r.job}</td><td>${r.item}</td><td>${r.model}</td><td class="c">${r.area}</td><td>${r.cust}</td><td class="r">${money(r.amount)}</td><td class="c">${r.proc}</td><td class="c">${r.paid}</td><td class="r">${money(r.quote)}</td><td class="r">${money(r.nego)}</td><td class="r">${money(r.diff)}</td><td>${r.partner}</td><td><div class="bar"><i style="width:${r.rate}%"></i><b>${r.rate}%</b></div></td><td class="c">${r.idate}</td><td class="c">${r.odate}</td><td class="c">${r.edate}</td></tr>`).join('');
-sumQuote.textContent=money(view.reduce((a,r)=>a+r.quote,0));sumNego.textContent=money(view.reduce((a,r)=>a+r.nego,0));sumDiff.textContent=money(view.reduce((a,r)=>a+r.diff,0));countText.textContent=`${view.length}건`}
+sumQuote.textContent=money(view.reduce((a,r)=>a+(Number(r.quote)||0),0));sumNego.textContent=money(view.reduce((a,r)=>a+(Number(r.nego)||0),0));sumDiff.textContent=money(view.reduce((a,r)=>a+(Number(r.diff)||0),0));countText.textContent=`${view.length}건`}
 let selIdx=-1;
 function sel(tr,i){selIdx=(i==null?-1:Number(i));document.querySelectorAll('#body tr').forEach(x=>x.classList.remove('sel'));tr.classList.add('sel')}
 /* v81: 오발주 취소 — order_lines(외주설계) 발주행을 삭제해 발주요청을 되돌린다 */

@@ -41,7 +41,7 @@ const rows=[];
 let view=[...rows];
 const money=v=>Number(v||0).toLocaleString('ko-KR');
 function render(){body.innerHTML=view.map((r,i)=>`<tr onclick="sel(this)"><td class="c">${i+1}</td><td>${r.job}</td><td class="c">${r.type}</td><td>${r.item}</td><td class="c">${r.odate}</td><td>${r.cust}</td><td class="c">${r.dev}</td><td class="r">${money(r.amount)}</td><td class="r">${money(r.buy)}</td></tr>`).join('');
-sumOrder.textContent=money(view.reduce((a,r)=>a+r.amount,0));sumBuy.textContent=money(view.reduce((a,r)=>a+r.buy,0));countText.textContent=`${view.length}건`}
+sumOrder.textContent=money(view.reduce((a,r)=>a+(Number(r.amount)||0),0));sumBuy.textContent=money(view.reduce((a,r)=>a+(Number(r.buy)||0),0));countText.textContent=`${view.length}건`}
 function sel(tr){document.querySelectorAll('#body tr').forEach(x=>x.classList.remove('sel'));tr.classList.add('sel')}
 function search(){const j=jobQ.value.trim().toLowerCase(),it=itemQ.value.trim().toLowerCase(),c=custQ.value.trim().toLowerCase(),t=typeQ.value,b=baseDate.value;
 view=rows.filter(r=>(!j||r.job.toLowerCase().includes(j))&&(!it||r.item.toLowerCase().includes(it))&&(!c||r.cust.toLowerCase().includes(c))&&(!t||r.type===t)&&(!b||!r.odate||r.odate<=b));

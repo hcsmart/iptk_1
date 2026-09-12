@@ -53,10 +53,10 @@ const money=v=>Number(v||0).toLocaleString('ko-KR');
 const fix=r=>Math.round(r.quote*(1-(r.rate||0)/100));
 function doneMode(){return document.querySelector('input[name=done]:checked').value}
 function render(){body.innerHTML=view.map((r,i)=>`<tr onclick="pick(event,${r.no})"><td class="c">${i+1}</td><td class="c"><input type="checkbox" data-no="${r.no}" onchange="summary()"></td><td class="c">${r.status==='확정'?'확정':''}</td><td>${r.job}</td><td>${r.item}</td><td class="c">${r.proc}</td><td class="c">${r.procName}</td><td>${r.part}</td><td>${r.partName}</td><td class="c">${r.mp}</td><td>${r.mpName}</td><td>${r.vendor}</td><td class="c">${r.odate}</td><td class="c">${r.idate}</td><td class="c">${r.cdate}</td><td class="r">${money(r.quote)}</td><td class="r">${(r.rate||0).toFixed(2)}</td><td class="r">${money(fix(r))}</td></tr>`).join('');
-sumQuote.textContent=money(view.reduce((a,r)=>a+r.quote,0));sumFix.textContent=money(view.reduce((a,r)=>a+fix(r),0));countText.textContent=`${view.length}건`;summary()}
+sumQuote.textContent=money(view.reduce((a,r)=>a+(Number(r.quote)||0),0));sumFix.textContent=money(view.reduce((a,r)=>a+fix(r),0));countText.textContent=`${view.length}건`;summary()}
 function pick(e,no){if(e.target.tagName==='INPUT')return;const cb=document.querySelector(`#body input[data-no="${no}"]`);if(cb){cb.checked=!cb.checked;summary()}}
 function selected(){const ids=[...document.querySelectorAll('#body input:checked')].map(x=>Number(x.dataset.no));return rows.filter(r=>ids.includes(r.no))}
-function summary(){const s=selected();total.value=money(s.reduce((a,r)=>a+r.quote,0));selectedText.textContent=`선택 ${s.length}건`;document.querySelectorAll('#body tr').forEach(tr=>tr.classList.toggle('sel',!!tr.querySelector('input:checked')))}
+function summary(){const s=selected();total.value=money(s.reduce((a,r)=>a+(Number(r.quote)||0),0));selectedText.textContent=`선택 ${s.length}건`;document.querySelectorAll('#body tr').forEach(tr=>tr.classList.toggle('sel',!!tr.querySelector('input:checked')))}
 /* v88: [조회] 는 DB 를 다시 읽고 나서 거른다 — 다른 화면에서 새로 생긴 발주가 바로 보인다 */
 function search(){
  if(window.MESDB&&MESDB.reloadLines){

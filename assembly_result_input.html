@@ -134,7 +134,7 @@ async function loadResults(){
    (RESULTS[k]=RESULTS[k]||[]).push({id:r.row_no,worker:r.worker_name||'',
      date:r.work_date||'',min:Number(r.work_minutes||0)})});
   STEPS.forEach(s=>{const l=RESULTS[`${j.job}|${s.mp}`]||[];
-   const m=l.reduce((a,r)=>a+r.min,0);s.min=m||null;
+   const m=l.reduce((a,r)=>a+(Number(r.min)||0),0);s.min=m||null;
    s.rate=s.done?100:(s.plan?Math.min(100,Math.round(m/s.plan*100)):(m?50:null))});
   renderSteps();renderResults();
  }catch(e){renderSteps();renderResults()}

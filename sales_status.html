@@ -52,7 +52,7 @@ let view=[...rows];
 const money=v=>Number(v||0).toLocaleString('ko-KR');
 function within(v,a,b){if(!a&&!b)return true;if(!v)return false;return (!a||v>=a)&&(!b||v<=b)}
 function render(){body.innerHTML=view.map((r,i)=>`<tr onclick="sel(this)"><td class="c">${i+1}</td><td>${r.job}</td><td class="c">${r.type}</td><td>${r.cust}</td><td>${r.item}</td><td class="r">${r.set}</td><td class="c">${r.dev}</td><td class="c">${r.cdate}</td><td class="r">${money(r.order)}</td><td class="r">${money(r.sale)}</td><td>${r.partner}</td><td class="r">${money(r.month)}</td><td class="r">${money(r.total)}</td></tr>`).join('');
-sumOrder.textContent=money(view.reduce((a,r)=>a+r.order,0));sumSale.textContent=money(view.reduce((a,r)=>a+r.sale,0));sumMonth.textContent=money(view.reduce((a,r)=>a+r.month,0));sumTotal.textContent=money(view.reduce((a,r)=>a+r.total,0));countText.textContent=`${view.length}건`}
+sumOrder.textContent=money(view.reduce((a,r)=>a+(Number(r.order)||0),0));sumSale.textContent=money(view.reduce((a,r)=>a+(Number(r.sale)||0),0));sumMonth.textContent=money(view.reduce((a,r)=>a+(Number(r.month)||0),0));sumTotal.textContent=money(view.reduce((a,r)=>a+(Number(r.total)||0),0));countText.textContent=`${view.length}건`}
 function sel(tr){document.querySelectorAll('#body tr').forEach(x=>x.classList.remove('sel'));tr.classList.add('sel')}
 function search(){const d=document.querySelector('input[name=dev]:checked').value;const j=jobQ.value.trim().toLowerCase(),it=itemQ.value.trim().toLowerCase();
 view=rows.filter(r=>(d==='전체'||(d==='사내'?r.dev==='사내':r.dev&&r.dev!=='사내'))&&(!j||r.job.toLowerCase().includes(j))&&(!it||r.item.toLowerCase().includes(it))&&within(r.cdate,cd1.value,cd2.value));

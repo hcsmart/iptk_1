@@ -55,7 +55,7 @@ let view=[...rows];
 const money=v=>Number(v||0).toLocaleString('ko-KR');
 function within(v,a,b){if(!a&&!b)return true;if(!v)return false;return (!a||v>=a)&&(!b||v<=b)}
 function render(){body.innerHTML=view.map((r,i)=>`<tr onclick="sel(this)"><td class="c">${i+1}</td><td class="c"><span class="tag t-${r.st}">${r.st}</span></td><td>${r.vendor}</td><td>${r.job}</td><td>${r.item}</td><td class="c">${r.proc}</td><td class="c">${r.procName}</td><td>${r.part}</td><td>${r.partName}</td><td class="c">${r.mp}</td><td class="c">${r.odate}</td><td class="c">${r.edate}</td><td class="c">${r.idate}</td><td class="c">${r.cdate}</td><td class="r">${money(r.quote)}</td><td class="r">${money(r.fix)}</td></tr>`).join('');
-sumQuote.textContent=money(view.reduce((a,r)=>a+r.quote,0));sumFix.textContent=money(view.reduce((a,r)=>a+r.fix,0));countText.textContent=`${view.length}건`}
+sumQuote.textContent=money(view.reduce((a,r)=>a+(Number(r.quote)||0),0));sumFix.textContent=money(view.reduce((a,r)=>a+(Number(r.fix)||0),0));countText.textContent=`${view.length}건`}
 function sel(tr){document.querySelectorAll('#body tr').forEach(x=>x.classList.remove('sel'));tr.classList.add('sel')}
 /* v88: [조회] 는 DB 를 다시 읽고 나서 거른다 — 다른 화면에서 새로 생긴 발주가 바로 보인다 */
 function search(){
