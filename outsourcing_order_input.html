@@ -80,7 +80,7 @@ tr.rdone td{color:#8b98a3}
       <div class="tablewrap"><table><thead><tr><th>협력업체</th></tr></thead><tbody id="venBody"></tbody></table></div></div>
     <div class="box"><div class="box-title">부품별 가공공정 리스트<span class="legend"><i style="background:#8fdc6b"></i>다음 공정(클릭)<i style="background:#8e6bb0"></i>요청<i style="background:#e07a1f"></i>출고<i style="background:#2f6fb5"></i>입고<i style="background:#8b98a3"></i>완료</span></div><div class="tablewrap"><table style="min-width:900px">
       <colgroup><col style="width:36px"><col style="width:80px"><col style="width:90px"><col style="width:56px"><col style="width:56px"><col style="width:56px"><col style="width:56px"><col style="width:56px"><col style="width:56px"><col style="width:56px"><col style="width:56px"><col style="width:56px"></colgroup>
-      <thead><tr><th></th><th style="width:46px">조</th><th>부품코드</th><th>부품명</th><th>공정1</th><th>공정2</th><th>공정3</th><th>공정4</th><th>공정5</th><th>공정6</th><th>공정7</th><th>공정8</th><th>공정9</th></tr></thead>
+      <thead><tr><th></th><th style="width:66px">공정(조)</th><th>부품코드</th><th>부품명</th><th>공정1</th><th>공정2</th><th>공정3</th><th>공정4</th><th>공정5</th><th>공정6</th><th>공정7</th><th>공정8</th><th>공정9</th></tr></thead>
       <tbody id="routeBody"></tbody></table></div></div>
   </section>
   <div class="midbar"><span class="label">입고요구일</span><input id="reqDate" class="field" type="date"><button class="btn" onclick="pushDown()">⬇ 요청추가</button><button class="btn" onclick="pullUp()">⬆ 요청삭제</button></div>
@@ -176,7 +176,7 @@ function renderRoutes(){
   const tip=allDone?'모든 가공공정이 입고되었습니다':wait?'직전 공정이 아직 입고되지 않아 다음 공정을 발주할 수 없습니다 (직전 공정 셀 우클릭 → 입고 처리)':'';
   return `<tr class="${dis&&n?'rdone':''}"${tip?` title="${_esc(tip)}"`:''}>`+
    `<td class="c"><input type="checkbox" data-i="${ri}"${dis?' disabled':''}${picks.length?' checked':''} onchange="pickRow(${ri},this.checked)"></td>`+
-   `<td class="c">${_esc(r.jo?r.jo+'조':'')}</td>`+
+   `<td class="c">${_esc(String(r.jo||'').replace(/조$/,''))}</td>`+
    `<td>${_esc(r.part)}${tag}</td>`+
    `<td>${_esc(r.name)}</td>`+
    (r.steps||[]).map((s,i)=>{const c=stepCode(s);if(!c)return '<td></td>';
