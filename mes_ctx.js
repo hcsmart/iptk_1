@@ -235,9 +235,10 @@ window.MESCTX={confirm:dlgConfirm};
 (function(){
  const st=document.createElement('style');
  st.textContent=`
- table.mes-zebra tbody tr:nth-child(even):not(.sel):not(.selected):not(:hover) td{background:#e8eff6!important}
- table.mes-zebra tbody tr:nth-child(odd):not(.sel):not(.selected):not(:hover) td{background:#fff!important}
- table.mes-zebra tbody tr:not(.sel):not(.selected):hover td{background:#d9ecfb!important}
+ /* v112: 화면이 상태색을 칠한 셀(공정 진행상태 등)은 제외 — 덮으면 흰 배경+흰 글자가 된다 */
+ table.mes-zebra tbody tr:nth-child(even):not(.sel):not(.selected):not(:hover) td:not(.route):not(.step):not(.keepbg){background:#e8eff6!important}
+ table.mes-zebra tbody tr:nth-child(odd):not(.sel):not(.selected):not(:hover) td:not(.route):not(.step):not(.keepbg){background:#fff!important}
+ table.mes-zebra tbody tr:not(.sel):not(.selected):hover td:not(.route):not(.step):not(.keepbg){background:#d9ecfb!important}
  /* 앞 2열 고정 — 두 번째 열의 left 는 첫 열 폭(--c1) 으로 잡는다 */
  table.mes-freeze th:nth-child(-n+2),table.mes-freeze td:nth-child(-n+2){position:sticky;z-index:1}
  table.mes-freeze th:first-child,table.mes-freeze td:first-child{left:0}
@@ -245,8 +246,8 @@ window.MESCTX={confirm:dlgConfirm};
   box-shadow:inset -1px 0 0 #b8c4ce}
  table.mes-freeze thead th:nth-child(-n+2){z-index:3}
  table.mes-freeze tfoot td:first-child{z-index:2}
- table.mes-freeze tbody tr:nth-child(odd):not(.sel):not(.selected):not(:hover) td:nth-child(-n+2){background:#f6f8fa!important}
- table.mes-freeze tbody tr:nth-child(even):not(.sel):not(.selected):not(:hover) td:nth-child(-n+2){background:#dfe8f1!important}
+ table.mes-freeze tbody tr:nth-child(odd):not(.sel):not(.selected):not(:hover) td:nth-child(-n+2):not(.route):not(.step):not(.keepbg){background:#f6f8fa!important}
+ table.mes-freeze tbody tr:nth-child(even):not(.sel):not(.selected):not(:hover) td:nth-child(-n+2):not(.route):not(.step):not(.keepbg){background:#dfe8f1!important}
  /* v112: 선택행(tr.sel td{color:#fff})의 흰 글자를 입력칸이 물려받아 흰 배경 위 흰 글자가 되던 문제 —
     표 안의 입력칸은 행 선택·마우스오버와 무관하게 항상 진한 글자로 고정한다 */
  table td input:not([type=checkbox]):not([type=radio]),table td select,table td textarea{
