@@ -209,7 +209,7 @@ function build(){
    const st=stOf(p.steps[i].status);
    if(st!=='req')continue;
    const prev=i===0?'done':stOf(p.steps[i-1].status);
-   if(prev==='done'||prev==='in')p.readyIdx=i;
+   if(prev==='done')p.readyIdx=i;   /* v112: 직전 공정 '입고확정' 이후에만 발주 가능 (입고만으로는 불가) */
    break;
   }
   const due=p.steps.map(l=>l.required_date).filter(Boolean).sort().pop();
