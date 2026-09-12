@@ -264,7 +264,7 @@ const APP={
       '가공':[
         {name:'가공',items:['가공계획등록','공정이력카드']},
         {name:'외주가공',items:['외주가공 발주','외주가공 입고','외주가공 입고확정','외주가공 QR스캔']},
-        {name:'현황',items:['외주가공발주현황','외주가공 파이프라인']}
+        {name:'현황',items:['외주가공발주현황','외주가공 진척현황']}
       ]
     }
   },
@@ -424,9 +424,9 @@ const pageRegistry={
 '외주가공 입고':{id:'outsourcing_receipt_input',file:'outsourcing_receipt_input.html',title:'외주가공 입고'},
 '외주가공 입고확정':{id:'outsourcing_receipt_confirmation',file:'outsourcing_receipt_confirmation.html',title:'외주가공입고확정'},
 '외주가공발주현황':{id:'outsourcing_order_status',file:'outsourcing_order_status.html',title:'외주가공 발주현황'},
-/* v113: 외주가공 파이프라인으로 대체 — 메뉴에서 내렸다. 되살리려면 구매관리>가공>현황 items 에 '가공구매 진척현황' 을 다시 넣으면 된다 */
+/* v113: 외주가공 진척현황으로 대체 — 메뉴에서 내렸다. 되살리려면 구매관리>가공>현황 items 에 '가공구매 진척현황' 을 다시 넣으면 된다 */
 '가공구매 진척현황':{id:'machining_purchase_progress',file:'machining_purchase_progress.html',title:'가공구매 진척현황'},
-'외주가공 파이프라인':{id:'outsourcing_pipeline_board',file:'outsourcing_pipeline_board.html',title:'외주가공 파이프라인'},
+'외주가공 진척현황':{id:'outsourcing_pipeline_board',file:'outsourcing_pipeline_board.html',title:'외주가공 진척현황'},
 '외주가공 QR스캔':{id:'mobile_scan',file:'mobile_scan.html',title:'외주가공 QR 스캔'},
 '조립실적등록':{id:'assembly_result_input',file:'assembly_result_input.html',title:'조립실적등록'},
 '매출현황':{id:'sales_status',file:'sales_status.html',title:'매출현황'},
