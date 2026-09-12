@@ -21,6 +21,30 @@ td.route.s-ext{background:#dff5d3;color:#2c5a24;cursor:pointer}
 td.route.s-pick{background:#5cb85c;color:#fff;font-weight:700;cursor:pointer}
 td.route.s-req{background:#efe5f7;color:#5a3a7a}td.route.s-req .st{background:#8e6bb0;color:#fff}
 td.route.s-out{background:#ffe9d1;color:#7a4a12;font-weight:700}td.route.s-out .st{background:#e07a1f;color:#fff}
+/* v112: 공정 셀 우클릭 팝업 — 발주/입고/입고확정을 그 자리에서 처리 */
+#ctxMask{position:fixed;inset:0;z-index:9000;display:none}#ctxMask.on{display:block}
+#ctxPop{position:fixed;z-index:9001;width:400px;max-width:96vw;background:#fff;border:1px solid #6f8090;box-shadow:0 8px 26px rgba(0,0,0,.28);display:none;font-size:12px;color:#22303a}
+#ctxPop.on{display:block}
+#ctxPop .ch{display:flex;align-items:center;gap:8px;padding:0 8px 0 11px;height:31px;color:#fff;font-weight:700;background:linear-gradient(#5f7f9f,#3f5f7d)}
+#ctxPop .ch.k-order{background:linear-gradient(#5e9e46,#3f7a2c)}#ctxPop .ch.k-in{background:linear-gradient(#e08a2b,#b8681a)}#ctxPop .ch.k-cfm{background:linear-gradient(#3f7fc4,#2a5d95)}
+#ctxPop .ch .x{margin-left:auto;border:0;background:transparent;color:#fff;cursor:pointer;font:inherit;font-size:14px}
+#ctxPop .cb{padding:9px 11px 6px}
+#ctxPop .sub{color:#4d5c69;margin-bottom:7px;line-height:1.5}
+#ctxPop .sub b{color:#20456b}
+#ctxPop .g{display:grid;grid-template-columns:76px minmax(0,1fr) 76px minmax(0,1fr);gap:5px 7px;align-items:center}
+#ctxPop .g label{font-weight:700;text-align:right;color:#4d5c69;white-space:nowrap}
+#ctxPop .g input,#ctxPop .g select{width:100%;min-width:0;height:25px;border:1px solid #b9c3cb;padding:0 5px;font:inherit;box-sizing:border-box;color:#22303a;background:#fff}
+#ctxPop .g input.r{text-align:right}
+#ctxPop .g .full{grid-column:2/5}
+#ctxPop .g .chk{grid-column:2/5;font-weight:400;text-align:left;display:flex;align-items:center;gap:5px}
+#ctxPop .note{font-size:11px;color:#6d7b88;margin-top:6px;line-height:1.45}
+#ctxPop .cf{display:flex;gap:6px;justify-content:flex-end;padding:8px 11px 10px;border-top:1px solid #e3e9ed;background:#f7f9fa}
+#ctxPop .cf .btn{height:27px;min-width:72px}
+#ctxPop .cf .btn.go{font-weight:700;color:#fff;border-color:#2a5d95;background:linear-gradient(#4a8ad0,#2f6fb0)}
+#ctxPop .cf .btn.go.k-order{border-color:#3f7a2c;background:linear-gradient(#5e9e46,#3f7a2c)}
+#ctxPop .cf .btn.go.k-in{border-color:#b8681a;background:linear-gradient(#e08a2b,#b8681a)}
+#ctxPop .cf .btn.go:disabled{opacity:.5}
+#ctxPop .info{display:grid;grid-template-columns:76px 1fr;gap:3px 8px}#ctxPop .info b{color:#4d5c69;text-align:right}
 td.route.s-in{background:#dbeaf8;color:#1a4f7a;font-weight:700}td.route.s-in .st{background:#2f6fb5;color:#fff}
 td.route.s-done{background:#e6e9ec;color:#7d8993}td.route.s-done .st{background:#8b98a3;color:#fff}
 .legend{font-size:11px;color:#5a6b7a;margin-left:8px;font-weight:400}.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin:0 3px 0 8px;vertical-align:-1px}
@@ -90,10 +114,10 @@ async function loadOrdered(job){
  if(!job||!(window.MESDB&&MESDB.online))return;
  try{
   const ex=await MESDB.table('order_lines')
-    .select(`select=line_id,part_no,vendor_name,machining_process_code,step_no,status&category=eq.${encodeURIComponent('외주가공')}&job_no=eq.${encodeURIComponent(job)}&order=line_id`);
+    .select(`select=line_id,part_no,vendor_name,machining_process_code,step_no,status,order_qty,receipt_qty,unit_price,quote_price,confirm_price,nego_rate,order_date,required_date,receipt_date,confirm_date,remark&category=eq.${encodeURIComponent('외주가공')}&job_no=eq.${encodeURIComponent(job)}&order=line_id`,{fresh:true});
   (ex||[]).forEach(e=>{const st=ST_DB[String(e.status||'')];if(!st)return;
    const k=e.step_no?okey(e.part_no,'#'+e.step_no):okey(e.part_no,e.machining_process_code);
-   ORDERED.set(k,{st,vendor:e.vendor_name||''})});   /* 같은 키가 여럿이면 최신 line_id 가 남는다 */
+   ORDERED.set(k,{st,vendor:e.vendor_name||'',line:e})});   /* 같은 키가 여럿이면 최신 line_id 가 남는다. v112: line 원본은 우클릭 팝업용 */
  }catch(e){}
 }
 const curVendor=()=>venView[venIdx]||'';
@@ -158,7 +182,7 @@ function renderRoutes(){
      else if(nx>=0&&i>nx){cls='s-ext'}
      const click=(cls==='s-next'||cls==='s-ext'||cls==='s-pick')?` onclick="pickCell(${ri},${i})"`:'';
      const t=`공정${i+1} ${c}`+(o.vendor?` · ${o.vendor}`:'')+(st?` · ${st}`:cls==='s-ext'?' · 클릭하면 다음 공정부터 여기까지 같은 업체에 발주':'');
-     return `<td class="route ${cls}" title="${_esc(t)}"${click}>${_esc(procName(c))}${lab?`<span class="st">${lab}</span>`:''}</td>`}).join('')+
+     return `<td class="route ${cls}" title="${_esc(t)} · 우클릭: 발주/입고/확정" oncontextmenu="return ctxMenu(event,${ri},${i})"${click}>${_esc(procName(c))}${lab?`<span class="st">${lab}</span>`:''}</td>`}).join('')+
    `</tr>`}).join('');
 }
 function renderReq(){reqBody.innerHTML=REQ.map((r,i)=>`<tr><td class="c">${i+1}</td><td class="c"><input type="checkbox" data-no="${r.no}"></td><td>${r.vendor}</td><td>${r.job}</td><td>${r.item}</td><td class="c">${r.proc}</td><td class="c">${r.procName}</td><td>${r.part}</td><td>${r.partName}</td><td class="c">${r.sn||""}${r.snOf?"/"+r.snOf:""}</td><td class="c">${r.mp}</td><td>${r.mpName}</td><td class="c"><input value="${r.qty??1}" style="width:52px;text-align:right;padding:1px 4px;border:1px solid #b7c2cb" onclick="event.stopPropagation()" onchange="setQty(${r.no},this.value)"></td><td class="c">${r.odate}</td><td class="c">${r.rdate}</td><td>${r.remark}</td><td class="c">${r.writer}</td></tr>`).join('');countText.textContent=`제번 ${jobView.length}건 / 요청 ${REQ.length}건`}
@@ -295,12 +319,216 @@ async function refreshAll(){
  }catch(e){msg('새로고침 실패: '+String(e.message||e).slice(0,110))}
  finally{if(b){b.disabled=false;b.textContent='⟳ 새로고침'}}
 }
+/* ════════════════════════════════════════════════════════════════
+ * v112: 공정 셀 우클릭 팝업 — 상태에 따라 발주 / 입고 / 입고확정을 즉시 처리
+ *   ''(다음 공정)  → 발주: 업체·수량·발주일·입고요구일·단가·금액 → DB 즉시 등록 (또는 요청 리스트에 추가)
+ *   요청           → 요청 리스트에 있음: 삭제 가능
+ *   출고           → 입고: 입고수량(잔량)·입고일 → fn_osp_receive RPC (기존 입고 화면과 동일 경로)
+ *   입고           → 입고확정: 확정일·확정가(네고) → order_lines upsert (입고확정 화면과 동일)
+ *   완료           → 내역 표시
+ * ════════════════════════════════════════════════════════════════ */
+const T0=()=>new Date().toISOString().slice(0,10);
+let CTX=null;
+function ctxClose(){document.getElementById('ctxMask').classList.remove('on');document.getElementById('ctxPop').classList.remove('on');CTX=null}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&CTX)ctxClose()});
+function ctxOpen(ev,title,kind,bodyHtml,footHtml){
+ const pop=document.getElementById('ctxPop');
+ document.getElementById('ctxTitle').textContent=title;
+ document.getElementById('ctxHead').className='ch '+(kind||'');
+ document.getElementById('ctxBody').innerHTML=bodyHtml;
+ document.getElementById('ctxFoot').innerHTML=footHtml||'<button class="btn" onclick="ctxClose()">닫기</button>';
+ document.getElementById('ctxMask').classList.add('on');pop.classList.add('on');
+ /* 마우스 위치 근처에 띄우되 화면 밖으로 나가지 않게 */
+ const W=pop.offsetWidth||400,H=pop.offsetHeight||260;
+ let x=ev.clientX+6,y=ev.clientY+6;
+ if(x+W>window.innerWidth-8)x=Math.max(8,window.innerWidth-W-8);
+ if(y+H>window.innerHeight-8)y=Math.max(8,window.innerHeight-H-8);
+ pop.style.left=x+'px';pop.style.top=y+'px';
+ const f=pop.querySelector('input:not([readonly]),select');if(f)setTimeout(()=>f.focus(),30);
+}
+const _v=id=>{const e=document.getElementById(id);return e?e.value:''};
+const _n=v=>Number(String(v??'').replace(/[^0-9.\-]/g,''))||0;
+const _won=v=>_n(v).toLocaleString('ko-KR');
+function ctxMenu(ev,ri,i){
+ ev.preventDefault();
+ const r=ROUTES[ri];if(!r)return false;
+ const c=stepCode((r.steps||[])[i]);if(!c)return false;
+ const o=stepInfo(r,i),st=o.st,nx=nextStep(r);
+ const j=jobView[jobIdx]||{};
+ CTX={ri,i,r,c,o,st,job:j};
+ const head=`<div class="sub"><b>${_esc(j.job||'')}</b> · ${_esc(r.part)} ${_esc(r.name||'')} · <b>공정${i+1}</b> ${_esc(procName(c))}${o.vendor?` · ${_esc(o.vendor)}`:''}</div>`;
+ if(st===''){
+  if(i===nx)return ctxOrder(ev,head);
+  if(nx===-2||i>nx)return ctxInfo(ev,'발주 대기',head+`<div class="note">직전 공정이 아직 입고되지 않아 이 공정은 발주할 수 없습니다.<br>공정 순서대로 입고 → 다음 공정 발주로 진행하세요.</div>`);
+  return ctxInfo(ev,'발주 불가',head+`<div class="note">발주 가능한 순서가 아닙니다.</div>`);
+ }
+ if(st==='요청')return ctxReq(ev,head);
+ if(st==='출고')return ctxReceive(ev,head);
+ if(st==='입고')return ctxConfirm(ev,head);
+ if(st==='완료')return ctxDone(ev,head);
+ return false;
+}
+function ctxInfo(ev,title,html){ctxOpen(ev,title,'',html);return false}
+
+/* ── 발주 ── */
+async function ctxOrder(ev,head){
+ const {r,i,c,job}=CTX;
+ const vopts=VENDORS.map(v=>`<option value="${_esc(v)}"${v===curVendor()?' selected':''}>${_esc(v)}</option>`).join('');
+ const today=T0(),rd=reqDate.value||new Date(Date.now()+12*864e5).toISOString().slice(0,10);
+ ctxOpen(ev,`공정${i+1} ${procName(c)} — 발주`,'k-order',head+`
+  <div class="g">
+   <label>협력업체</label><select id="cxVendor" class="full" onchange="ctxPrice()"><option value="">(업체 선택)</option>${vopts}</select>
+   <label>수량</label><input id="cxQty" class="r" value="1" inputmode="numeric" onchange="ctxAmt()">
+   <label>발주일</label><input id="cxOdate" type="date" value="${today}" onchange="ctxPrice()">
+   <label>입고요구일</label><input id="cxRdate" type="date" value="${rd}">
+   <label>단가</label><input id="cxPrice" class="r" value="0" inputmode="numeric" onchange="ctxAmt()">
+   <label>발주금액</label><input id="cxAmt" class="r" value="0" readonly>
+   <label>비고</label><input id="cxRemark" class="full" placeholder="선택">
+  </div>
+  <div class="note" id="cxNote">단가는 공정단가변동등록에서 업체·발주일 기준으로 자동 조회됩니다. 없으면 직접 입력하세요.</div>`,
+  `<button class="btn" onclick="ctxAddReq()" title="바로 등록하지 않고 아래 구매요청 리스트에 넣습니다">↓ 요청 리스트</button>
+   <button class="btn go k-order" id="cxGo" onclick="ctxOrderNow()">▣ 즉시 발주</button>
+   <button class="btn" onclick="ctxClose()">취소</button>`);
+ await ctxPrice();
+ return false;
+}
+async function ctxPrice(){
+ const {c}=CTX||{};if(!c)return;
+ const v=_v('cxVendor'),d=_v('cxOdate')||T0();
+ if(!v||!window.MESPRICE)return ctxAmt();
+ try{const hit=await MESPRICE.process(c,v,{asOf:d});
+  const p=document.getElementById('cxPrice');if(p&&hit&&hit.price)p.value=hit.price;
+  const n=document.getElementById('cxNote');if(n)n.textContent=hit&&hit.price?`단가 ${_won(hit.price)}원 (${v} · ${d} 기준 자동조회)`:'등록된 단가가 없습니다 — 직접 입력하면 발주금액에 반영됩니다.';
+ }catch(e){}
+ ctxAmt();
+}
+function ctxAmt(){const a=document.getElementById('cxAmt');if(a)a.value=_won(_n(_v('cxPrice'))*Math.max(1,_n(_v('cxQty'))))}
+function ctxRow(){
+ const {r,i,c,job}=CTX;
+ const n=(r.steps||[]).map(stepCode).filter(Boolean).length;
+ const qty=Math.max(1,Math.round(_n(_v('cxQty')))),price=_n(_v('cxPrice'));
+ return {no:REQ.length?Math.max(...REQ.map(x=>x.no))+1:1,vendor:_v('cxVendor'),job:job.job,item:job.item,
+  proc:(r.jo||job.proc||'1'),procName:joName(r.jo||job.proc||'1',job.setQty||1),part:r.part,partName:r.name,sn:i+1,snOf:n,
+  mp:c,mpName:procName(c),qty,odate:_v('cxOdate')||T0(),rdate:_v('cxRdate')||'',remark:_v('cxRemark')||'',writer:OWNER,price,amount:price*qty};
+}
+function ctxAddReq(){
+ const row=ctxRow();if(!row.vendor)return msg('협력업체를 선택하세요.');
+ if(REQ.some(x=>x.part===row.part&&x.sn===row.sn))return msg(`${row.part} 공정${row.sn} 은 이미 요청 리스트에 있습니다.`);
+ REQ.push(row);renderReq();renderRoutes();ctxClose();
+ msg(`${row.part} 공정${row.sn} ${row.mpName} → ${row.vendor} 요청 리스트에 추가 (${_won(row.amount)}원). [저장]으로 발주하세요.`);
+}
+async function ctxOrderNow(){
+ const row=ctxRow();if(!row.vendor)return msg('협력업체를 선택하세요.');
+ if(!_online())return msg('DB 미연결 - 즉시 발주는 사용할 수 없습니다. 요청 리스트로 넣어두세요.');
+ const b=document.getElementById('cxGo');if(b){b.disabled=true;b.textContent='등록 중…'}
+ try{
+  const bad=await dupCheck('외주가공',row.job,[row]);
+  if(bad.length){msg('발주할 수 없습니다: '+bad.join(', '));if(b){b.disabled=false;b.textContent='▣ 즉시 발주'}return}
+  await MESDB.newLines([{category:'외주가공',status:'발주',vendor_name:row.vendor,job_no:row.job,item_name:row.item||null,process_code:row.proc,process_name:row.procName,part_no:row.part,part_name:row.partName,machining_process_code:row.mp,machining_process_name:row.mpName||null,step_no:Number(row.sn)||null,order_qty:row.qty,unit_price:row.price||null,quote_price:row.amount||null,order_date:row.odate||null,required_date:row.rdate||null,owner_name:row.writer||null,remark:row.remark||null}]);
+  await ctxAfter(row.job,`${row.part} 공정${row.sn} ${row.mpName} → ${row.vendor} 발주 등록 (${_won(row.amount)}원, 입고요구 ${row.rdate||'-'}). 공정 리스트에 출고 표시.`);
+ }catch(e){msg('발주 실패: '+String(e.message||e).slice(0,120));if(b){b.disabled=false;b.textContent='▣ 즉시 발주'}}
+}
+
+/* ── 요청 리스트에 있는 공정 ── */
+function ctxReq(ev,head){
+ const {r,i}=CTX;const q=REQ.find(x=>x.part===r.part&&x.sn===i+1);
+ ctxOpen(ev,`공정${i+1} — 요청 리스트`,'',head+`<div class="info"><b>업체</b><span>${_esc(q?q.vendor:'')}</span><b>수량</b><span>${q?q.qty:''}</span><b>입고요구일</b><span>${_esc(q?q.rdate:'')}</span><b>발주금액</b><span>${q?_won(q.amount):''}원</span></div>
+  <div class="note">아래 구매요청 리스트에 담겨 있습니다. [저장]을 누르면 발주됩니다.</div>`,
+  `<button class="btn" onclick="ctxReqDel()">✕ 요청에서 삭제</button><button class="btn" onclick="ctxClose()">닫기</button>`);
+ return false;
+}
+function ctxReqDel(){const {r,i}=CTX;const k=REQ.findIndex(x=>x.part===r.part&&x.sn===i+1);if(k>=0)REQ.splice(k,1);renderReq();renderRoutes();ctxClose();msg(`${r.part} 공정${i+1} 요청을 삭제했습니다.`)}
+
+/* ── 입고 (fn_osp_receive) ── */
+async function ospRpc(fn,body){
+ const auth=(()=>{try{return window.parent.MES_AUTH||window.MES_AUTH||{}}catch(e){return window.MES_AUTH||{}}})();
+ const res=await fetch(MESDB.cfg.url+'/rest/v1/rpc/'+fn,{method:'POST',headers:{apikey:MESDB.cfg.key,Authorization:'Bearer '+(auth.token||MESDB.cfg.key),'Content-Type':'application/json'},body:JSON.stringify(body)});
+ const t=await res.text();if(!res.ok)throw new Error(t.slice(0,160));try{return JSON.parse(t)}catch(e){return null}
+}
+function ctxReceive(ev,head){
+ const {i,c,o}=CTX;const l=o.line||{};
+ const ord=_n(l.order_qty)||1,got=_n(l.receipt_qty),rem=Math.max(ord-got,0);
+ ctxOpen(ev,`공정${i+1} ${procName(c)} — 입고`,'k-in',head+`
+  <div class="info" style="margin-bottom:8px"><b>발주일</b><span>${_esc(String(l.order_date||'').slice(0,10))}</span><b>입고요구일</b><span>${_esc(String(l.required_date||'').slice(0,10))}</span><b>발주/기입고</b><span>${ord} / ${got} (잔량 ${rem})</span><b>발주금액</b><span>${_won(l.quote_price)}원</span></div>
+  <div class="g">
+   <label>입고수량</label><input id="cxInQty" class="r" value="${rem}" inputmode="numeric">
+   <label>입고일</label><input id="cxInDate" type="date" value="${T0()}">
+   <label></label><label class="chk"><input type="checkbox" id="cxShort" style="width:auto;height:auto"> 잔량은 입고하지 않음 (부족분 마감)</label>
+   <label>비고</label><input id="cxInRemark" class="full" placeholder="선택">
+  </div>`,
+  `<button class="btn go k-in" id="cxGo" onclick="ctxReceiveNow()">▣ 입고 처리</button><button class="btn" onclick="ctxClose()">취소</button>`);
+ return false;
+}
+async function ctxReceiveNow(){
+ const {r,i,c,o,job}=CTX;const l=o.line||{};
+ if(!l.line_id)return msg('발주 라인을 찾을 수 없습니다. [새로고침] 후 다시 시도하세요.');
+ if(!_online())return msg('DB 미연결 - 입고 처리를 할 수 없습니다.');
+ const ord=_n(l.order_qty)||1,got=_n(l.receipt_qty),rem=Math.max(ord-got,0),q=_n(_v('cxInQty'));
+ if(!(q>0))return msg('입고수량을 입력하세요.');
+ if(q>rem)return msg(`잔량 ${rem}을 초과했습니다.`);
+ const rest=Math.max(rem-q,0),short=document.getElementById('cxShort').checked&&rest>0?rest:0;
+ const b=document.getElementById('cxGo');if(b){b.disabled=true;b.textContent='처리 중…'}
+ try{
+  await ospRpc('fn_osp_receive',{p_line_id:Number(l.line_id),p_qty:q,p_date:_v('cxInDate')||T0(),p_short:short,p_source:'발주화면',p_remark:_v('cxInRemark')||null});
+  await ctxAfter(job.job,`${r.part} 공정${i+1} ${procName(c)} 입고 ${q}개${rest&&!short?` (잔량 ${rest} 대기)`:''} — 우클릭으로 입고확정하거나 다음 공정을 발주하세요.`);
+ }catch(e){msg('입고 실패: '+String(e.message||e).slice(0,120));if(b){b.disabled=false;b.textContent='▣ 입고 처리'}}
+}
+
+/* ── 입고확정 ── */
+function ctxConfirm(ev,head){
+ const {i,c,o}=CTX;const l=o.line||{};
+ const quote=_n(l.quote_price),fix=_n(l.confirm_price)||quote;
+ ctxOpen(ev,`공정${i+1} ${procName(c)} — 입고확정`,'k-cfm',head+`
+  <div class="info" style="margin-bottom:8px"><b>입고일</b><span>${_esc(String(l.receipt_date||'').slice(0,10))}</span><b>입고수량</b><span>${_n(l.receipt_qty)||_n(l.order_qty)||1}</span></div>
+  <div class="g">
+   <label>확정일</label><input id="cxCdate" type="date" value="${T0()}">
+   <label>견적가</label><input id="cxQuote" class="r" value="${_won(quote)}" readonly>
+   <label>네고율(%)</label><input id="cxRate" class="r" value="${quote?((1-fix/quote)*100).toFixed(1):'0'}" inputmode="decimal" onchange="ctxFixFromRate()">
+   <label>확정가</label><input id="cxFix" class="r" value="${_won(fix)}" inputmode="numeric" onchange="ctxRateFromFix()">
+  </div>
+  <div class="note">확정가는 제조원가(외주가공비)에 반영됩니다. 네고율을 입력하면 확정가가, 확정가를 고치면 네고율이 맞춰집니다.</div>`,
+  `<button class="btn go" id="cxGo" onclick="ctxConfirmNow()">▣ 입고확정</button><button class="btn" onclick="ctxClose()">취소</button>`);
+ return false;
+}
+function ctxFixFromRate(){const q=_n(_v('cxQuote')),rt=_n(_v('cxRate'));document.getElementById('cxFix').value=_won(Math.round(q*(1-rt/100)))}
+function ctxRateFromFix(){const q=_n(_v('cxQuote')),f=_n(_v('cxFix'));document.getElementById('cxRate').value=q?((1-f/q)*100).toFixed(1):'0'}
+async function ctxConfirmNow(){
+ const {r,i,c,o,job}=CTX;const l=o.line||{};
+ if(!l.line_id)return msg('발주 라인을 찾을 수 없습니다. [새로고침] 후 다시 시도하세요.');
+ if(!_online())return msg('DB 미연결 - 입고확정을 할 수 없습니다.');
+ const fix=_n(_v('cxFix')),quote=_n(l.quote_price);
+ const b=document.getElementById('cxGo');if(b){b.disabled=true;b.textContent='처리 중…'}
+ try{
+  await MESDB.table('order_lines').upsert([{line_id:Number(l.line_id),status:'입고확정',confirm_date:_v('cxCdate')||T0(),confirm_price:fix||null,nego_rate:quote?Number(((1-fix/quote)*100).toFixed(2)):null,updated_at:new Date().toISOString()}],'line_id');
+  await ctxAfter(job.job,`${r.part} 공정${i+1} ${procName(c)} 입고확정 (확정가 ${_won(fix)}원) — 제조원가에 반영됩니다.`);
+ }catch(e){msg('입고확정 실패: '+String(e.message||e).slice(0,120));if(b){b.disabled=false;b.textContent='▣ 입고확정'}}
+}
+
+/* ── 완료 내역 ── */
+function ctxDone(ev,head){
+ const {i,c,o}=CTX;const l=o.line||{};
+ ctxOpen(ev,`공정${i+1} ${procName(c)} — 완료`,'',head+`<div class="info"><b>업체</b><span>${_esc(l.vendor_name||o.vendor||'')}</span><b>발주일</b><span>${_esc(String(l.order_date||'').slice(0,10))}</span><b>입고일</b><span>${_esc(String(l.receipt_date||'').slice(0,10))}</span><b>확정일</b><span>${_esc(String(l.confirm_date||'').slice(0,10))}</span><b>견적가</b><span>${_won(l.quote_price)}원</span><b>확정가</b><span>${_won(l.confirm_price)}원</span></div>
+  <div class="note">입고취소가 필요하면 외주가공 입고확정 화면에서 처리하세요.</div>`);
+ return false;
+}
+
+/* 처리 후 공통: 캐시 비우고 → 알림 → 공정 리스트 재조회 */
+async function ctxAfter(job,text){
+ try{MESDB.dropCache&&MESDB.dropCache('order_lines')}catch(e){}
+ try{MESDB.notify&&MESDB.notify(['order_lines'])}catch(e){}
+ ctxClose();
+ await loadOrdered(job);renderRoutes();PICK.clear();
+ msg(text);
+ try{window.MESPOP&&MESPOP.ok(text,'처리 완료')}catch(e){}
+}
 window.MES={search,save,exportCsv,setMessage:msg,reload:refreshAll};
 /* 다른 화면에서 발주·입고가 저장되면 자동으로 다시 읽는다 */
 (function(){let t=null;const go=()=>{clearTimeout(t);t=setTimeout(refreshAll,500)};
  const bind=()=>{if(window.MESDB&&MESDB.onChange){MESDB.onChange(['order_lines','machining_plan_parts','partlist_materials'],go);return true}return false};
  if(!bind()){let n=0;const iv=setInterval(()=>{if(bind()||++n>40)clearInterval(iv)},100)}})();
 </script>
+<div id="ctxMask" onclick="ctxClose()"></div>
+<div id="ctxPop"><div class="ch" id="ctxHead"><span id="ctxTitle"></span><button class="x" onclick="ctxClose()">✕</button></div><div class="cb" id="ctxBody"></div><div class="cf" id="ctxFoot"></div></div>
 <script src="mes_sample.js?v=92"></script><script src="mes_scene.js?v=92"></script><script src="mes_demo.js?v=92"></script><script src="mes_db.js?v=92"></script>
 <script>
 /* v39: JOBS/ROUTES 는 page_state 스냅샷이 아니라 실데이터에서 매번 로드한다.
