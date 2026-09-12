@@ -56,7 +56,7 @@
         <span class="label">작업자</span><input id="worker" class="field" list="workerList" placeholder="사용자정보에서 선택" autocomplete="off"><datalist id="workerList"></datalist>
       </div>
       <div class="entrybtns">
-        <button class="btn sm primary" onclick="addResult()">실적 등록</button><button class="btn" onclick="sampleFill()" title="화면 순서대로 시연하며 등록요점을 설명합니다.">▶ 등록예제</button>
+        <button class="btn sm primary" onclick="addResult()">실적 등록</button>
         <button class="btn sm warn" onclick="delResult()">실적 삭제</button>
         <button class="btn sm" onclick="completeStep()">세부공정 완료</button>
         <button class="btn sm" onclick="completeAssembly()">조립 완료</button>
@@ -254,7 +254,7 @@ const renderWorkers=fillWorkers;
 fillWorkers();workDate.value=new Date().toISOString().slice(0,10);
 renderJobs();renderSteps();renderResults();window.MES={search,save:addResult,exportCsv,setMessage:msg,reload:loadJobs};loadJobs();loadProcs();
 </script>
-<script src="mes_sample.js?v=67"></script><script src="mes_scene.js?v=67"></script><script src="mes_demo.js?v=67"></script><script src="mes_db.js?v=67"></script>
+<script src="mes_db.js?v=67"></script>
 <script>/* v113: WORKERS 는 기준정보(사용자정보)에서 매번 새로 읽는다 — 스냅샷에 넣으면 옛 이름이 복원된다 */
 MESDB.bind("assembly_result_input",()=>({JOBS,STEPS}));</script>
 <script src="mes_ctx.js?v=67"></script>
@@ -286,12 +286,6 @@ async function loadWorkers(){
  /* 기준정보에서 사용자정보가 바뀌면 목록을 다시 읽는다 */
  try{MESDB.onChange&&MESDB.onChange(['users'],()=>loadWorkers())}catch(e){}
 })();
-</script>
-<script>
-function sampleFill(){
-  if(window.MESDEMO)return MESDEMO.run('assembly_result_input',{});
-  var e=document.getElementById('message'); if(e)e.textContent='예제 모듈을 불러오지 못했습니다.';
-}
 </script>
 </body>
 </html>
