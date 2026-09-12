@@ -197,11 +197,18 @@ function manual(){
 }
 
 /* ═══ 조회 ═══ */
+/* v113: mes_db.js 는 </body> 끝에서 로드되므로 시작 시점엔 window.MESDB 가 아직 없다.
+   그대로 online() 을 물으면 '미연결' 로 판정해 예시 데이터가 먼저 그려졌다 → 최대 3초 기다린다. */
+async function waitDB(){
+ for(let i=0;i<60&&!window.MESDB;i++)await new Promise(r=>setTimeout(r,50));
+ if(window.MESDB&&MESDB.ready){try{await MESDB.ready}catch(e){}}
+}
+
 async function search(key){
  ctx=key;
  const res=document.getElementById('res');
  res.innerHTML='<div class="empty">조회 중…</div>';
- if(!online()&&window.MESDB&&MESDB.ready){try{await MESDB.ready}catch(e){}}
+ await waitDB();
  if(!online()){
   setLive(false);
   lines=SAMPLE.filter(l=>match(l,key));
@@ -327,7 +334,7 @@ function renderRecent(){
 
 /* ═══ 시작 ═══ */
 (async function init(){
- if(window.MESDB&&MESDB.ready){try{await MESDB.ready}catch(e){}}
+ await waitDB();
  setLive(online());
  /* 딥링크: ?job=..&part=.. 또는 ?key=제번_공정_품번 */
  const p=new URLSearchParams(location.search);

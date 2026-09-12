@@ -262,8 +262,15 @@ const hereIdx=r=>{const i=STAGES.findIndex(s=>(r['st_'+s.k]||'wait')!=='done');r
 const isLate=r=>!!(r.s1_overdue||r.delivery_overdue);
 
 /* ═══ 조회 ═══ */
+/* v113: mes_db.js 는 </body> 끝에서 로드되므로 시작 시점엔 window.MESDB 가 아직 없다.
+   그대로 online() 을 물으면 '미연결' 로 판정해 예시 데이터가 먼저 그려졌다 → 최대 3초 기다린다. */
+async function waitDB(){
+ for(let i=0;i<60&&!window.MESDB;i++)await new Promise(r=>setTimeout(r,50));
+ if(window.MESDB&&MESDB.ready){try{await MESDB.ready}catch(e){}}
+}
+
 async function load(manual){
- if(!online()&&window.MESDB&&MESDB.ready){try{await MESDB.ready}catch(e){}}
+ await waitDB();
  if(!online()){setLive(false);if(!rows.length)rows=[...SAMPLE];booting=false;apply();return}
  try{
   const rs=await MESDB.table('job_progress_view').select('select=*&order=job_no'+(manual?'&':''),manual?{fresh:true}:undefined);

@@ -185,11 +185,17 @@ const online=()=>!!(window.MESDB&&MESDB.online);
 /* ═══ 조회 ═══
  * order_lines(발주된 외주가공) + machining_plan_parts(가공계획의 전체 부품·공정)를 합쳐
  * 아직 발주하지 않은 부품·공정도 '미발주'로 보여준다. */
+/* v113: mes_db.js 는 </body> 끝에서 로드되므로 시작 시점엔 window.MESDB 가 아직 없다.
+   그대로 online() 을 물으면 '미연결' 로 판정해 예시 데이터가 먼저 그려졌다 → 최대 3초 기다린다. */
+async function waitDB(){
+ for(let i=0;i<60&&!window.MESDB;i++)await new Promise(r=>setTimeout(r,50));
+ if(window.MESDB&&MESDB.ready){try{await MESDB.ready}catch(e){}}
+}
 let PLAN=[];
 const stepCode=x=>String((x&&typeof x==='object')?(x.process_code||x.code||''):(x??'')).trim();
 const PROCN={};
 async function load(manual){
- if(!online()&&window.MESDB&&MESDB.ready){try{await MESDB.ready}catch(e){}}
+ await waitDB();
  if(!online()){setLive(false);if(!lines.length)lines=[...SAMPLE];booting=false;build();apply();return}
  const o=manual?{fresh:true}:undefined;
  try{
