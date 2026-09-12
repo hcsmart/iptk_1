@@ -140,6 +140,7 @@ button,input,select{font:inherit;color:inherit}button{cursor:pointer}
  <button class="tbtn red" id="bLate" onclick="toggleLate()">⚠ 지연만</button>
  <button class="tbtn" id="bPlan" onclick="togglePlan()" title="가공계획에는 있으나 아직 발주하지 않은 공정이 남은 부품만 봅니다">⬚ 미발주만</button>
  <button class="tbtn" id="bOpen" onclick="toggleOpen()">진행중만</button>
+ <button class="tbtn" onclick="exportCsv()" title="현재 보이는 목록을 엑셀(CSV)로 내려받습니다">▤ EXCEL</button>
  <button class="tbtn" onclick="load(true)">⟳</button>
  <span class="live" id="live"><i></i><span id="liveTx">연결 확인중</span></span>
 </div>
@@ -295,6 +296,9 @@ function renderSum(){
  const tot=ls.reduce((a,l)=>a+amt(l),0);
  const done=ls.filter(l=>stOf(l.status)==='done').reduce((a,l)=>a+amt(l),0);
  const rate=tot?Math.round(done*1000/tot)/10:0;
+ /* 금액 집계 — 확정(완료) / 미입고(발주·출고) / 미발주(계획) */
+ const notin=ls.filter(l=>!l.plan&&stOf(l.status)==='out').reduce((a,l)=>a+amt(l),0);
+ const inamt=ls.filter(l=>!l.plan&&stOf(l.status)==='in').reduce((a,l)=>a+amt(l),0);
  document.getElementById('sum').innerHTML=
   `<span class="pill">부품 <b class="num">${parts.length}</b></span>`
   +`<span class="pill">공정 <b class="num">${ls.length}</b></span>`
@@ -304,7 +308,8 @@ function renderSum(){
   +`<span class="pill in">입고 <b class="num">${c('in')}</b></span>`
   +`<span class="pill done">완료 <b class="num">${c('done')}</b></span>`
   +`<span class="pill late">⚠ 지연 <b class="num">${late}</b></span>`
-  +`<span class="pill">금액진척 <span class="pb"><i style="width:${rate}%"></i></span><b class="num">${rate}%</b></span>`;
+  +`<span class="pill" title="발주금액 합계 ${tot.toLocaleString('ko-KR')}원 · 확정 ${done.toLocaleString('ko-KR')}원 · 입고(미확정) ${inamt.toLocaleString('ko-KR')}원 · 미입고 ${notin.toLocaleString('ko-KR')}원">금액진척 <span class="pb"><i style="width:${rate}%"></i></span><b class="num">${rate}%</b></span>`
+  +`<span class="pill" title="입고확정된 금액 / 전체 발주금액">확정금액 <b class="num">${done.toLocaleString('ko-KR')}</b> / ${tot.toLocaleString('ko-KR')}</span>`;
 }
 
 /* ═══ ① 부품 파이프라인 ═══ */
@@ -397,6 +402,24 @@ function kcard(x,isReady){
  </div>`;
 }
 
+/* v112: 가공구매 진척현황을 대체 — 현재 목록(필터 적용)을 CSV 로 내려받는다 */
+function exportCsv(){
+ const head=['제번','품번','부품명','공정(조)','공정순번','가공공정','협력업체','상태','납기','입고일','확정일','발주금액','확정금액'];
+ const out=[head];
+ for(const p of view){
+  p.steps.forEach((l,i)=>{
+   const st=l.plan?'미발주':isLate(l)?'지연':ST[stOf(l.status)].n;
+   const code=l.machining_process_code||l.process_code||'';
+   out.push([p.job,p.part,p.partName||'',p.proc||'',n0(l.step_no)||i+1,pName(code)||code,
+    l.plan?'':(l.vendor_name||''),st,
+    String(l.required_date||'').slice(0,10),String(l.receipt_date||'').slice(0,10),String(l.confirm_date||'').slice(0,10),
+    l.plan?'':n0(l.quote_price),l.plan?'':n0(l.confirm_price)]);
+  });
+ }
+ const csv='\ufeff'+out.map(a=>a.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n');
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+ a.download='outsourcing_pipeline.csv';a.click();URL.revokeObjectURL(a.href);
+}
 function render(){renderSum();if(curView==='pipe')renderPipe();else renderVendor()}
 
 /* ═══ 시작 · 자동갱신 ═══ */
@@ -408,7 +431,7 @@ function render(){renderSum();if(curView==='pipe')renderPipe();else renderVendor
  if(!bind()){let n=0;const iv=setInterval(()=>{if(bind()||++n>40)clearInterval(iv)},100)}
  setInterval(()=>{if(online())load()},300000);
 })();
-window.MES=Object.assign(window.MES||{},{search:()=>load(true),reload:()=>load(true)});
+window.MES=Object.assign(window.MES||{},{search:()=>load(true),reload:()=>load(true),exportCsv});
 </script>
 <script src="mes_db.js?v=111"></script>
 </body></html>
