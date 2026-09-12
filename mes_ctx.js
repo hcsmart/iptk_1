@@ -246,7 +246,12 @@ window.MESCTX={confirm:dlgConfirm};
  table.mes-freeze thead th:nth-child(-n+2){z-index:3}
  table.mes-freeze tfoot td:first-child{z-index:2}
  table.mes-freeze tbody tr:nth-child(odd):not(.sel):not(.selected):not(:hover) td:nth-child(-n+2){background:#f6f8fa!important}
- table.mes-freeze tbody tr:nth-child(even):not(.sel):not(.selected):not(:hover) td:nth-child(-n+2){background:#dfe8f1!important}`;
+ table.mes-freeze tbody tr:nth-child(even):not(.sel):not(.selected):not(:hover) td:nth-child(-n+2){background:#dfe8f1!important}
+ /* v112: 선택행(tr.sel td{color:#fff})의 흰 글자를 입력칸이 물려받아 흰 배경 위 흰 글자가 되던 문제 —
+    표 안의 입력칸은 행 선택·마우스오버와 무관하게 항상 진한 글자로 고정한다 */
+ table td input:not([type=checkbox]):not([type=radio]),table td select,table td textarea{
+  color:#22303a!important;background:#fff!important;-webkit-text-fill-color:#22303a}
+ table td input::placeholder{color:#a8b4bd!important;-webkit-text-fill-color:#a8b4bd}`;
  (document.head||document.documentElement).appendChild(st);
 
  const WRAP='.gridbox,.tablewrap,.pb,.entrybox,.grid,.list';
