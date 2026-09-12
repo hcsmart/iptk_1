@@ -121,7 +121,7 @@ const CHK=new Set();   /* v114: 일괄 합격 선택 (line_id) */
 function renderTgt(){
   tgtBody.innerHTML=view.map((l,i)=>{
     const j=judOf(l), cls=j==='합격'?'ok':j==='불합격'?'ng':'';
-    const can=j==='대기'&&!!CAT_MAP[l.category];
+    const can=!['합격','특채'].includes(j)&&!!CAT_MAP[l.category];   /* v114: 합격·특채로 끝난 건만 제외 */
     return `<tr class="${i===sel?'sel':''}" onclick="pick(${i})">
       <td class="c"><input type="checkbox" ${can?'':'disabled'} ${CHK.has(l.line_id)?'checked':''} onclick="event.stopPropagation();toggleChk(${l.line_id},this.checked)"></td>
       <td class="c">${i+1}</td><td class="c">${esc(l.category)}</td><td>${esc(l.job_no)}</td>
@@ -131,14 +131,14 @@ function renderTgt(){
   }).join('');
   countText.textContent=`검사대상 ${view.length}건 / 검사이력 ${RESULTS.length}건${CHK.size?` / 선택 ${CHK.size}건`:''}`;
   const ca=document.getElementById('chkAll');
-  if(ca){const cand=view.filter(l=>judOf(l)==='대기'&&!!CAT_MAP[l.category]);ca.checked=cand.length>0&&cand.every(l=>CHK.has(l.line_id))}
+  if(ca){const cand=view.filter(l=>!['합격','특채'].includes(judOf(l))&&!!CAT_MAP[l.category]);ca.checked=cand.length>0&&cand.every(l=>CHK.has(l.line_id))}
 }
 /* ── v114: 일괄 합격/입고확정 — 체크한 대기 건을 전 항목 OK 로 합격 처리한다 ── */
 function toggleChk(id,on){on?CHK.add(id):CHK.delete(id);renderTgt()}
-function toggleAll(on){CHK.clear();if(on)view.forEach(l=>{if(judOf(l)==='대기'&&CAT_MAP[l.category])CHK.add(l.line_id)});renderTgt()}
+function toggleAll(on){CHK.clear();if(on)view.forEach(l=>{if(!['합격','특채'].includes(judOf(l))&&CAT_MAP[l.category])CHK.add(l.line_id)});renderTgt()}
 async function bulkPass(){
-  const rows=view.map((l,i)=>({l,i})).filter(x=>CHK.has(x.l.line_id)&&judOf(x.l)==='대기'&&CAT_MAP[x.l.category]);
-  if(!rows.length)return msg('일괄 합격할 건을 체크하세요. (판정 대기 건만 가능)');
+  const rows=view.map((l,i)=>({l,i})).filter(x=>CHK.has(x.l.line_id)&&!['합격','특채'].includes(judOf(x.l))&&CAT_MAP[x.l.category]);
+  if(!rows.length)return msg('일괄 합격할 건을 체크하세요.');
   if(!window.MESDB||!MESDB.online)return msg('DB 미연결 상태에서는 일괄 처리를 할 수 없습니다.');
   const insp=fInsp.value||fInsp.options[0]?.value||'';
   if(INSP_LIMITED&&insp&&!QINSP.some(x=>x.employee_name===insp))
@@ -153,8 +153,8 @@ async function bulkPass(){
       const i=view.indexOf(l);if(i<0)continue;
       pick(i);
       fDate.value=date;if(insp)fInsp.value=insp;
-      sheet.forEach(s=>{if(s.result==='대기')s.result='OK'});
-      fJud.value='합격';fDefect.value=0;
+      sheet.forEach(s=>{s.result='OK'});          /* 체크한 건은 체크시트 전 항목 자동 OK */
+      fJud.value='합격';fDefect.value=0;fRemark.value=fRemark.value||'일괄 합격';
       const r=await saveInspection(true);
       if(r)ok++;else fail.push(`${l.job_no} ${l.part_no||''}: ${message.textContent.slice(0,60)}`);
     }catch(e){fail.push(`${l.job_no} ${l.part_no||''}: ${String(e.message||e).slice(0,60)}`)}
@@ -295,9 +295,10 @@ async function saveInspection(quiet){
 
 async function passLine(){
   if(sel<0)return msg('검사할 건을 선택하세요.');
-  if(sheet.length && sheet.some(s=>s.result==='대기'))
-    if(!confirm('판정하지 않은 검사항목이 있습니다. 전 항목을 OK로 처리하고 합격시키겠습니까?'))return;
-  sheet.forEach(s=>{if(s.result==='대기')s.result='OK'});
+  /* v114: 미판정 항목은 자동 OK — 확인창 없이 바로 합격 처리 (NG 로 판정한 항목이 있으면 막는다) */
+  const ngs=sheet.filter(s=>s.result==='NG');
+  if(ngs.length)return msg(`NG 판정 항목이 ${ngs.length}건 있습니다 (${ngs.map(s=>s.name).join(', ')}). 합격시키려면 결과를 OK 로 바꾸거나 [불합격/반품]으로 처리하세요.`);
+  sheet.forEach(s=>{if(s.result==='대기'||s.result==='N/A')s.result='OK'});
   fJud.value='합격'; fDefect.value=0; renderSheet();
   const jobP=view[sel].job_no;
   if(!await saveInspection(true))return;
