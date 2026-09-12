@@ -208,6 +208,7 @@ async function jobDates(job){
 }
 /* 카드 1장 렌더 */
 async function showCard(c){
+ await loadProcNames();   /* v112: 머리표 공정명 표기용 */
  const jd=await jobDates(c.job_no);
  c.design_date=c.design_date||jd.design;c.assembly_date=c.assembly_date||jd.assembly;c.machining_date=c.machining_date||jd.machining;
  setTxt('cardKey',c.card_key||'(발행 시 부여)');
@@ -215,7 +216,7 @@ async function showCard(c){
  setTxt('issueDate',MD(c.issue_date));
  setTxt('dOrder',MD(c.order_date));setTxt('dDesign',MD(c.design_date));
  setTxt('dMach',MD(c.machining_date));setTxt('dAsm',MD(c.assembly_date));setTxt('dS1',MD(c.s1_date));
- setTxt('mJob',c.job_no);setTxt('mProc',c.process_code||'');setTxt('mPart',c.part_no||'');
+ setTxt('mJob',c.job_no);setTxt('mProc',procLabel(c.process_code,c.process_name));setTxt('mPart',c.part_no||'');
  setTxt('mMat',c.material_code||'');setTxt('mQty',c.quantity??'');
  setTxt('mProd',c.product_name||'');setTxt('mPartName',c.part_name||'');
  CARD=c;
@@ -224,6 +225,19 @@ async function showCard(c){
  await buildInspect(c);
  goPage(1);
 }
+/* v112: 공정코드 → 공정명 사전 (카드 머리표·작업공정 그리드에서 코드 대신 공정명을 쓴다) */
+const PROCN={};let PROCN_LOADED=false;
+async function loadProcNames(){
+ if(PROCN_LOADED)return PROCN;
+ try{(await MESDB.table('processes').select('select=process_code,process_name'))
+   .forEach(p=>{PROCN[String(p.process_code).trim().toUpperCase()]=p.process_name||''})}catch(e){}
+ PROCN_LOADED=true;return PROCN;
+}
+/* 공정명이 없으면 코드를 그대로 쓴다 — 빈칸으로 두지 않는다 */
+const procLabel=(code,fallbackName)=>{
+ const c=String(code||'').trim();
+ return (fallbackName&&String(fallbackName).trim())||PROCN[c.toUpperCase()]||c;
+};
 /* 공정 계획 행: ① 작업지시(work_order_details) ② 없으면 외주가공 발주(order_lines) */
 let CARD=null, CARD_PLAN=[];
 const hesc=s=>String(s??'').replace(/[&<>"]/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[x]));
@@ -235,8 +249,7 @@ async function buildPlan(c){
   *  ④ 가공표준공정 machining_standard_routes 첫 번째 / standard_processes 첫 번째
   *  ②~④ 로 만든 행은 작업지시가 없으므로 wo 가 null 이며, 진행기록은 카드에 저장된다. */
  let rows=[], src='';
- const PN={};
- try{(await MESDB.table('processes').select('select=process_code,process_name')).forEach(p=>PN[String(p.process_code).toUpperCase()]=p.process_name||'')}catch(e){}
+ const PN=await loadProcNames();   /* v112: 공용 사전 재사용 */
  const nameOf=code=>PN[String(code||'').trim().toUpperCase()]||'';
  const codeOf=st=>typeof st==='object'&&st?(st.process_code||st.code||''):String(st||'');
  try{
@@ -348,13 +361,13 @@ function fillPage2(c){
  setTxt('p2Order',MD(c.order_date));setTxt('p2Design',MD(c.design_date));
  setTxt('p2Mach',MD(c.machining_date));setTxt('p2Asm',MD(c.assembly_date));setTxt('p2S1',MD(c.s1_date));
  
- setTxt('p2Job',c.job_no||'');setTxt('p2Proc',c.process_code||'');setTxt('p2Part',c.part_no||'');
+ setTxt('p2Job',c.job_no||'');setTxt('p2Proc',procLabel(c.process_code,c.process_name));setTxt('p2Part',c.part_no||'');
  setTxt('p2Mat',c.material_code||'');setTxt('p2Qty',c.quantity??'');
  setTxt('p2Prod',c.product_name||'');setTxt('p2PartName',c.part_name||'');
  /* 작업공정 그리드: 공정계획(CARD_PLAN) 앞 8개 */
  const g=CARD_PLAN.slice(0,8), cell=f=>Array.from({length:8},(_,i)=>`<div>${hesc(g[i]?f(g[i]):'')}</div>`).join('');
  document.getElementById('workGrid').innerHTML=
-  `<div class="side">작업공정</div><div class="lbl">공정</div>${cell(r=>r.code)}
+  `<div class="side">작업공정</div><div class="lbl">공정</div>${cell(r=>r.name||r.code)}
    <div class="lbl">작업자(업체)</div>${cell(r=>r.place)}
    <div class="lbl">접수일</div>${cell(r=>r.recv)}
    <div class="lbl">완료일</div>${cell(r=>r.done)}`;
