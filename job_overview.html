@@ -251,7 +251,8 @@ const SAMPLE=[
 ];
 
 /* ═══ 상태 ═══ */
-let rows=[...SAMPLE],view=[],curView='dash',onlyOpen=true,curJob=null;
+/* v113: 시작 시 SAMPLE 을 그리면 실데이터 전환 전 '하드코딩 화면'이 잠깐 보인다 */
+let rows=[],view=[],curView='dash',onlyOpen=true,curJob=null,booting=true;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const n0=v=>Number(v||0);
 const won=v=>n0(v)?n0(v).toLocaleString('ko-KR')+'원':'-';
@@ -263,12 +264,12 @@ const isLate=r=>!!(r.s1_overdue||r.delivery_overdue);
 /* ═══ 조회 ═══ */
 async function load(manual){
  if(!online()&&window.MESDB&&MESDB.ready){try{await MESDB.ready}catch(e){}}
- if(!online()){setLive(false);apply();return}
+ if(!online()){setLive(false);if(!rows.length)rows=[...SAMPLE];booting=false;apply();return}
  try{
   const rs=await MESDB.table('job_progress_view').select('select=*&order=job_no'+(manual?'&':''),manual?{fresh:true}:undefined);
-  rows=rs||[];setLive(true);apply();
+  rows=rs||[];booting=false;setLive(true);apply();
   if(curJob){const r=rows.find(x=>x.job_no===curJob);if(r)fillDetail(r)}
- }catch(e){setLive(false)}
+ }catch(e){setLive(false);if(!rows.length)rows=[...SAMPLE];booting=false;apply()}
 }
 function setLive(on){
  const el=document.getElementById('live');
@@ -402,6 +403,14 @@ function renderList(){
 }
 
 function render(){
+ if(booting){
+  document.getElementById('kpis').innerHTML='<div class="kpi"><small>조회</small><b>…</b><span>불러오는 중</span></div>';
+  document.getElementById('hotList').innerHTML='<div class="mini-empty">불러오는 중…</div>';
+  document.getElementById('ownBar').innerHTML='';document.getElementById('stgBar').innerHTML='';
+  document.getElementById('kb').innerHTML='<div class="empty">불러오는 중…</div>';
+  document.getElementById('lst').innerHTML='<div class="empty">불러오는 중…</div>';
+  return;
+ }
  if(curView==='dash')renderDash();
  else if(curView==='board')renderBoard();
  else renderList();
@@ -485,7 +494,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDetail()});
  setView(curView);
  apply();
  const p=new URLSearchParams(location.search).get('job')||(h[1]?decodeURIComponent(h[1]):'');
- setTimeout(()=>{load().then?load().then(()=>{if(p)openDetail(p)}):0},250);
+ load().then(()=>{if(p)openDetail(p)}).catch(()=>{});
  if(p)setTimeout(()=>openDetail(p),900);
  /* 다른 화면 저장 → 자동 갱신 (조회 버튼 불필요) */
  let t=null;const go=()=>{clearTimeout(t);t=setTimeout(()=>load(true),400)};

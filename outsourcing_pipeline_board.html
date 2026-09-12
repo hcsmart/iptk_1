@@ -173,7 +173,9 @@ const SAMPLE=[
  {line_id:11,job_no:'IP26-043',part_no:'P-1043-02',process_code:'MC',step_no:2,machining_process_code:'연마',vendor_name:'서진연마',status:'입고확정',quote_price:190000,confirm_date:'2026-09-06',required_date:'2026-09-05'}
 ];
 
-let lines=[...SAMPLE],parts=[],view=[],curView='pipe',fLate=false,fPlan=false,onlyOpen=true,open=new Set();
+/* v113: 시작 시 SAMPLE 을 바로 그리면 실데이터로 바뀌기 전 '하드코딩 화면'이 잠깐 보인다.
+   DB 연결이 확인될 때까지 비워 두고, 오프라인일 때만 SAMPLE 로 대체한다. */
+let lines=[],parts=[],view=[],curView='pipe',fLate=false,fPlan=false,onlyOpen=true,open=new Set(),booting=true;
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const n0=v=>Number(v||0);
 const won=v=>n0(v).toLocaleString('ko-KR');
@@ -188,20 +190,20 @@ const stepCode=x=>String((x&&typeof x==='object')?(x.process_code||x.code||''):(
 const PROCN={};
 async function load(manual){
  if(!online()&&window.MESDB&&MESDB.ready){try{await MESDB.ready}catch(e){}}
- if(!online()){setLive(false);build();apply();return}
+ if(!online()){setLive(false);if(!lines.length)lines=[...SAMPLE];booting=false;build();apply();return}
  const o=manual?{fresh:true}:undefined;
  try{
   const [rs,pl]=await Promise.all([
    MESDB.table('order_lines').select('select=*&category=eq.외주가공&order=job_no,part_no,step_no,line_id',o),
    MESDB.table('machining_plan_parts').select('select=job_no,part_no,part_name,process_code,steps,row_no&order=job_no,row_no',o).catch(()=>[])
   ]);
-  lines=rs||[];PLAN=pl||[];
+  lines=rs||[];PLAN=pl||[];booting=false;
   if(!Object.keys(PROCN).length){
    try{(await MESDB.table('processes').select('select=process_code,process_name'))
      .forEach(p=>{const c=String(p.process_code||'').trim();if(c)PROCN[c.toUpperCase()]=p.process_name||''})}catch(e){}
   }
   setLive(true);build();apply();
- }catch(e){setLive(false)}
+ }catch(e){setLive(false);if(!lines.length)lines=[...SAMPLE];booting=false;build();apply()}
 }
 const pName=c=>PROCN[String(c||'').trim().toUpperCase()]||String(c||'');
 function setLive(on){
@@ -288,6 +290,7 @@ function setView(v){
 
 /* ═══ 요약 스트립 ═══ */
 function renderSum(){
+ if(booting){document.getElementById('sum').innerHTML='<span class="pill">불러오는 중…</span>';return}
  const ls=parts.flatMap(p=>p.steps);
  const c=k=>ls.filter(l=>!l.plan&&stOf(l.status)===k).length;
  const planN=ls.filter(l=>l.plan).length;
@@ -331,6 +334,7 @@ function stepBox(l,i,p){
  </div></div>`;
 }
 function renderPipe(){
+ if(booting){vPipe.innerHTML='<div class="empty">불러오는 중…</div>';return}
  if(!view.length){vPipe.innerHTML='<div class="empty">표시할 외주가공 발주가 없습니다.</div>';return}
  const byJob=new Map();
  for(const p of view){if(!byJob.has(p.job))byJob.set(p.job,[]);byJob.get(p.job).push(p)}
@@ -373,6 +377,7 @@ function toggle(k){open.has(k)?open.delete(k):open.add(k);render()}
 
 /* ═══ ② 업체 보드 ═══ */
 function renderVendor(){
+ if(booting){document.getElementById('kb').innerHTML='<div class="empty">불러오는 중…</div>';return}
  const ls=view.flatMap(p=>p.steps.map(l=>({l,p})));
  const act=ls.filter(x=>{const st=stOf(x.l.status);return st==='out'||st==='in'});
  const g=new Map();
@@ -424,8 +429,8 @@ function render(){renderSum();if(curView==='pipe')renderPipe();else renderVendor
 
 /* ═══ 시작 · 자동갱신 ═══ */
 (function init(){
- build();apply();
- setTimeout(load,250);
+ build();apply();          /* booting=true 이므로 '불러오는 중' 만 그린다 */
+ load();
  let t=null;const go=()=>{clearTimeout(t);t=setTimeout(()=>load(true),400)};
  const bind=()=>{if(window.MESDB&&MESDB.onChange){MESDB.onChange(['order_lines'],go);return true}return false};
  if(!bind()){let n=0;const iv=setInterval(()=>{if(bind()||++n>40)clearInterval(iv)},100)}
