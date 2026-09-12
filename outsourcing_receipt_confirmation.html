@@ -44,7 +44,7 @@ tfoot th{position:sticky;bottom:0;background:linear-gradient(#e6eef5,#d3e0ea)}
     <span class="label">입고확정일</span><input id="confirmDate" class="dateinput" type="date"><button class="btn confirm" onclick="confirmSelected()">▣ 입고확정</button>
     <div class="spacer"></div><span id="selectedText">선택 0건</span>
   </div>
-  <footer class="foot"><button class="btn" onclick="search()">⌕ 검색</button><button class="btn" onclick="save()">▣ 저장</button><button class="btn" onclick="sampleFill()" title="화면 순서대로 시연하며 등록요점을 설명합니다.">▶ 등록예제</button><button class="btn warn" onclick="cancelConfirm()">✖ 입고취소</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">입고 확정 대기 자료를 조회했습니다.</span><span class="right" id="countText"></span></footer>
+  <footer class="foot"><button class="btn" onclick="search()">⌕ 검색</button><button class="btn" onclick="save()">▣ 저장</button><button class="btn warn" onclick="cancelConfirm()">✖ 입고취소</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">입고 확정 대기 자료를 조회했습니다.</span><span class="right" id="countText"></span></footer>
 </div>
 <script>
 const rows=[];

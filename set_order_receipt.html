@@ -53,7 +53,7 @@ input.cell{width:100%;height:20px;border:1px solid #cbd4dc;padding:0 3px;text-al
       <thead><tr><th>No</th><th></th><th>제번</th><th>조수</th><th>협력업체</th><th>입고일</th><th>진척</th><th>입고금액</th><th>검수자</th><th>비고</th></tr></thead>
       <tbody id="rcpBody"></tbody></table></div></div>
   </section>
-  <footer class="foot"><button class="btn" onclick="search()">⌕ 검색</button><button class="btn confirm" onclick="receive()">▣ 입고처리</button><button class="btn" onclick="sampleFill()" title="화면 순서대로 시연하며 등록요점을 설명합니다.">▶ 등록예제</button><button class="btn" onclick="cancelReceipt()">↶ 입고취소</button><button class="btn" onclick="cancelOrder()">✕ 발주취소</button><button class="btn" onclick="exportCsv()">▤ EXCEL</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">입고할 발주를 선택한 뒤 입고일·진척률을 입력하고 입고처리 하세요.</span><span class="right" id="countText"></span></footer>
+  <footer class="foot"><button class="btn" onclick="search()">⌕ 검색</button><button class="btn confirm" onclick="receive()">▣ 입고처리</button><button class="btn" onclick="cancelReceipt()">↶ 입고취소</button><button class="btn" onclick="cancelOrder()">✕ 발주취소</button><button class="btn" onclick="exportCsv()">▤ EXCEL</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">입고할 발주를 선택한 뒤 입고일·진척률을 입력하고 입고처리 하세요.</span><span class="right" id="countText"></span></footer>
 </div>
 <script>
 /* v77: 조립외주입고 — 설계외주입고와 같은 진척률·입고이력 방식으로 재작성.

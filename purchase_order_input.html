@@ -63,7 +63,7 @@ input.cell,tr.sel input.cell,tr:hover input.cell{color:#22303a;background:#fff;-
     <tbody id="reqBody"></tbody>
     <tfoot><tr><th colspan="9" class="r">합 계</th><th class="r" id="sumQty">0</th><th class="r" id="sumOrd">0</th><th colspan="5"></th><th class="r" id="sumBuy">0</th><th class="r" id="sumAmt">0</th></tr></tfoot>
   </table></div></div>
-  <footer class="foot"><button class="btn" onclick="search()">⌕ 검색</button><button class="btn" onclick="save()">▣ 저장</button><button class="btn" onclick="sampleFill()" title="화면 순서대로 시연하며 등록요점을 설명합니다.">▶ 등록예제</button><button class="btn primary" onclick="printOrder()">⎙ PRINT</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">제번과 협력업체를 선택하고 자재표에서 발주할 품번을 내려주세요.</span><span class="right" id="countText"></span></footer>
+  <footer class="foot"><button class="btn" onclick="search()">⌕ 검색</button><button class="btn" onclick="save()">▣ 저장</button><button class="btn primary" onclick="printOrder()">⎙ PRINT</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">제번과 협력업체를 선택하고 자재표에서 발주할 품번을 내려주세요.</span><span class="right" id="countText"></span></footer>
 </div>
 <div class="modal" id="preview"><div class="sheet"><div class="sheet-head"><span>미리 보기</span><button class="btn" style="margin-left:auto;height:22px;min-width:56px" onclick="window.print()">⎙ 인쇄</button><button class="x" style="margin-left:6px" onclick="preview.classList.remove('on')">×</button></div><div class="doc" id="docArea"></div></div></div>
 <script>

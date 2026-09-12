@@ -18,7 +18,7 @@ button,input,select,textarea{font:inherit;color:inherit}.screen{height:100%;disp
 <div class="title"><h1>아이템 관리 <small>아이템 분류 코드를 관리합니다.</small></h1></div>
 <div class="content"><section class="form"><div class="formrow"><div class="label">아이템코드</div><input id="code" class="field"><div class="label">아이템명</div><input id="name" class="field"><div class="label">비고</div><input id="remark" class="field"></div></section>
 <div class="gridbox compact"><table><thead><tr><th style="width:46px">No</th><th style="width:150px">아이템코드</th><th style="width:300px">아이템명</th><th>비고</th></tr></thead><tbody id="body"></tbody></table></div></div>
-<footer class="foot"><button class="btn" onclick="save()">▣ 저장</button><button class="btn" onclick="add()">＋ 신규</button><button class="btn" onclick="sampleFill()" title="예시값을 순서대로 채우며 등록요점을 설명합니다.">◈ 등록예제</button><button class="btn" onclick="window.remove()">✖ 삭제</button><button class="btn" onclick="exportCsv()">▤ EXCEL</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">데이터를 조회했습니다.</span><span class="right" id="countText"></span></footer>
+<footer class="foot"><button class="btn" onclick="save()">▣ 저장</button><button class="btn" onclick="add()">＋ 신규</button><button class="btn" onclick="window.remove()">✖ 삭제</button><button class="btn" onclick="exportCsv()">▤ EXCEL</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">데이터를 조회했습니다.</span><span class="right" id="countText"></span></footer>
 </div>
 <script>
 const data=[];

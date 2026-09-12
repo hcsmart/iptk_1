@@ -29,7 +29,7 @@ table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th
 <div class="toolbar"><button class="btn" onclick="save()">▣ 저장</button><button class="btn" onclick="newRow()">＋ 신규</button><button class="btn" onclick="window.remove()">✖ 삭제</button></div>
 <div class="searchline"><input id="query" placeholder="검색어를 입력하세요."><button class="btn" onclick="search()">찾기</button><button class="btn" onclick="clearSearch()">지우기</button></div>
 <div class="gridbox"><table><thead><tr><th>등록일</th><th>가공공정그룹</th><th>가공공정코드</th><th>가공공정명</th><th>협력업체코드</th><th>협력업체명</th><th>단가</th><th>담당자</th></tr></thead><tbody id="body"></tbody></table></div>
-<footer class="foot"><button class="btn" onclick="save()">▣ 저장</button><button class="btn" onclick="newRow()">＋ 신규</button><button class="btn" onclick="sampleFill()" title="예시값을 순서대로 채우며 등록요점을 설명합니다.">▶ 등록예제</button><button class="btn" onclick="window.remove()">✖ 삭제</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">공정단가 데이터를 조회했습니다.</span><span class="right" id="countText"></span></footer>
+<footer class="foot"><button class="btn" onclick="save()">▣ 저장</button><button class="btn" onclick="newRow()">＋ 신규</button><button class="btn" onclick="window.remove()">✖ 삭제</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">공정단가 데이터를 조회했습니다.</span><span class="right" id="countText"></span></footer>
 </div><script>
 /* v46: 작성자/담당자 기본값 = 로그인 사용자 (회사명 하드코딩 제거) */
 const OWNER=(function(){try{return (window.MES_AUTH||window.parent.MES_AUTH)?.name||'담당자'}catch(e){return '담당자'}})();
