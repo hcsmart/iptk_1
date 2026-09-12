@@ -246,7 +246,7 @@ function card(l,i,ls){
  const late=st!=='done'&&l.required_date&&String(l.required_date).slice(0,10)<today();
  const ord=n0(l.order_qty)||1,got=n0(l.receipt_qty),rem=Math.max(ord-got,0);
  const prev=i===0?'done':stOf(ls[i-1].status);
- const canOrderNext=st==='req'&&prev==='done';   /* v112: 직전 공정 입고확정 후에만 */
+ const canOrderNext=st==='req'&&(prev==='done'||prev==='in');   /* v112: 현품 입고되면 다음 공정 발주 가능 */
  let action='';
  if(st==='out'){
   action=`<div class="qtyrow"><label>입고수량</label>
@@ -258,7 +258,7 @@ function card(l,i,ls){
  }else if(st==='done'){
   action=`<div class="doneline">✔ 입고확정 완료 <small style="color:var(--ink3);font-weight:500">${esc(String(l.confirm_date||'').slice(0,10))}</small></div>`;
  }else{
-  action=`<div class="blockline">${canOrderNext?'⚑ 직전 공정 입고확정 완료 — PC 발주 화면에서 발주할 수 있습니다.':'⏳ 직전 공정 입고확정 대기 — 순차 발주 규칙에 따라 대기'}</div>`;
+  action=`<div class="blockline">${canOrderNext?'⚑ 직전 공정 입고 완료 — PC 발주 화면에서 발주할 수 있습니다.':'⏳ 직전 공정 입고 대기 — 순차 발주 규칙에 따라 대기'}</div>`;
  }
  return `<div class="lcard${late?' late':''}" id="lc_${l.line_id}">
   <div class="l1"><span class="stepn">공정${n0(l.step_no)||i+1}</span><b>${esc(l.machining_process_code||l.process_code||'-')}</b>

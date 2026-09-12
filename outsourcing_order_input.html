@@ -133,8 +133,8 @@ function stepInfo(r,i){
  return q?{st:'요청',vendor:q.vendor}:{st:'',vendor:''};
 }
 const stepState=(r,i)=>stepInfo(r,i).st;
-/* v112: 다음 공정은 '직전 공정 입고확정(완료)' 이후에만 발주할 수 있다 (종전엔 입고만 되어도 허용) */
-const RECV=st=>st==='완료';
+/* v112: 현품이 들어오면(입고) 다음 공정을 발주할 수 있다. 입고확정(전표)은 뒤늦게 처리될 수 있으므로 진행을 막지 않는다. */
+const RECV=st=>st==='입고'||st==='완료';
 /* 다음 발주 가능 공정 index (없으면 -1). 직전 공정이 출고/요청이면 대기(-2) */
 function nextStep(r){
  const n=(r.steps||[]).map(stepCode).filter(Boolean).length;
@@ -169,8 +169,11 @@ function renderRoutes(){
   const allDone=n>0&&nx===-1&&codes.every((c,i)=>RECV(stepState(r,i)));
   const wait=nx===-2;
   const dis=n===0||nx<0;
-  const tag=n===0?'':allDone?'<span class="tagd">전공정 완료</span>':wait?(()=>{const k=codes.findIndex((c,i)=>stepState(r,i)==='');const ps=stepState(r,k-1);return `<span class="tagd">공정${k} ${ps}${ps==='입고'?' → 확정대기':' 대기'}</span>`})():nx>0?`<span class="tagd">${nx}/${n} 진행</span>`:'';
-  const tip=allDone?'모든 가공공정이 입고확정되었습니다':wait?'직전 공정이 아직 입고확정되지 않아 다음 공정을 발주할 수 없습니다 (우클릭 → 입고/입고확정)':'';
+  /* v112: 입고는 됐지만 입고확정(전표)이 안 끝난 공정 수 — 진행은 막지 않고 표시만 한다 */
+  const unfix=codes.filter((c,i)=>stepState(r,i)==='입고').length;
+  const fixTag=unfix?`<span class="tagd" style="background:#dbeaf8;color:#1a4f7a" title="현품은 입고됐지만 입고확정(전표)이 남아 있습니다. 셀을 우클릭해 확정하세요.">확정대기 ${unfix}</span>`:'';
+  const tag=(n===0?'':allDone?'<span class="tagd">전공정 완료</span>':wait?`<span class="tagd">공정${codes.findIndex((c,i)=>stepState(r,i)==='')} ${stepState(r,codes.findIndex((c,i)=>stepState(r,i)==='')-1)} 대기</span>`:nx>0?`<span class="tagd">${nx}/${n} 진행</span>`:'')+fixTag;
+  const tip=allDone?'모든 가공공정이 입고되었습니다':wait?'직전 공정이 아직 입고되지 않아 다음 공정을 발주할 수 없습니다 (직전 공정 셀 우클릭 → 입고 처리)':'';
   return `<tr class="${dis&&n?'rdone':''}"${tip?` title="${_esc(tip)}"`:''}>`+
    `<td class="c"><input type="checkbox" data-i="${ri}"${dis?' disabled':''}${picks.length?' checked':''} onchange="pickRow(${ri},this.checked)"></td>`+
    `<td class="c">${_esc(r.jo?r.jo+'조':'')}</td>`+
@@ -243,14 +246,14 @@ async function dupCheck(cat,job,rows){
   if(me&&me!=='완료'){bad.push(`${r.part} 공정${r.sn} 이미 ${me}`);continue}
   if(r.sn>1&&!rows.some(x=>x.part===r.part&&x.sn===r.sn-1)){
    const prev=st.get(okey(r.part,'#'+(r.sn-1)));
-   if(!RECV(prev||''))bad.push(`${r.part} 공정${r.sn-1} ${prev||'미발주'} (입고확정 후 발주 가능)`);
+   if(!RECV(prev||''))bad.push(`${r.part} 공정${r.sn-1} ${prev||'미발주'} (입고 후 발주 가능)`);
   }
  }
  return bad;
 }
 async function save(){if(!REQ.length)return msg('저장할 발주 자료가 없습니다.');if(!window.MESDB||!MESDB.online){msg(`외주가공 발주 ${REQ.length}건을 저장했습니다. (DB 미연결 - 로컬)`);return}try{
  const dup=await dupCheck('외주가공',REQ[0].job,REQ);if(dup.length)return msg(`발주할 수 없는 공정이 있습니다: ${[...new Set(dup)].join(', ')} — 요청 리스트에서 제외하세요.`);
- await MESDB.newLines(REQ.map(r=>({category:'외주가공',status:'발주',vendor_name:r.vendor,job_no:r.job,item_name:r.item||null,process_code:r.proc,process_name:r.procName,part_no:r.part,part_name:r.partName,machining_process_code:r.mp,machining_process_name:r.mpName||null,step_no:Number(r.sn)||null,order_qty:Number(r.qty)||1,unit_price:Number(r.price)||null,quote_price:Number(r.amount)||null,order_date:r.odate||null,required_date:r.rdate||null,owner_name:r.writer||null,remark:r.remark||null})));const n=REQ.length;const _j=REQ[0].job;REQ.length=0;renderReq();try{MESDB.notify&&MESDB.notify(['order_lines'])}catch(e){}await loadOrdered(_j);renderRoutes();PICK.clear();msg(`외주가공 발주 ${n}건을 DB에 등록했습니다. (공정 리스트에 출고 표시) 입고 → 입고확정 후 다음 공정을 발주하세요.`)}catch(e){msg('DB 등록 실패: '+e.message.slice(0,120))}}
+ await MESDB.newLines(REQ.map(r=>({category:'외주가공',status:'발주',vendor_name:r.vendor,job_no:r.job,item_name:r.item||null,process_code:r.proc,process_name:r.procName,part_no:r.part,part_name:r.partName,machining_process_code:r.mp,machining_process_name:r.mpName||null,step_no:Number(r.sn)||null,order_qty:Number(r.qty)||1,unit_price:Number(r.price)||null,quote_price:Number(r.amount)||null,order_date:r.odate||null,required_date:r.rdate||null,owner_name:r.writer||null,remark:r.remark||null})));const n=REQ.length;const _j=REQ[0].job;REQ.length=0;renderReq();try{MESDB.notify&&MESDB.notify(['order_lines'])}catch(e){}await loadOrdered(_j);renderRoutes();PICK.clear();msg(`외주가공 발주 ${n}건을 DB에 등록했습니다. (공정 리스트에 출고 표시) 입고되면 다음 공정을 발주할 수 있습니다.`)}catch(e){msg('DB 등록 실패: '+e.message.slice(0,120))}}
 function exportCsv(){const out=[['협력업체','제번','공정','품번','부품명','순번','가공공정코드','가공공정','수량','발주월','입고요구월','작성자'],...REQ.map(r=>[r.vendor,r.job,r.proc,r.part,r.partName,(r.sn||'')+(r.snOf?'/'+r.snOf:''),r.mp,r.mpName,r.qty??1,r.odate,r.rdate,r.writer])];const csv='\ufeff'+out.map(a=>a.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='outsourcing_order_input.csv';a.click();URL.revokeObjectURL(a.href)}
 function msg(t){message.textContent=t}
 reqDate.value=new Date(Date.now()+12*864e5).toISOString().slice(0,10);
@@ -362,7 +365,7 @@ function ctxMenu(ev,ri,i){
  const head=`<div class="sub"><b>${_esc(j.job||'')}</b> · ${_esc(r.part)} ${_esc(r.name||'')} · <b>공정${i+1}</b> ${_esc(procName(c))}${o.vendor?` · ${_esc(o.vendor)}`:''}</div>`;
  if(st===''){
   if(i===nx)return ctxOrder(ev,head);
-  if(nx===-2||i>nx)return ctxInfo(ev,'발주 대기',head+`<div class="note">직전 공정이 아직 <b>입고확정</b>되지 않아 이 공정은 발주할 수 없습니다.<br>직전 공정 셀을 우클릭해 입고 → 입고확정까지 처리하면 여기에 <b>▶ 다음</b>이 표시됩니다.</div>`);
+  if(nx===-2||i>nx)return ctxInfo(ev,'발주 대기',head+`<div class="note">직전 공정의 현품이 아직 <b>입고</b>되지 않아 이 공정은 발주할 수 없습니다.<br>직전 공정 셀을 우클릭해 <b>입고 처리</b>하면 여기에 <b>▶ 다음</b>이 표시됩니다. (입고확정(전표)은 나중에 해도 됩니다)</div>`);
   return ctxInfo(ev,'발주 불가',head+`<div class="note">발주 가능한 순서가 아닙니다.</div>`);
  }
  if(st==='요청')return ctxReq(ev,head);
@@ -473,7 +476,7 @@ async function ctxReceiveNow(){
  const b=document.getElementById('cxGo');if(b){b.disabled=true;b.textContent='처리 중…'}
  try{
   await ospRpc('fn_osp_receive',{p_line_id:Number(l.line_id),p_qty:q,p_date:_v('cxInDate')||T0(),p_short:short,p_source:'발주화면',p_remark:_v('cxInRemark')||null});
-  await ctxAfter(job.job,`${r.part} 공정${i+1} ${procName(c)} 입고 ${q}개${rest&&!short?` (잔량 ${rest} 대기)`:''} — 이 셀을 다시 우클릭해 입고확정하면 다음 공정을 발주할 수 있습니다.`);
+  await ctxAfter(job.job,`${r.part} 공정${i+1} ${procName(c)} 입고 ${q}개${rest&&!short?` (잔량 ${rest} 대기)`:''} — 다음 공정을 바로 발주할 수 있습니다. 입고확정(전표)은 이 셀을 다시 우클릭해 나중에 처리하세요.`);
  }catch(e){msg('입고 실패: '+String(e.message||e).slice(0,120));if(b){b.disabled=false;b.textContent='▣ 입고 처리'}}
 }
 
@@ -503,7 +506,7 @@ async function ctxConfirmNow(){
  const b=document.getElementById('cxGo');if(b){b.disabled=true;b.textContent='처리 중…'}
  try{
   await MESDB.table('order_lines').upsert([{line_id:Number(l.line_id),status:'입고확정',confirm_date:_v('cxCdate')||T0(),confirm_price:fix||null,nego_rate:quote?Number(((1-fix/quote)*100).toFixed(2)):null,updated_at:new Date().toISOString()}],'line_id');
-  await ctxAfter(job.job,`${r.part} 공정${i+1} ${procName(c)} 입고확정 (확정가 ${_won(fix)}원) — 제조원가 반영, 다음 공정 발주가 열렸습니다.`);
+  await ctxAfter(job.job,`${r.part} 공정${i+1} ${procName(c)} 입고확정 (확정가 ${_won(fix)}원) — 제조원가에 반영됩니다.`);
  }catch(e){msg('입고확정 실패: '+String(e.message||e).slice(0,120));if(b){b.disabled=false;b.textContent='▣ 입고확정'}}
 }
 
