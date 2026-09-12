@@ -56,8 +56,8 @@ html[data-mw="xl"] .formgrid .wide,html[data-mw="lg"] .formgrid .wide,html[data-
 
   <section class="top">
     <div class="box"><div class="box-title">검사 대상 (입고 완료 건)</div><div class="tablewrap"><table>
-      <colgroup><col style="width:36px"><col style="width:9%"><col style="width:11%"><col style="width:12%"><col style="width:9%"><col style="width:14%"><col style="width:11%"><col style="width:7%"><col style="width:9%"><col style="width:8%"><col style="width:8%"></colgroup>
-      <thead><tr><th>No</th><th>구분</th><th>제번</th><th>업체</th><th>품번</th><th>부품명</th><th>검사구분</th><th>수량</th><th>입고일</th><th>판정</th><th>조치</th></tr></thead>
+      <colgroup><col style="width:30px"><col style="width:36px"><col style="width:9%"><col style="width:11%"><col style="width:12%"><col style="width:9%"><col style="width:14%"><col style="width:11%"><col style="width:7%"><col style="width:9%"><col style="width:8%"><col style="width:8%"></colgroup>
+      <thead><tr><th><input type="checkbox" id="chkAll" title="미검사 건 전체 선택" onclick="event.stopPropagation();toggleAll(this.checked)"></th><th>No</th><th>구분</th><th>제번</th><th>업체</th><th>품번</th><th>부품명</th><th>검사구분</th><th>수량</th><th>입고일</th><th>판정</th><th>조치</th></tr></thead>
       <tbody id="tgtBody"></tbody></table></div></div>
   </section>
 
@@ -93,7 +93,7 @@ html[data-mw="xl"] .formgrid .wide,html[data-mw="lg"] .formgrid .wide,html[data-
   <footer class="foot">
     <button class="btn" onclick="search()">⌕ 검색</button>
     <button class="btn primary" onclick="saveInspection()">▣ 검사저장</button>
-    <button class="btn" onclick="passLine()">✔ 합격/입고확정</button>
+    <button class="btn" onclick="passLine()">✔ 합격/입고확정</button><button class="btn" id="btnBulk" onclick="bulkPass()" title="목록에서 체크한 대기 건을 전 항목 OK 로 한꺼번에 합격/입고확정 합니다">☑ 선택 일괄 합격/입고확정</button>
     <button class="btn" onclick="failLine()">✖ 불합격/반품</button><button class="btn" onclick="exportCsv()">▤ EXCEL</button>
     <button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button>
     <span class="msg" id="message">검사할 건을 선택하세요.</span><span class="right" id="countText"></span>
@@ -117,16 +117,54 @@ function resultOf(l){return RESULTS.find(r=>r.line_id===l.line_id)}
 function judOf(l){return resultOf(l)?.judgement||'대기'}
 function actOf(l){return resultOf(l)?.action_taken||''}
 
+const CHK=new Set();   /* v114: 일괄 합격 선택 (line_id) */
 function renderTgt(){
   tgtBody.innerHTML=view.map((l,i)=>{
     const j=judOf(l), cls=j==='합격'?'ok':j==='불합격'?'ng':'';
+    const can=j==='대기'&&!!CAT_MAP[l.category];
     return `<tr class="${i===sel?'sel':''}" onclick="pick(${i})">
+      <td class="c"><input type="checkbox" ${can?'':'disabled'} ${CHK.has(l.line_id)?'checked':''} onclick="event.stopPropagation();toggleChk(${l.line_id},this.checked)"></td>
       <td class="c">${i+1}</td><td class="c">${esc(l.category)}</td><td>${esc(l.job_no)}</td>
       <td>${esc(l.vendor_name)}</td><td class="c">${esc(l.part_no)}</td><td>${esc(l.part_name)}</td>
       <td class="c">${esc(catName(CAT_MAP[l.category]))}</td><td class="r">${l.receipt_qty??l.order_qty??''}</td>
       <td class="c">${esc(l.receipt_date)}</td><td class="c ${cls}">${esc(j)}</td><td class="c">${esc(actOf(l))}</td></tr>`;
   }).join('');
-  countText.textContent=`검사대상 ${view.length}건 / 검사이력 ${RESULTS.length}건`;
+  countText.textContent=`검사대상 ${view.length}건 / 검사이력 ${RESULTS.length}건${CHK.size?` / 선택 ${CHK.size}건`:''}`;
+  const ca=document.getElementById('chkAll');
+  if(ca){const cand=view.filter(l=>judOf(l)==='대기'&&!!CAT_MAP[l.category]);ca.checked=cand.length>0&&cand.every(l=>CHK.has(l.line_id))}
+}
+/* ── v114: 일괄 합격/입고확정 — 체크한 대기 건을 전 항목 OK 로 합격 처리한다 ── */
+function toggleChk(id,on){on?CHK.add(id):CHK.delete(id);renderTgt()}
+function toggleAll(on){CHK.clear();if(on)view.forEach(l=>{if(judOf(l)==='대기'&&CAT_MAP[l.category])CHK.add(l.line_id)});renderTgt()}
+async function bulkPass(){
+  const rows=view.map((l,i)=>({l,i})).filter(x=>CHK.has(x.l.line_id)&&judOf(x.l)==='대기'&&CAT_MAP[x.l.category]);
+  if(!rows.length)return msg('일괄 합격할 건을 체크하세요. (판정 대기 건만 가능)');
+  if(!window.MESDB||!MESDB.online)return msg('DB 미연결 상태에서는 일괄 처리를 할 수 없습니다.');
+  const insp=fInsp.value||fInsp.options[0]?.value||'';
+  if(INSP_LIMITED&&insp&&!QINSP.some(x=>x.employee_name===insp))
+    return msg(`${insp} 님은 유효한 검사 자격이 없습니다. 검사자를 먼저 바꾸세요.`);
+  const date=fDate.value||today();
+  const list=rows.slice(0,8).map(x=>` · ${x.l.job_no} ${x.l.part_no||''} ${x.l.part_name||''} (${x.l.vendor_name||''})`).join('\n')+(rows.length>8?`\n · … 외 ${rows.length-8}건`:'');
+  if(!confirm(`체크한 ${rows.length}건을 일괄 합격/입고확정 합니다.\n\n${list}\n\n검사일 ${date} · 검사자 ${insp||'(미지정)'} · 체크시트 전 항목 OK · 불량 0\n각 건의 발주라인이 입고확정으로 넘어가 제조원가에 반영됩니다. 계속할까요?`))return;
+  const btn=document.getElementById('btnBulk');if(btn){btn.disabled=true;btn.textContent='처리 중…'}
+  let ok=0;const fail=[];
+  for(const {l} of rows){
+    try{
+      const i=view.indexOf(l);if(i<0)continue;
+      pick(i);
+      fDate.value=date;if(insp)fInsp.value=insp;
+      sheet.forEach(s=>{if(s.result==='대기')s.result='OK'});
+      fJud.value='합격';fDefect.value=0;
+      const r=await saveInspection(true);
+      if(r)ok++;else fail.push(`${l.job_no} ${l.part_no||''}: ${message.textContent.slice(0,60)}`);
+    }catch(e){fail.push(`${l.job_no} ${l.part_no||''}: ${String(e.message||e).slice(0,60)}`)}
+    CHK.delete(l.line_id);
+  }
+  if(btn){btn.disabled=false;btn.textContent='☑ 선택 일괄 합격/입고확정'}
+  const t=`${ok}건 합격/입고확정 처리했습니다.`+(fail.length?`\n\n실패 ${fail.length}건:\n`+fail.join('\n'):'');
+  msg(t.replace(/\n/g,' '));
+  fail.length?(window.MESPOP?MESPOP.warn(t,'일괄 처리 결과'):alert(t)):(window.MESPOP?MESPOP.ok(t,'일괄 합격/입고확정 완료'):alert(t));
+  if(onlyWait.checked)search();else renderTgt();
 }
 
 function buildSheet(l){
@@ -188,7 +226,7 @@ function search(){
     if(q){const t=`${l.job_no} ${l.part_no} ${l.part_name} ${l.vendor_name}`.toLowerCase();if(!t.includes(q))return false}
     return true;
   });
-  sel=-1; sheet=[]; renderTgt(); renderSheet(); sheetInfo.textContent='';
+  sel=-1; sheet=[]; CHK.clear(); renderTgt(); renderSheet(); sheetInfo.textContent='';
   msg(`검사대상 ${view.length}건을 조회했습니다.`);
 }
 
