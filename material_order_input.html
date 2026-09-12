@@ -148,8 +148,28 @@ async function dupCheck(cat,job,rows){
  const have=new Set((ex||[]).map(e=>key(e.part_no,e.vendor_name,e.machining_process_code)));
  return rows.filter(r=>have.has(key(r.part,r.vendor,r.mp)));
 }
+/* v112: 같은 제번·같은 품번이 '다른 업체'로 이미 발주(미입고)돼 있으면 경고한다.
+   분할발주·견적비교를 막지 않기 위해 차단이 아니라 확인 후 진행. */
+async function dupOtherVendor(cat,job,rows){
+ const ex=await MESDB.table('order_lines').select(`select=part_no,part_name,vendor_name,order_date,order_qty&category=eq.${encodeURIComponent(cat)}&status=eq.발주&job_no=eq.${encodeURIComponent(job)}`);
+ const out=[];
+ for(const r of rows){
+  const hit=(ex||[]).filter(e=>(e.part_no||'')===(r.part||'')&&(e.vendor_name||'')!==(r.vendor||''));
+  for(const h of hit)out.push({part:r.part,name:r.name||h.part_name||'',now:r.vendor,prev:h.vendor_name||'(업체미지정)',qty:h.order_qty,date:String(h.order_date||'').slice(0,10)});
+ }
+ return out;
+}
 async function save(){if(!REQ.length)return msg('저장할 구매요청이 없습니다.');if(!window.MESDB||!MESDB.online){msg(`구매요청 ${REQ.length}건을 저장했습니다. (DB 미연결 - 로컬)`);return}try{const j=jobView[jobIdx]||{};
  const dup=await dupCheck('원재료',j.job,REQ);if(dup.length)return msg(`이미 발주(미입고) 된 품번이 있습니다: ${[...new Set(dup.map(r=>r.part))].join(', ')} — 요청 리스트에서 제외하거나 입고 후 재발주하세요.`);
+ const alt=await dupOtherVendor('원재료',j.job,REQ);
+ if(alt.length){
+  const list=alt.slice(0,8).map(a=>` · ${a.part} ${a.name} — 기존 발주: ${a.prev} (${a.date||'일자미상'}, ${a.qty??''}개) → 이번 발주: ${a.now}`).join('\n');
+  const more=alt.length>8?`\n  … 외 ${alt.length-8}건`:'';
+  if(!confirm(`같은 제번에서 아래 품번이 이미 다른 업체로 발주(미입고)돼 있습니다.\n\n${list}${more}\n\n중복 구매가 될 수 있습니다. 그래도 발주하시겠습니까?`)){
+   msg(`발주를 취소했습니다. 중복 의심 ${alt.length}건 — 기존 발주는 원재료 발주현황에서 확인하거나, 요청 리스트에서 해당 행을 [요청삭제]하세요.`);
+   return;
+  }
+ }
  await MESDB.newLines(REQ.map(r=>({category:'원재료',status:'발주',vendor_name:r.vendor,job_no:r.job,item_name:j.item||null,process_code:r.proc,part_no:r.part,part_name:r.name,material:r.mat,spec:r.design,order_qty:Number(r.ord)||null,unit_price:Number(r.buyPrice||r.price)||null,quote_price:Number(r.amount)||null,confirm_price:Number(r.amount)||null,order_date:r.odate||null,required_date:r.rdate||null,remark:r.remark||null})));const n=REQ.length;REQ.length=0;renderReq();/* v112: [저장] 클릭 0.4초 뒤 자동저장이 발주 완료보다 먼저 돌아 옛 요청이 page_state 에 남았다 → 비운 뒤 한 번 더 저장 트리거 */try{document.dispatchEvent(new Event('change'))}catch(e){}msg(`원재료 발주 ${n}건을 DB에 등록했습니다. 발주현황/입고등록 화면에서 확인하세요.`)}catch(e){msg('DB 등록 실패: '+e.message.slice(0,120))}}
 function printOrder(){const ids=[...reqBody.querySelectorAll('input:checked')].map(x=>Number(x.dataset.no));const rows=ids.length?REQ.filter(r=>ids.includes(r.no)):REQ.slice(0,1);if(!rows.length)return msg('출력할 행이 없습니다.');const j=jobView[jobIdx]||JOBS[0];const v=rows[0].vendor;
 docArea.innerHTML=`<h2>원재료 발주서</h2>
