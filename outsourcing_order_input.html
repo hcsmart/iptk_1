@@ -43,6 +43,7 @@ tr.rdone td{color:#8b98a3}
     <span class="label">품명</span><input id="itemQ" class="field" style="width:190px">
     <span class="label">업체</span><input id="venF" class="field" style="width:190px">
     <button class="btn" onclick="search()">⌕ 조회</button>
+    <button class="btn" id="btnRefresh" onclick="refreshAll()" title="DB에서 제번·부품별 가공공정을 다시 불러옵니다 (다른 화면의 발주·입고 반영)">⟳ 새로고침</button>
   </section>
   <section class="panes">
     <div class="box"><div class="box-title">제번리스트</div><div class="tablewrap"><table>
@@ -276,7 +277,29 @@ async function loadRoutes(){
   msg(`${j.job} 부품별 가공공정 ${ROUTES.length}건을 조회했습니다.`+(_w?` · 입고 대기 ${_w}건`:'')+(_d?` · 전공정 완료 ${_d}건`:''));
  }catch(e){renderRoutes();msg('가공공정 조회 실패: '+String(e.message||e).slice(0,110))}
 }
-window.MES={search,save,exportCsv,setMessage:msg,reload:loadJobs};
+/* v112: [새로고침] — 다른 화면에서 발주·입고한 내용을 반영해 부품별 가공공정 상태를 다시 그린다.
+   RPC·직접 fetch 는 조회 캐시를 거치지 않으므로 dropCache 로 비운 뒤 다시 읽는다. 선택한 제번은 유지. */
+async function refreshAll(){
+ const b=document.getElementById('btnRefresh');
+ const keep=(jobView[jobIdx]||{}).job||'';
+ if(b){b.disabled=true;b.textContent='⟳ 조회중…'}
+ msg('DB에서 다시 불러오는 중…');
+ try{
+  ['order_lines','machining_plan_parts','partlist_materials','job_pool','machining_standard_routes','processes']
+   .forEach(t=>{try{MESDB.dropCache&&MESDB.dropCache(t)}catch(e){}});
+  await loadJobs();
+  if(keep){                       /* 새로고침 전에 보던 제번으로 되돌린다 */
+   const i=jobView.findIndex(x=>x.job===keep);
+   if(i>=0&&i!==jobIdx){jobIdx=i;renderJobs();await loadRoutes()}
+  }
+ }catch(e){msg('새로고침 실패: '+String(e.message||e).slice(0,110))}
+ finally{if(b){b.disabled=false;b.textContent='⟳ 새로고침'}}
+}
+window.MES={search,save,exportCsv,setMessage:msg,reload:refreshAll};
+/* 다른 화면에서 발주·입고가 저장되면 자동으로 다시 읽는다 */
+(function(){let t=null;const go=()=>{clearTimeout(t);t=setTimeout(refreshAll,500)};
+ const bind=()=>{if(window.MESDB&&MESDB.onChange){MESDB.onChange(['order_lines','machining_plan_parts','partlist_materials'],go);return true}return false};
+ if(!bind()){let n=0;const iv=setInterval(()=>{if(bind()||++n>40)clearInterval(iv)},100)}})();
 </script>
 <script src="mes_sample.js?v=92"></script><script src="mes_scene.js?v=92"></script><script src="mes_demo.js?v=92"></script><script src="mes_db.js?v=92"></script>
 <script>
