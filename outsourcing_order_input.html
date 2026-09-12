@@ -387,11 +387,11 @@ async function ctxOrder(ev,head){
    <label>수량</label><input id="cxQty" class="r" value="1" inputmode="numeric" onchange="ctxAmt()">
    <label>발주일</label><input id="cxOdate" type="date" value="${today}" onchange="ctxPrice()">
    <label>입고요구일</label><input id="cxRdate" type="date" value="${rd}">
-   <label>단가</label><input id="cxPrice" class="r" value="0" inputmode="numeric" onchange="ctxAmt()">
-   <label>발주금액</label><input id="cxAmt" class="r" value="0" readonly>
+   <label>단가</label><input id="cxPrice" class="r" value="" placeholder="예: 45,000" inputmode="numeric" onchange="ctxPriceEdit()">
+   <label>발주금액</label><input id="cxAmt" class="r" value="" placeholder="단가 입력 시 자동" readonly>
    <label>비고</label><input id="cxRemark" class="full" placeholder="선택">
   </div>
-  <div class="note" id="cxNote">단가는 공정단가변동등록에서 업체·발주일 기준으로 자동 조회됩니다. 없으면 직접 입력하세요.</div>`,
+  <div class="note" id="cxNote">업체를 선택하면 공정단가변동등록에서 발주일 기준 단가를 자동 조회합니다. 이력이 없으면 단가를 직접 입력하세요.</div>`,
   `<button class="btn" onclick="ctxAddReq()" title="바로 등록하지 않고 아래 구매요청 리스트에 넣습니다">↓ 요청 리스트</button>
    <button class="btn go k-order" id="cxGo" onclick="ctxOrderNow()">▣ 즉시 발주</button>
    <button class="btn" onclick="ctxClose()">취소</button>`);
@@ -403,12 +403,25 @@ async function ctxPrice(){
  const v=_v('cxVendor'),d=_v('cxOdate')||T0();
  if(!v||!window.MESPRICE)return ctxAmt();
  try{const hit=await MESPRICE.process(c,v,{asOf:d});
-  const p=document.getElementById('cxPrice');if(p&&hit&&hit.price)p.value=hit.price;
-  const n=document.getElementById('cxNote');if(n)n.textContent=hit&&hit.price?`단가 ${_won(hit.price)}원 (${v} · ${d} 기준 자동조회)`:'등록된 단가가 없습니다 — 직접 입력하면 발주금액에 반영됩니다.';
+  const p=document.getElementById('cxPrice');
+  /* v112: 이력이 없으면 0 을 남기지 않는다 — 0 이 남아 있으면 숫자 입력 시 '045000' 처럼 앞에 붙는다 */
+  /* 자동조회로 채운 값(data-auto)은 업체를 바꿀 때 비우고, 사용자가 직접 친 단가는 그대로 둔다 */
+  if(p){
+   if(hit&&hit.price){p.value=_won(hit.price);p.dataset.auto='1'}
+   else if(p.dataset.auto==='1'||!_n(p.value)){p.value='';p.dataset.auto=''}
+  }
+  const n=document.getElementById('cxNote');if(n)n.textContent=hit&&hit.price?`단가 ${_won(hit.price)}원 (${v} · ${d} 기준 자동조회)`:`${v} · ${c} 단가 이력이 없습니다 — 단가를 직접 입력하세요. (공정단가변동등록에 등록해 두면 다음부터 자동조회)`;
  }catch(e){}
  ctxAmt();
 }
-function ctxAmt(){const a=document.getElementById('cxAmt');if(a)a.value=_won(_n(_v('cxPrice'))*Math.max(1,_n(_v('cxQty'))))}
+/* 사용자가 단가를 직접 고치면 자동조회 표시를 해제한다 (업체를 바꿔도 값이 유지된다) */
+function ctxPriceEdit(){const p=document.getElementById('cxPrice');if(p)p.dataset.auto='';ctxAmt()}
+function ctxAmt(){
+ const p=document.getElementById('cxPrice'),a=document.getElementById('cxAmt');
+ const price=_n(p?p.value:0),qty=Math.max(1,_n(_v('cxQty')));
+ if(p)p.value=price?_won(price):'';          /* 045,000 같은 앞자리 0 정리 (자동조회 표시는 건드리지 않는다) */
+ if(a)a.value=price?_won(price*qty):'';
+}
 function ctxRow(){
  const {r,i,c,job}=CTX;
  const n=(r.steps||[]).map(stepCode).filter(Boolean).length;
@@ -425,6 +438,7 @@ function ctxAddReq(){
 }
 async function ctxOrderNow(){
  const row=ctxRow();if(!row.vendor)return msg('협력업체를 선택하세요.');
+ if(!row.price&&!confirm(`단가가 입력되지 않았습니다.\n\n발주금액 0원으로 등록되어 제조원가에 외주가공비가 잡히지 않습니다.\n그래도 발주하시겠습니까?`))return msg('단가를 입력한 뒤 다시 발주하세요.');
  if(!_online())return msg('DB 미연결 - 즉시 발주는 사용할 수 없습니다. 요청 리스트로 넣어두세요.');
  const b=document.getElementById('cxGo');if(b){b.disabled=true;b.textContent='등록 중…'}
  try{
