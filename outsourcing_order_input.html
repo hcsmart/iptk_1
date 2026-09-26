@@ -205,9 +205,13 @@ function activeCycleRows(rows,remember=true){   /* v226: 차수별 행이 따로
    미입고가 1개라도 남아 있으면 계속 '출고' 상태로 두어 우클릭 입고가 가능하게 한다. */
 function orderAgg(lines){
  const a=(lines||[]).slice().sort((x,y)=>(Number(x.line_id)||0)-(Number(y.line_id)||0));
+ /* v248: 상태가 입고·입고확정인 발주건은 입고수량이 비어 있어도(다른 화면·옛 자료에서 수량 없이 입고 처리) 입고된 것으로 본다.
+    종전엔 수량만 보고 '미입고'로 판정해, 입고했는데도 다음 공정을 발주할 수 없었다. */
+ const isRcv=l=>/입고/.test(String(l.status||''));
+ const gotOf=l=>{const g=Number(l.receipt_qty)||0,o=Number(l.order_qty)||0;return isRcv(l)&&g<o?o:g};
  let ord=0,got=0;
- a.forEach(l=>{ord+=Number(l.order_qty)||0;got+=Number(l.receipt_qty)||0});
- const open=a.filter(l=>(Number(l.order_qty)||0)>(Number(l.receipt_qty)||0));
+ a.forEach(l=>{ord+=Number(l.order_qty)||0;got+=gotOf(l)});
+ const open=a.filter(l=>!isRcv(l)&&(Number(l.order_qty)||0)>(Number(l.receipt_qty)||0));
  const recv=a.filter(l=>!open.includes(l)&&String(l.status||'')!=='입고확정');
  const done=a.filter(l=>String(l.status||'')==='입고확정');
  let st='',line=null;
