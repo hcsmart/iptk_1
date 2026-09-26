@@ -458,7 +458,9 @@ function pullUp(){const ids=[...reqBody.querySelectorAll('input:checked')].map(x
 /* v62: 같은 제번·품번·업체(외주가공은 가공공정 포함)의 미입고 발주가 있으면 중복 등록 차단 */
 /* v97: 저장 직전 DB 재확인 — (1) 같은 부품·공정순번이 이미 발주/입고 중이면 차단 (업체 무관), (2) 직전 순번이 입고/입고확정이 아니면 차단 */
 async function dupCheck(cat,job,rows){
- const ex0=await MESDB.table('order_lines').select(`select=line_id,part_no,machining_process_code,step_no,status,order_qty,receipt_qty,remark&category=eq.${encodeURIComponent(cat)}&job_no=eq.${encodeURIComponent(job)}&order=line_id`);
+ /* v259: cycle_no 도 읽는다 — 빠져 있으면 차수 키가 달라 입고완료된 직전 공정을 '미발주'로 보고 다음 공정 발주를 막았다 */
+ const _dq=c=>`select=line_id,part_no,machining_process_code,step_no,status,order_qty,receipt_qty,remark${c?',cycle_no':''}&category=eq.${encodeURIComponent(cat)}&job_no=eq.${encodeURIComponent(job)}&order=line_id`;
+ let ex0;try{ex0=await MESDB.table('order_lines').select(_dq(1),{fresh:true})}catch(e){ex0=await MESDB.table('order_lines').select(_dq(0),{fresh:true})}
  /* v155: 현재 신규발주 차수만 중복/순서 판정에 사용한다. 신규발주 첫 발주는 과거 차수를 전부 무시한다. */
  const freshParts=new Set((rows||[]).filter(x=>x.newCycle).map(x=>String(x.part||'')));
  const ex=activeCycleRows(ex0||[],false).filter(e=>!freshParts.has(String(e.part_no||'')));
@@ -472,7 +474,9 @@ async function dupCheck(cat,job,rows){
   /* v147: 직전 공정이 사내가공이면 그 앞의 외주 공정을 본다 */
   const rt=ROUTES.find(x=>x.part===r.part),po=rt?prevOut(rt,r.sn-1):r.sn-2;
   if(po>=0&&!rows.some(x=>x.part===r.part&&x.sn===po+1)){
-   const prev=st.get(okey(r.part,'#'+(po+1),r.cyc));
+   /* v259: 순번 없는 옛 발주건은 가공공정 코드로도 찾는다 */
+   const pc=rt?stepCode((rt.steps||[])[po]):'';
+   const prev=st.get(okey(r.part,'#'+(po+1),r.cyc))||(pc?st.get(okey(r.part,pc,r.cyc)):undefined);
    if(!RECV(prev||''))bad.push(`${r.part} 공정${po+1} ${prev||'미발주'} (입고 후 발주 가능)`);
   }
  }
