@@ -17,6 +17,7 @@
 input.fixin{width:100%;height:20px;border:1px solid #cbd4dc;padding:0 3px;text-align:right;font:inherit}input.fixin.man{background:#fff8e1;border-color:#e0b64a}
 .summary .fixbulk{width:110px;text-align:right}
 input.qtyin{width:100%;height:20px;border:1px solid #cbd4dc;padding:0 3px;text-align:right;font:inherit}
+.cbo{background:#fff url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0h10L5 6z' fill='%23708090'/%3E%3C/svg%3E") no-repeat right 8px center;padding-right:22px}.cbo::-webkit-calendar-picker-indicator{opacity:0;width:16px;margin-right:-16px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -26,7 +27,7 @@ input.qtyin{width:100%;height:20px;border:1px solid #cbd4dc;padding:0 3px;text-a
   </div>
   <section class="filters">
     <div class="row">
-      <div class="label">협력업체</div><input id="vendorQ" class="field" placeholder="협력업체">
+      <div class="label">협력업체</div><input id="vendorQ" class="field cbo" list="venDL" autocomplete="off" placeholder="업체 입력/선택"><datalist id="venDL"></datalist>
       <div class="label">제번</div><input id="jobQ" class="field" placeholder="제번">
       <div class="label">품명</div><input id="itemQ" class="field" placeholder="품명">
       <div class="label wide-hide">공장</div><select id="plantQ" class="field wide-hide"><option>1공장</option><option>2공장</option></select>
@@ -82,12 +83,22 @@ function applyFix(){const s=selectedRows();if(!s.length)return msg('확정가를
  if(!Number.isFinite(n)||n<0)return msg('확정가를 숫자로 입력하세요.');
  s.forEach(r=>{r.fixManual=n;if(num(r.price)>0)r.rate=Number(((1-n/num(r.price))*100).toFixed(2))});render();s.forEach(r=>{const cb=document.querySelector(`#body input[data-id="${r.id}"]`);if(cb)cb.checked=true});summary();
  msg(`${s.length}건에 확정가 ${money(n)}원을 적용했습니다.`)}
-function render(){body.innerHTML=view.map((r,i)=>`<tr data-id="${r.id}" onclick="selectRow(event,${r.id})"><td class="c">${r.id}</td><td class="c"><input type="checkbox" data-id="${r.id}" onchange="summary()"></td><td>${r.job}</td><td>${r.item}</td><td class="c">${r.proc}</td><td class="c">${r.procName}</td><td>${r.part}</td><td>${r.partName}</td><td class="c">${r.mat}</td><td>${r.vendor}</td><td class="c">${r.order}</td><td class="c">${r.inDate}</td><td class="c">${r.confirm}</td><td class="r">${r.ord??''}</td><td class="r">${r.status==='확정'?(r.got??''):`<input class="qtyin" value="${r.got??''}" placeholder="${r.ord??''}" onclick="event.stopPropagation()" onfocus="this.select()" onchange="setGot(${r.id},this.value)" title="입고수량 수정">`}</td><td class="r">${r.status==='확정'?money(r.unit):`<input class="fixin" value="${num(r.unit)||''}" placeholder="0" onclick="event.stopPropagation()" onfocus="this.select()" onchange="setUnit(${r.id},this.value)" title="단가 — 매입가 = 입고수량 × 단가">`}</td><td class="r">${money(buyOf(r))}</td><td class="r">${pct(r.rate)}</td><td class="r">${r.status==='확정'?money(finalPrice(r)):`<input class="fixin${r.fixManual!=null?' man':''}" value="${finalPrice(r)||''}" placeholder="0" onclick="event.stopPropagation()" onfocus="this.select()" onchange="setFix(${r.id},this.value)" title="확정가 직접 입력 — 비우면 매입가×(1-네고율) 로 돌아갑니다">`}</td><td class="c">${r.status}</td></tr>`).join('');countText.textContent=`${view.length}건`;summary()}
+function render(){try{fillVenDL()}catch(e){}body.innerHTML=view.map((r,i)=>`<tr data-id="${r.id}" onclick="selectRow(event,${r.id})"><td class="c">${r.id}</td><td class="c"><input type="checkbox" data-id="${r.id}" onchange="summary()"></td><td>${r.job}</td><td>${r.item}</td><td class="c">${r.proc}</td><td class="c">${r.procName}</td><td>${r.part}</td><td>${r.partName}</td><td class="c">${r.mat}</td><td>${r.vendor}</td><td class="c">${r.order}</td><td class="c">${r.inDate}</td><td class="c">${r.confirm}</td><td class="r">${r.ord??''}</td><td class="r">${r.status==='확정'?(r.got??''):`<input class="qtyin" value="${r.got??''}" placeholder="${r.ord??''}" onclick="event.stopPropagation()" onfocus="this.select()" onchange="setGot(${r.id},this.value)" title="입고수량 수정">`}</td><td class="r">${r.status==='확정'?money(r.unit):`<input class="fixin" value="${num(r.unit)||''}" placeholder="0" onclick="event.stopPropagation()" onfocus="this.select()" onchange="setUnit(${r.id},this.value)" title="단가 — 매입가 = 입고수량 × 단가">`}</td><td class="r">${money(buyOf(r))}</td><td class="r">${pct(r.rate)}</td><td class="r">${r.status==='확정'?money(finalPrice(r)):`<input class="fixin${r.fixManual!=null?' man':''}" value="${finalPrice(r)||''}" placeholder="0" onclick="event.stopPropagation()" onfocus="this.select()" onchange="setFix(${r.id},this.value)" title="확정가 직접 입력 — 비우면 매입가×(1-네고율) 로 돌아갑니다">`}</td><td class="c">${r.status}</td></tr>`).join('');countText.textContent=`${view.length}건`;summary()}
 function selectedRows(){const ids=[...document.querySelectorAll('#body input:checked')].map(x=>Number(x.dataset.id));return rows.filter(r=>ids.includes(r.id))}
 function selectRow(e,id){if(e.target.tagName==='INPUT')return;const cb=document.querySelector(`#body input[data-id="${id}"]`);if(cb){cb.checked=!cb.checked;summary()}}
 function summary(){const s=selectedRows();total.value=money(s.reduce((a,r)=>a+(Number(r.price)||0),0));selectedText.textContent=`선택 ${s.length}건`;document.querySelectorAll('#body tr').forEach(tr=>tr.classList.toggle('sel',!!tr.querySelector('input:checked')))}
 /* 미완료 = 아직 확정 안 된 입고 건, 완료 = 확정된 건. 확정 후에는 대기리스트에서 빠진다. */
 function doneMode(){const e=document.querySelector('input[name=done]:checked');return e?e.value:'미완료'}
+/* v255: 협력업체 드롭다운/입력 — 조회된 자료의 업체(많이 나온 순) + 기준정보 협력업체 */
+function fillVenDL(){const dl=document.getElementById('venDL');if(!dl)return;const C=new Map();
+ rows.forEach(r=>{const v=String(r.vendor||'').trim();if(v)C.set(v,(C.get(v)||0)+1)});
+ const e=v=>String(v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+ let opts=[...C].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'ko')).map(([v,n])=>`<option value="${e(v)}">${n}건</option>`);
+ (window.__venMaster||[]).forEach(v=>{if(!C.has(v))opts.push(`<option value="${e(v)}">`)});
+ dl.innerHTML=opts.join('')}
+(async()=>{try{for(let i=0;i<60&&!window.MESLOOK;i++)await new Promise(r=>setTimeout(r,100));if(!window.MESLOOK)return;
+ const ns=await MESLOOK.names('vendor_purchase');window.__venMaster=ns||[];fillVenDL()}catch(e){}})();
+vendorQ.addEventListener('change',()=>search());
 function search(){const v=vendorQ.value.trim().toLowerCase(),j=jobQ.value.trim().toLowerCase(),it=itemQ.value.trim().toLowerCase(),m=doneMode();view=rows.filter(r=>(m==='완료'?r.status==='확정':r.status!=='확정')&&(!v||String(r.vendor||'').toLowerCase().includes(v))&&(!j||String(r.job||'').toLowerCase().includes(j))&&(!it||String(r.item||'').toLowerCase().includes(it)));render();msg(`${m} 기준 ${view.length}건을 조회했습니다.`)}
 function applyNego(){const s=selectedRows();if(!s.length)return msg('네고율을 적용할 행을 선택하세요.');const rate=Math.max(0,Math.min(100,Number(nego.value)||0));s.forEach(r=>{r.rate=rate;r.fixManual=null});filterText.textContent=`Starts with([네고율(%)], '${rate.toFixed(2)}')`;render();s.forEach(r=>{const cb=document.querySelector(`#body input[data-id="${r.id}"]`);if(cb)cb.checked=true});summary();msg(`${s.length}건에 네고율 ${rate.toFixed(2)}%를 적용했습니다.`)}
 let dirty=false;   /* v62 */
@@ -134,6 +145,7 @@ confirmDate.value=new Date().toISOString().slice(0,10);window.MES={search,add,de
 </script>
 <script src="mes_sample.js?v=169"></script><script src="mes_scene.js?v=67"></script><script src="mes_demo.js?v=67"></script><script src="mes_db.js?v=171"></script>
 <script>MESDB.lines({page:"purchase_receipt_confirmation",category:"구매품",statuses:["입고", "입고확정"],map:{"id": {"col": "line_id", "type": "num"}, "vendor": "vendor_name", "job": "job_no", "item": "item_name", "proc": "process_code", "procName": "process_name", "part": "part_no", "partName": "part_name", "mat": "material", "order": {"col": "order_date", "type": "date"}, "inDate": {"col": "receipt_date", "type": "date"}, "confirm": {"col": "confirm_date", "type": "date"}, "ord": {"col": "order_qty", "type": "num"}, "got": {"col": "receipt_qty", "type": "num"}, "unit": {"col": "unit_price", "type": "num"}, "price": {"col": "quote_price", "type": "num"}, "rate": {"col": "nego_rate", "type": "num"}, "fix": {"col": "confirm_price", "type": "num"}, "status": {"col": "status", "type": "status"}},get:()=>rows,render:()=>{search()}});</script>
+<script src="mes_lookup.js?v=230"></script>
 <script src="mes_ctx.js?v=169"></script>
 <script>
 function sampleFill(){
