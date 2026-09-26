@@ -41,7 +41,7 @@ table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th
 @media(max-width:1400px){.formrow{grid-template-columns:78px minmax(0,1fr) 78px minmax(0,1fr)}}
 @media(max-width:880px){.formrow{grid-template-columns:78px minmax(0,1fr)}}
 .formrow>*{min-width:0}
-</style></head><body><div class="screen"><div class="title"><h1>매입현황</h1><small>원가관리 · 매입매출현황</small></div><section class="filt"><div class="opts"><span class="lb" style="width:44px">구분</span><label><input type="checkbox" id="k_all" checked>전체</label><label><input type="checkbox" name="k" value="구매품" checked>구매품</label><label><input type="checkbox" name="k" value="원재료" checked>원재료</label><label><input type="checkbox" name="k" value="외주가공" checked>외주가공</label><label><input type="checkbox" name="k" value="외주설계" checked>외주설계</label><span class="lb" style="width:60px">관리제번</span><select id="q_base" class="field" style="width:180px"><option value="">전체</option></select><span class="lb" style="width:44px">제번</span><input id="q_job" class="field" style="width:140px" list="jobDL" autocomplete="off" placeholder="제번 선택/입력"><datalist id="jobDL"></datalist><span class="lb" style="width:44px">품번</span><input id="q_item" class="field" style="width:190px" list="modelDL" autocomplete="off" placeholder="품번 선택/입력"><datalist id="modelDL"></datalist><span class="lb" style="width:70px">협력업체</span><input id="q_ven" class="field" style="width:150px" list="venDL" autocomplete="off" placeholder="업체 선택/입력"><datalist id="venDL"></datalist><span style="display:inline-flex;gap:5px;align-items:center;white-space:nowrap"><span class="lb" style="width:44px">기간</span><select id="d_kind" class="field" style="width:96px"><option value="order_date">발주일</option><option value="receipt_date">입고일</option><option value="receipt_confirmed_date">입고확정일</option></select><input id="d1" type="date" class="field" style="width:135px"><span>~</span><input id="d2" type="date" class="field" style="width:135px"><button class="btn" onclick="search()">⌕ 조회</button></span></div></section><div class="gridbox"><table style="min-width:1780px"><thead><tr><th style="width:46px">NO</th><th style="width:76px">항목</th><th style="width:120px">제번</th><th style="width:170px">품번(제품)</th><th style="width:58px">공정/조수</th><th style="width:90px">공정명</th><th style="width:80px">품번</th><th style="width:140px">부품명</th><th style="width:74px">가공공정</th><th style="width:110px">가공공정명</th><th style="width:74px">발주자</th><th style="width:110px">협력업체</th><th style="width:96px">발주일</th><th style="width:100px">입고예정일</th><th style="width:96px">입고일</th><th style="width:100px">입고확정일</th><th style="width:104px">견적가</th><th style="width:104px">확정가</th></tr></thead><tbody id="body"></tbody><tfoot><tr class="gtot"><td colspan="18" class="c" id="totline">조회 0건</td></tr></tfoot></table></div><footer class="foot"><button class="btn" onclick="search()">⌕ 검색</button><button class="btn" onclick="csv()">▤ EXCEL</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">조회 중…</span><span class="right" id="countText"></span></footer></div><script>const data=[];const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+</style></head><body><div class="screen"><div class="title"><h1>매입현황</h1><small>원가관리 · 매입매출현황</small></div><section class="filt"><div class="opts"><span class="lb" style="width:44px">구분</span><label><input type="checkbox" id="k_all" checked>전체</label><label><input type="checkbox" name="k" value="구매품" checked>구매품</label><label><input type="checkbox" name="k" value="원재료" checked>원재료</label><label><input type="checkbox" name="k" value="외주가공" checked>외주가공</label><label><input type="checkbox" name="k" value="외주설계" checked>외주설계</label><label title="영업관리 › SET외주 발주"><input type="checkbox" name="k" value="외주SET" checked>SET외주</label><span class="lb" style="width:60px">관리제번</span><select id="q_base" class="field" style="width:180px"><option value="">전체</option></select><span class="lb" style="width:44px">제번</span><input id="q_job" class="field" style="width:140px" list="jobDL" autocomplete="off" placeholder="제번 선택/입력"><datalist id="jobDL"></datalist><span class="lb" style="width:44px">품번</span><input id="q_item" class="field" style="width:190px" list="modelDL" autocomplete="off" placeholder="품번 선택/입력"><datalist id="modelDL"></datalist><span class="lb" style="width:70px">협력업체</span><input id="q_ven" class="field" style="width:150px" list="venDL" autocomplete="off" placeholder="업체 선택/입력"><datalist id="venDL"></datalist><span style="display:inline-flex;gap:5px;align-items:center;white-space:nowrap"><span class="lb" style="width:44px">기간</span><select id="d_kind" class="field" style="width:96px"><option value="order_date">발주일</option><option value="receipt_date">입고일</option><option value="receipt_confirmed_date">입고확정일</option></select><input id="d1" type="date" class="field" style="width:135px"><span>~</span><input id="d2" type="date" class="field" style="width:135px"><button class="btn" onclick="search()">⌕ 조회</button></span></div></section><div class="gridbox"><table style="min-width:1780px"><thead><tr><th style="width:46px">NO</th><th style="width:76px">항목</th><th style="width:120px">제번</th><th style="width:170px">품번(제품)</th><th style="width:58px">공정/조수</th><th style="width:90px">공정명</th><th style="width:80px">품번</th><th style="width:140px">부품명</th><th style="width:74px">가공공정</th><th style="width:110px">가공공정명</th><th style="width:74px">발주자</th><th style="width:110px">협력업체</th><th style="width:96px">발주일</th><th style="width:100px">입고예정일</th><th style="width:96px">입고일</th><th style="width:100px">입고확정일</th><th style="width:104px">견적가</th><th style="width:104px">확정가</th></tr></thead><tbody id="body"></tbody><tfoot><tr class="gtot"><td colspan="18" class="c" id="totline">조회 0건</td></tr></tfoot></table></div><footer class="foot"><button class="btn" onclick="search()">⌕ 검색</button><button class="btn" onclick="csv()">▤ EXCEL</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">조회 중…</span><span class="right" id="countText"></span></footer></div><script>const data=[];const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const n=v=>v==null?'':Number(v).toLocaleString();const p=v=>v==null?'':Number(v).toFixed(2)+'%';
 const msg=t=>message.textContent=t;
 let view=[...data];
@@ -53,7 +53,7 @@ function renderTotal(){
   const el=document.getElementById('totline'); if(!el)return;
   el.textContent = src.length ? `조회 ${src.length}건 · ` + ['견적가 '+money(sum('quotation_price')),'확정가 '+money(sum('confirmed_price'))].join(' / ') : '조회된 자료가 없습니다.';
 }
-function render(){body.innerHTML=view.map(r=>`<tr><td class="c">${r.row_no}</td><td class="c">${esc(r.category)}</td><td>${esc(r.job_no)}</td><td>${esc(modelOf(r.job_no))}</td><td class="c">${esc(r.process_code||'')}</td><td class="c">${esc(r.process_name||'')}</td><td>${esc(r.part_no||'')}</td><td>${esc(r.part_name||'')}</td><td class="c">${esc(r.machining_process_code||'')}</td><td>${esc(r.machining_process_name||'')}</td><td class="c">${esc(r.orderer_name||'')}</td><td>${esc(r.partner_vendor_name||'')}</td><td class="c">${esc(r.order_date||'')}</td><td class="c">${esc(r.receipt_planned_date||'')}</td><td class="c">${esc(r.receipt_date||'')}</td><td class="c">${esc(r.receipt_confirmed_date||'')}</td><td class="num">${n(r.quotation_price)}</td><td class="num">${n(r.confirmed_price)}</td></tr>`).join('');countText.textContent=view.length+'건';}
+function render(){body.innerHTML=view.map(r=>`<tr><td class="c">${r.row_no}</td><td class="c">${esc(CATLAB(r.category))}</td><td>${esc(r.job_no)}</td><td>${esc(modelOf(r.job_no))}</td><td class="c">${esc(r.process_code||'')}</td><td class="c">${esc(r.process_name||'')}</td><td>${esc(r.part_no||'')}</td><td>${esc(r.part_name||'')}</td><td class="c">${esc(r.machining_process_code||'')}</td><td>${esc(r.machining_process_name||'')}</td><td class="c">${esc(r.orderer_name||'')}</td><td>${esc(r.partner_vendor_name||'')}</td><td class="c">${esc(r.order_date||'')}</td><td class="c">${esc(r.receipt_planned_date||'')}</td><td class="c">${esc(r.receipt_date||'')}</td><td class="c">${esc(r.receipt_confirmed_date||'')}</td><td class="num">${n(r.quotation_price)}</td><td class="num">${n(r.confirmed_price)}</td></tr>`).join('');countText.textContent=view.length+'건';}
 /* v139: 구분 체크박스(복수 선택) · 제번/품번 콤보(드롭+직접입력, 상호연동) · 조회 버튼 */
 const JOBS=[];const MODEL_OF={};
 const modelOf=j=>MODEL_OF[j]||'';
@@ -88,11 +88,27 @@ function search(){const ks=new Set(kBoxes().filter(b=>b.checked).map(b=>b.value)
  render();renderTotal();msg(ks.size?`조회결과 ${view.length}건입니다.`:'구분을 하나 이상 선택하세요.');}
 function csv(){
  const h=['NO','항목','제번','품번(제품)','공정','공정명','품번','부품명','가공공정','가공공정명','발주자','협력업체','발주일','입고예정일','입고일','입고확정일','견적가','확정가'];
- const rows=view.map(r=>[r.row_no,r.category,r.job_no,modelOf(r.job_no),r.process_code,r.process_name,r.part_no,r.part_name,r.machining_process_code,r.machining_process_name,r.orderer_name,r.partner_vendor_name,r.order_date,r.receipt_planned_date,r.receipt_date,r.receipt_confirmed_date,r.quotation_price,r.confirmed_price]);
+ const rows=view.map(r=>[r.row_no,CATLAB(r.category),r.job_no,modelOf(r.job_no),r.process_code,r.process_name,r.part_no,r.part_name,r.machining_process_code,r.machining_process_name,r.orderer_name,r.partner_vendor_name,r.order_date,r.receipt_planned_date,r.receipt_date,r.receipt_confirmed_date,r.quotation_price,r.confirmed_price]);
  const t='\ufeff'+[h,...rows].map(a=>a.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n');
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/csv;charset=utf-8'}));
  a.download='purchase_status.csv';a.click();URL.revokeObjectURL(a.href);msg(`${view.length}건을 엑셀로 내보냈습니다.`)}
 
+/* v233: SET외주 — order_lines category=외주SET. 화면 표시는 「SET외주」 */
+const CATLAB=c=>c==='외주SET'?'SET외주':(c||'');
+/* purchase_status_view 에 외주SET 이 아직 안 잡히면 order_lines 에서 직접 읽어 같은 칸으로 붙인다 */
+async function loadSet(){
+ if(data.some(r=>r.category==='외주SET'))return 0;
+ try{
+  const ls=await MESDB.table('order_lines').select('select=*&category=eq.'+encodeURIComponent('외주SET')+'&order=order_date.desc,line_id.desc');
+  const D=v=>v?String(v).slice(0,10):null,N=v=>v==null||v===''?null:Number(v);
+  let no=data.reduce((a,r)=>Math.max(a,Number(r.row_no)||0),0);
+  (ls||[]).forEach(l=>data.push({row_no:++no,category:'외주SET',job_no:l.job_no,process_code:l.process_code==='ALL'?'ALL':(l.process_code||''),
+   process_name:l.process_name||'',part_no:l.part_no||'',part_name:l.part_name||'',machining_process_code:'',machining_process_name:'',
+   orderer_name:l.owner_name||'',partner_vendor_name:l.vendor_name||'',order_date:D(l.order_date),receipt_planned_date:D(l.required_date),
+   receipt_date:D(l.receipt_date),receipt_confirmed_date:D(l.confirm_date),quotation_price:N(l.quote_price),confirmed_price:N(l.confirm_price)}));
+  return (ls||[]).length;
+ }catch(e){return 0}
+}
 /* v32: 스냅샷 테이블 → purchase_status_view 실집계 조회 */
 const _online=()=>!!(window.MESDB&&MESDB.online);
 async function loadLive(){
@@ -104,6 +120,7 @@ async function loadLive(){
   const rs=await MESDB.table('purchase_status_view').select('select=*');
   data.length=0;
   rs.forEach(r=>data.push(r));
+  await loadSet();   /* v233 */
   fillVen();
   if(typeof view!=='undefined'&&Array.isArray(view))view=[...data];
   (window.MES&&window.MES.search||window.search||window.render||function(){})();
@@ -112,7 +129,7 @@ async function loadLive(){
  }catch(e){const m=document.getElementById('message');
   if(m)m.textContent='조회 실패: '+String(e.message||e).slice(0,110)}
 }
-window.MES={search,setMessage:msg};loadLive();render();renderTotal();</script><script src="mes_db.js?v=171"></script>
+window.MES={search,setMessage:msg};loadLive();render();renderTotal();</script><script src="mes_db.js?v=230"></script>
 
 <script src="mes_ctx.js?v=169"></script>
 </body></html>
