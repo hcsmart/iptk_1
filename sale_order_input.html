@@ -78,6 +78,8 @@ html[data-mw="xs"] .formgrid{grid-template-columns:84px minmax(0,1fr)}
 .attbtn b{display:inline-block;min-width:18px;margin-left:5px;padding:0 5px;border-radius:9px;background:#2f75b5;color:#fff;font-size:11px;line-height:17px}
 .attbtn b:empty{display:none}
 @media(max-width:680px){.foot{flex-wrap:wrap;height:auto;min-height:42px}.dlg.attbox{margin-top:20px}}
+/* v235: 첨부 끌어놓기 */
+#attDrop.drag{outline:2px dashed #2f75b5;outline-offset:-4px;background:#eef5fc}
 /* 첨부파일: 비어 있을 때 과도한 여백 축소 */
 .filearea .empty,#fileEmpty{height:64px!important}
 </style></head><body><div class="screen">
@@ -126,8 +128,8 @@ html[data-mw="xs"] .formgrid{grid-template-columns:84px minmax(0,1fr)}
 <div class="fillsp"></div>
 <div class="secthead" style="display:none">첨부파일</div>
 
-<div class="mask" id="attMask" onmousedown="this._d=(event.target===this)" onclick="if(event.target===this&&this._d)attClose()"><div class="dlg attbox"><div class="dlghead">첨부파일 <span id="attJob" style="font-weight:400;color:#6b7a86;margin-left:8px"></span><button onclick="attClose()">✕</button></div><div class="dlgbody"><div class="toolbar"><button class="btn" onclick="attPick()">파일첨부</button><button class="btn" onclick="attOpen(1)">다운로드</button><button class="btn" onclick="attOpen()">미리보기</button><button class="btn" onclick="attDel()">파일삭제</button><input type="file" id="attFile" multiple style="display:none" onchange="attUpload(this.files)"></div>
-<div class="att attdlg"><table style="min-width:640px"><thead><tr><th style="width:34px"></th><th>파일명</th><th style="width:150px">Version</th><th style="width:280px">파일내용</th><th style="width:90px">크기</th><th style="width:90px">확장자</th></tr></thead><tbody id="attBody"></tbody></table></div></div><div class="dlgfoot"><button class="btn" onclick="attClose()">닫기</button></div></div></div>
+<div class="mask" id="attMask" onmousedown="this._d=(event.target===this)" onclick="if(event.target===this&&this._d)attClose()"><div class="dlg attbox"><div class="dlghead">첨부파일 <span id="attJob" style="font-weight:400;color:#6b7a86;margin-left:8px"></span><button onclick="attClose()">✕</button></div><div class="dlgbody"><div class="toolbar"><button class="btn" onclick="attPick()">파일첨부</button><button class="btn" onclick="attOpen(1)">다운로드</button><button class="btn" onclick="attOpen()">미리보기</button><button class="btn" onclick="attDel()">파일삭제</button><input type="file" id="attFile" multiple style="display:none" onchange="attUpload(this.files)"><span id="attMsg" style="margin-left:10px;color:#b45309;font-size:12px"></span></div>
+<div class="att attdlg" id="attDrop" title="파일을 여기로 끌어놓아도 됩니다"><table style="min-width:640px"><thead><tr><th style="width:34px"></th><th>파일명</th><th style="width:150px">Version</th><th style="width:280px">파일내용</th><th style="width:90px">크기</th><th style="width:90px">확장자</th></tr></thead><tbody id="attBody"></tbody></table></div></div><div class="dlgfoot"><button class="btn" onclick="attClose()">닫기</button></div></div></div>
 
 <footer class="foot"><button class="btn attbtn" id="attBtn" onclick="attShow()">📎 첨부파일<b id="attCnt"></b></button><button class="btn" onclick="save()">▤ 저장</button><button class="btn" onclick="clearForm()">＋ 신규등록</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">관리제번·공정수 등 필수항목을 입력하고 저장하세요. 공정수가 2 이상이면 A·B·C… 제번이 공정 수만큼 만들어집니다.</span></footer>
 </div>
@@ -279,38 +281,59 @@ function renderAtt(){
  :'<tr><td colspan="6" class="c" style="height:64px;color:#8a97a2">첨부파일이 없습니다.</td></tr>';
  const c=document.getElementById('attCnt');if(c)c.textContent=ATT.length?ATT.length:'';
 }
-function attShow(){attJob.textContent=job_no.value.trim()?'제번 '+job_no.value.trim():'(제번 미입력)';renderAtt();attMask.classList.add('on')}
+/* v235: 첨부 안내는 팝업 안에도 보인다 (하단 메시지는 팝업 뒤에 가려 안 보였다) */
+function amsg(t,ok){const e=document.getElementById('attMsg');if(e){e.textContent=t||'';e.style.color=ok?'#1d6b3a':'#b45309'}msg(t)}
+function attShow(){const j=job_no.value.trim()||(jobPreview()||[])[0]||'';attJob.textContent=j?'제번 '+j:'(관리제번을 먼저 입력하세요)';amsg('');renderAtt();attMask.classList.add('on')}
 function attClose(){attMask.classList.remove('on')}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&attMask.classList.contains('on'))attClose()});
 function attSel(){const r=document.querySelector('input[name=attSel]:checked');return r?ATT[Number(r.value)]:null}
+function attJobNo(){if(!job_no.value.trim())jobPreview();return job_no.value.trim()}
 function attPick(){
- if(!job_no.value.trim())return msg('제번을 먼저 입력하세요. (첨부는 제번별로 저장됩니다)');
- if(!sbTok())return msg('로그인 후 파일을 첨부할 수 있습니다.');
+ if(!attJobNo())return amsg('관리제번을 먼저 입력하세요. (첨부는 제번별로 저장됩니다)');
  document.getElementById('attFile').click();
+}
+/* 이미 등록된 수주면 첨부 목록을 바로 DB 에 반영한다 (저장을 안 눌러 잃어버리던 문제) — 공정 제번 전부 */
+async function attPersist(){
+ if(!(window.MESDB&&MESDB.online))return false;
+ const b=(base_job.value||'').trim().toUpperCase();if(!b)return false;
+ try{const ex=await existingJobs(b);if(!ex.length)return false;
+  for(const r of ex)await MESDB.table('sale_orders').upsert({job_no:r.job_no,attachments:ATT},'job_no');
+  try{MESDB.notify&&MESDB.notify(['sale_orders'])}catch(e){}
+  return true}catch(e){return false}
 }
 async function attUpload(files){
  if(!files||!files.length)return;
- const job=job_no.value.trim();
- for(const f of files){
+ const job=attJobNo();if(!job)return amsg('관리제번을 먼저 입력하세요.');
+ const tok=sbTok();const list=[...files];let n=0;
+ for(const f of list){
+  if(f.size>50*1024*1024){amsg(`${f.name}: 50MB 를 넘는 파일은 올릴 수 없습니다.`);continue}
   const safe=f.name.replace(/[^\w.\-가-힣 ]/g,'_');
   const path=job+'/'+Date.now()+'_'+safe;
+  amsg(`${f.name} 올리는 중… (${n+1}/${list.length})`,true);
   try{
    const r=await fetch(SB_URL+'/storage/v1/object/mes-attach/'+path.split('/').map(encodeURIComponent).join('/'),
-    {method:'POST',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbTok(),'Content-Type':f.type||'application/octet-stream','x-upsert':'true'},body:f});
-   if(!r.ok){const t=await r.text();throw new Error(t.slice(0,120))}
-   ATT.push({name:f.name,path,size:f.size,ext:(f.name.split('.').pop()||'').toUpperCase(),note:''});
-  }catch(e){msg('업로드 실패('+f.name+'): '+String(e.message||e).slice(0,120));document.getElementById('attFile').value='';renderAtt();return}
+    {method:'POST',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+(tok||SB_KEY),'Content-Type':f.type||'application/octet-stream','x-upsert':'true'},body:f});
+   if(!r.ok){const t=await r.text();throw new Error((r.status===400||r.status===403?(tok?'저장소 권한 없음 — ':'로그인 후 첨부할 수 있습니다. '):'')+t.slice(0,120))}
+   ATT.push({name:f.name,path,size:f.size,ext:(f.name.split('.').pop()||'').toUpperCase(),note:''});n++;renderAtt();
+  }catch(e){document.getElementById('attFile').value='';renderAtt();return amsg('업로드 실패('+f.name+'): '+String(e.message||e).slice(0,140))}
  }
  document.getElementById('attFile').value='';renderAtt();
- msg(`${files.length}개 파일을 업로드했습니다. [저장]을 눌러야 수주에 확정 반영됩니다.`);
+ if(!n)return;
+ const saved=await attPersist();
+ amsg(`${n}개 파일을 올렸습니다. `+(saved?'수주정보에 바로 반영했습니다.':'아직 등록 전인 수주입니다 — [▤ 저장]을 눌러야 수주에 반영됩니다.'),true);
 }
-function attOpen(dl){const a=attSel();if(!a)return msg(dl?'다운로드할 파일을 선택하세요.':'미리보기할 파일을 선택하세요.');
+/* 끌어놓기 */
+(function(){const d=document.getElementById('attDrop');if(!d)return;const isF=e=>{try{return [...(e.dataTransfer&&e.dataTransfer.types||[])].includes('Files')}catch(_){return false}};
+ d.addEventListener('dragover',e=>{if(!isF(e))return;e.preventDefault();d.classList.add('drag')});
+ d.addEventListener('dragleave',()=>d.classList.remove('drag'));
+ d.addEventListener('drop',e=>{if(!isF(e))return;e.preventDefault();d.classList.remove('drag');attUpload(e.dataTransfer.files)});})();
+function attOpen(dl){const a=attSel();if(!a)return amsg(dl?'다운로드할 파일을 선택하세요.':'미리보기할 파일을 선택하세요.');
  const u=attUrl(a.path);if(dl){const el=document.createElement('a');el.href=u;el.download=a.name;el.target='_blank';el.click()}else window.open(u,'_blank')}
-async function attDel(){const a=attSel();if(!a)return msg('삭제할 파일을 선택하세요.');
+async function attDel(){const a=attSel();if(!a)return amsg('삭제할 파일을 선택하세요.');
  if(!confirm(a.name+' 파일을 삭제할까요?'))return;
  try{await fetch(SB_URL+'/storage/v1/object/mes-attach/'+a.path.split('/').map(encodeURIComponent).join('/'),
   {method:'DELETE',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+(sbTok()||SB_KEY)}})}catch(e){}
- ATT.splice(ATT.indexOf(a),1);renderAtt();msg('첨부를 삭제했습니다. [저장]으로 반영하세요.')}
+ ATT.splice(ATT.indexOf(a),1);renderAtt();const saved=await attPersist();amsg('첨부를 삭제했습니다. '+(saved?'수주정보에 반영했습니다.':'[▤ 저장]으로 반영하세요.'),true)}
 /* 제번으로 기존 수주정보 + 첨부를 화면에 채운다.
  * v60: 첨부만 읽던 것을 전체 행 로드로 확장. 빈 화면 상태로 [수정]을 눌러
  *      기존 값이 통째로 지워지던 문제를 막는다.
