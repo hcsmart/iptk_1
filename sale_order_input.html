@@ -69,6 +69,10 @@ html[data-mw="lg"] .formgrid{grid-template-columns:repeat(4,84px minmax(0,1fr))}
 html[data-mw="md"] .formgrid{grid-template-columns:repeat(3,84px minmax(0,1fr))}
 html[data-mw="sm"] .formgrid{grid-template-columns:repeat(2,84px minmax(0,1fr))}
 html[data-mw="xs"] .formgrid{grid-template-columns:84px minmax(0,1fr)}
+/* v241: 개발유형 체크박스 */
+.devbox{display:grid;grid-template-columns:1fr 1fr;gap:1px 6px;align-content:center;min-height:28px;padding:1px 4px;border:1px solid #cfd8e0;background:#fff;font-size:11.5px;line-height:13px;white-space:nowrap;box-sizing:border-box}
+.devbox label{display:flex;align-items:center;gap:3px;cursor:pointer}.devbox input{margin:0;width:13px;height:13px}
+.grid>div:has(.devbox){align-self:stretch}
 /* v116 수주등록 배치: 구분선 + 납기완료일·정산완료일 분리, 첨부파일 팝업 */
 .formgrid .gsep{grid-column:1/-1;height:0;border-top:1px dashed #9fb0bf;margin:4px 0 2px}
 .fillsp{flex:1;min-height:0}
@@ -105,7 +109,7 @@ html[data-mw="xs"] .formgrid{grid-template-columns:84px minmax(0,1fr)}
  <div class="label">고객사</div><div class="lk"><input id="cust_code"><input id="cust_name" readonly><button onclick="openLook('customer','cust_code','cust_name')">…</button></div>
 
  <div class="label">금형타입</div><div class="lk"><input id="mold_code"><input id="mold_name" readonly><button onclick="openLook('mold','mold_code','mold_name')">…</button></div>
- <div class="label">개발유형</div><div><select id="devtype" class="field"><option value=""></option><option>사내</option><option>외주</option></select></div>
+ <div class="label" title="설계·조립을 사내/외주 중 어디서 하는지 (여러 개 체크 가능). SET외주발주에는 「사외조립」 체크된 제번만 나옵니다">개발유형</div><div class="devbox"><input id="devtype" type="hidden"><label><input type="checkbox" data-dev="사내설계" onchange="devToValue()">사내설계</label><label><input type="checkbox" data-dev="외주설계" onchange="devToValue()">외주설계</label><label><input type="checkbox" data-dev="사내조립" onchange="devToValue()">사내조립</label><label><input type="checkbox" data-dev="사외조립" onchange="devToValue()">사외조립</label></div>
  <div class="label">양산처</div><div class="lk"><input id="mp_code"><input id="mp_name" readonly><button onclick="openLook('mass_production','mp_code','mp_name')">…</button></div>
  <div class="label">품명</div><div><input id="product_name" class="field"></div>
  <div class="label">품번</div><div><input id="model" class="field"></div>
@@ -157,8 +161,15 @@ const MAP={job_no:'job_no',order_date:'order_date',s1p:'s1_planned_date',
  ms_code:'machine_spec_code',ms_name:'machine_spec_name',material_used:'material_used',
  s1c:'s1_completed_date',dlvc:'delivery_completed_date',eco:'eco',remark:'remark',
  order_price:'order_price',comp_date:'completion_date',nego_amount:'nego_amount',nego_note:'nego_note',proc_cat:'process_category'};
-function load(o){for(const[el,k]of Object.entries(MAP)){const n=document.getElementById(el);if(n)n.value=o[k]??''}}
-function clearForm(){for(const el of Object.keys(MAP)){const n=document.getElementById(el);if(n)n.value=''}document.getElementById('status').value='진행';otype.value='신작';dom.value='국내';ATT.length=0;renderAtt();msg('신규 입력 상태입니다.')}
+function load(o){for(const[el,k]of Object.entries(MAP)){const n=document.getElementById(el);if(n)n.value=o[k]??''}devFromValue()}
+/* v241: 개발유형 = 체크박스 4개 (사내설계·외주설계·사내조립·사외조립) → development_type 에 쉼표로 저장. 옛 값 '사내'/'외주' 는 설계 기준으로 읽는다 */
+const DEVS=['사내설계','외주설계','사내조립','사외조립'];
+const devBoxes=()=>[...document.querySelectorAll('.devbox input[data-dev]')];
+function devToValue(){devtype.value=devBoxes().filter(b=>b.checked).map(b=>b.dataset.dev).join(',')}
+function devFromValue(){const v=String(devtype.value||'');const set=new Set(v.split(/[,\s/·]+/).filter(Boolean));
+ if(set.has('사내')){set.delete('사내');set.add('사내설계')}if(set.has('외주')){set.delete('외주');set.add('외주설계')}
+ devBoxes().forEach(b=>b.checked=set.has(b.dataset.dev));devtype.value=[...set].filter(x=>DEVS.includes(x)).join(',')}
+function clearForm(){for(const el of Object.keys(MAP)){const n=document.getElementById(el);if(n)n.value=''}devFromValue();document.getElementById('status').value='진행';otype.value='신작';dom.value='국내';ATT.length=0;renderAtt();msg('신규 입력 상태입니다.')}
 const NUMF=['quotation_price','order_price','nego_amount'];   /* v119: 네고조정(회의록 6-1) */   /* v62: 공정(process_set_qty)은 '1/1' 형식 text — 숫자변환 제외 */
 const DATEF=['order_date','s1_planned_date','delivery_planned_date','s1_completed_date','delivery_completed_date','completion_date'];
 async function saveOne(mode){
