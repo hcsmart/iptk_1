@@ -122,7 +122,7 @@ async function load(){
 let COMMON=null;
 const LABOR=r=>r.labor_cost!=null&&r.labor_cost!==''?N(r.labor_cost):Math.round(N(r.work_minutes)/60*30000);
 function build(plan,pl,lines,res,meta,exps){
- COMMON={dex:{amt:0,wait:0,n:0},din:{min:0,amt:0,n:0},asm:{min:0,amt:0,n:0},insp:{min:0,amt:0,n:0},exp:{amt:0,n:0},etc:{amt:0,min:0,n:0}};
+ COMMON={dex:{amt:0,wait:0,n:0},sex:{amt:0,wait:0,n:0},din:{min:0,amt:0,n:0},asm:{min:0,amt:0,n:0},insp:{min:0,amt:0,n:0},exp:{amt:0,n:0},etc:{amt:0,min:0,n:0}};
  const map=new Map();   /* job|part → row */
  const K=(j,p)=>j+'|'+p;
  const at=(j,p)=>{const k=K(j,p);if(!map.has(k))map.set(k,{job:j,seq:seqOf(j),part:p,name:'',mat:'',shape:'',img:'',spec:'',qty:null,
@@ -140,6 +140,7 @@ function build(plan,pl,lines,res,meta,exps){
  lines.forEach(l=>{
   const done0=l.status==='입고확정';
   if(l.category==='외주설계'){const c=COMMON.dex;c.n++;if(done0)c.amt+=confAmt(l);else if(l.status==='발주'||l.status==='입고')c.wait+=confAmt(l);return}
+  if(l.category==='외주SET'){const c=COMMON.sex;c.n++;if(done0)c.amt+=confAmt(l);else if(l.status==='발주'||l.status==='입고')c.wait+=confAmt(l);return}   /* v230: SET외주 → 금형 공통비 */
   const p=l.part_no||'';
   if(!p||p==='★'){if(done0&&['원재료','구매품','외주가공'].includes(l.category)){COMMON.etc.amt+=confAmt(l);COMMON.etc.n++}return}
   const x=at(l.job_no,p);x.name=x.name||l.part_name||'';
@@ -174,7 +175,7 @@ function build(plan,pl,lines,res,meta,exps){
   const d=D(r.work_date);if(d&&d>q.dIn)q.dIn=d;
  });
  (exps||[]).forEach(e=>{COMMON.exp.amt+=N(e.amount);COMMON.exp.n++});
- COMMON.total=COMMON.dex.amt+COMMON.din.amt+COMMON.asm.amt+COMMON.insp.amt+COMMON.exp.amt+COMMON.etc.amt;
+ COMMON.total=COMMON.dex.amt+COMMON.sex.amt+COMMON.din.amt+COMMON.asm.amt+COMMON.insp.amt+COMMON.exp.amt+COMMON.etc.amt;
  ROWS=[...map.values()];
  ROWS.forEach(x=>{const m=(meta||{})[x.job+'|'+x.part];
   if(m){if(!x.shape)x.shape=m.shape||'';if(!x.img)x.img=m.image_url||''}
@@ -199,7 +200,7 @@ function build(plan,pl,lines,res,meta,exps){
  *   공정 칸 → 외주·사내가공: 사내외가공 발주 (그 공정 칸 표시) · 조립: 조립실적등록 · 검사: 검사실적등록 · 설계: 설계실적등록 */
 function goTarget(td){
  if(td.dataset.go==='common'){const k=td.dataset.kind,job=CURJOB,base=baseOf(CURJOB);
-  return ({dex:{name:'외주설계발주현황',p:{job,base}},din:{name:'설계실적등록',p:{job}},asm:{name:'조립실적등록',p:{job,part:'★'}},
+  return ({dex:{name:'외주설계발주현황',p:{job,base}},sex:{name:'SET외주발주현황',p:{job,base}},din:{name:'설계실적등록',p:{job}},asm:{name:'조립실적등록',p:{job,part:'★'}},
    insp:{name:'검사실적등록',p:{job,part:'★'}},exp:{name:'경비현황',p:{job:BASEMODE?base:job,base}},etc:{name:'사내외가공 발주',p:{job}}})[k]||null}
  const tr=td.closest('tr[data-part]');if(!tr)return null;
  const job=tr.dataset.job,part=tr.dataset.part,x=ROWS.find(r=>r.job===job&&r.part===part)||{};
@@ -252,6 +253,7 @@ function render(){
   /* v196: 금형 공통비 — 부품 표 아래에 항목별로 (우클릭하면 근거 화면) */
   if(CURJOB&&COMMON){const all=(showJob?11:10)+(COLS.length||1)+2,C=COMMON,hh=m=>m?H(m)+'h':'';
    const items=[['dex','외주설계',`입고확정 ${F(C.dex.amt)||0}원`+(C.dex.wait?` · 미확정 ${F(C.dex.wait)}원`:'')+(C.dex.n?` · ${C.dex.n}건`:''),C.dex.amt],
+    ['sex','SET외주',`입고확정 ${F(C.sex.amt)||0}원`+(C.sex.wait?` · 미확정 ${F(C.sex.wait)}원`:'')+(C.sex.n?` · ${C.sex.n}건`:''),C.sex.amt],
     ['din','사내설계',C.din.n?`설계실적 ${hh(C.din.min)} · ${C.din.n}건`:'설계실적 없음',C.din.amt],
     ['asm','조립 (금형 전체)',C.asm.n?`부품에 매지 않은 조립 ${hh(C.asm.min)} · ${C.asm.n}건`:'없음',C.asm.amt],
     ['insp','검사 (금형 전체)',C.insp.n?`부품에 매지 않은 검사 ${hh(C.insp.min)} · ${C.insp.n}건`:'없음',C.insp.amt],
@@ -308,7 +310,7 @@ function csv(){
    ...COLS.flatMap(c=>{const q=x.proc[c];return q?[q.min?(q.min/60).toFixed(1):'',Math.round(q.out+q.cost)||'']:['','']}),
    Math.round(x.procTot)||'',Math.round(x.total)||'']);
   if(COMMON){const w=h.length,row=(l,a)=>{const r=Array(w).fill('');r[0]=l;r[w-1]=Math.round(a)||0;return r};
-   rows.push(Array(w).fill(''),row('금형 공통비 · 외주설계',COMMON.dex.amt),row('금형 공통비 · 사내설계',COMMON.din.amt),row('금형 공통비 · 조립(금형 전체)',COMMON.asm.amt),
+   rows.push(Array(w).fill(''),row('금형 공통비 · 외주설계',COMMON.dex.amt),row('금형 공통비 · SET외주',COMMON.sex.amt),row('금형 공통비 · 사내설계',COMMON.din.amt),row('금형 공통비 · 조립(금형 전체)',COMMON.asm.amt),
     row('금형 공통비 · 검사(금형 전체)',COMMON.insp.amt),row('금형 공통비 · 경비',COMMON.exp.amt),...(COMMON.etc.n?[row('금형 공통비 · 기타(부품 미지정)',COMMON.etc.amt)]:[]),
     row('금형 총원가',v.reduce((a,x)=>a+N(x.total),0)+COMMON.total))}
  }else{
@@ -326,7 +328,7 @@ window.MES={search:load,csv,setMessage:msg,reload:load};
 render();
 (async()=>{await waitDB();const j=(jobQ.value||'').trim();if(j&&online())load()})();
 </script>
-<script src="mes_db.js?v=196"></script>
+<script src="mes_db.js?v=230"></script>
 <script src="mes_ctx.js?v=169"></script>
 <script src="mes_jobpick.js?v=196"></script>
 <script src="mes_go.js?v=196"></script>

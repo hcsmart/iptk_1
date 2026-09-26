@@ -83,6 +83,9 @@ const KINDS={
             fallback:r=>r.vendor_type==='협력업체', crud:VENDOR_CRUD},
  design_partner:{title:'협력업체(외주설계)', table:'outsourced_design_partners', order:'seq',
             cols:['No','업체명'], map:r=>[r.seq,r.partner_name], code:r=>r.partner_name, name:r=>r.partner_name},
+ /* v230: SET외주 협력업체 — SET외주제작등록(조립외주)의 협력업체 마스터(set_order_partners)를 같이 쓴다 */
+ set_partner:{title:'협력업체(SET외주)', table:'set_order_partners', order:'row_no',
+            cols:['No','업체명'], map:r=>[r.row_no,r.partner_vendor_name], code:r=>r.partner_vendor_name, name:r=>r.partner_vendor_name},
  /* v68: 기준정보 '사용자정보'(users) 에서 조회한다.
     코드 = 아이디(user_id). 시스템 계정(hcsmart) 제외.
     사용여부 해제(is_active=false) 는 '사용중만' 체크로 숨긴다. */

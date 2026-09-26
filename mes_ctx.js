@@ -552,6 +552,7 @@ window.MESCTX={confirm:dlgConfirm};
 (function(){
  const f=(location.pathname||'').split('/').pop();
  const PAGE={'outsourced_design_order_input.html':{phase:'design',label:'설계'},
+             'set_outsourcing_order_input.html':{phase:'assembly',label:'SET'},   /* v230: SET외주 = 제작계획 조립외주 */
              'outsourcing_order_input.html':{phase:'machining',label:'가공'},
              'set_order_registration.html':{set:true}}[f];
  if(!PAGE)return;
@@ -667,19 +668,21 @@ window.MESCTX={confirm:dlgConfirm};
  * → [조회] 를 누르거나 order_lines 변경 알림이 오면 DB 를 다시 읽어 ORD 를 채운 뒤 걸러낸다. */
 (function(){
  const f=(location.pathname||'').split('/').pop();
- if(f!=='outsourced_design_receipt_input.html')return;
+ /* v230: SET외주발주입고도 같은 방식 (category=외주SET · set_outsourcing_receipts) */
+ const RC={'outsourced_design_receipt_input.html':{cat:'외주설계',rcp:'outsourced_design_receipts'},'set_outsourcing_receipt_input.html':{cat:'외주SET',rcp:'set_outsourcing_receipts'}}[f];
+ if(!RC)return;
  const D=v=>v?String(v).slice(0,10):'';
  const Nn=v=>(v===null||v===undefined?'':Number(v));
  async function refetch(){
   if(!(window.MESDB&&MESDB.online))return false;
   try{
-   const rows=await MESDB.table('order_lines').select('select=*&order=line_id&category=eq.'+encodeURIComponent('외주설계'));
+   const rows=await MESDB.table('order_lines').select('select=*&order=line_id&category=eq.'+encodeURIComponent(RC.cat));
    if(typeof ORD==='undefined')return false;
    ORD.length=0;
    rows.forEach(r=>ORD.push({_id:r.line_id,seq:Nn(r.line_id),job_no:r.job_no||'',item_name:r.item_name||'',partner_name:r.vendor_name||'',
     process_code:r.process_code||'',process_name:r.process_name||'',order_date:D(r.order_date),expected_date:D(r.required_date),
     nego_price:Nn(r.confirm_price),quote_price:Nn(r.quote_price),progress_rate:Nn(r.nego_rate),receipt_date:D(r.receipt_date)}));   /* v199: 관리제번 표시용 process_name · 견적가 */
-   try{RCP=await MESDB.table('outsourced_design_receipts').select('select=*&order=receipt_no')}catch(e){}
+   try{RCP=await MESDB.table(RC.rcp).select('select=*&order=receipt_no')}catch(e){}
    if(typeof fillVen==='function')fillVen();
    return true;
   }catch(e){return false}

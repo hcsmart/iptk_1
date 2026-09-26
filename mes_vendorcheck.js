@@ -40,7 +40,7 @@
   }
 
   /* v68: 알림전용 여부 */
-  var NOTIFY_FILES = /outsourced_design_order_input/i;
+  var NOTIFY_FILES = /outsourced_design_order_input|set_outsourcing_order_input/i;   /* v230: SET외주도 알림전용 */
   function opt() { try { return window.MES_VCHK_OPT || {}; } catch (e) { return {}; } }
   function notifyOnly() {
     var o = opt();

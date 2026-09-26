@@ -466,6 +466,8 @@ MESDB.syncPlanOut=async function(job,kind){
     if(!pl||!pl[0])return;
     let rows=[],vendor=null;
     if(kind==='design'){rows=await rest(`order_lines?select=vendor_name&category=eq.%EC%99%B8%EC%A3%BC%EC%84%A4%EA%B3%84&job_no=eq.${q}&order=line_id`);vendor=rows[0]&&rows[0].vendor_name||null}
+    /* v230: SET외주(order_lines category=외주SET) → 제작계획의 조립(assembly) 외주 여부로 기록 */
+    else if(kind==='set'){kind='assembly';rows=await rest(`order_lines?select=vendor_name&category=eq.${encodeURIComponent('외주SET')}&job_no=eq.${q}&order=line_id`);vendor=rows[0]&&rows[0].vendor_name||null}
     else{rows=await rest(`set_order_lines?select=partner_vendor_name&job_no=eq.${q}&order=line_id`);vendor=rows[0]&&rows[0].partner_vendor_name||null}
     const on=rows.length>0;
     const body={row_no:Number(pl[0].row_no)};
