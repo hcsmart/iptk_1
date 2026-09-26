@@ -34,7 +34,7 @@ tfoot th{position:sticky;bottom:0;background:linear-gradient(#e6eef5,#d3e0ea)}
     <div class="grid-title">입고 처리 대기 리스트</div>
     <div class="tablewrap"><table>
       <colgroup><col style="width:44px"><col style="width:40px"><col style="width:104px"><col style="width:112px"><col style="width:96px"><col style="width:48px"><col style="width:58px"><col style="width:76px"><col style="width:140px"><col style="width:64px"><col style="width:74px"><col style="width:74px"><col style="width:110px"><col style="width:76px"><col style="width:82px"><col style="width:92px"><col style="width:92px"><col style="width:92px"><col style="width:70px"></colgroup>
-      <thead><tr><th>No</th><th>선택</th><th>협력업체</th><th>제번</th><th>품명</th><th>공정</th><th>공정명</th><th>품번</th><th>부품명</th><th>재질</th><th>발주수량</th><th>입고수량</th><th>규격</th><th>입고단가</th><th>입고금액</th><th>발주월</th><th>입고예정일</th><th>입고월</th><th>발주자</th></tr></thead>
+      <thead><tr><th>No</th><th><input type="checkbox" id="chkAll" onclick="chkAllToggle(this)" title="전체선택 / 전체해제"></th><th>협력업체</th><th>제번</th><th>품명</th><th>공정</th><th>공정명</th><th>품번</th><th>부품명</th><th>재질</th><th>발주수량</th><th>입고수량</th><th>규격</th><th>입고단가</th><th>입고금액</th><th>발주월</th><th>입고예정일</th><th>입고월</th><th>발주자</th></tr></thead>
       <tbody id="body"></tbody>
       <tfoot><tr><th colspan="10" class="r">합계</th><th class="r" id="sumOrd">0</th><th class="r" id="sumIn">0</th><th></th><th class="r" id="sumPrice">0</th><th class="r" id="sumAmt">0</th><th colspan="4"></th></tr></tfoot>
     </table></div>
@@ -49,9 +49,18 @@ let dirty=false;   /* v26: 입고취소만 하고 저장하는 경우도 DB에 �
 const money=v=>Number(v||0).toLocaleString('ko-KR');
 function render(){body.innerHTML=view.map((r,i)=>`<tr onclick="pick(event,${r.no})"><td class="c">${i+1}</td><td class="c"><input type="checkbox" data-no="${r.no}" onchange="summary()"></td><td>${r.vendor}</td><td>${r.job}</td><td>${r.item}</td><td class="c">${r.proc}</td><td class="c">${r.procName}</td><td>${r.part}</td><td>${r.partName}</td><td class="c">${r.mat}</td><td class="r">${r.ord}</td><td class="r">${r.inQty}</td><td>${r.spec}</td><td class="r">${money(r.price)}</td><td class="r">${money(r.amt)}</td><td class="c">${r.odate}</td><td class="c">${r.edate}</td><td class="c">${r.idate}</td><td class="c">${r.owner}</td></tr>`).join('');
 sumOrd.textContent=money(view.reduce((a,r)=>a+(r.ord||0),0));sumIn.textContent=money(view.reduce((a,r)=>a+(r.inQty||0),0));sumPrice.textContent=money(view.reduce((a,r)=>a+(r.price||0),0));sumAmt.textContent=money(view.reduce((a,r)=>a+(r.amt||0),0));countText.textContent=`${view.length}건`;summary()}
+/* v252: 제목행 마스터 체크박스 — 전체선택/해제, 부분선택은 중간 표시 (원재료 입고와 동일) */
+function chks(){return [...document.querySelectorAll('#body input[type=checkbox]')]}
+function chkAllToggle(el){chks().forEach(c=>c.checked=el.checked);summary();
+ msg(el.checked?`${chks().length}건을 모두 선택했습니다.`:'선택을 모두 해제했습니다.')}
+function syncChkAll(){
+ const all=document.getElementById('chkAll');if(!all)return;
+ const cs=chks(),on=cs.filter(c=>c.checked).length;
+ all.checked=cs.length>0&&on===cs.length;all.indeterminate=on>0&&on<cs.length;
+}
 function pick(e,no){if(e.target.tagName==='INPUT')return;const cb=document.querySelector(`#body input[data-no="${no}"]`);if(cb){cb.checked=!cb.checked;summary()}}
 function selected(){const ids=[...document.querySelectorAll('#body input:checked')].map(x=>Number(x.dataset.no));return rows.filter(r=>ids.includes(r.no))}
-function summary(){const s=selected();selectedText.textContent=`선택 ${s.length}건`;document.querySelectorAll('#body tr').forEach(tr=>tr.classList.toggle('sel',!!tr.querySelector('input:checked')))}
+function summary(){const s=selected();selectedText.textContent=`선택 ${s.length}건`;document.querySelectorAll('#body tr').forEach(tr=>tr.classList.toggle('sel',!!tr.querySelector('input:checked')));syncChkAll()}
 /* 저장이 끝난(입고완료) 행은 대기 리스트에서 감춘다. [입고완료 포함] 을 켜면 다시 보이고 입고취소할 수 있다. */
 function passFilter(r){
  const v=vendorQ.value.trim().toLowerCase(),j=jobQ.value.trim().toLowerCase(),it=itemQ.value.trim().toLowerCase();
