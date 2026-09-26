@@ -223,8 +223,10 @@ MESDB.imgUpload=async function(file,job,part){
   if(!/^image\//.test(file.type||''))throw new Error('이미지 파일만 올릴 수 있습니다.');
   if(file.size>8*1024*1024)throw new Error('이미지가 너무 큽니다 (8MB 이하).');
   const ext=(file.name.split('.').pop()||'png').toLowerCase().replace(/[^a-z0-9]/g,'');
-  const safe=String(part||'part').replace(/[^\w.\-가-힣]/g,'_');
-  const path='parts/'+String(job||'공통').replace(/[^\w.\-가-힣]/g,'_')+'/'+safe+'_'+Date.now()+'.'+ext;
+  /* v237: 저장소 키는 영문·숫자·._- 만 (한글·공백이 들어가면 InvalidKey) */
+  const K=v=>String(v||'').replace(/[^A-Za-z0-9._-]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'');
+  const safe=K(part)||'part';
+  const path='parts/'+(K(job)||'common')+'/'+safe+'_'+Date.now()+'.'+ext;
   const tok=sbToken();
   const r=await fetch(CFG.url+'/storage/v1/object/'+IMG_BUCKET+'/'+path.split('/').map(encodeURIComponent).join('/'),
     {method:'POST',headers:{'apikey':CFG.key,'Authorization':'Bearer '+(tok||CFG.key),

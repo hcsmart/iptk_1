@@ -281,6 +281,9 @@ function renderAtt(){
  :'<tr><td colspan="6" class="c" style="height:64px;color:#8a97a2">첨부파일이 없습니다.</td></tr>';
  const c=document.getElementById('attCnt');if(c)c.textContent=ATT.length?ATT.length:'';
 }
+function attKey(name,i){const m=/\.([A-Za-z0-9]{1,8})$/.exec(name||'');const ext=m?'.'+m[1].toLowerCase():'';
+ const stem=String(name||'').replace(/\.[^.]*$/,'').replace(/[^A-Za-z0-9._-]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'').slice(0,40);
+ return Date.now()+'_'+(i||0)+(stem?'_'+stem:'')+ext}
 /* v235: 첨부 안내는 팝업 안에도 보인다 (하단 메시지는 팝업 뒤에 가려 안 보였다) */
 function amsg(t,ok){const e=document.getElementById('attMsg');if(e){e.textContent=t||'';e.style.color=ok?'#1d6b3a':'#b45309'}msg(t)}
 function attShow(){const j=job_no.value.trim()||(jobPreview()||[])[0]||'';attJob.textContent=j?'제번 '+j:'(관리제번을 먼저 입력하세요)';amsg('');renderAtt();attMask.classList.add('on')}
@@ -316,8 +319,8 @@ async function attUpload(files){
  const tok=await sbFresh();const list=[...files];let n=0;
  for(const f of list){
   if(f.size>50*1024*1024){amsg(`${f.name}: 50MB 를 넘는 파일은 올릴 수 없습니다.`);continue}
-  const safe=f.name.replace(/[^\w.\-가-힣 ]/g,'_');
-  const path=job+'/'+Date.now()+'_'+safe;
+  /* v237: 저장소 키는 영문·숫자·._- 만 허용 (InvalidKey) — 한글·공백 이름은 확장자만 살려 시각+일련번호로. 원래 이름은 목록(name)에 남긴다 */
+  const path=job.replace(/[^A-Za-z0-9._-]/g,'_')+'/'+attKey(f.name,n);
   amsg(`${f.name} 올리는 중… (${n+1}/${list.length})`,true);
   try{
    const r=await fetch(SB_URL+'/storage/v1/object/mes-attach/'+path.split('/').map(encodeURIComponent).join('/'),
