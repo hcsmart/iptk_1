@@ -123,13 +123,12 @@ html[data-mw="xs"] .formgrid{grid-template-columns:84px minmax(0,1fr)}
  <div class="label">기계사양</div><div class="lk"><input id="ms_code"><input id="ms_name" readonly><button onclick="openLook('mspec','ms_code','ms_name')">…</button></div>
  <div class="label">사용재료</div><div><input id="material_used" class="field"></div>
  <div class="label">T/O 완료일</div><div><input id="s1c" type="date" class="field"></div>
- <div class="label">ECO</div><div><input id="eco" class="field"></div>
+ <div class="label">양산처</div><div class="lk"><input id="mp_code"><input id="mp_name" readonly><button onclick="openLook('mass_production','mp_code','mp_name')">…</button></div><input id="eco" type="hidden">   <!-- v244: ECO 칸 삭제 (값은 숨겨 보존) → 그 자리에 양산처 -->
 
  <div class="label">비고</div><div class="span3"><input id="remark" class="field"></div>
  <div class="gsep"></div>
  <div class="label">납기완료일</div><div><input id="dlvc" type="date" class="field"></div>
  <div class="label">정산완료일</div><div><input id="comp_date" type="date" class="field" title="납품 후 잔여 수정·검수·정산까지 끝나 이 제번을 종결한 날."></div>
- <div class="label">양산처</div><div class="lk"><input id="mp_code"><input id="mp_name" readonly><button onclick="openLook('mass_production','mp_code','mp_name')">…</button></div>
 </section>
 <div style="display:none"><select id="proc_seq" data-nocombo="1"><option value=""></option></select><input id="job_no" type="hidden"></div>
 <div class="fillsp"></div>
