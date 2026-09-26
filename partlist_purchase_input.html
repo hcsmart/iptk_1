@@ -42,13 +42,20 @@ tbody tr.new td{color:#1d4f86}
 #xPrev{border:1px solid #c7d1d9;background:#fff;max-height:280px;overflow:auto}
 #xPrev th,#xPrev td{height:24px;font-size:12px}
 #xPrev tr.bad td{color:#b04a4a;background:#fdf1f1}
+/* v232: 엑셀파일 불러오기 */
+.xfile{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:7px 9px;border:2px dashed #9fb8cf;background:#f6fafd;margin-bottom:6px}
+.xfile.drag{border-color:#2f75b5;background:#e3f0fb}
+.xfile .fi{color:#4a5a68;font-size:11.5px;line-height:1.6}
+.xfile select{height:26px;border:1px solid #aeb9c3}
+#xStrike{font-size:11px;color:#8a3a3a;margin:4px 0 0}
+body.drag-on .screen{outline:3px dashed #2f75b5;outline-offset:-6px}
 </style></head><body><div class="screen">
 <div class="title"><h1>PartList 등록(구매품)</h1><small>설계관리 · PARTLIST</small></div>
 
 <section class="filt">
  <span class="lb">제번</span><input id="q_job" class="field" style="width:190px" autocomplete="off">
  <span class="lb">품번</span><input id="q_pn" class="field" style="width:170px" placeholder="품번 입력/선택" list="pnDL" autocomplete="off"><datalist id="pnDL"></datalist>
- <span class="hint">제번 선택 → 엑셀 <b>금형번호·품명·형식·규격·수량</b> 복사(<b>Ctrl+C</b>) → <b>Ctrl+V</b> → 리스트에 추가 → 체크 → <b>[▤ 등록]</b></span>
+ <span class="hint"><b>[▤ 엑셀불러오기]</b>에서 PART LIST 엑셀파일 선택(또는 화면에 끌어놓기) · 또는 엑셀 <b>금형번호·품명·형식·규격·수량</b> 복사(<b>Ctrl+C</b>) → <b>Ctrl+V</b> → 리스트에 추가 → 체크 → <b>[▤ 등록]</b></span>
 </section>
 
 <div class="gridbox"><table style="min-width:900px"><thead><tr>
@@ -86,15 +93,21 @@ tbody tr.new td{color:#1d4f86}
 <div class="xmask" id="xMask" onmousedown="xMask._d=(event.target===xMask)" onclick="if(event.target===xMask&&xMask._d)xlsClose()"><div class="xdlg">
  <div class="xhead"><span>엑셀 불러오기(구매품) - 제번 <b id="xJob"></b></span><button onclick="xlsClose()">×</button></div>
  <div class="xbody">
+  <div class="xfile" id="xDrop">
+   <button class="btn pri" onclick="xFile.click()" title=".xlsx · .xls · .csv">📂 엑셀파일 선택</button>
+   <input type="file" id="xFile" accept=".xlsx,.xlsm,.xls,.csv" style="display:none" onchange="xlsFile(this.files[0]);this.value=''">
+   <select id="xSheet" style="display:none" onchange="xlsSheet(this.value)" title="시트 선택"></select>
+   <span class="fi" id="xFileInfo">PART LIST(표준품) 엑셀파일을 고르거나 여기로 끌어놓으세요. 관리제번은 파일에서 읽고, <s>취소선</s> 행은 제외합니다.</span>
+  </div>
   <div style="padding:7px 9px;background:#e9f1f8;border:1px solid #bfd2e2;margin-bottom:6px;line-height:1.7">
    <b>① 엑셀 열 순서</b> : <b style="color:#2f75b5">금형번호 → 품명 → 형식(TYPE) → 규격(SIZE) → 수량(Q'TY)</b>
    <span style="color:#5a6a78">(제목행은 있어도 되고 없어도 됩니다)</span><br>
-   <b>② </b>엑셀에서 범위를 복사(Ctrl+C) → 아래 칸에 붙여넣기(Ctrl+V)<br>
+   <b>② </b>위 <b>[📂 엑셀파일 선택]</b> 또는 엑셀에서 범위를 복사(Ctrl+C) → 아래 칸에 붙여넣기(Ctrl+V)<br>
    <b>③ </b><b>[⬇ 리스트에 추가]</b> → 리스트에서 등록할 행 체크 → <b>[▤ 등록]</b> → 등록자·등록일자 입력
    <button class="btn" style="margin-left:8px;height:24px" onclick="tplDown()">⤓ 서식 받기</button>
   </div>
   <textarea id="xText" placeholder="여기에 붙여넣기 (Ctrl+V)&#10;예)  D38A	SET,POST-BUSH	BRPK	BRPK50-200	4" oninput="xlsPreview()" onpaste="setTimeout(xlsPreview,30)"></textarea>
-  <div id="xMap">붙여넣으면 읽은 결과가 여기 표시됩니다.</div>
+  <div id="xMap">붙여넣으면 읽은 결과가 여기 표시됩니다.</div><div id="xStrike"></div>
   <div id="xPrev"></div>
   <div style="display:flex;justify-content:center;gap:8px;margin-top:8px">
    <button class="btn pri" onclick="xlsAdd()">⬇ 리스트에 추가</button><button class="btn" onclick="xlsClose()">⊠ 취소</button>
@@ -285,8 +298,11 @@ const COLS=[
  {k:'qty',      t:'수량',re:/수\s*량|q'?\s*ty|quantity|^\s*ea\s*$|^\s*pcs\s*$/i}];
 function xls(pasted){
  const job=curJobNo();
- if(!job){msg('제번을 먼저 선택하세요.');q_job.focus();return false}
- xJob.textContent=job;
+ /* v232: 엑셀파일은 관리제번을 파일에서 읽으므로 제번 없이도 창을 연다 (붙여넣기는 제번 필요) */
+ if(!job&&pasted){msg('제번을 먼저 선택하세요.');q_job.focus();return false}
+ xJob.textContent=job||'(미선택 — 파일의 관리제번으로 선택)';
+ XF=null;xSheet.style.display='none';xStrike.textContent='';
+ xFileInfo.innerHTML='PART LIST(표준품) 엑셀파일을 고르거나 여기로 끌어놓으세요. 관리제번은 파일에서 읽고, <s>취소선</s> 행은 제외합니다.';
  xText.value=pasted||'';
  xMask.classList.add('on');xlsPreview();
  if(!pasted)setTimeout(()=>xText.focus(),50);
@@ -299,7 +315,7 @@ function xlsGrid(){
 function xlsMap(){
  let g=xlsGrid();
  let head=-1;const idx={};
- for(let i=0;i<Math.min(g.length,5)&&head<0;i++){
+ for(let i=0;i<Math.min(g.length,25)&&head<0;i++){   /* v232: PART LIST 양식은 제목·관리제번 칸 아래에 머리행이 있다 */
   const m={};
   g[i].forEach((c,j)=>{if(!c)return;const col=COLS.find(x=>m[x.k]==null&&x.re.test(c));if(col)m[col.k]=j});
   if(m.part_no!=null&&Object.keys(m).length>=3){head=i;Object.assign(idx,m)}
@@ -320,6 +336,7 @@ function xlsRows(){
  for(let i=start;i<g.length;i++){
   const r=g[i],pn=get(r,'part_no');
   if(/^예\s*\)/.test(pn))continue;
+  if(COLS[0].re.test(pn)&&!XNUM(get(r,'qty')))continue;   /* v232: 다음 쪽 반복 머리행 */
   if(!pn){skipNo++;bad.push(i);continue}
   rows.push({part_no:pn,part_name:get(r,'part_name'),type:get(r,'type')||null,spec:get(r,'spec')||null,qty:XNUM(get(r,'qty'))});
  }
@@ -335,10 +352,17 @@ function xlsPreview(){
   +rows.map((r,i)=>`<tr class="${r.qty==null?'bad':''}"><td class="c">${i+1}</td><td>${esc(r.part_no)}</td><td>${esc(r.part_name)}</td><td class="c">${esc(r.type||'')}</td><td>${esc(r.spec||'')}</td><td class="num">${r.qty??'?'}</td></tr>`).join('')
   +'</tbody></table>';
 }
-function xlsAdd(){
+async function xlsAdd(){
  const {g,rows}=xlsRows();
  if(!g.length){alert('붙여넣은 내용이 없습니다.');xText.focus();return}
  if(!rows.length){alert('추가할 행이 없습니다. 첫 열이 금형번호인지 확인하세요.');return}
+ /* v232: 엑셀파일의 관리제번 ↔ 화면 제번 */
+ const fj=XF&&XF.job,cj=curJobNo();
+ if(fj&&fj!==cj){
+  if(cj&&!confirm(`엑셀파일의 관리제번은 ${fj} 입니다. (화면 제번 ${cj})\n\n[확인] ${fj} 로 바꿔서 추가\n[취소] 화면 제번 ${cj} 에 그대로 추가`)){}
+  else{q_job.value=fj;try{MESJOB.syncSplit('q_job')}catch(e){}await loadJob(fj);try{pnSync(fj)}catch(e){}}
+ }
+ if(!curJobNo()){alert('제번을 선택하세요. (파일에서 관리제번을 찾지 못했습니다)');return}
  for(const r of rows){
   const i=pend.findIndex(x=>x.part_no===r.part_no);
   if(i>=0){chk.delete(pend[i].row_no);pend.splice(i,1)}
@@ -349,6 +373,113 @@ function xlsAdd(){
  const ex=new Set(data.map(x=>x.part_no)),up=rows.filter(r=>ex.has(r.part_no)).length;
  msg(`${rows.length}행을 리스트에 추가했습니다`+(up?` (기존 금형번호 ${up}건은 등록 시 수정)`:'')+`. 등록할 행을 체크하고 [▤ 등록]을 누르세요.`);
 }
+/* ── v232: 엑셀파일 불러오기 (.xlsx·.xlsm → ExcelJS : 취소선 행 제외 / .xls·.csv → SheetJS) ──
+ * 시트를 표(행×열)로 읽어 붙여넣기 칸에 넣는다 → 기존 머리행 인식·미리보기·리스트 추가를 그대로 쓴다.
+ * 양식 위쪽의 「관리제번」 칸 오른쪽 값을 제번으로 읽는다. 병합셀은 첫 칸만 값을 둔다. */
+let XF=null;   /* {name, book, kind, sheets:[{name,grid,struck,job}], cur} */
+const _libs={};
+function _lib(src,test){if(test())return Promise.resolve();if(_libs[src])return _libs[src];
+ return _libs[src]=new Promise((ok,ng)=>{const sc=document.createElement('script');sc.src=src;sc.onload=()=>ok();sc.onerror=()=>{delete _libs[src];ng(new Error('라이브러리를 불러오지 못했습니다 (인터넷 연결 확인)'))};document.head.appendChild(sc)})}
+const XLIB={exceljs:()=>_lib('https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js',()=>!!window.ExcelJS),
+ sheetjs:()=>_lib('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',()=>!!window.XLSX)};
+const _ct=v=>String(v??'').replace(/[\t\r\n]+/g,' ').replace(/\s{2,}/g,' ').trim();
+/* ExcelJS 셀 값 → 글자 */
+function xcText(c){
+ let v=c.value;if(v==null)return '';
+ if(typeof v==='object'){
+  if(v instanceof Date){const d=new Date(v.getTime()-v.getTimezoneOffset()*6e4);return d.toISOString().slice(0,10)}
+  if(v.richText)return _ct(v.richText.map(t=>t.text).join(''));
+  if('result' in v||'formula' in v||'sharedFormula' in v){const r=v.result;if(r==null)return '';if(r instanceof Date)return r.toISOString().slice(0,10);if(typeof r==='object')return r.error?'':_ct(r.text||'');return _ct(r)}
+  if(v.text!=null)return _ct(v.text&&v.text.richText?v.text.richText.map(t=>t.text).join(''):v.text);
+  if(v.error)return '';
+ }
+ return _ct(c.text!=null&&typeof v!=='number'?c.text:v);
+}
+/* 취소선: 글꼴 취소선 또는 서식있는 글자 전부가 취소선 */
+function xcStrike(c){try{
+ const v=c.value;
+ if(v&&v.richText&&v.richText.length){const rs=v.richText.filter(t=>String(t.text||'').trim());if(rs.length&&rs.every(t=>t.font&&t.font.strike))return true}
+ return !!(c.font&&c.font.strike)&&xcText(c)!=='';
+}catch(e){return false}}
+/* 관리제번 칸 찾기 — 「관리제번」 글자의 오른쪽 첫 값 */
+function xFindJob(grid){
+ for(const r of grid.slice(0,15))for(let j=0;j<r.length;j++){
+  if(/^관\s*리\s*제\s*번$|^제\s*번$|^job\s*no\.?$/i.test(r[j]||'')){for(let k=j+1;k<r.length;k++){const v=String(r[k]||'').trim();if(v)return v.replace(/\s+/g,'').toUpperCase()}}
+ }
+ return '';
+}
+function xHasHead(grid){return grid.slice(0,25).some(r=>{let n=0,pn=false;r.forEach(c=>{if(!c)return;COLS.forEach((x,i)=>{if(x.re.test(c)){n++;if(i===0)pn=true}})});return pn&&n>=3})}
+async function xlsFile(file){
+ if(!file)return;
+ const nm=file.name||'',ext=(nm.split('.').pop()||'').toLowerCase();
+ if(!['xlsx','xlsm','xls','csv'].includes(ext)){alert('엑셀파일(.xlsx · .xls · .csv)만 불러올 수 있습니다.');return}
+ if(!xMask.classList.contains('on'))xls();
+ xFileInfo.textContent=`${nm} 읽는 중…`;
+ try{
+  const buf=await file.arrayBuffer();
+  const sheets=[];
+  if(ext==='xlsx'||ext==='xlsm'){
+   await XLIB.exceljs();
+   const wb=new ExcelJS.Workbook();await wb.xlsx.load(buf);
+   wb.eachSheet(ws=>{
+    if(ws.state&&ws.state!=='visible')return;
+    const grid=[],struck=[];let w=0;
+    ws.eachRow({includeEmpty:true},(row,rn)=>{
+     const a=[];let st=false;
+     row.eachCell({includeEmpty:true},(c,cn)=>{
+      const slave=c.isMerged&&c.master&&c.master.address!==c.address;
+      a[cn-1]=slave?'':xcText(c);
+      if(!slave&&cn<=3&&xcStrike(c))st=true;   /* 품번·품명 칸 쪽 취소선 */
+     });
+     for(let i=0;i<a.length;i++)if(a[i]==null)a[i]='';
+     w=Math.max(w,a.length);
+     if(st&&a.some(x=>x)){struck.push(a.filter(Boolean).slice(0,2).join(' '));return}
+     grid.push(a);
+    });
+    sheets.push({name:ws.name,grid:grid.filter(r=>r.some(x=>x!=='')),struck});
+   });
+  }else{
+   await XLIB.sheetjs();
+   const wb=XLSX.read(buf,{type:'array',cellDates:true});
+   wb.SheetNames.forEach(n=>{const ws=wb.Sheets[n];
+    const grid=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:'',blankrows:false}).map(r=>r.map(_ct));
+    /* 병합셀은 첫 칸만 값이 있다 (SheetJS 기본) */
+    sheets.push({name:n,grid:grid.filter(r=>r.some(x=>x!=='')),struck:[]});
+   });
+  }
+  if(!sheets.length)throw new Error('읽을 수 있는 시트가 없습니다.');
+  sheets.forEach(sh=>{sh.job=xFindJob(sh.grid);sh.ok=xHasHead(sh.grid)});
+  XF={name:nm,kind:ext,sheets,cur:0};
+  const cj=curJobNo();
+  let pick=sheets.findIndex(sh=>sh.ok&&cj&&sh.job&&(sh.job===cj||sh.job.startsWith(cj)));
+  if(pick<0)pick=sheets.findIndex(sh=>sh.ok);if(pick<0)pick=0;
+  xSheet.innerHTML=sheets.map((sh,i)=>`<option value="${i}">${esc(sh.name)}${sh.job?' · '+esc(sh.job):''}${sh.ok?'':' (머리행 없음)'}</option>`).join('');
+  xSheet.style.display=sheets.length>1?'':'none';xSheet.value=String(pick);
+  xlsSheet(pick);
+ }catch(e){XF=null;xFileInfo.innerHTML=`<span style="color:#b04a4a">불러오기 실패: ${esc(String(e.message||e).slice(0,140))}</span>`}
+}
+function xlsSheet(i){
+ if(!XF)return;i=Number(i)||0;XF.cur=i;const sh=XF.sheets[i];if(!sh)return;
+ XF.job=sh.job||'';
+ xText.value=sh.grid.map(r=>r.join('\t')).join('\n');
+ xlsPreview();
+ const cj=curJobNo();
+ xFileInfo.innerHTML=`📄 <b>${esc(XF.name)}</b>`+(XF.sheets.length>1?` · 시트 <b>${esc(sh.name)}</b>`:'')
+  +(sh.job?` · 관리제번 <b style="color:${cj&&cj!==sh.job?'#b45309':'#1d6b3a'}">${esc(sh.job)}</b>`+(cj&&cj!==sh.job?` <span style="color:#b45309">(화면 제번 ${esc(cj)} 과 다름 — 추가할 때 선택)</span>`:(!cj?' <span style="color:#1d6b3a">(추가할 때 이 제번으로 선택)</span>':'')):' · <span style="color:#8a5a00">관리제번 칸 없음 — 화면 제번으로 추가</span>')
+  +(XF.kind==='xls'||XF.kind==='csv'?' · <span style="color:#8a5a00">.xls·.csv 는 취소선을 읽지 못합니다 — 취소 행은 미리보기에서 확인하세요</span>':'');
+ xStrike.textContent=sh.struck.length?`취소선 ${sh.struck.length}행 제외: ${sh.struck.slice(0,8).join(' · ')}${sh.struck.length>8?' …':''}`:'';
+ if(!curJobNo()&&sh.job)xJob.textContent=sh.job+' (파일)';
+}
+/* 끌어놓기 — 창 안 점선 칸 또는 화면 어디든 */
+(function(){
+ const isF=e=>{try{return [...(e.dataTransfer&&e.dataTransfer.types||[])].includes('Files')}catch(_){return false}};
+ let n=0;
+ document.addEventListener('dragenter',e=>{if(!isF(e))return;n++;document.body.classList.add('drag-on');xDrop.classList.add('drag')});
+ document.addEventListener('dragleave',e=>{if(!isF(e))return;if(--n<=0){n=0;document.body.classList.remove('drag-on');xDrop.classList.remove('drag')}});
+ document.addEventListener('dragover',e=>{if(isF(e))e.preventDefault()});
+ document.addEventListener('drop',e=>{if(!isF(e))return;e.preventDefault();n=0;document.body.classList.remove('drag-on');xDrop.classList.remove('drag');
+  const f=e.dataTransfer.files&&e.dataTransfer.files[0];if(f)xlsFile(f)});
+})();
 function tplDown(){
  const t='\ufeff'+[['금형번호','품명','형식','규격','수량'],['D38A','SET,POST-BUSH','BRPK','BRPK50-200','4']]
   .map(a=>a.map(v=>'"'+v.replaceAll('"','""')+'"').join(',')).join('\n');
