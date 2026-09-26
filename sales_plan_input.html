@@ -126,7 +126,7 @@ table.ev td .dcell .wd.late{background:#ffe45c;color:#5a4400;font-weight:700}
  <div class="lb" title="고객사 담당자와 연락처">고객담당</div><div><input id="customer_contact" class="field" placeholder="예) 김정호 책임 010-0000-0000"></div>
  <div class="lb">설계처</div><div><input id="design_partner" class="field cbo" list="dl_vd_design" autocomplete="off" placeholder="예) 베스텍(김기구 대표)"></div>
  <div class="lb">제작처</div><div><input id="maker_name" class="field cbo" list="dl_vd_mach" autocomplete="off" placeholder="예) 일평기연"></div>
- <div class="lb">양산처</div><div><input id="mass_vendor" class="field" placeholder="미확정이면 비워 두세요"></div>
+ <div class="lb">양산처</div><div><input id="mass_vendor" class="field cbo" list="dl_vd_mass" autocomplete="off" placeholder="입력 또는 선택 (수주등록 양산처)" title="수주등록의 양산처를 가져오고, 기준정보 업체관리(양산처)에서 고를 수도 있습니다"></div>
 </div></div>
 
 <div class="blk two">
@@ -207,7 +207,7 @@ table.ev td .dcell .wd.late{background:#ffe45c;color:#5a4400;font-weight:700}
 </div>
 <footer class="foot"><button class="btn" onclick="save()">▤ 저장</button><button class="btn" onclick="clearForm()">✕ 삭제</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">관리제번을 고르면 수주정보가 채워지고, 저장하면 공정 제번(A~D 등) 모두에 같은 계획이 들어갑니다.</span></footer>
 </div>
-<datalist id="dl_job"></datalist><datalist id="dl_make"><option value="신규제작"><option value="수정"><option value="추가"><option value="보완"><option value="양산이관"></datalist><datalist id="dl_cust"></datalist><datalist id="dl_item"></datalist><datalist id="dl_mold"></datalist><datalist id="dl_emp"></datalist><datalist id="dl_vd_design"></datalist><datalist id="dl_vd_mach"></datalist><datalist id="dl_vd_asm"></datalist>
+<datalist id="dl_job"></datalist><datalist id="dl_make"><option value="신규제작"><option value="수정"><option value="추가"><option value="보완"><option value="양산이관"></datalist><datalist id="dl_cust"></datalist><datalist id="dl_vd_mass"></datalist><datalist id="dl_item"></datalist><datalist id="dl_mold"></datalist><datalist id="dl_emp"></datalist><datalist id="dl_vd_design"></datalist><datalist id="dl_vd_mach"></datalist><datalist id="dl_vd_asm"></datalist>
 <script src="mes_lookup.js?v=71"></script><script>
 /* v68: 제번·고객사·아이템·금형타입·담당자를 기준정보 드롭다운으로 (하드코딩 seed 제거) */
 const AK=['design_internal_amount','design_external_amount','raw_material_amount','purchase_amount','machining_internal_amount','machining_external_amount','assembly_internal_amount','assembly_external_amount'];
@@ -491,6 +491,7 @@ async function loadMasters(){
  /* 외주업체: 설계=외주설계 협력업체, 가공=외주가공 협력업체, 조립=협력업체 전체 */
  fillDL('dl_vd_design',await pull('design_partner'),r=>r.partner_name,r=>'외주설계');
  fillDL('dl_vd_mach',await pull('vendor_outsourcing'),r=>r.vendor_name,r=>r.vendor_code||'');
+ fillDL('dl_vd_mass',await pull('mass_production'),r=>r.vendor_name,r=>r.vendor_code||'');   /* v238: 양산처 드롭다운 */
  fillDL('dl_vd_asm',(await pull('vendor')).filter(r=>r.vendor_type==='협력업체'),r=>r.vendor_name,r=>r.vendor_code||'');
  ['design','machining','assembly'].forEach(vendorGate);
 }
@@ -518,6 +519,8 @@ async function loadJob(j){
    /* 원가 금액은 공정 합계로 보여준다 (저장 시 다시 공정 수로 나눔) */
    if(ex.length>1)AK.forEach(k=>{o[k]=ex.reduce((t,r)=>t+num(r[k]),0)||null});
    load(o);setSel('job_no',baseLabel(b));
+   /* v238: 계획에 비어 있는 양산처·도번은 수주등록 값으로 채운다 */
+   if(so&&so[0]){if(!mass_vendor.value)setSel('mass_vendor',so[0].mass_production_vendor_name);if(!drawing_no.value)setSel('drawing_no',so[0].drawing_no)}
    if(soSum)order_price.value=fmt(soSum);recalc();
    msg(`${b} ${rg} 기존 제작계획을 불러왔습니다. (공정 제번 ${jobs.length}건 중 계획 ${ex.length}건${ex.length<jobs.length?' — 저장하면 나머지 공정에도 들어갑니다':''})`);return}
   if(!so||!so[0]){msg(`${b} 수주정보가 없습니다. 수주등록을 먼저 진행하세요.`);return}
@@ -528,6 +531,7 @@ async function loadJob(j){
   setSel('delivery_planned_date',s0.delivery_planned_date);setSel('mold_type_name',s0.mold_type_name);
   setSel('process_set_qty',s0.process_set_qty);
   setSel('drawing_no',s0.drawing_no);setSel('receipt_date',s0.order_date);
+  setSel('mass_vendor',s0.mass_production_vendor_name);   /* v238: 수주등록의 양산처 */
   /* v168: 새 계획은 EVENT 표의 빈 날짜 칸을 전부 오늘로 채운다 — 휠로 밀어 가며 잡기 쉽게 */
   fillTodayAll();markLate();
   order_price.value=soSum?fmt(soSum):'';
