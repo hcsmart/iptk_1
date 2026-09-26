@@ -555,6 +555,11 @@ async function loadRoutes(){
   const seen=new Set();
   ROUTES.length=0;
   const base=[];for(const r of out){const k=(r.jo??'')+'|'+r.part;if(seen.has(k))continue;seen.add(k);base.push(r)}
+  /* v261: 행 순서 = PartList(원재료) 등록 순서 → 없으면 품번순. 종전엔 가공계획 저장 여부로 묶여,
+     [가공계획 적용] 하면 그 부품이 위쪽(저장된 부품 묶음)으로 자리를 옮겼다 */
+  const PO=new Map();(pm||[]).forEach((x,i)=>{const k=(joNum(x.process_code)??'')+'|'+x.part_no;if(!PO.has(k))PO.set(k,i);if(!PO.has('|'+x.part_no))PO.set('|'+x.part_no,i)});
+  const ord=r=>PO.has((r.jo??'')+'|'+r.part)?PO.get((r.jo??'')+'|'+r.part):PO.has('|'+r.part)?PO.get('|'+r.part):1e9;
+  base.sort((a,b)=>(Number(a.jo)||0)-(Number(b.jo)||0)||ord(a)-ord(b)||String(a.part).localeCompare(String(b.part),'ko',{numeric:true}));
   await loadOrdered(j.job);
   /* v226: 차수별 줄 — 품번마다 1차 … 현재차수 (1차 위, 새 차수 아래). 이전 차수 줄은 old 표시 */
   for(const r of base){const n=window.MESCYCLE?MESCYCLE.cur(r.part):1;for(let c=1;c<=n;c++)ROUTES.push(Object.assign({},r,{cyc:c,old:c<n}))}
