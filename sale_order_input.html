@@ -73,6 +73,8 @@ html[data-mw="xs"] .formgrid{grid-template-columns:84px minmax(0,1fr)}
 .devbox{display:grid;grid-template-columns:1fr 1fr;gap:1px 6px;align-content:center;min-height:28px;padding:1px 4px;border:1px solid #cfd8e0;background:#fff;font-size:11.5px;line-height:13px;white-space:nowrap;box-sizing:border-box}
 .devbox label{display:flex;align-items:center;gap:3px;cursor:pointer}.devbox input{margin:0;width:13px;height:13px}
 .grid>div:has(.devbox){align-self:stretch}
+.cbo{background:#fff url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0h10L5 6z' fill='%23708090'/%3E%3C/svg%3E") no-repeat right 8px center;padding-right:22px}
+#design_vendor:disabled{background-color:#f3f5f7;color:#9aa5ad}
 /* v116 수주등록 배치: 구분선 + 납기완료일·정산완료일 분리, 첨부파일 팝업 */
 .formgrid .gsep{grid-column:1/-1;height:0;border-top:1px dashed #9fb0bf;margin:4px 0 2px}
 .fillsp{flex:1;min-height:0}
@@ -127,6 +129,7 @@ html[data-mw="xs"] .formgrid{grid-template-columns:84px minmax(0,1fr)}
  <div class="gsep"></div>
  <div class="label">납기완료일</div><div><input id="dlvc" type="date" class="field"></div>
  <div class="label">정산완료일</div><div><input id="comp_date" type="date" class="field" title="납품 후 잔여 수정·검수·정산까지 끝나 이 제번을 종결한 날."></div>
+ <div class="label" id="dvLabel" title="개발유형에서 「외주설계」 를 체크하면 입력할 수 있습니다. 제작계획등록의 설계처와 설계외주발주 업체 선택에 이어집니다">설계업체</div><div><input id="design_vendor" class="field cbo" list="dl_design_vendor" autocomplete="off" placeholder="외주설계 체크 시 입력/선택" disabled><datalist id="dl_design_vendor"></datalist></div>
 </section>
 <div style="display:none"><select id="proc_seq" data-nocombo="1"><option value=""></option></select><input id="job_no" type="hidden"></div>
 <div class="fillsp"></div>
@@ -155,7 +158,7 @@ const MAP={job_no:'job_no',order_date:'order_date',s1p:'s1_planned_date',
  status:'order_status',otype:'order_type',quo:'quotation_no',item_code:'item_code',item_name:'item_name',
  dlvp:'delivery_planned_date',dom:'domestic_overseas',drawing_no:'drawing_no',
  mgr_code:'manager_code',mgr_name:'manager_name',cust_code:'customer_code',cust_name:'customer_name',
- mold_code:'mold_type_code',mold_name:'mold_type_name',devtype:'development_type',
+ mold_code:'mold_type_code',mold_name:'mold_type_name',devtype:'development_type',design_vendor:'design_vendor_name',   /* v242 */
  mp_code:'mass_production_vendor_code',mp_name:'mass_production_vendor_name',
  product_name:'product_name',model:'model',proc_cnt:'process_set_qty',quo_price:'quotation_price',
  ms_code:'machine_spec_code',ms_name:'machine_spec_name',material_used:'material_used',
@@ -165,10 +168,14 @@ function load(o){for(const[el,k]of Object.entries(MAP)){const n=document.getElem
 /* v241: 개발유형 = 체크박스 4개 (사내설계·외주설계·사내조립·사외조립) → development_type 에 쉼표로 저장. 옛 값 '사내'/'외주' 는 설계 기준으로 읽는다 */
 const DEVS=['사내설계','외주설계','사내조립','사외조립'];
 const devBoxes=()=>[...document.querySelectorAll('.devbox input[data-dev]')];
-function devToValue(){devtype.value=devBoxes().filter(b=>b.checked).map(b=>b.dataset.dev).join(',')}
+function devToValue(){devtype.value=devBoxes().filter(b=>b.checked).map(b=>b.dataset.dev).join(',');devGate()}
+/* v242: 외주설계를 체크했을 때만 설계업체 입력 */
+function devGate(){const on=/외주설계/.test(devtype.value||'');const e=document.getElementById('design_vendor');if(!e)return;e.disabled=!on;if(!on)e.value='';
+ const l=document.getElementById('dvLabel');if(l)l.style.color=on?'':'#9aa5ad';
+ if(on&&!e.__dl){e.__dl=1;(async()=>{try{const ns=await MESLOOK.names('design_partner');dl_design_vendor.innerHTML=ns.map(n=>`<option value="${esc(n)}">`).join('')}catch(x){}})()}}
 function devFromValue(){const v=String(devtype.value||'');const set=new Set(v.split(/[,\s/·]+/).filter(Boolean));
  if(set.has('사내')){set.delete('사내');set.add('사내설계')}if(set.has('외주')){set.delete('외주');set.add('외주설계')}
- devBoxes().forEach(b=>b.checked=set.has(b.dataset.dev));devtype.value=[...set].filter(x=>DEVS.includes(x)).join(',')}
+ devBoxes().forEach(b=>b.checked=set.has(b.dataset.dev));devtype.value=[...set].filter(x=>DEVS.includes(x)).join(',');devGate()}
 function clearForm(){for(const el of Object.keys(MAP)){const n=document.getElementById(el);if(n)n.value=''}devFromValue();document.getElementById('status').value='진행';otype.value='신작';dom.value='국내';ATT.length=0;renderAtt();msg('신규 입력 상태입니다.')}
 const NUMF=['quotation_price','order_price','nego_amount'];   /* v119: 네고조정(회의록 6-1) */   /* v62: 공정(process_set_qty)은 '1/1' 형식 text — 숫자변환 제외 */
 const DATEF=['order_date','s1_planned_date','delivery_planned_date','s1_completed_date','delivery_completed_date','completion_date'];
@@ -176,6 +183,7 @@ async function saveOne(mode){
  const ACT=(typeof mode==='string'&&mode)?mode:'저장';
  if(!job_no.value.trim()){msg('제번은 필수입니다.');return false}
  const o={};for(const[el,k]of Object.entries(MAP)){const n=document.getElementById(el);if(n)o[k]=n.value||null}
+ if(!/외주설계/.test(o.development_type||''))o.design_vendor_name=null;   /* v242: 외주설계가 아니면 설계업체 없음 */
  o.plant_name='1공장';o.attachments=ATT;
  for(const k of NUMF){const v=Number(o[k]);o[k]=(o[k]===null||o[k]===''||Number.isNaN(v))?null:v}
  for(const k of DATEF)if(o[k]==='')o[k]=null;
@@ -244,6 +252,8 @@ async function save(mode){
  const ACT=(typeof mode==='string'&&mode)?mode:'저장';
  const b=(base_job.value||'').trim().toUpperCase();
  if(!b){msg('관리제번은 필수입니다.');base_job.focus();return false}
+ /* v242: 외주설계인데 설계업체가 비어 있으면 한 번 확인 */
+ if(/외주설계/.test(devtype.value||'')&&!design_vendor.value.trim()&&!confirm('개발유형이 「외주설계」 인데 설계업체가 비어 있습니다.\n설계업체 없이 저장할까요? (나중에 수주등록에서 채울 수 있습니다)')){design_vendor.focus();msg('설계업체를 입력한 뒤 저장하세요.');return false}
  base_job.value=b;
  const n=PROC_N(),jobs=jobPreview();
  if(n<2){job_no.value=jobs[0];proc_seq.value='';return SAVE0(ACT)}
@@ -458,7 +468,7 @@ clearForm();
  return ok};
  window.MES.save=window.save;})();
 </script><script src="mes_sample.js?v=169"></script><script src="mes_demo.js?v=116"></script><script src="mes_db.js?v=171"></script>
-<script src="mes_ctx.js?v=169"></script>
+<script src="mes_ctx.js?v=242"></script>
 
 <script>
 function sampleFill(){

@@ -520,7 +520,7 @@ async function loadJob(j){
    if(ex.length>1)AK.forEach(k=>{o[k]=ex.reduce((t,r)=>t+num(r[k]),0)||null});
    load(o);setSel('job_no',baseLabel(b));
    /* v238: 계획에 비어 있는 양산처·도번은 수주등록 값으로 채운다 */
-   if(so&&so[0]){if(!mass_vendor.value)setSel('mass_vendor',so[0].mass_production_vendor_name);if(!drawing_no.value)setSel('drawing_no',so[0].drawing_no)}
+   if(so&&so[0]){if(!mass_vendor.value)setSel('mass_vendor',so[0].mass_production_vendor_name);if(!drawing_no.value)setSel('drawing_no',so[0].drawing_no);if(!design_partner.value&&so[0].design_vendor_name)setSel('design_partner',so[0].design_vendor_name)}   /* v242: 수주등록 설계업체 */
    if(soSum)order_price.value=fmt(soSum);recalc();
    msg(`${b} ${rg} 기존 제작계획을 불러왔습니다. (공정 제번 ${jobs.length}건 중 계획 ${ex.length}건${ex.length<jobs.length?' — 저장하면 나머지 공정에도 들어갑니다':''})`);return}
   if(!so||!so[0]){msg(`${b} 수주정보가 없습니다. 수주등록을 먼저 진행하세요.`);return}
@@ -532,6 +532,7 @@ async function loadJob(j){
   setSel('process_set_qty',s0.process_set_qty);
   setSel('drawing_no',s0.drawing_no);setSel('receipt_date',s0.order_date);
   setSel('mass_vendor',s0.mass_production_vendor_name);   /* v238: 수주등록의 양산처 */
+  if(s0.design_vendor_name)setSel('design_partner',s0.design_vendor_name);   /* v242: 수주등록의 설계업체 → 설계처 */
   /* v168: 새 계획은 EVENT 표의 빈 날짜 칸을 전부 오늘로 채운다 — 휠로 밀어 가며 잡기 쉽게 */
   fillTodayAll();markLate();
   order_price.value=soSum?fmt(soSum):'';

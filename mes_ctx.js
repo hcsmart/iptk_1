@@ -572,8 +572,14 @@ window.MESCTX={confirm:dlgConfirm};
    for(let i=0;i<80&&!window.MESDB;i++)await new Promise(r=>setTimeout(r,50));
    if(window.MESDB&&MESDB.ready){try{await MESDB.ready}catch(e){}}
    if(!(window.MESDB&&MESDB.online))return {};
-   try{const rs=await MESDB.table('sales_plans').select('select=job_no,design_outsourced,design_vendor,design_set_outsourced,machining_outsourced,machining_vendor,machining_set_outsourced,assembly_outsourced,assembly_vendor,assembly_set_outsourced');
-    PLAN={};rs.forEach(r=>PLAN[r.job_no]=r);return PLAN}catch(e){return {}}
+   try{const rs=await MESDB.table('sales_plans').select('select=job_no,design_outsourced,design_vendor,design_partner,design_set_outsourced,machining_outsourced,machining_vendor,machining_set_outsourced,assembly_outsourced,assembly_vendor,assembly_set_outsourced');
+    PLAN={};rs.forEach(r=>PLAN[r.job_no]=r);
+    /* v242: 수주등록의 개발유형(외주설계)·설계업체 — 계획에 설계 외주업체가 없으면 그것으로 */
+    try{const so=await MESDB.table('sale_orders').select('select=job_no,development_type,design_vendor_name');
+     (so||[]).forEach(o=>{const p=PLAN[o.job_no]||(PLAN[o.job_no]={job_no:o.job_no,_fromOrder:true});
+      if(!p.design_vendor)p.design_vendor=p.design_partner||o.design_vendor_name||null;
+      if(p.design_outsourced==null||p._fromOrder)p.design_outsourced=/외주설계/.test(String(o.development_type||''))||!!p.design_vendor})}catch(e){}
+    return PLAN}catch(e){return {}}
   })();
   return loading;
  }
