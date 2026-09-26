@@ -47,6 +47,7 @@ async function refresh(){
     AUTH.session=s; store.set(JSON.stringify(s)); return true;
   }catch(e){return false}
 }
+AUTH.refresh=refresh;   /* v236: 화면(첨부 업로드 등)이 만료 직전 토큰을 갱신할 수 있게 */
 /* 토큰 만료 5분 전 자동 갱신 */
 setInterval(()=>{const s=AUTH.session;if(s&&s.expires_at*1000-Date.now()<5*60*1000)refresh()},60*1000);
 

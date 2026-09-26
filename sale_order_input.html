@@ -301,10 +301,19 @@ async function attPersist(){
   try{MESDB.notify&&MESDB.notify(['sale_orders'])}catch(e){}
   return true}catch(e){return false}
 }
+/* v236: 토큰이 만료돼 있으면 먼저 갱신 (화면을 오래 열어 두면 만료된 토큰으로 올려 거부됨) */
+async function sbFresh(){try{const a=window.MES_AUTH||window.parent.MES_AUTH;const s=a&&a.session;
+ if(s&&s.expires_at&&s.expires_at*1000-Date.now()<2*60*1000&&a.refresh)await a.refresh()}catch(e){}return sbTok()}
+const attWhy=(st,t,tok)=>{const m=String(t||'');
+ if(/jwt|expired|invalid token/i.test(m))return '로그인이 만료되었습니다. 다시 로그인한 뒤 첨부하세요.';
+ if(/mime|content.?type|not allowed|file type/i.test(m))return '저장소가 이 파일 형식을 막고 있습니다 (sql_v236_attach_policy.sql 실행).';
+ if(/exceeded|maximum size|too large/i.test(m))return '저장소 크기 제한을 넘었습니다 (sql_v236_attach_policy.sql 실행).';
+ if(/row-level security|policy|Unauthorized|403/i.test(m)||st===403)return (tok?'저장소 권한 없음 (sql_v236_attach_policy.sql 실행 · 로그인 상태 확인)':'로그인 후 첨부할 수 있습니다.')+' — '+m.slice(0,100);
+ return `(${st}) `+m.slice(0,140)};
 async function attUpload(files){
  if(!files||!files.length)return;
  const job=attJobNo();if(!job)return amsg('관리제번을 먼저 입력하세요.');
- const tok=sbTok();const list=[...files];let n=0;
+ const tok=await sbFresh();const list=[...files];let n=0;
  for(const f of list){
   if(f.size>50*1024*1024){amsg(`${f.name}: 50MB 를 넘는 파일은 올릴 수 없습니다.`);continue}
   const safe=f.name.replace(/[^\w.\-가-힣 ]/g,'_');
@@ -313,7 +322,7 @@ async function attUpload(files){
   try{
    const r=await fetch(SB_URL+'/storage/v1/object/mes-attach/'+path.split('/').map(encodeURIComponent).join('/'),
     {method:'POST',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+(tok||SB_KEY),'Content-Type':f.type||'application/octet-stream','x-upsert':'true'},body:f});
-   if(!r.ok){const t=await r.text();throw new Error((r.status===400||r.status===403?(tok?'저장소 권한 없음 — ':'로그인 후 첨부할 수 있습니다. '):'')+t.slice(0,120))}
+   if(!r.ok){const t=await r.text();throw new Error(attWhy(r.status,t,tok))}
    ATT.push({name:f.name,path,size:f.size,ext:(f.name.split('.').pop()||'').toUpperCase(),note:''});n++;renderAtt();
   }catch(e){document.getElementById('attFile').value='';renderAtt();return amsg('업로드 실패('+f.name+'): '+String(e.message||e).slice(0,140))}
  }
