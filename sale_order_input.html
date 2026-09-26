@@ -265,8 +265,7 @@ async function save(mode){
  base_job.value=b;proc_seq.value='';job_no.value=jobs[0];jobPreview();
  if(fail.length){msg(`${b} 공정 ${ok}건 ${ACT} · 실패 ${fail.join(', ')}${lastMsg?' — '+lastMsg.slice(0,80):''}`);return false}
  msg(`${b} 공정 ${ok}건을 ${ACT}했습니다 (${jobs.join(', ')}). 수주현황은 관리제번 1줄로 보입니다.`);
- try{(window.MESPOP||window.parent?.MESPOP)?.ok(`${b} 공정 ${ok}건 ${ACT}`,'수주등록')}catch(e){}
- return true;
+ return true;   /* v240: 완료 팝업은 아래 저장 래퍼에서 한 번만 */
 }
 
 /* ── v46 첨부파일: Supabase Storage(mes-attach) 업로드 ─────────── */
@@ -436,10 +435,14 @@ clearForm();
   return _save.apply(this,arguments)};
  window.MES.save=window.save;window.MES.load=window.load;
 })();
-/* v116: 저장 성공 후 입력내용 초기화 (저장 결과 메시지는 유지) */
+/* v240: 저장 성공 → 입력내용은 그대로 두고 「저장됨」 팝업 (v116 의 입력칸 초기화 제거 — 새 수주는 [＋ 신규등록]) */
 (function(){const _save=window.save;window.save=async function(m){
  const ok=await _save.apply(this,arguments);
- if(ok===true){const t=message.textContent;clearForm();msg(t+' — 입력칸을 비웠습니다.');
+ if(ok===true){
+  const b=(base_job.value||'').trim().toUpperCase(),js=(jobPreview()||[]);
+  const t=`${b||job_no.value} 수주정보가 저장되었습니다.\n\n제번 : ${js.join(', ')||job_no.value}${ATT.length?`\n첨부 : ${ATT.length}건`:''}\n\n입력한 내용은 화면에 그대로 남아 있습니다.\n새 수주는 [＋ 신규등록] 을 누르세요.`;
+  let shown=false;try{const P=window.MESPOP||window.parent?.MESPOP;if(P&&P.ok){P.ok(t,'수주등록 — 저장됨');shown=true}}catch(e){}
+  if(!shown)alert(t);
   try{document.dispatchEvent(new Event('change'))}catch(e){}}
  return ok};
  window.MES.save=window.save;})();
