@@ -35,6 +35,7 @@ tr.sel td span{color:#fff!important}
   <section class="filters">
     <span class="label">관리제번</span><input id="jobQ" class="field cbo" list="dl_job" autocomplete="off" style="width:260px" placeholder="관리제번 입력/선택 (제작계획 등록분)" title="제작계획이 등록된 관리제번 목록입니다. 공정 제번(26DSA057B)을 넣어도 찾습니다.">
     <span class="label">품명</span><input id="itemQ" class="field" style="width:260px" placeholder="품명">
+    <label style="display:flex;align-items:center;gap:4px;white-space:nowrap" title="수주등록 › 개발유형에서 「외주설계」 를 체크한 관리제번만 보입니다"><input type="checkbox" id="onlyOut" checked onchange="search()"> 외주설계만</label>
     <button class="btn" onclick="search()">⌕ 조회</button>
   </section><datalist id="dl_job"></datalist>
   <section class="top">
@@ -114,9 +115,19 @@ function pickVendor(i){const v=venView[i];if(v==null)return;
  msg(ps.length?`협력업체 ${ps.length}개 선택: ${ps.join(', ')}`:'협력업체 선택 없음');}
 function findVendor(){const q=venQ.value.trim().toLowerCase();venView=VENDORS.filter(v=>!q||v.toLowerCase().includes(q));venIdx=0;renderVendors()}   /* 선택(VENSEL)은 검색해도 유지된다 */
 function clearVendor(){venQ.value='';venView=[...VENDORS];venIdx=0;renderVendors()}
+/* v246: 수주등록 개발유형에 「외주설계」 가 체크된 관리제번만 (기본). 옛 값 '외주' 도 외주설계로 본다. 체크를 풀면 전체 */
+const OUTJOB=new Set();let OUTLOADED=false;
+async function loadOutFlags(){
+ if(!online())return;
+ try{const rs=await MESDB.table('sale_orders').select('select=job_no,development_type');
+  OUTJOB.clear();(rs||[]).forEach(r=>{const d=String(r.development_type||'');if(/외주설계/.test(d)||d.trim()==='외주')OUTJOB.add(JSPL(r.job_no).base)});OUTLOADED=true}catch(e){}
+}
+const isOutJob=x=>OUTJOB.has(x.base||JSPL(x.job).base);
 function search(){const j=jobQ.value.trim().toLowerCase(),it=itemQ.value.trim().toLowerCase();
  const jj=j?JSPL(j.toUpperCase()).base.toLowerCase():'';
- jobView=JOBS.filter(x=>(!j||x.job.toLowerCase().includes(jj)||(x.jobs||[]).some(y=>y.job.toLowerCase().includes(j)))&&(!it||(x.item||'').toLowerCase().includes(it)));
+ const onlyOutOn=!!(document.getElementById('onlyOut')||{}).checked;
+ jobView=JOBS.filter(x=>(!onlyOutOn||isOutJob(x))&&(!j||x.job.toLowerCase().includes(jj)||(x.jobs||[]).some(y=>y.job.toLowerCase().includes(j)))&&(!it||(x.item||'').toLowerCase().includes(it)));
+ if(!jobView.length&&onlyOutOn&&!j&&!it){jobIdx=-1;renderJobs();return msg(OUTLOADED?'수주등록에서 「외주설계」 를 체크한 제번이 없습니다. 수주등록 › 개발유형을 확인하거나 [외주설계만] 체크를 푸세요.':'수주 개발유형을 읽는 중입니다…')}
  const exact=j?jobView.findIndex(x=>x.job.toLowerCase()===jj||(x.jobs||[]).some(y=>y.job.toLowerCase()===j)):-1;
  if(!jobView.length){jobIdx=-1;renderJobs();return msg(`'${jobQ.value.trim()}' 에 해당하는 제번이 없습니다.`)}
  pickJob(exact>=0?exact:0);msg(`관리제번 ${jobView.length}건`+(exact>=0?` — ${jobLabel(jobView[exact])} 선택`:''));}
@@ -126,7 +137,7 @@ async function loadJobList(){
  try{const ps=await MESDB.table('sales_plans').select('select=job_no,item_name,design_outsourced,design_vendor&order=job_no');
   const esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const dl=document.getElementById('dl_job');if(!dl)return;
-  const mp=new Map();ps.forEach(r=>{const b=JSPL(r.job_no).base;if(!mp.has(b))mp.set(b,{seqs:[],r});mp.get(b).seqs.push(JSPL(r.job_no).seq)});
+  const mp=new Map();ps.forEach(r=>{const b=JSPL(r.job_no).base;if((document.getElementById('onlyOut')||{}).checked&&OUTLOADED&&!OUTJOB.has(b))return;if(!mp.has(b))mp.set(b,{seqs:[],r});mp.get(b).seqs.push(JSPL(r.job_no).seq)});   /* v246: 외주설계 제번만 */
   dl.innerHTML=[...mp.entries()].sort((a,b)=>b[0].localeCompare(a[0])).map(([b,g])=>{const r=g.r;return `<option value="${esc(b)}">${esc([seqRange(g.seqs),(r.design_outsourced===true?'설계외주'+(r.design_vendor?' · '+r.design_vendor:''):'설계사내'),r.item_name].filter(Boolean).join(' · '))}</option>`}).join('');
  }catch(e){}
 }
@@ -215,7 +226,9 @@ async function loadJobs(){
    if(!g.jobs.some(x=>x.job===r.job_no))g.jobs.push({job:r.job_no,seq:s.seq,item:r.item_name||'',due:r.completion_date||''});
    if(!g.item&&r.item_name)g.item=r.item_name;if(String(r.completion_date||'')>String(g.due||''))g.due=r.completion_date||g.due});
   JOBS.forEach(g=>g.jobs.sort((a,b)=>a.job.localeCompare(b.job)));
-  jobView=[...JOBS];jobIdx=JOBS.length?0:-1;renderJobs();
+  await loadOutFlags();   /* v246 */
+  jobView=JOBS.filter(x=>!(document.getElementById('onlyOut')||{}).checked||isOutJob(x));jobIdx=jobView.length?0:-1;renderJobs();
+  if(!jobView.length&&JOBS.length)msg('수주등록에서 「외주설계」 를 체크한 제번이 없습니다. (전체 '+JOBS.length+'건) — 수주등록 › 개발유형을 확인하거나 [외주설계만] 체크를 푸세요.');
   await loadPool();
  }catch(e){}
 }
