@@ -64,7 +64,7 @@ function sel(tr){document.querySelectorAll('#body tr').forEach(x=>x.classList.re
 /* v88: [조회] 는 DB 를 다시 읽고 나서 거른다 — 다른 화면에서 새로 생긴 발주가 바로 보인다 */
 function search(){
  if(window.MESDB&&MESDB.reloadLines){
-  MESDB.reloadLines().then(n=>{_filterNow();if(n===-1&&typeof msg==='function')msg('저장하지 않은 입력이 있어 새로고침을 건너뛰었습니다. 먼저 [▣ 저장] 하세요.')})
+  MESDB.reloadLines().then(n=>{_filterNow();if(n===-1&&typeof msg==='function')msg(MESDB.online===false?'DB 재조회 실패 — 화면에 있는 자료로만 걸렀습니다.':'저장하지 않은 입력이 있어 새로고침을 건너뛰었습니다. 먼저 [▣ 저장] 하세요.')})
    .catch(()=>_filterNow());
   return;
  }
@@ -144,9 +144,14 @@ function pnPick(){
  _filterNow();
 }
 function jobPick(){const m=PN(String(jobQ.value||'').trim());if(m)pnQ.value=m;_filterNow()}
-function _filterNow(){const st=document.querySelector('input[name=st]:checked').value;const j=jobQ.value.trim().toLowerCase(),pn=pnQ.value.trim().toLowerCase(),v=vendorQ.value.trim().toLowerCase();
-view=rows.filter(r=>(st==='전체'||r.st===st)&&(!j||r.job.toLowerCase().includes(j))&&(!pn||PN(r.job).toLowerCase().includes(pn))&&(!v||r.vendor.toLowerCase().includes(v))&&within(r.edate,ed1.value,ed2.value)&&within(r.idate,id1.value,id2.value)&&within(r.cdate,cd1.value,cd2.value));
-render();msg(`${st} 기준 ${view.length}건을 조회했습니다.`)}
+/* v231: 구분 필터 — 화면 상태값(대기·입고·확정)을 라디오 값(발주·입고·입고확정)으로 맞춘다.
+   종전엔 r.st===st 로 비교해 [발주]·[입고확정] 을 고르면 항상 0건이었다. (원재료·구매품 현황과 같은 방식) */
+const ST=v=>v==='대기'?'발주':v==='확정'?'입고확정':(v||'');
+/* v231: 필터만 적용 (메시지 없음) — DB 자동갱신 때도 조회조건을 유지한다 */
+function _applyFilter(){const st=document.querySelector('input[name=st]:checked').value;const j=jobQ.value.trim().toLowerCase(),pn=pnQ.value.trim().toLowerCase(),v=vendorQ.value.trim().toLowerCase();
+view=rows.filter(r=>(st==='전체'||ST(r.st)===st)&&(!j||r.job.toLowerCase().includes(j))&&(!pn||PN(r.job).toLowerCase().includes(pn))&&(!v||r.vendor.toLowerCase().includes(v))&&within(r.edate,ed1.value,ed2.value)&&within(r.idate,id1.value,id2.value)&&within(r.cdate,cd1.value,cd2.value));
+render();return st}
+function _filterNow(){const st=_applyFilter();msg(`${st} 기준 ${view.length}건을 조회했습니다.`)}
 function exportCsv(){const out=[['구분','협력업체','제번','품번(제품)','공정','공정명','품번','부품명','발주수량','입고수량','가공공정','발주일','입고예정일','입고일','입고확정일','견적가','확정가'],...view.map(r=>[r.st,r.vendor,r.job,PN(r.job),r.proc,r.procName,r.part,r.partName,(Number(r.ord)||1),(Number(r.got)||0),r.mp,r.odate,r.edate,r.idate,r.cdate,r.quote,r.fix])];const csv='\ufeff'+out.map(a=>a.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='outsourcing_order_status.csv';a.click();URL.revokeObjectURL(a.href);msg('EXCEL(CSV) 파일을 생성했습니다.')}
 function msg(t){message.textContent=t}
 /* ════ v112: 행 더블클릭 수정 ════
@@ -259,8 +264,8 @@ tbody tr.sel button.btn.edit{background:#fff;color:#2c6ca8}
 <div id="edMask" onclick="closeEdit()"></div>
 <div id="edPop"><div class="h"><span id="edTitle">발주 수정</span><button class="x" onclick="closeEdit()">✕</button></div>
  <div class="b" id="edBody"></div><div class="f" id="edFoot"></div></div>
-<script src="mes_db.js?v=171"></script><script src="mes_cycle.js?v=225"></script>
-<script>MESDB.lines({page:"outsourcing_order_status",category:"외주가공",statuses:[],map:{"no": {"col": "line_id", "type": "num"}, "vendor": "vendor_name", "job": "job_no", "item": "item_name", "proc": "process_code", "procName": "process_name", "part": "part_no", "cyc": {"col": "cycle_no", "type": "num"}, "cycWhy": "cycle_reason", "partName": "part_name", "st": {"col": "status", "type": "status"}, "ord": {"col": "order_qty", "type": "num"}, "got": {"col": "receipt_qty", "type": "num"}, "mp": "machining_process_code", "odate": {"col": "order_date", "type": "date"}, "edate": {"col": "required_date", "type": "date"}, "idate": {"col": "receipt_date", "type": "date"}, "cdate": {"col": "confirm_date", "type": "date"}, "quote": {"col": "quote_price", "type": "num"}, "fix": {"col": "confirm_price", "type": "num"}},get:()=>rows,render:()=>{view=[...rows];render()}});</script>
+<script src="mes_db.js?v=230"></script><script src="mes_cycle.js?v=225"></script>
+<script>MESDB.lines({page:"outsourcing_order_status",category:"외주가공",statuses:[],map:{"no": {"col": "line_id", "type": "num"}, "vendor": "vendor_name", "job": "job_no", "item": "item_name", "proc": "process_code", "procName": "process_name", "part": "part_no", "cyc": {"col": "cycle_no", "type": "num"}, "cycWhy": "cycle_reason", "partName": "part_name", "st": {"col": "status", "type": "status"}, "ord": {"col": "order_qty", "type": "num"}, "got": {"col": "receipt_qty", "type": "num"}, "mp": "machining_process_code", "odate": {"col": "order_date", "type": "date"}, "edate": {"col": "required_date", "type": "date"}, "idate": {"col": "receipt_date", "type": "date"}, "cdate": {"col": "confirm_date", "type": "date"}, "quote": {"col": "quote_price", "type": "num"}, "fix": {"col": "confirm_price", "type": "num"}},get:()=>rows,render:()=>{try{_applyFilter()}catch(e){view=[...rows];render()}}});   /* v231: 재조회·자동갱신 때 조회조건 유지 */</script>
 <script src="mes_lookup.js?v=92"></script>
 <script>
 /* v86: 협력업체 — 기준정보(업체 관리)의 외주가공 협력사를 드롭다운으로 선택 */
