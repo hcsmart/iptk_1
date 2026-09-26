@@ -112,7 +112,7 @@ html[data-mw="xs"] .formgrid{grid-template-columns:84px minmax(0,1fr)}
 
  <div class="label">금형타입</div><div class="lk"><input id="mold_code"><input id="mold_name" readonly><button onclick="openLook('mold','mold_code','mold_name')">…</button></div>
  <div class="label" title="설계·조립을 사내/외주 중 어디서 하는지 (여러 개 체크 가능). SET외주발주에는 「사외조립」 체크된 제번만 나옵니다">개발유형</div><div class="devbox"><input id="devtype" type="hidden"><label><input type="checkbox" data-dev="사내설계" onchange="devToValue()">사내설계</label><label><input type="checkbox" data-dev="외주설계" onchange="devToValue()">외주설계</label><label><input type="checkbox" data-dev="사내조립" onchange="devToValue()">사내조립</label><label><input type="checkbox" data-dev="사외조립" onchange="devToValue()">사외조립</label></div>
- <div class="label">양산처</div><div class="lk"><input id="mp_code"><input id="mp_name" readonly><button onclick="openLook('mass_production','mp_code','mp_name')">…</button></div>
+ <div class="label" id="dvLabel" title="개발유형에서 「외주설계」 를 체크하면 입력할 수 있습니다. 제작계획등록의 설계처와 설계외주발주 업체 선택에 이어집니다">설계업체</div><div><input id="design_vendor" class="field cbo" list="dl_design_vendor" autocomplete="off" placeholder="외주설계 체크 시 입력/선택" disabled><datalist id="dl_design_vendor"></datalist></div>
  <div class="label">품명</div><div><input id="product_name" class="field"></div>
  <div class="label">품번</div><div><input id="model" class="field"></div>
 
@@ -129,7 +129,7 @@ html[data-mw="xs"] .formgrid{grid-template-columns:84px minmax(0,1fr)}
  <div class="gsep"></div>
  <div class="label">납기완료일</div><div><input id="dlvc" type="date" class="field"></div>
  <div class="label">정산완료일</div><div><input id="comp_date" type="date" class="field" title="납품 후 잔여 수정·검수·정산까지 끝나 이 제번을 종결한 날."></div>
- <div class="label" id="dvLabel" title="개발유형에서 「외주설계」 를 체크하면 입력할 수 있습니다. 제작계획등록의 설계처와 설계외주발주 업체 선택에 이어집니다">설계업체</div><div><input id="design_vendor" class="field cbo" list="dl_design_vendor" autocomplete="off" placeholder="외주설계 체크 시 입력/선택" disabled><datalist id="dl_design_vendor"></datalist></div>
+ <div class="label">양산처</div><div class="lk"><input id="mp_code"><input id="mp_name" readonly><button onclick="openLook('mass_production','mp_code','mp_name')">…</button></div>
 </section>
 <div style="display:none"><select id="proc_seq" data-nocombo="1"><option value=""></option></select><input id="job_no" type="hidden"></div>
 <div class="fillsp"></div>
