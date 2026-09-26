@@ -258,8 +258,10 @@ function nextHtml(r,small){
     <span class="ntxt">${esc(r.next_step||'')}</span>`;
 }
 function btnHtml(r){
+ /* v234: 카드는 관리제번 단위 — 삭제도 관리제번(A~F 공정 전체) 단위로. 종전엔 대표 공정 제번 하나만 지워 나머지 공정이 남았다 */
+ const base=jsplit(r.job_no).base;
  return `${r.next_screen?`<button class="btn go" onclick="event.stopPropagation();goScreen('${esc(r.next_screen)}')">↗ ${esc(r.next_screen)}</button>`:''}
-    ${canReset()?`<button class="btn del" onclick="event.stopPropagation();resetJob('${esc(r.job_no)}')">✕ 진행삭제</button>`:''}`;
+    ${canReset()?`<button class="btn del" onclick="event.stopPropagation();resetJob('${esc(base)}')" title="관리제번 ${esc(base)} 의 모든 공정 제번과 이력을 지웁니다">✕ 진행삭제</button>`:''}`;
 }
 function render(){
  board.innerHTML=groups.length?groups.map(g=>{
@@ -329,41 +331,75 @@ function toggle(job){open.has(job)?open.delete(job):open.add(job);render()}
 function expandAll(on){open=on?new Set(groups.map(g=>g.base)):new Set();render()}
 /* 진행삭제: 수주정보(제번)까지 포함해 그 제번의 모든 기록을 지운다 (관리자만) */
 function canReset(){try{const a=MESDB.auth&&MESDB.auth();const r=a&&a.role;return r==='master'||r==='admin'}catch(e){return false}}
-async function resetJob(job){
+/* v234: 관리제번 단위 완전 삭제
+ *  1) 관리제번에 딸린 공정 제번(A~F) 전부를 화면·DB(jobs·sale_orders·sales_plans·order_lines) 에서 모아
+ *  2) 공정 제번마다 기존 RPC mes_reset_job_progress 로 지우고
+ *  3) DB 함수 mes_purge_job_base(관리제번) 로 job_no 를 가진 모든 표를 한 번 더 훑어 잔여 행을 지운다 (sql_v234)
+ *  4) 그래도 남으면 화면에서 표별로 직접 지우고, 끝까지 남는 표를 알린다 */
+const RESET_TABLES=['outsourcing_moves','set_outsourcing_receipts','outsourced_design_receipts','order_lines','set_order_lines','set_order_registrations','set_order_receipts',
+ 'part_cycles','work_order_details','process_history_cards','machining_plan_parts','machining_plans','design_results','design_plan_steps','design_plans',
+ 'partlist_materials','partlist_purchases','assembly_steps','assembly_jobs','inspection_results','expenses','nonconformances','corrective_actions',
+ 'sales_plans','sale_orders','jobs','job_pool'];
+async function jobsOfBase(base){
+ const set=new Set();
+ rows.forEach(r=>{if(jsplit(r.job_no).base===base)set.add(r.job_no)});
+ const like=encodeURIComponent(base)+'*';
+ for(const t of ['jobs','sale_orders','sales_plans','order_lines','set_order_lines','design_plans','partlist_materials','partlist_purchases']){
+  try{const rs=await MESDB.table(t).select(`select=job_no&job_no=like.${like}`,{fresh:true});
+   (rs||[]).forEach(x=>{if(x.job_no&&jsplit(x.job_no).base===base)set.add(x.job_no)})}catch(e){}
+ }
+ if(!set.size)set.add(base);
+ return [...set].sort();
+}
+async function resetJob(base){
  if(!online())return msg('DB 미연결 - 진행삭제를 사용할 수 없습니다.');
- const ok=confirm(`[${job}] 을(를) 완전히 삭제합니다.\n\n삭제 대상: 수주정보(제번), 제작계획, 외주설계·원재료·구매품·외주가공 발주/입고, 설계계획·실적, PartList, 가공계획·작업지시·이력카드, 조립실적, 검사실적, SET발주, 경비\n\n되돌릴 수 없습니다. 계속할까요?`);
+ base=jsplit(base).base;
+ msg(`${base} 공정 제번 확인 중...`);
+ const jobs=await jobsOfBase(base);
+ const ok=confirm(`관리제번 [${base}] 을(를) 완전히 삭제합니다.\n\n공정 제번 ${jobs.length}건: ${jobs.join(', ')}\n\n삭제 대상: 수주정보(제번), 제작계획, 외주설계·SET외주·원재료·구매품·외주가공 발주/입고, 설계계획·실적, PartList, 가공계획·작업지시·이력카드, 조립실적, 검사실적, 경비, 부적합\n\n되돌릴 수 없습니다. 계속할까요?`);
  if(!ok)return;
- const typed=prompt(`확인을 위해 제번을 그대로 입력하세요:\n${job}`);
- if(typed===null){msg(`${job} 삭제를 취소했습니다. (아무것도 지워지지 않았습니다)`);return}
- if(typed.trim()!==job){
-  alert(`입력한 제번이 다릅니다.\n\n입력: ${typed.trim()}\n대상: ${job}\n\n아무것도 삭제하지 않았습니다.`);
-  msg(`제번이 일치하지 않아 취소했습니다. (입력: ${typed.trim()} / 대상: ${job}) — 아무것도 지워지지 않았습니다.`);return}
+ const typed=prompt(`확인을 위해 관리제번을 그대로 입력하세요:\n${base}`);
+ if(typed===null){msg(`${base} 삭제를 취소했습니다. (아무것도 지워지지 않았습니다)`);return}
+ if(typed.trim().toUpperCase()!==base.toUpperCase()){
+  alert(`입력한 제번이 다릅니다.\n\n입력: ${typed.trim()}\n대상: ${base}\n\n아무것도 삭제하지 않았습니다.`);
+  msg(`제번이 일치하지 않아 취소했습니다. (입력: ${typed.trim()} / 대상: ${base}) — 아무것도 지워지지 않았습니다.`);return}
+ const errs=[];let n=0,tabs='';
  try{
-  msg(`${job} 진행내용 삭제 중...`);
-  const r=await MESDB.rpc('mes_reset_job_progress',{p_job:job});
-  const tabs=r&&r.tables?Object.entries(r.tables).map(([k,v])=>`${k} ${v}`).join(', '):'';
-  try{MESDB.notify&&MESDB.notify(['jobs','sale_orders','sale_order_status_rows','sales_plans','sales_plan_status_rows','order_lines','design_plans','design_plan_steps','design_results','partlist_materials','partlist_purchases','assembly_jobs','assembly_steps','work_order_details','inspection_results','set_order_lines','expenses','sale_orders'])}catch(e){}
-  open.delete(jsplit(job).base);
-  /* v80: 삭제 즉시 화면에서 지우고(낙관적 갱신) → DB 재조회 → 잠시 뒤 한 번 더.
-     RPC 는 여러 테이블을 지우므로 뷰 반영이 살짝 늦을 수 있다. */
-  rows=rows.filter(x=>x.job_no!==job);apply();
+  /* 1) 공정 제번마다 기존 RPC */
+  for(const job of jobs){
+   msg(`${job} 진행내용 삭제 중... (${jobs.indexOf(job)+1}/${jobs.length})`);
+   try{const r=await MESDB.rpc('mes_reset_job_progress',{p_job:job});if(r&&r.deleted!=null)n+=Number(r.deleted)||0}
+   catch(e){errs.push(job+': '+String(e.message||e).slice(0,80))}
+  }
+  /* 2) 관리제번으로 모든 표 일괄 정리 (sql_v234 — 함수가 없으면 화면에서 직접) */
+  let swept=false;
+  try{const r=await MESDB.rpc('mes_purge_job_base',{p_base:base});swept=true;
+   if(r&&r.deleted!=null)n+=Number(r.deleted)||0;
+   tabs=r&&r.tables?Object.entries(r.tables).filter(([,v])=>Number(v)>0).map(([k,v])=>`${k} ${v}`).join(', '):'';
+  }catch(e){if(!/PGRST202|404|Could not find the function/i.test(String(e.message||e)))errs.push('일괄정리: '+String(e.message||e).slice(0,80))}
+  if(!swept){
+   for(const t of RESET_TABLES)for(const job of jobs){try{await MESDB.table(t).delete({job_no:job})}catch(e){}}
+  }
+  try{MESDB.dropCache&&MESDB.dropCache('rpc');MESDB.notify&&MESDB.notify(['jobs','sale_orders','job_pool','sale_order_status_rows','sales_plans','sales_plan_status_rows','order_lines','design_plans','design_plan_steps','design_results','partlist_materials','partlist_purchases','assembly_jobs','assembly_steps','work_order_details','inspection_results','set_order_lines','set_outsourcing_receipts','outsourced_design_receipts','expenses'])}catch(e){}
+  open.delete(base);
+  rows=rows.filter(x=>jsplit(x.job_no).base!==base);apply();
   await load();
   setTimeout(load,800);
-  /* v80: 정말로 지워졌는지 확인한다. 남아 있으면 조용히 넘어가지 않고 알린다 */
-  /* v169: RPC 가 못 지운 잔여 행(수주·제번 풀·제작계획)은 화면에서 직접 지운다 — 제번 드롭다운(job_pool)에 남는 문제 */
+  /* 3) 정말로 지워졌는지 — 남은 표를 알린다 */
   const leftIn=[];
-  for(const t of ['sales_plans','sale_orders','jobs','job_pool']){
-   try{const chk=await MESDB.table(t).select(`select=job_no&job_no=eq.${encodeURIComponent(job)}`,{fresh:true});
-    if((chk||[]).length){try{await MESDB.table(t).delete({job_no:job})}catch(e){}
-     const re=await MESDB.table(t).select(`select=job_no&job_no=eq.${encodeURIComponent(job)}`,{fresh:true});if((re||[]).length)leftIn.push(t)}}catch(e){}
+  for(const t of RESET_TABLES){
+   try{const chk=await MESDB.table(t).select(`select=job_no&job_no=like.${encodeURIComponent(base)}*&limit=50`,{fresh:true});
+    const hit=(chk||[]).filter(x=>jsplit(x.job_no).base===base);
+    if(hit.length){for(const x of new Set(hit.map(h=>h.job_no))){try{await MESDB.table(t).delete({job_no:x})}catch(e){}}
+     const re=await MESDB.table(t).select(`select=job_no&job_no=like.${encodeURIComponent(base)}*&limit=5`,{fresh:true});
+     if((re||[]).some(x=>jsplit(x.job_no).base===base))leftIn.push(t)}}catch(e){}
   }
-  try{MESDB.dropCache&&MESDB.dropCache('rpc');MESDB.notify&&MESDB.notify(['jobs','sale_orders','job_pool','sales_plans'])}catch(e){}
-  const left=leftIn.length;
-  if(left){
-   alert(`${job} 이(가) 아직 남아 있습니다 (${leftIn.join(', ')}). 삭제가 완전히 되지 않았습니다.`);
-   msg(`${job} 삭제가 완전히 되지 않았습니다 (${leftIn.join(', ')} 에 남음). 화면을 새로고침한 뒤 다시 시도하세요.`);
+  if(leftIn.length||errs.length){
+   const why=leftIn.length?`남은 표: ${leftIn.join(', ')}`:'';
+   alert(`${base} 삭제가 완전히 되지 않았습니다.\n${why}${errs.length?'\n오류: '+errs.join('\n'):''}\n\n${leftIn.length?'sql_v234_purge_job.sql 을 실행했는지 확인하세요.':''}`);
+   msg(`${base} 삭제가 완전히 되지 않았습니다. ${why} ${errs.join(' / ')}`);
   }else{
-   msg(`${job} 을(를) 삭제했습니다. ${r&&r.deleted!=null?r.deleted+'건':''}`+(tabs?` (${tabs})`:''));
+   msg(`관리제번 ${base} (공정 제번 ${jobs.length}건) 을(를) 삭제했습니다.`+(n?` ${n}건`:'')+(tabs?` (${tabs})`:''));
   }
  }catch(e){msg('진행삭제 실패: '+String(e.message||e).slice(0,140))}
 }
