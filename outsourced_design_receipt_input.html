@@ -100,7 +100,12 @@ async function receive(){if(sel<0)return msg('입고할 발주를 선택하세�
  if(!(rate>cur&&rate<=100))return msg(`진척률은 현재값(${cur}%)보다 크고 100 이하여야 합니다.`);
  if(o.order_date&&fDate.value<o.order_date)return msg('입고일이 발주일보다 빠를 수 없습니다.');
  const done=RCP.filter(r=>Number(r.order_seq)===Number(o.seq)).reduce((s,r)=>s+(Number(r.amount)||0),0);
- if(done+amt>(Number(o.nego_price)||0)&&!confirm('입고금액 누계가 네고가를 초과합니다. 계속하시겠습니까?'))return;/* v39: 입고이력을 outsourced_design_receipts 에 실제 저장 (기존엔 메모리에만 남아 새로고침 시 유실) */
+ if(done+amt>(Number(o.nego_price)||0)&&!confirm('입고금액 누계가 네고가를 초과합니다. 계속하시겠습니까?'))return;
+ /* v239: 입고일 재확인 — 진척 100% 는 입고확정(원가 반영)이라 날짜를 한 번 더 확인한다 */
+ {const W=['일','월','화','수','목','금','토'],dt=new Date(fDate.value+'T00:00:00'),wd=isNaN(dt)?'':'('+W[dt.getDay()]+')';
+  const td=today(),diff=Math.round((new Date(fDate.value+'T00:00:00')-new Date(td+'T00:00:00'))/864e5);
+  const warn=diff>0?`\n\n⚠ 입고일이 오늘보다 ${diff}일 뒤입니다.`:diff<-30?`\n\n⚠ 입고일이 오늘보다 ${-diff}일 전입니다.`:'';
+  if(!confirm(`설계외주 ${rate>=100?'입고확정':'부분입고'} 하시겠습니까?\n\n관리제번 : ${jobLab(o)}\n협력업체 : ${o.partner_name||''}\n입 고 일 : ${fDate.value} ${wd}\n진 척 률 : ${rate}%${rate>=100?' (입고확정 — 금형원가에 반영)':''}\n입고금액 : ${money(amt)} 원${warn}\n\n입고일이 맞으면 [확인], 고치려면 [취소]`)){fDate.focus();return msg('입고일을 확인한 뒤 다시 [입고처리] 하세요.')}}/* v39: 입고이력을 outsourced_design_receipts 에 실제 저장 (기존엔 메모리에만 남아 새로고침 시 유실) */
  const rec={receipt_no:RCP.length?Math.max(...RCP.map(r=>Number(r.receipt_no)||0))+1:1,
   order_seq:o.seq,job_no:o.job_no,partner_name:o.partner_name,process_code:o.process_code,
   receipt_date:fDate.value,progress_rate:rate,amount:amt,
