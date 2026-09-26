@@ -72,7 +72,9 @@ function steps(){
  const plan=D.plan||{},st=(Array.isArray(plan.steps)?plan.steps:[]).map(c=>String(c||'').trim().toUpperCase()).filter(Boolean);
  const inh=Array.isArray(plan.inhouse)?plan.inhouse:[];
  const lines=D.lines||[],res=D.results||[],P=D.procs||{};
- const codes=st.length?st:[...new Set(lines.map(l=>String(l.machining_process_code||'').toUpperCase()).filter(Boolean))];
+ /* v260: 가공계획 순서 + 계획에 없는데 발주된 공정도 뒤에 붙인다 (계획이 발주보다 짧아 공정이 빠져 보이던 문제) */
+ const lc=[...new Set(lines.slice().sort((a,b)=>(Number(a.step_no)||99)-(Number(b.step_no)||99)).map(l=>String(l.machining_process_code||'').toUpperCase()).filter(Boolean))];
+ const codes=st.length?st.concat(lc.filter(c=>!st.includes(c))):lc;
  return codes.map((c,i)=>{
   const house=!!inh[i]&&!lines.some(l=>String(l.machining_process_code||'').toUpperCase()===c);
   const ls=lines.filter(l=>String(l.machining_process_code||'').toUpperCase()===c);

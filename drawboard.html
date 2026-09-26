@@ -41,6 +41,7 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;font-size:12px
 .tools{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
 .movetip{flex-basis:100%;font-size:11px;color:#5d6e7d}.movetip:empty{display:none}
 @media print{.movetip{display:none}}
+@media print{[data-noprint]{display:none!important}}   /* v260 */
 .tools button{height:28px;padding:0 10px;border:1px solid #8b9ba9;background:linear-gradient(#fff,#e9eef2);cursor:pointer;font:inherit;border-radius:3px}
 .tools button.go{font-weight:700;color:#fff;border-color:#2a5d95;background:linear-gradient(#4a8ad0,#2f6fb0)}
 /* v213: 다음·이전 품번, 기준공정 불러오기 — 하늘색 */
@@ -154,5 +155,5 @@ body.portrait .sheet{width:198mm}
 <div class="ov" id="ov"><div class="bar"><b id="ovT">원본 이미지</b><span id="ovS"></span><span class="sp"></span><button id="ovFit">화면 맞춤</button><button id="ovReal">실제 크기</button><button id="ovClose">닫기 (Esc)</button></div><div class="body" id="ovB"></div></div>
 <script src="mes_qr.js?v=92"></script>
 <script src="mes_imgedit.js?v=196"></script>
-<script src="drawboard.js?v=228"></script>
+<script src="drawboard.js?v=260"></script>
 </body></html>

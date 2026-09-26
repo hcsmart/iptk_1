@@ -8,7 +8,7 @@ if(window.MESDRAW)return;
 function open(o){
  o=o||{};
  try{sessionStorage.setItem('mes_drawboard',JSON.stringify(o))}catch(e){}
- const w=window.open('drawboard.html?v=221','_blank');
+ const w=window.open('drawboard.html?v=260','_blank');
  if(!w)return alert('팝업이 차단되었습니다. 이 사이트의 팝업을 허용해 주세요.');
  return w;
 }

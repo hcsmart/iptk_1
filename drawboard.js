@@ -1,4 +1,4 @@
-/* drawboard.js (v221: 적용 공정 1열·나머지 3열 · v220: 공정 목록 3열 · v219: 확인란에 업체명(5자)·사내 표시, 공정명 한 줄 · v217: 그림에 박힌 머리글 자동 잘라내기 · v215: 공정 순서 띠 → 격자(확인란) + QR · v214: 이전·다음 품번은 열 때 받은 부품 리스트 순서로 · v213: ◀ 이전 · 다음 ▶ 품번 — 가공계획이 등록된 부품은 등록된 순서로, 아니면 띠 공정 그대로 / v212: 오른쪽 목록 끌어서 순서·해제 · 기준공정 불러오기 / v211: 공정 목록 — 선택한 공정 위 · 구분선 · 나머지 가나다 / v210: 그림 등록 / v209: 끌어서 순서) — 부품 그림보드 화면 스크립트
+/* drawboard.js (v260: 가공계획 적용 결과 회신·확인창 이 창에서 · v221: 적용 공정 1열·나머지 3열 · v220: 공정 목록 3열 · v219: 확인란에 업체명(5자)·사내 표시, 공정명 한 줄 · v217: 그림에 박힌 머리글 자동 잘라내기 · v215: 공정 순서 띠 → 격자(확인란) + QR · v214: 이전·다음 품번은 열 때 받은 부품 리스트 순서로 · v213: ◀ 이전 · 다음 ▶ 품번 — 가공계획이 등록된 부품은 등록된 순서로, 아니면 띠 공정 그대로 / v212: 오른쪽 목록 끌어서 순서·해제 · 기준공정 불러오기 / v211: 공정 목록 — 선택한 공정 위 · 구분선 · 나머지 가나다 / v210: 그림 등록 / v209: 끌어서 순서) — 부품 그림보드 화면 스크립트
  * 사내외가공 발주(mes_drawboard.js)가 sessionStorage 'mes_drawboard' 에 넣어 준 자료를 읽어 그린다.
  * 문서를 스크립트로 써 넣지 않고(document.write 없음) DOM 만 만든다. */
 (function(){
@@ -82,6 +82,8 @@
   try{if(window.qrcode){const q=qrcode(0,'M');q.addData(qrUrl());q.make();box.innerHTML=q.createSvgTag({cellSize:2,margin:0,scalable:true})}}catch(e){}
   if(!box.firstChild)box.appendChild(el('div','none','QR'));
   const cap=el('div','cap');cap.appendChild(el('b',null,'QR 스캔 → 작업완료'));cap.appendChild(el('span',null,qrKey()));box.appendChild(cap);
+  /* v260: 가공계획 미저장 부품은 QR 화면에 발주된 공정만 나온다 → 알림 (인쇄에는 안 나옴) */
+  if(!o.saved){const w=el('div','qrwarn','⚠ 가공계획 미저장 — [가공계획 적용] 후 QR 이 전체 공정을 보여줍니다');w.style.cssText='font-size:9px;color:#b45309;line-height:1.3;margin-top:2px';w.setAttribute('data-noprint','1');box.appendChild(w)}
   box.title='협력업체·사내 작업자가 휴대폰으로 읽으면(로그인 없음) 이 부품의 공정 목록이 열려 작업완료를 할 수 있습니다 — 외주: 입고 처리 · 사내: 가공 실적\n'+qrUrl();return box}
  function draw(){
   const st=$('strip');st.textContent='';
@@ -190,8 +192,23 @@
   const op=window.opener;if(!op||op.closed)return alert('사내외가공 발주 화면이 닫혀 있어 적용할 수 없습니다.');
   const steps=SEQ.map(i=>({code:STEPS[i].code,house:!!STEPS[i].inhouse}));
   if(!confirm(o.part+' 의 가공공정을 아래 순서로 가공계획에 적용합니다.\n\n'+steps.map((x,k)=>(k+1)+'. '+(STEPS[SEQ[k]].name||x.code)+(x.house?' [사내]':'')).join('\n')))return;
-  op.postMessage({type:'mes_drawboard_apply',job:o.job||'',part:o.part||'',jo:o.jo==null?null:o.jo,ri:o.ri,steps},location.origin);
-  $('bApply').textContent='✔ 적용 보냄';setTimeout(()=>{$('bApply').textContent='▣ 가공계획 적용'},2500);
+  /* v260: 결과를 받아 이 창에서 알린다 (진행 중 공정 확인도 이 창에서) */
+  const btn=$('bApply'),t0='▣ 가공계획 적용';btn.disabled=true;btn.textContent='적용 중…';
+  const send=force=>new Promise((res,rej)=>{const id='ap'+Date.now()+Math.random().toString(36).slice(2,6);
+   const to=setTimeout(()=>{window.removeEventListener('message',h);rej(new Error('사내외가공 발주 화면이 응답하지 않습니다. 그 화면을 새로고침한 뒤 다시 시도하세요.'))},20000);
+   function h(ev){const r=ev.data;if(!r||r.type!=='mes_drawboard_apply_done'||r.id!==id||ev.origin!==location.origin)return;clearTimeout(to);window.removeEventListener('message',h);res(r)}
+   window.addEventListener('message',h);
+   op.postMessage({type:'mes_drawboard_apply',id,force:!!force,job:o.job||'',part:o.part||'',jo:o.jo==null?null:o.jo,ri:o.ri,steps},location.origin)});
+  (async()=>{try{
+    let r=await send(false);
+    if(!r.ok&&r.need==='confirm'){if(!confirm(r.err))return;r=await send(true)}
+    if(!r.ok)return alert('적용하지 못했습니다.\n\n'+(r.err||''));
+    if(r.data){o=Object.assign({},o,r.data,{list:o.list,all:o.all,by:o.by,item:o.item});
+     if(Array.isArray(o.list)){const k=o.list.findIndex(x=>x.part===o.part&&String(x.jo??'')===String(o.jo??''));if(k>=0)o.list[k]=Object.assign({},o.list[k],r.data)}
+     try{sessionStorage.setItem('mes_drawboard',JSON.stringify(o))}catch(e){}}
+    btn.textContent='✔ 적용됨';alert('가공계획에 적용했습니다.\n\n'+(r.text||''));
+   }catch(e){alert(e.message||String(e))}
+   finally{btn.disabled=false;setTimeout(()=>{btn.textContent=t0},1800)}})();
  });
  $('bClose').addEventListener('click',()=>window.close());
  /* v213: ◀ 이전 품번 · 다음 품번 ▶ — 사내외가공 발주 화면의 부품 순서대로 다음 부품을 불러온다.
