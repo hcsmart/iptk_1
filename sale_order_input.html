@@ -88,44 +88,60 @@ html[data-mw="xs"] .formgrid{grid-template-columns:84px minmax(0,1fr)}
 #attDrop.drag{outline:2px dashed #2f75b5;outline-offset:-4px;background:#eef5fc}
 /* 첨부파일: 비어 있을 때 과도한 여백 축소 */
 .filearea .empty,#fileEmpty{height:64px!important}
+/* v245: 성격별 줄바꿈 — 화면 폭이 바뀌어도 각 그룹이 새 줄에서 시작 */
+.formgrid .gbreak{grid-column:1/-1;height:0}
+.formgrid .span2{grid-column:span 3}
+@media(min-width:1241px){.formgrid .wide{grid-column:4/-1}}
+html[data-mw="xl"] .formgrid .wide,html[data-mw="lg"] .formgrid .wide{grid-column:4/-1}
+html[data-mw="md"] .formgrid .wide,html[data-mw="sm"] .formgrid .wide,html[data-mw="xs"] .formgrid .wide{grid-column:auto}
 </style></head><body><div class="screen">
 <div class="title"><h1>수주등록</h1><small>영업관리 · 수주</small></div>
 <section class="formgrid">
+ <!-- v245: 수주등록 배치 성격별 8줄 재정렬 (식별/제품/일정/금액/수주분류/거래처·담당/금형·개발/기타). 입력칸 id·저장 로직은 그대로 -->
+ <!-- 1 식별 -->
  <div class="label" title="관리제번. 공정수가 2 이상이면 저장할 때 관리제번 뒤에 A·B·C… 를 붙인 제번이 공정 수만큼 생깁니다 (v179)">관리제번</div><div><input id="base_job" class="field" placeholder="예) 26IPA001" style="text-transform:uppercase"></div>
  <div class="label" title="공정(SET) 수. 2 이상이면 저장 시 관리제번+A·B·C… 제번이 공정 수만큼 만들어집니다. 원가 배부 단위가 됩니다.">공정수</div><div><input id="proc_cnt" class="field num" placeholder="1" inputmode="numeric"></div>
  <div class="label" title="저장하면 만들어지는(또는 이미 있는) 제번">생성 제번</div><div class="span2"><input id="job_preview" class="field" readonly style="background:#f4f7f9;color:#2f5f8a;font-weight:700" title="관리제번 + 공정수로 정해집니다"></div>
- <div class="label" title="공정 성격 (기준정보 › 공정카테고리). 회의록 1-4. 공정별로 다르게 두려면 [⚙ 공정 자동생성]">카테고리</div><div><select id="proc_cat" class="field"><option value=""></option></select></div>
-
- <div class="label">수주일</div><div><input id="order_date" type="date" class="field"></div>
- <div class="label">T/O 예정일</div><div><input id="s1p" type="date" class="field"></div>
-
- <div class="label">수주상태</div><div><select id="status" class="field"><option>진행</option><option>보류</option><option>완료</option><option>취소</option></select></div>
- <div class="label">수주유형</div><div><select id="otype" class="field"><option>신작</option><option>개조</option><option>수리</option></select></div>
- <div class="label">견적서번호</div><div><input id="quo" class="field"></div>
- <div class="label">아이템</div><div class="lk"><input id="item_code"><input id="item_name" readonly><button onclick="openLook('item','item_code','item_name')">…</button></div>
- <div class="label">납기예정일</div><div><input id="dlvp" type="date" class="field"></div>
- <div class="label">국내/해외</div><div><select id="dom" class="field"><option>국내</option><option>해외</option></select></div>
-
- <div class="label">도번</div><div class="span3"><input id="drawing_no" class="field"></div>
- <div class="label">담당자</div><div class="lk"><input id="mgr_code"><input id="mgr_name" readonly><button onclick="openLook('employee','mgr_code','mgr_name')">…</button></div>
- <div class="label">고객사</div><div class="lk"><input id="cust_code"><input id="cust_name" readonly><button onclick="openLook('customer','cust_code','cust_name')">…</button></div>
-
- <div class="label">금형타입</div><div class="lk"><input id="mold_code"><input id="mold_name" readonly><button onclick="openLook('mold','mold_code','mold_name')">…</button></div>
- <div class="label" title="설계·조립을 사내/외주 중 어디서 하는지 (여러 개 체크 가능). SET외주발주에는 「사외조립」 체크된 제번만 나옵니다">개발유형</div><div class="devbox"><input id="devtype" type="hidden"><label><input type="checkbox" data-dev="사내설계" onchange="devToValue()">사내설계</label><label><input type="checkbox" data-dev="외주설계" onchange="devToValue()">외주설계</label><label><input type="checkbox" data-dev="사내조립" onchange="devToValue()">사내조립</label><label><input type="checkbox" data-dev="사외조립" onchange="devToValue()">사외조립</label></div>
- <div class="label" id="dvLabel" title="개발유형에서 「외주설계」 를 체크하면 입력할 수 있습니다. 제작계획등록의 설계처와 설계외주발주 업체 선택에 이어집니다">설계업체</div><div><input id="design_vendor" class="field cbo" list="dl_design_vendor" autocomplete="off" placeholder="외주설계 체크 시 입력/선택" disabled><datalist id="dl_design_vendor"></datalist></div>
+ <div class="gbreak"></div>
+ <!-- 2 제품 -->
  <div class="label">품명</div><div><input id="product_name" class="field"></div>
  <div class="label">품번</div><div><input id="model" class="field"></div>
-
+ <div class="label">도번</div><div><input id="drawing_no" class="field"></div>
+ <div class="label">아이템</div><div class="lk"><input id="item_code"><input id="item_name" readonly><button onclick="openLook('item','item_code','item_name')">…</button></div>
+ <div class="gbreak"></div>
+ <!-- 3 일정 -->
+ <div class="label">수주일</div><div><input id="order_date" type="date" class="field"></div>
+ <div class="label">T/O 예정일</div><div><input id="s1p" type="date" class="field"></div>
+ <div class="label">납기예정일</div><div><input id="dlvp" type="date" class="field"></div>
+ <div class="label">T/O 완료일</div><div><input id="s1c" type="date" class="field"></div>
+ <div class="gbreak"></div>
+ <!-- 4 금액 -->
  <div class="label">견적가</div><div><input id="quo_price" class="field num"></div>
  <div class="label">수주가</div><div><input id="order_price" class="field num"></div>
  <div class="label" title="가격 협상으로 조정된 금액 (감액 +, 증액 −). 원가관리의 실수주가 = 수주가 − 네고조정">네고조정</div><div><input id="nego_amount" class="field num" placeholder="0"></div>
  <div class="label">네고사유</div><div><input id="nego_note" class="field"></div>
- <div class="label">기계사양</div><div class="lk"><input id="ms_code"><input id="ms_name" readonly><button onclick="openLook('mspec','ms_code','ms_name')">…</button></div>
- <div class="label">사용재료</div><div><input id="material_used" class="field"></div>
- <div class="label">T/O 완료일</div><div><input id="s1c" type="date" class="field"></div>
+ <div class="gbreak"></div>
+ <!-- 5 수주 분류 -->
+ <div class="label" title="공정 성격 (기준정보 › 공정카테고리). 회의록 1-4. 공정별로 다르게 두려면 [⚙ 공정 자동생성]">카테고리</div><div><select id="proc_cat" class="field"><option value=""></option></select></div>
+ <div class="label">수주유형</div><div><select id="otype" class="field"><option>신작</option><option>개조</option><option>수리</option></select></div>
+ <div class="label">수주상태</div><div><select id="status" class="field"><option>진행</option><option>보류</option><option>완료</option><option>취소</option></select></div>
+ <div class="label">국내/해외</div><div><select id="dom" class="field"><option>국내</option><option>해외</option></select></div>
+ <div class="gbreak"></div>
+ <!-- 6 거래처·담당 -->
+ <div class="label">고객사</div><div class="lk"><input id="cust_code"><input id="cust_name" readonly><button onclick="openLook('customer','cust_code','cust_name')">…</button></div>
  <div class="label">양산처</div><div class="lk"><input id="mp_code"><input id="mp_name" readonly><button onclick="openLook('mass_production','mp_code','mp_name')">…</button></div><input id="eco" type="hidden">   <!-- v244: ECO 칸 삭제 (값은 숨겨 보존) → 그 자리에 양산처 -->
-
- <div class="label">비고</div><div class="span3"><input id="remark" class="field"></div>
+ <div class="label">담당자</div><div class="lk"><input id="mgr_code"><input id="mgr_name" readonly><button onclick="openLook('employee','mgr_code','mgr_name')">…</button></div>
+ <div class="label">견적서번호</div><div><input id="quo" class="field"></div>
+ <div class="gbreak"></div>
+ <!-- 7 금형·개발 -->
+ <div class="label">금형타입</div><div class="lk"><input id="mold_code"><input id="mold_name" readonly><button onclick="openLook('mold','mold_code','mold_name')">…</button></div>
+ <div class="label" title="설계·조립을 사내/외주 중 어디서 하는지 (여러 개 체크 가능). SET외주발주에는 「사외조립」 체크된 제번만 나옵니다">개발유형</div><div class="devbox"><input id="devtype" type="hidden"><label><input type="checkbox" data-dev="사내설계" onchange="devToValue()">사내설계</label><label><input type="checkbox" data-dev="외주설계" onchange="devToValue()">외주설계</label><label><input type="checkbox" data-dev="사내조립" onchange="devToValue()">사내조립</label><label><input type="checkbox" data-dev="사외조립" onchange="devToValue()">사외조립</label></div>
+ <div class="label" id="dvLabel" title="개발유형에서 「외주설계」 를 체크하면 입력할 수 있습니다. 제작계획등록의 설계처와 설계외주발주 업체 선택에 이어집니다">설계업체</div><div><input id="design_vendor" class="field cbo" list="dl_design_vendor" autocomplete="off" placeholder="외주설계 체크 시 입력/선택" disabled><datalist id="dl_design_vendor"></datalist></div>
+ <div class="label">기계사양</div><div class="lk"><input id="ms_code"><input id="ms_name" readonly><button onclick="openLook('mspec','ms_code','ms_name')">…</button></div>
+ <div class="gbreak"></div>
+ <!-- 8 기타 -->
+ <div class="label">사용재료</div><div><input id="material_used" class="field"></div>
+ <div class="label">비고</div><div class="wide"><input id="remark" class="field"></div>
  <div class="gsep"></div>
  <div class="label">납기완료일</div><div><input id="dlvc" type="date" class="field"></div>
  <div class="label">정산완료일</div><div><input id="comp_date" type="date" class="field" title="납품 후 잔여 수정·검수·정산까지 끝나 이 제번을 종결한 날."></div>
