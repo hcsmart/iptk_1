@@ -64,6 +64,14 @@ button,input,select{font:inherit;color:inherit}button{cursor:pointer}
 @media(max-width:1400px){.detail-grid{grid-template-columns:78px minmax(0,1fr) 78px minmax(0,1fr)}}
 @media(max-width:880px){.detail-grid{grid-template-columns:78px minmax(0,1fr)}}
 .detail-grid>*{min-width:0}
+/* v246: 사용자 목록 칸 폭 축소(직급·성명) → 오른쪽 상세영역 확대, 버튼 글자 한 줄 표시 */
+.body{grid-template-columns:minmax(300px,330px) minmax(0,1fr)}
+.user-row{grid-template-columns:96px 150px 48px}
+.filters{grid-template-columns:64px minmax(0,1fr) auto}
+.actions{flex-wrap:wrap;gap:4px;padding:3px 0 3px 3px}
+.actions .btn{min-width:0;width:auto;padding:0 10px;white-space:nowrap;flex:none}
+.right{grid-template-rows:auto auto minmax(0,1fr)}
+@media(max-width:1000px){.body{grid-template-columns:minmax(260px,300px) minmax(0,1fr)}}
 </style>
 </head>
 <body>
