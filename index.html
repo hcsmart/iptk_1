@@ -147,7 +147,7 @@ input,select{font:inherit}
 .modcard button b{font-size:14px}
 .modcard button small{color:var(--ink-3);font-size:11px;line-height:1.4;white-space:normal}
 .modcard button:hover{border-color:var(--blue);background:#f4f8ff}
-.favlist{display:grid;gap:4px}
+.favlist{display:grid;gap:4px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
 .favlist button{display:flex;justify-content:space-between;padding:7px 10px;border-radius:4px;border:1px solid var(--line)}
 .favlist button:hover{border-color:var(--blue);color:var(--blue)}
 .favlist small{color:var(--ink-3)}
@@ -232,7 +232,7 @@ a.menu-off,a.menu-off:hover{color:#9aa5ae!important;opacity:.55;cursor:not-allow
 </div>
 
 <script>
-const APP_VER='265';
+const APP_VER='282';
 const APP={
   '영업관리':{
     secondary:[
@@ -742,9 +742,10 @@ function homeHTML(){
   const mods=visibleModules().filter(m=>m!=='사용메뉴얼');
   const quick=['금형진척현황','수주등록','수주현황','제작계획등록','설계실적등록','사내외가공 발주','구매품 발주','조립실적등록'];
   return `<div class="home">
-  <div class="card" style="grid-column:span 8"><h3>업무 모듈 <span>상단 메뉴에 마우스를 올리면 세부 메뉴가 열립니다</span></h3>
+  <!-- v282: 업무 모듈 카드 숨김 (상단 메뉴로 충분) -->
+  <div class="card" style="grid-column:span 8;display:none"><h3>업무 모듈 <span>상단 메뉴에 마우스를 올리면 세부 메뉴가 열립니다</span></h3>
    <div class="modcard">${mods.map(m=>`<button onclick="pinModule('${m}')"><b>${MOD_ICON[m]||'▪'} ${esc(m)}</b><small>${esc(MOD_DESC[m]||'')}</small></button>`).join('')}</div></div>
-  <div class="card" style="grid-column:span 4"><h3>즐겨찾기 <span>★ ${favs.length}</span></h3>
+  <div class="card" style="grid-column:span 12"><h3>즐겨찾기 <span>★ ${favs.length}</span></h3>
    <div class="favlist">${favs.filter(n=>locate(n)).length?favs.filter(n=>locate(n)).map(n=>{const l=locate(n);return `<button onclick="openByName('${esc(n)}')"><span>${esc(MENU_LABEL[n]||n)}</span><small>${l?esc(l.mod):''}</small></button>`}).join(''):'<small style="color:var(--ink-3)">상단 메뉴 항목의 ★ 를 눌러 추가</small>'}</div></div>
   <div class="card" style="grid-column:span 8"><h3>바로가기</h3>
    <div class="quick">${quick.filter(n=>{const l=locate(n);return l&&canView(l.mod+'/'+l.sec+'/'+n)}).map(n=>`<button onclick="openByName('${esc(n)}')"><span style="font-size:18px">${MOD_ICON[locate(n).mod]}</span>${esc(MENU_LABEL[n]||n)}</button>`).join('')}</div></div>
