@@ -159,7 +159,7 @@ table.ev td .dcell .wd.late{background:#ffe45c;color:#5a4400;font-weight:700}
     <td><input id="complete_manager" class="cbo" list="dl_emp" autocomplete="off" placeholder="완료" title="완료(납품) 담당자"></td>
     <td><!-- v275: 사내/외주/세트 표시 삭제 — 외주 여부는 아래 외주업체 칸에 업체가 있으면 외주 --><div class="chk src" style="display:none"><label><input type="radio" name="machining_src" value="사내" checked>사내</label><label><input type="radio" name="machining_src" value="외주">외주</label>
      <label><input type="checkbox" id="machining_set_outsourced">세트</label></div></td></tr>
-   <tr class="sub"><th>외주업체</th><td></td>
+   <tr class="sub" style="display:none"><th>외주업체</th><td></td><!-- v280: 외주업체 줄 숨김 (설계 외주업체 값은 수주등록 설계업체로 계속 저장) -->
     <td><input id="design_vendor" class="cbo" list="dl_vd_design" autocomplete="off" placeholder="수주등록 외주설계 체크 시" disabled title="설계 외주업체 — 외주설계발주 화면에서도 기록됩니다 (v276)" style="width:100%"></td>
     <!-- v279: 가공·조립·초품·완료 외주업체는 이 화면에서 입력하지 않는다 (칸 숨김 — 가공·조립은 각 발주 화면이 기록) -->
     <td><input id="machining_vendor" class="cbo" data-nocombo="1" autocomplete="off" style="display:none"></td>
