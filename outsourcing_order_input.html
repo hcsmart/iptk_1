@@ -133,7 +133,10 @@ tr.rdone td{color:#8b98a3}
 #jobListTable th{width:auto!important;min-width:0!important;max-width:none!important}
 @media(max-width:900px){.panes{grid-template-columns:1fr!important}.panes>.box:first-child{min-width:0!important}}
 /* v269: 전체 부품 보기 — 제번 머리줄 · 업체 필터 표시 */
-#routeBody tr.jhead td{background:#e4eef7!important;color:#1f4e79;font-size:12px;height:24px;text-align:left;padding:0 10px;cursor:pointer;border-top:2px solid #9fb9d2;position:sticky;left:0}
+#routeBody tr.jhead td{background:#e4eef7!important;color:#1f4e79;font-size:12px;height:24px;text-align:left;padding:0 10px;cursor:pointer;border-top:2px solid #9fb9d2}
+/* 머리줄 = [고정 6칸 폭(colspan 6) 고정] + [공정 칸(colspan 10) 스크롤] — 가로로 밀어도 제번 글자가 고정 영역에 남는다 */
+#routeBody tr.jhead td.jfix{position:sticky;left:0;z-index:3;box-shadow:1px 0 0 #c5ced6}
+#routeBody tr.jhead td.jrest{position:static;left:auto;border-right:0}
 #routeBody tr.jhead td:hover{background:#d4e5f5!important}
 #routeBody tr.jhead .jcnt{margin-left:10px;color:#6b7f93;font-weight:400;font-size:11px}
 .vftag{display:inline-block;margin-left:4px;padding:3px 9px;border-radius:12px;background:#fff3d6;border:1px solid #e3c98a;color:#7a5200;cursor:pointer;white-space:nowrap}
@@ -415,7 +418,7 @@ function renderRoutes(){
   const job=ROUTES[i].job;let k=i;while(k<ROUTES.length&&ROUTES[k].job===job)k++;
   let vis=0,parts=new Set();for(let x=i;x<k;x++){if(!HID[x])vis++;parts.add(ROUTES[x].part)}
   const r0=ROUTES[i];
-  html+=`<tr class="jhead"${vis?'':' style="display:none"'}><td colspan="${6+MAXSTEP}" title="클릭하면 이 제번만 봅니다" onclick="jobOnly('${_esc(job)}')">▸ <b>${_esc(job)}</b>${r0.jobModel?` · ${_esc(r0.jobModel)}`:''}${r0.jobItem?` · ${_esc(r0.jobItem)}`:''}<span class="jcnt">부품 ${parts.size}${vis!==k-i?` · 표시 ${vis}행`:''}</span></td></tr>`;
+  html+=`<tr class="jhead"${vis?'':' style="display:none"'} title="클릭하면 이 제번만 봅니다" onclick="jobOnly('${_esc(job)}')"><td class="jfix" colspan="6">▸ <b>${_esc(job)}</b>${r0.jobModel?` · ${_esc(r0.jobModel)}`:''}${r0.jobItem?` · ${_esc(r0.jobItem)}`:''}<span class="jcnt">부품 ${parts.size}${vis!==k-i?` · 표시 ${vis}행`:''}</span></td><td class="jrest" colspan="${MAXSTEP}"></td></tr>`;
   for(let x=i;x<k;x++)html+=H[x];
   i=k;
  }
