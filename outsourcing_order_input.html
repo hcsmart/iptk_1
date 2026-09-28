@@ -433,7 +433,7 @@ function setQty(no,v){const r=REQ.find(x=>x.no===no);if(!r)return;
  r.qty=q;r.amount=(Number(r.price)||0)*q;renderReq();
  msg(`${r.part} ${r.mp} 발주수량 ${q} · 발주금액 ${(r.amount||0).toLocaleString('ko-KR')}원`)}
 function pickJob(i){if(ALL){ALL=false;JS.clear();CURJ=''}jobIdx=i;renderJobs();const j=jobView[i];if(!j)return;
- try{jobQ.value=j.job;pnQ.value=j.model||''}catch(e){}
+ /* v271: 제번을 골라도 제번·품번 필터 칸은 건드리지 않는다 — 종전엔 칸이 채워져 다음 [조회]가 그 제번 하나로 다시 걸러졌다 */
  msg(`${j.job} 부품별 가공공정을 조회합니다...`);
  if(typeof loadRoutes==='function')loadRoutes();}
 function pickVendor(i){venIdx=i;renderVendors();renderRoutes();msg(`협력업체 ${venView[i]} 선택`)}
@@ -465,7 +465,7 @@ function fillBase(){const sel=document.getElementById('baseQ');if(!sel)return;co
  const e=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
  sel.innerHTML=`<option value="">전체 (${bs.length})</option>`+bs.map(b=>`<option value="${e(b)}">${e(b)}${rng(G.get(b).seq)}${G.get(b).m?' · '+e(G.get(b).m):''}</option>`).join('');
  sel.value=G.has(cur)?cur:''}
-function basePick(){jobQ.value='';pnQ.value='';search();if(jobView.length)pickJob(0)}
+function basePick(){jobQ.value='';pnQ.value='';doQuery()}   /* v271: 관리제번 선택 = 그 관리제번 조회 (A~F 부품 전체, 1건이면 그 제번) */
 /* v196: 업체 — 협력업체 목록에서 고르거나 입력하면 오른쪽 협력업체 목록이 걸러지고, 정확히 맞으면 그 업체가 선택된다 */
 function venFillDL(){const dl=document.getElementById('venDL');if(!dl)return;
  dl.innerHTML=VENDORS.map(v=>`<option value="${String(v).replace(/"/g,'')}"></option>`).join('')}
