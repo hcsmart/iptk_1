@@ -152,20 +152,21 @@ table.ev td .dcell .wd.late{background:#ffe45c;color:#5a4400;font-weight:700}
     <td class="c" style="color:#8b98a3" title="설계 / 가공 / 조립 / 초품 / 완료 — 목표일 − 시작일 + 1">일수 <span id="design_days_v">-</span> / <span id="machining_days_v">-</span> / <span id="assembly_days_v">-</span> / <span id="tryout_days_v">-</span> / <span id="complete_days_v">-</span></td></tr>
    <tr class="sub"><th>담당자</th>
     <td><input id="receipt_manager" class="cbo" list="dl_emp" autocomplete="off" placeholder="접수" title="접수(영업) 담당자 (v185)"></td><td><input id="design_manager" class="cbo" list="dl_emp" autocomplete="off" placeholder="설계"></td>
-    <!-- v277: 가공·조립·초품·완료 담당자는 입력하지 않는다 (칸은 숨김 — 값 읽기/저장 구조는 유지) -->
-    <td><div class="mrow" style="display:none"><input id="machining_manager" class="cbo" data-nocombo="1" autocomplete="off" placeholder="가공"></div></td>
-    <td><input id="assembly_manager" class="cbo" data-nocombo="1" autocomplete="off" placeholder="조립" style="display:none"></td>
-    <td><input id="tryout_manager" class="cbo" data-nocombo="1" autocomplete="off" placeholder="초품" style="display:none"></td>
-    <td><input id="complete_manager" class="cbo" data-nocombo="1" autocomplete="off" placeholder="완료" style="display:none"></td>
+    <!-- v279: 가공·조립·초품·완료 담당자 다시 입력 가능 -->
+    <td><div class="mrow"><input id="machining_manager" class="cbo" list="dl_emp" autocomplete="off" placeholder="가공"></div></td>
+    <td><input id="assembly_manager" class="cbo" list="dl_emp" autocomplete="off" placeholder="조립"></td>
+    <td><input id="tryout_manager" class="cbo" list="dl_emp" autocomplete="off" placeholder="초품" title="초품 담당자"></td>
+    <td><input id="complete_manager" class="cbo" list="dl_emp" autocomplete="off" placeholder="완료" title="완료(납품) 담당자"></td>
     <td><!-- v275: 사내/외주/세트 표시 삭제 — 외주 여부는 아래 외주업체 칸에 업체가 있으면 외주 --><div class="chk src" style="display:none"><label><input type="radio" name="machining_src" value="사내" checked>사내</label><label><input type="radio" name="machining_src" value="외주">외주</label>
      <label><input type="checkbox" id="machining_set_outsourced">세트</label></div></td></tr>
    <tr class="sub"><th>외주업체</th><td></td>
     <td><input id="design_vendor" class="cbo" list="dl_vd_design" autocomplete="off" placeholder="수주등록 외주설계 체크 시" disabled title="설계 외주업체 — 외주설계발주 화면에서도 기록됩니다 (v276)" style="width:100%"></td>
-    <td><input id="machining_vendor" class="cbo" list="dl_vd_mach" autocomplete="off" placeholder="가공 외주업체" title="가공 외주업체 — 넣으면 가공 외주" style="width:100%"></td>
-    <td><input id="assembly_vendor" class="cbo" list="dl_vd_asm" autocomplete="off" placeholder="조립 외주업체" title="조립(SET) 외주업체 — SET외주발주 화면에서도 기록됩니다 (v275)" style="width:100%"></td>
-    <td><input id="tryout_vendor" class="cbo" list="dl_vd_mach" autocomplete="off" placeholder="초품 외주업체" title="초품 외주업체 (v275)" style="width:100%"></td>
-    <td><input id="complete_vendor" class="cbo" list="dl_vd_mach" autocomplete="off" placeholder="완료 외주업체" title="완료(납품) 외주업체 (v275)" style="width:100%"></td>
-    <td class="c" style="color:#8b98a3">업체를 넣으면 외주</td></tr>
+    <!-- v279: 가공·조립·초품·완료 외주업체는 이 화면에서 입력하지 않는다 (칸 숨김 — 가공·조립은 각 발주 화면이 기록) -->
+    <td><input id="machining_vendor" class="cbo" data-nocombo="1" autocomplete="off" style="display:none"></td>
+    <td><input id="assembly_vendor" class="cbo" data-nocombo="1" autocomplete="off" style="display:none"></td>
+    <td><input id="tryout_vendor" class="cbo" data-nocombo="1" autocomplete="off" style="display:none"></td>
+    <td><input id="complete_vendor" class="cbo" data-nocombo="1" autocomplete="off" style="display:none"></td>
+    <td class="c" style="color:#8b98a3">가공·조립 외주는 각 발주 화면</td></tr>
   </tbody></table>
   <input id="design_days" type="hidden"><input id="machining_days" type="hidden"><input id="assembly_days" type="hidden">
  </div>
@@ -440,11 +441,11 @@ const PCT={design_internal_amount:'design_internal_pct',design_external_amount:'
 const EXTK=['receipt_manager','tryout_manager','complete_manager','tryout_start_date','complete_start_date','drawing_no','make_type','material_spec','size_spec','customer_contact','design_partner','maker_name','mass_vendor','image_url',
  'receipt_date','req_receipt_date','req_design_date','req_machining_date','req_assembly_date','req_tryout_date','req_complete_date',
  'can_receipt_date','can_design_date','can_machining_date','can_assembly_date','can_tryout_date','can_complete_date'];
-const HK=['job_no','product_name','customer_name','process_set_qty','item_name','order_date','design_vendor','assembly_vendor','tryout_vendor','complete_vendor',
+const HK=['job_no','product_name','customer_name','process_set_qty','item_name','order_date','design_vendor',
  'mold_type_name','s1_planned_date','model','delivery_planned_date','design_start_date','design_end_date',
  'design_days','design_manager','machining_start_date','machining_end_date','machining_manager',
  'assembly_start_date','assembly_end_date','assembly_manager','order_price','target_price',
- 'machining_vendor',...EXTK];
+ ...EXTK];
 const DATEK=['order_date','s1_planned_date','delivery_planned_date','design_start_date','design_end_date',
  'machining_start_date','machining_end_date','assembly_start_date','assembly_end_date',
  ...EXTK.filter(k=>/_date$/.test(k))];
@@ -462,12 +463,9 @@ function collect(){
  o.remark=(document.getElementById('remark').value||'').trim()||null;
  o.progress_log=PLOG.length?PLOG:[];
  /* v119: 설계·조립 외주 여부는 이 화면에서 보내지 않는다 (DB 값 유지). 가공만 입력 */
- o.machining_outsourced=isOut('machining');
- {const c=document.getElementById('machining_set_outsourced');o.machining_set_outsourced=!!(c&&c.checked)}
- if(!o.machining_outsourced)o.machining_vendor=null;
- /* v275: 조립·초품·완료 외주업체 — 비어 있으면 null. 조립은 업체가 있으면 외주로 표시 */
- ['design_vendor','assembly_vendor','tryout_vendor','complete_vendor'].forEach(k=>{const v=document.getElementById(k);o[k]=(v&&String(v.value||'').trim())||null});
- if(o.assembly_vendor)o.assembly_outsourced=true;
+ /* v279: 가공·조립·초품·완료 외주 여부·업체는 이 화면에서 보내지 않는다 (DB 값 유지 — 각 발주 화면이 기록) */
+ ['machining_outsourced','machining_set_outsourced','machining_vendor','assembly_outsourced','assembly_vendor','tryout_vendor','complete_vendor'].forEach(k=>delete o[k]);
+ {const v=document.getElementById('design_vendor');o.design_vendor=(v&&!v.disabled&&String(v.value||'').trim())||null}
  if(o.design_vendor)o.design_outsourced=true;   /* v276: 설계 외주업체가 있으면 설계 외주 */
  let s=0;AK.forEach((k,i)=>s+=num(document.getElementById('a'+(i+1)).value));
  AK.forEach((k,i)=>{const a=num(document.getElementById('a'+(i+1)).value);
