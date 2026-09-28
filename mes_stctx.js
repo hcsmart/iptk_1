@@ -1,6 +1,7 @@
-/* mes_stctx.js — v263
- * 원재료·구매품 「발주/입고현황」 행 우클릭 처리 (입고 · 입고+확정 · 입고확정 · 입고취소 · 확정취소 · 발주취소)
- * 발주 화면(mes_ordctx.js)과 같은 order_lines 컬럼을 쓴다.
+/* mes_stctx.js — v264
+ * 원재료·구매품·외주가공 「발주/입고현황」 행 우클릭 처리 (입고 · 입고+확정 · 입고확정 · 입고취소 · 확정취소 · 발주취소)
+ * 원재료·구매품은 발주 화면(mes_ordctx.js)과 같은 order_lines 컬럼을 쓰고,
+ * 외주가공(osp:true)은 외주가공 발주 화면과 같이 fn_osp_receive / fn_osp_receive_cancel_all RPC 를 쓴다 (부분입고·회차).
  *   <script>MESSTCTX.init({category:'원재료'});</script>
  * init({category, rows:()=>view, chk:()=>CHK, st:ST}) — 화면의 let/const 전역은 window 에 없으므로 함수로 넘긴다.
  * 화면 쪽 function 전역: msg(), sel(), itemLoad(), loadVendorSel(), _filterNow()
@@ -20,6 +21,27 @@ const VIEW = () => { try { return (typeof CFG.rows === 'function' ? CFG.rows() :
 const CHKS = () => { try { return typeof CFG.chk === 'function' ? CFG.chk() : window.CHK; } catch (e) { return null; } };
 const buy = r => { const q = Number(r.got) || Number(r.qty) || 0, u = Number(r.price) || 0; return u > 0 && q > 0 ? Math.round(q * u) : (Number(r.ramt) || Number(r.quote) || 0); };
 let CFG = { category: '' }, CTX = null;
+const OSP = () => !!CFG.osp;
+async function ospRpc(fn, body) {
+  const auth = (() => { try { return window.parent.MES_AUTH || window.MES_AUTH || {}; } catch (e) { return window.MES_AUTH || {}; } })();
+  const res = await fetch(MESDB.cfg.url + '/rest/v1/rpc/' + fn, { method: 'POST', headers: { apikey: MESDB.cfg.key, Authorization: 'Bearer ' + (auth.token || MESDB.cfg.key), 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const t = await res.text(); if (!res.ok) throw new Error(t.slice(0, 160)); try { return JSON.parse(t); } catch (e) { return null; }
+}
+const _noFn = e => /PGRST202|Could not find the function|does not exist|404/i.test(String(e && e.message || e));
+async function ospRpcOr(fn, body, fallback) { try { return await ospRpc(fn, body); } catch (e) { if (fallback && _noFn(e)) return fallback(); throw e; } }
+/* 외주가공 입고 1건 — {closed} 반환 (전량 입고 여부) */
+async function ospRecv(r, q, d, short) {
+  const res = await ospRpc('fn_osp_receive', { p_line_id: Number(r.no), p_qty: q, p_date: d, p_short: short || 0, p_source: '현황화면', p_remark: null });
+  const o = Array.isArray(res) ? res[0] : res;
+  return (o && typeof o.closed === 'boolean') ? o.closed : ((Number(r.ord) || 1) - (Number(r.got) || 0) - q - (short || 0) <= 0);
+}
+/* 외주가공 입고취소 — RPC 가 없으면 outsourcing_moves 삭제 + order_lines 되돌리기 */
+async function ospCancelAll(lineId) {
+  return ospRpcOr('fn_osp_receive_cancel_all', { p_line_id: Number(lineId) }, async () => {
+    for (const io of ['입고', '사내입고']) { try { await MESDB.table('outsourcing_moves').delete({ line_id: Number(lineId), io }); } catch (e) {} }
+    await MESDB.table('order_lines').upsert([{ line_id: Number(lineId), status: '발주', receipt_qty: null, receipt_date: null, confirm_date: null, confirm_price: null, nego_rate: null, updated_at: new Date().toISOString() }], 'line_id');
+  });
+}
 
 /* ── 팝업 UI ─────────────────────────────────────────────── */
 const CSS = `
@@ -83,6 +105,8 @@ function open(ev, title, kind, bodyHtml, btns) {
 
 /* ── 공통 ────────────────────────────────────────────────── */
 function headHtml(r) {
+  if (OSP()) return `<div class="sub"><b>${_esc(r.job || '')}</b> · ${_esc(r.part || '')} ${_esc(r.partName || '')} · 공정 ${_esc(r.mp || r.procName || '')}
+   &nbsp;|&nbsp; ${_esc(r.vendor || '')} &nbsp;|&nbsp; 발주 ${Number(r.ord) || 1}개 · 입고 ${Number(r.got) || 0}개 · 견적가 ${_won(r.quote)}원 (${_esc(_dt(r.odate))})</div>`;
   return `<div class="sub"><b>${_esc(r.job || '')}</b> · ${_esc(r.part || '')} ${_esc(r.partName || '')}
    &nbsp;|&nbsp; ${_esc(r.vendor || '')} &nbsp;|&nbsp; 발주 ${Number(r.qty) || 0}개 · 단가 ${_won(r.price)}원 (${_esc(_dt(r.odate))})</div>`;
 }
@@ -102,7 +126,8 @@ function batchNote(list, what) {
 const useBatch = () => { const c = $('sxBatch'); return !!(c && c.checked); };
 async function after(text, popTitle) {
   try { MESDB.dropCache && MESDB.dropCache('order_lines'); } catch (e) {}
-  try { MESDB.notify && MESDB.notify(['order_lines']); } catch (e) {}
+  try { MESDB.notify && MESDB.notify(OSP() ? ['order_lines', 'outsourcing_moves'] : ['order_lines']); } catch (e) {}
+  try { OSP() && window.MESMOVE && MESMOVE.invalidate(); } catch (e) {}
   close();
   try { if (MESDB.reloadLines) await MESDB.reloadLines(); } catch (e) {}
   try { typeof window.itemLoad === 'function' && window.itemLoad(); } catch (e) {}
@@ -115,6 +140,7 @@ function busy(id, on, label) { const b = $(id); if (!b) return; b.disabled = !!o
 
 /* ── ① 발주 → 입고 / 입고+확정 / 발주취소 ─────────────────── */
 function formReceive(ev, r) {
+  if (OSP()) return formReceiveOsp(ev, r);
   CTX = { r };
   const bt = batchRows(r);
   open(ev, `${r.part || ''} — 입고 처리`, 'k-in', headHtml(r) + `
@@ -169,11 +195,68 @@ async function doReceive(withConfirm) {
       : `${r.part || ''} ${r.vendor || ''} 입고 ${q}개 처리 — 입고확정은 다시 우클릭하세요.` + more, withConfirm ? '입고+확정 완료' : '입고 완료');
   } catch (e) { say('입고 실패: ' + String(e.message || e).slice(0, 120)); busy(id, false); }
 }
+/* 외주가공: 잔량 입고 (fn_osp_receive) — 부분입고면 발주 상태로 남고, 전량이면 입고 상태 */
+function formReceiveOsp(ev, r) {
+  CTX = { r };
+  const bt = batchRows(r);
+  const ord = Number(r.ord) || 1, got = Number(r.got) || 0, rem = Math.max(ord - got, 0), quote = Number(r.quote) || 0;
+  open(ev, `${r.part || ''} — 외주가공 입고`, 'k-in', headHtml(r) + `
+   <div class="g">
+    <label>입고일</label><input id="sxDate" type="date" value="${T0()}">
+    <label>입고수량</label><input id="sxQty" class="r" value="${rem}" inputmode="numeric" title="미입고 잔량 ${rem}">
+    <label>견적가</label><input id="sxAmt" class="r" value="${_won(quote)}" readonly>
+    <label></label><label style="text-align:left;font-weight:400"><input type="checkbox" id="sxShort" style="width:auto;height:auto"> 잔량은 입고하지 않음(마감)</label>
+    <label>네고율(%)</label><input id="sxRate" class="r" value="${Number(r.rate) || 0}" inputmode="decimal" title="입고+확정 때만 적용">
+    <label>확정가</label><input id="sxFix" class="r" value="${_won(Number(r.fix) || quote)}" inputmode="numeric" title="입고+확정 때만 적용">
+   </div>
+   ${batchNote(bt, '입고 (각 잔량 전부)')}
+   <div class="note">[입고]는 입고 상태까지, [입고+확정]은 전량 입고(잔량 0 또는 마감)일 때 네고율·확정가까지 처리해 제조원가(외주가공비)에 반영합니다. 부분입고하면 발주 상태로 남아 다시 우클릭해 계속 입고할 수 있습니다.</div>`,
+   [{ t: '▣ 입고', cls: 'go', id: 'sxGo', fn: () => doReceiveOsp(false) },
+    { t: '▣ 입고+확정', cls: 'go', id: 'sxGo2', fn: () => doReceiveOsp(true) },
+    { t: '✖ 발주취소', cls: 'warn', title: '발주 라인을 삭제합니다', fn: doOrderCancel },
+    { t: '닫기', fn: close }]);
+  CTX.batch = bt;
+  $('sxRate').onchange = () => { $('sxFix').value = _won(Math.round(quote * (1 - _n($('sxRate').value) / 100))); };
+  $('sxFix').onchange = () => { $('sxFix').value = _won(_n($('sxFix').value)); $('sxRate').value = quote ? ((1 - _n($('sxFix').value) / quote) * 100).toFixed(1) : '0'; };
+  return false;
+}
+async function doReceiveOsp(withConfirm) {
+  const r = CTX && CTX.r; if (!r) return;
+  if (!_online()) return say('DB 미연결 - 입고 처리를 할 수 없습니다.');
+  const ord = Number(r.ord) || 1, got = Number(r.got) || 0, rem = Math.max(ord - got, 0), q = _n($('sxQty').value);
+  if (!(q > 0)) return say('입고수량을 입력하세요.');
+  if (q > rem) return say(`잔량 ${rem}을 초과했습니다.`);
+  const rest = Math.max(rem - q, 0), short = ($('sxShort').checked && rest > 0) ? rest : 0;
+  const d = $('sxDate').value || T0(), ts = new Date().toISOString(), quote = Number(r.quote) || 0;
+  const fixIn = _n($('sxFix').value) || quote, rate = withConfirm ? (quote ? Number(((1 - fixIn / quote) * 100).toFixed(2)) : 0) : 0;
+  const id = withConfirm ? 'sxGo2' : 'sxGo'; busy(id, true);
+  const fixRows = [], done = [], fails = [];
+  try {
+    const closed = await ospRecv(r, q, d, short);
+    if (withConfirm && closed) fixRows.push({ line_id: Number(r.no), status: '입고확정', confirm_date: d, confirm_price: fixIn || null, nego_rate: rate, updated_at: ts });
+    if (useBatch()) for (const x of (CTX.batch || [])) {
+      const xq = Math.max((Number(x.ord) || 1) - (Number(x.got) || 0), 0); if (!(xq > 0)) continue;
+      try { const xc = await ospRecv(x, xq, d, 0);
+        const xqt = Number(x.quote) || 0;
+        if (withConfirm && xc) fixRows.push({ line_id: Number(x.no), status: '입고확정', confirm_date: d, confirm_price: xqt ? Math.round(xqt * (1 - rate / 100)) : null, nego_rate: rate, updated_at: ts });
+        done.push(`${x.part || ''} ${xq}개`); }
+      catch (e) { fails.push(`${x.part || ''}: ${String(e.message || e).slice(0, 60)}`); }
+    }
+    if (fixRows.length) await MESDB.table('order_lines').upsert(fixRows, 'line_id');
+    for (const x of [r, ...(useBatch() ? (CTX.batch || []) : [])]) { try { const c = CHKS(); c && c.delete(Number(x.no)); } catch (e) {} }
+    const more = (done.length ? ` · 함께 입고 ${done.length}건: ${done.join(', ')}` : '') + (fails.length ? ` · 실패 ${fails.length}건: ${fails.join(' / ')}` : '');
+    if (withConfirm && closed) await after(`${r.part || ''} ${r.vendor || ''} 입고 ${q}개 + 입고확정 (확정가 ${_won(fixIn)}원, 네고 ${rate}%) — 제조원가에 반영됩니다.` + more, '입고+확정 완료');
+    else await after(`${r.part || ''} ${r.vendor || ''} 입고 ${q}개${rest && !short ? ` (잔량 ${rest} 대기)` : ''}` + more
+      + (withConfirm ? ' — 잔량이 남아 입고만 처리했습니다. 잔량을 입고하거나 「잔량은 입고하지 않음」을 체크하면 확정됩니다.' : ' — 입고확정은 다시 우클릭하세요.'), '입고 완료');
+  } catch (e) { say('입고 실패: ' + String(e.message || e).slice(0, 120)); busy(id, false); }
+}
+
 async function doOrderCancel() {
   const r = CTX && CTX.r; if (!r) return;
   if (!_online()) return say('DB 미연결 - 발주취소를 할 수 없습니다.');
   const bt = useBatch() ? (CTX.batch || []) : [];
   const all = [r, ...bt];
+  if (OSP()) { const pr = all.find(x => (Number(x.got) || 0) > 0); if (pr) return say(`${pr.part || ''} 은(는) 이미 ${Number(pr.got)}개가 부분입고됐습니다. [입고취소]를 먼저 하세요.`); }
   if (!confirm(`${CFG.category} 발주 ${all.length}건을 취소(삭제)합니다.\n\n · ${all.slice(0, 8).map(x => `${x.job} · ${x.vendor || ''} · ${x.part || ''} ${Number(x.qty) || 0}개`).join('\n · ')}${all.length > 8 ? '\n … 외 ' + (all.length - 8) + '건' : ''}\n\n되돌릴 수 없습니다. 계속할까요?`)) return;
   try {
     await MESDB.delLines(all.map(x => Number(x.no)));
@@ -189,15 +272,18 @@ async function doOrderCancel() {
 function formConfirm(ev, r) {
   CTX = { r };
   const bt = batchRows(r);
-  const quote = buy(r), fix = _n(r.fix) || quote;
-  open(ev, `${r.part || ''} — 입고확정`, 'k-cfm', headHtml(r) + `
-   <div class="g">
-    <label>입고일</label><input value="${_esc(_dt(r.idate))}" readonly>
-    <label>확정일</label><input id="sxCdate" type="date" value="${T0()}">
+  const quote = OSP() ? (Number(r.quote) || 0) : buy(r), fix = _n(r.fix) || quote;
+  const mid = OSP() ? `
+    <label>입고수량</label><input class="r" value="${Number(r.got) || Number(r.ord) || 1}" readonly>
+    <label>견적가</label><input id="sxAmt" class="r" value="${_won(quote)}" readonly>` : `
     <label>입고수량</label><input id="sxQty" class="r" value="${Number(r.got) || Number(r.qty) || 0}" inputmode="numeric">
     <label>단가</label><input id="sxPrice" class="r" value="${_won(r.price)}" inputmode="numeric">
     <label>매입가</label><input id="sxAmt" class="r" value="${_won(quote)}" readonly title="입고수량 × 단가">
-    <label></label><span></span>
+    <label></label><span></span>`;
+  open(ev, `${r.part || ''} — 입고확정`, 'k-cfm', headHtml(r) + `
+   <div class="g">
+    <label>입고일</label><input value="${_esc(_dt(r.idate))}" readonly>
+    <label>확정일</label><input id="sxCdate" type="date" value="${T0()}">${mid}
     <label>네고율(%)</label><input id="sxRate" class="r" value="${quote ? ((1 - fix / quote) * 100).toFixed(1) : '0'}" inputmode="decimal">
     <label>확정가</label><input id="sxFix" class="r" value="${_won(fix)}" inputmode="numeric">
    </div>
@@ -208,7 +294,7 @@ function formConfirm(ev, r) {
     { t: '닫기', fn: close }]);
   CTX.batch = bt;
   const f = () => { const a = Math.round(_n($('sxQty').value) * _n($('sxPrice').value)); $('sxAmt').value = _won(a); $('sxPrice').value = _won(_n($('sxPrice').value)); $('sxFix').value = _won(Math.round(a * (1 - _n($('sxRate').value) / 100))); };
-  $('sxQty').onchange = f; $('sxPrice').onchange = f;
+  if ($('sxQty')) { $('sxQty').onchange = f; $('sxPrice').onchange = f; }
   $('sxRate').onchange = () => { $('sxFix').value = _won(Math.round(_n($('sxAmt').value) * (1 - _n($('sxRate').value) / 100))); };
   $('sxFix').onchange = () => { const a = _n($('sxAmt').value); $('sxFix').value = _won(_n($('sxFix').value)); $('sxRate').value = a ? ((1 - _n($('sxFix').value) / a) * 100).toFixed(1) : '0'; };
   return false;
@@ -216,6 +302,7 @@ function formConfirm(ev, r) {
 async function doConfirm() {
   const r = CTX && CTX.r; if (!r) return;
   if (!_online()) return say('DB 미연결 - 입고확정을 할 수 없습니다.');
+  if (OSP()) return doConfirmOsp(r);
   const q = _n($('sxQty').value), price = _n($('sxPrice').value), quote = Math.round(q * price) || _n($('sxAmt').value), fix = _n($('sxFix').value);
   const rate = quote ? Number(((1 - fix / quote) * 100).toFixed(2)) : 0, cd = $('sxCdate').value || T0(), ts = new Date().toISOString();
   busy('sxGo', true);
@@ -234,10 +321,35 @@ async function doConfirm() {
       + (done.length ? ` · 함께 확정 ${done.length}건: ${done.join(', ')}` : ''), '입고확정 완료');
   } catch (e) { say('입고확정 실패: ' + String(e.message || e).slice(0, 120)); busy('sxGo', false, '▣ 입고확정'); }
 }
+async function doConfirmOsp(r) {
+  const quote = Number(r.quote) || 0, fix = _n($('sxFix').value);
+  const rate = quote ? Number(((1 - fix / quote) * 100).toFixed(2)) : null, cd = $('sxCdate').value || T0(), ts = new Date().toISOString();
+  busy('sxGo', true);
+  try {
+    const rows = [{ line_id: Number(r.no), status: '입고확정', confirm_date: cd, confirm_price: fix || null, nego_rate: rate, updated_at: ts }], done = [];
+    if (useBatch()) for (const x of (CTX.batch || [])) {
+      const xq = Number(x.quote) || 0, xf = Math.round(xq * (1 - (rate || 0) / 100));
+      rows.push({ line_id: Number(x.no), status: '입고확정', confirm_date: cd, confirm_price: xf || null, nego_rate: xq ? rate : null, updated_at: ts });
+      done.push(`${x.part || ''} ${_won(xf)}원`);
+    }
+    await MESDB.table('order_lines').upsert(rows, 'line_id');
+    for (const x of rows) { try { const c = CHKS(); c && c.delete(Number(x.line_id)); } catch (e) {} }
+    await after(`${r.part || ''} ${r.vendor || ''} 입고확정 (확정가 ${_won(fix)}원, 네고 ${rate || 0}%) — 제조원가(외주가공비)에 반영됩니다.`
+      + (done.length ? ` · 함께 확정 ${done.length}건: ${done.join(', ')}` : ''), '입고확정 완료');
+  } catch (e) { say('입고확정 실패: ' + String(e.message || e).slice(0, 120)); busy('sxGo', false, '▣ 입고확정'); }
+}
 async function doReceiveCancel() {
   const r = CTX && CTX.r; if (!r) return;
   if (!_online()) return say('DB 미연결 - 입고취소를 할 수 없습니다.');
   const all = [r, ...(useBatch() ? (CTX.batch || []) : [])];
+  if (OSP()) {
+    const fixed = all.filter(x => stOf(x) === '입고확정').length;
+    if (!confirm(`외주가공 입고 ${all.length}건을 취소합니다. (입고 회차 기록도 지워집니다)\n발주(출고) 상태로 돌아가며 입고수량·입고일이 지워집니다.${fixed ? `\n입고확정된 ${fixed}건은 확정일·확정가도 지워집니다.` : ''}\n계속할까요?`)) return;
+    let ok = 0; const ng = [];
+    for (const x of all) { try { await ospCancelAll(x.no); ok++; try { const c = CHKS(); c && c.delete(Number(x.no)); } catch (e) {} } catch (e) { ng.push(`${x.part || ''}: ${String(e.message || e).slice(0, 60)}`); } }
+    await after(`입고 ${ok}건을 취소했습니다. (발주 상태로 복귀 — 다시 입고 처리할 수 있습니다)` + (ng.length ? ` · 실패 ${ng.length}건: ${ng.join(' / ')}` : ''), '입고취소');
+    return;
+  }
   if (!confirm(`입고 ${all.length}건을 취소합니다.\n발주 상태로 돌아가며 입고수량·입고일이 지워집니다. 계속할까요?`)) return;
   try {
     const ts = new Date().toISOString();
@@ -256,13 +368,15 @@ function formDone(ev, r) {
    <div class="info">
     <b>입고일</b><span>${_esc(_dt(r.idate))}</span>
     <b>확정일</b><span>${_esc(_dt(r.cdate))}</span>
-    <b>입고수량</b><span>${Number(r.got) || Number(r.qty) || 0}</span>
-    <b>매입가</b><span>${_won(buy(r))}원</span>
+    <b>입고수량</b><span>${Number(r.got) || Number(r.qty) || Number(r.ord) || 0}</span>
+    <b>${OSP() ? '견적가' : '매입가'}</b><span>${_won(OSP() ? r.quote : buy(r))}원</span>
     <b>네고율</b><span>${Number(r.rate) || 0}%</span>
     <b>확정가</b><span>${_won(r.fix)}원</span></div>
    ${batchNote(bt, '확정취소')}
    <div class="note">확정취소를 하면 「입고」 상태로 돌아가 확정가를 다시 잡을 수 있습니다.</div>`,
-   [{ t: '✖ 확정취소', cls: 'warn', fn: doConfirmCancel }, { t: '닫기', fn: close }]);
+   [{ t: '✖ 확정취소', cls: 'warn', fn: doConfirmCancel },
+    ...(OSP() ? [{ t: '✖ 입고취소', cls: 'warn', title: '입고(확정 포함)를 취소하고 발주 상태로 되돌립니다', fn: doReceiveCancel }] : []),
+    { t: '닫기', fn: close }]);
   CTX.batch = bt;
   return false;
 }
