@@ -155,6 +155,9 @@ let rows=[...SAMPLE],view=[],fOwner='',fLate=false,open=new Set();
 const jsplit=j=>{const m=/^(.*\d)([A-Z])$/.exec(String(j||'').trim());return m?{base:m[1],seq:m[2]}:{base:String(j||'').trim(),seq:''}};
 const hereOf=r=>{const i=STAGES.findIndex(s=>(r['st_'+s.k]||'wait')!=='done');return i<0?STAGES.length:i};
 const isLate=r=>!!(r.s1_overdue||r.delivery_overdue);
+const OTYPE=new Map();   /* v267: 제번/관리제번 → 수주유형 */
+const otypeOf=g=>{for(const x of g.jobs){const t=OTYPE.get(String(x.job_no));if(t)return t}return OTYPE.get(g.base)||''};
+const OT_CLS={'신작':'border-color:#9fc5e8;background:#eaf3fb;color:#1f5f99','개조':'border-color:#e3c98a;background:#fff6dc;color:#8a5a00','수리':'border-color:#b9d7b0;background:#e9f5e4;color:#2f6b2a'};
 function groupRows(list){
  const mp=new Map();
  list.forEach(r=>{const s=jsplit(r.job_no);let g=mp.get(s.base);if(!g){g={base:s.base,jobs:[]};mp.set(s.base,g)}g.jobs.push(r)});
@@ -189,7 +192,10 @@ async function load(){
  if(!online()){apply();return msg('DB 미연결 - 예시 데이터를 표시합니다.')}
  try{
   const rs=await MESDB.table('job_progress_view').select('select=*&order=job_no');
-  rows=rs||[];apply();
+  rows=rs||[];
+  /* v267: 수주유형(신작·개조·수리) — sale_orders 에서 제번별로 읽어 카드에 표시 */
+  try{const so=await MESDB.table('sale_orders').select('select=job_no,order_type');OTYPE.clear();(so||[]).forEach(x=>{const t=String(x.order_type||'').trim();if(!t)return;OTYPE.set(String(x.job_no||''),t);const b=jsplit(x.job_no).base;if(b&&!OTYPE.has(b))OTYPE.set(b,t)})}catch(e){}
+  apply();
   msg(`${rows.length}건을 조회했습니다. (${new Date().toLocaleTimeString('ko-KR')})`);
  }catch(e){msg('조회 실패: '+String(e.message||e).slice(0,120))}
 }
@@ -275,6 +281,7 @@ function render(){
     ${multi?`<span class="seqs" title="${esc(g.jobs.map(x=>x.job_no).join(', '))}">공정 <b>${g.jobs.length}</b></span>`:''}
     <span class="item">${esc(g.item)}</span>
     <span class="cust">${esc(g.cust)}</span>
+    ${(()=>{const t=otypeOf(g);return t?`<span class="tag" style="${OT_CLS[t]||''}" title="수주유형">${esc(t)}</span>`:''})()}
     ${!r.has_plan?'<span class="tag" style="color:#9aa5ad">계획 미등록</span>':r.design_outsourced?'<span class="tag out">설계 외주</span>':'<span class="tag">설계 사내</span>'}
     ${g.s1late?'<span class="tag" style="border-color:#e2b3ae;background:#fbeceb;color:#c0392b">T/O 지연</span>':''}
     <span class="dday">${multi?`<span class="fold">${isOpen?'▲ 접기':'▼ 공정별 보기'}</span>`:''}${dueTxt(r,g)}
@@ -408,9 +415,9 @@ function goScreen(name){
  msg(`${name} 화면을 좌측 메뉴에서 열어주세요.`);
 }
 function exportCsv(){
- const head=['관리제번','공정 제번','대표 공정','품명','고객사','설계구분','진척률(평균)','T/O예정','납기예정','다음담당','다음화면','다음할일',
+ const head=['관리제번','공정 제번','대표 공정','품명','고객사','수주유형','설계구분','진척률(평균)','T/O예정','납기예정','다음담당','다음화면','다음할일',
   ...STAGES.map(s=>s.n)];
- const out=[head,...groups.map(g=>{const r=g.rep;return [g.base+(g.jobs.length>1?' '+seqRange(g.jobs.map(x=>jsplit(x.job_no).seq)):''),g.jobs.map(x=>x.job_no).join(' '),r.job_no,g.item,g.cust,
+ const out=[head,...groups.map(g=>{const r=g.rep;return [g.base+(g.jobs.length>1?' '+seqRange(g.jobs.map(x=>jsplit(x.job_no).seq)):''),g.jobs.map(x=>x.job_no).join(' '),r.job_no,g.item,g.cust,otypeOf(g),
   r.design_outsourced?'외주':'사내',g.pct+'%',r.s1_planned_date||'',r.delivery_planned_date||'',
   r.next_owner||'',r.next_screen||'',r.next_step||'',
   ...STAGES.map(s=>({done:'완료',run:'진행',wait:'대기'}[r['st_'+s.k]||'wait']))]})];
