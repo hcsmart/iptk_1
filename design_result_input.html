@@ -23,7 +23,7 @@ td.asm .st{display:block;font-size:10.5px;padding:1px 5px;margin-top:2px;border-
 td.asm.d{background:#cbb894;color:#3d2f16;box-shadow:inset 5px 0 0 #6b5327}td.asm.d .st{background:#6b5327}
 td.asm .sub{display:block;font-size:10.5px;color:#7a6034}td.asm.d .sub{color:#4a3a1c}
 tr.all td{background:#fff9ea;font-weight:700}tr.all td.asm{background:#f3e3b8}tr.all td.asm.d{background:#c9b485}
-#partBody tr:hover td:not(.asm){background:#edf6fd}
+#partBody tr{cursor:context-menu}#partBody tr:hover td:not(.asm){background:#edf6fd}
 .foot{height:40px;display:flex;align-items:center;gap:6px;padding:0 14px;border-top:1px solid var(--line2);background:#f5f7f8}.msg{margin-left:6px;color:#1d5da3;font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* 실적 창 */
 #hxMask{position:fixed;inset:0;z-index:9000;display:none}#hxMask.on{display:block}
@@ -167,15 +167,15 @@ async function loadParts(){
  }catch(e){renderParts();msg(WORK.type+'실적 조회 실패: '+String(e.message||e).slice(0,110))}
 }
 function cell(p){
- const a=RES[p.part]||[];if(!a.length)return `<td class="asm" oncontextmenu="return hxOpen(event,'${esc(p.part)}')" ondblclick="hxOpen(event,'${esc(p.part)}')" title="우클릭 → 실적 등록"><b>${esc(PROC.name)}</b><span class="sub">미등록</span><span class="st">▶ 실적등록</span></td>`;
+ const a=RES[p.part]||[];if(!a.length)return `<td class="asm" title="우클릭 → 실적 등록"><b>${esc(PROC.name)}</b><span class="sub">미등록</span><span class="st">▶ 실적등록</span></td>`;
  const m=a.reduce((s,r)=>s+N(r.work_minutes),0),c=a.reduce((s,r)=>s+N(r.labor_cost),0);
- return `<td class="asm d" oncontextmenu="return hxOpen(event,'${esc(p.part)}')" ondblclick="hxOpen(event,'${esc(p.part)}')" title="${a.length}건 · 우클릭 → 추가 등록 / 삭제"><b>${esc(PROC.name)}</b><span class="sub">${H(m)} · ${W(c)}원 · ${a.length}건</span><span class="st">✔ 실적 ${a.length}건</span></td>`;
+ return `<td class="asm d" title="${a.length}건 · 우클릭 → 추가 등록 / 삭제"><b>${esc(PROC.name)}</b><span class="sub">${H(m)} · ${W(c)}원 · ${a.length}건</span><span class="st">✔ 실적 ${a.length}건</span></td>`;
 }
 function renderParts(){
  const j=curJob();
  $('partBody').innerHTML=!j?'<tr><td colspan="7" class="c" style="height:80px;color:#8a97a2">제번을 선택하세요.</td></tr>':
   PARTS.map(p=>{const a=RES[p.part]||[],last=a.length?a[a.length-1]:null;
-   return `<tr class="${p.part===ALL?'all':''}"><td class="c"><input type="checkbox" data-p="${esc(p.part)}" onclick="event.stopPropagation()"></td><td class="c">${esc(p.jo)}</td><td>${p.part===ALL?'★':esc(p.part)}</td><td title="${esc(p.name)}">${esc(p.name)}</td><td class="c">${esc(p.qty)}</td>${cell(p)}<td style="font-size:11px;color:#55677a">${last?`${esc(last.work_date||'')} ${esc(last.worker_name||'')}`:''}</td></tr>`}).join('')
+   return `<tr class="${p.part===ALL?'all':''}" oncontextmenu="return hxOpen(event,'${esc(p.part)}')" ondblclick="if(!event.target.closest('input'))hxOpen(event,'${esc(p.part)}')" title="행 우클릭 · 더블클릭 → 실적 등록"><td class="c"><input type="checkbox" data-p="${esc(p.part)}" onclick="event.stopPropagation()"></td><td class="c">${esc(p.jo)}</td><td>${p.part===ALL?'★':esc(p.part)}</td><td title="${esc(p.name)}">${esc(p.name)}</td><td class="c">${esc(p.qty)}</td>${cell(p)}<td style="font-size:11px;color:#55677a">${last?`${esc(last.work_date||'')} ${esc(last.worker_name||'')}`:''}</td></tr>`}).join('')
   +(PARTS.length<=1?'<tr><td colspan="7" class="c" style="height:60px;color:#8a4f08;background:#fff8ec;white-space:normal">이 제번에 PartList(원재료) 부품이 없습니다. 「금형 전체」 행에 등록하거나 설계관리 › PartList 등록을 먼저 하세요.</td></tr>':'');
  try{$('chkAll').checked=false}catch(e){}
 }
