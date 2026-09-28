@@ -20,14 +20,32 @@ const key=p=>String(p||'').trim();
 const online=()=>!!(window.MESDB&&MESDB.online);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
+const toEntry=r=>({no:Number(r.cycle_no)||1,reason:r.reason||'',memo:r.memo||'',by:r.started_by||'',at:String(r.started_at||'').slice(0,10),
+    ended:!!r.ended_at,endAt:String(r.ended_at||'').slice(0,10),endReason:r.end_reason||'',endMemo:r.end_memo||'',endBy:r.ended_by||''});
+/* v269: 여러 제번을 한 번에 읽어 제번별 상태(snap)로 돌려준다 — 사내외가공 발주 「전체 부품 보기」용.
+   restore(snap) 으로 현재 제번 상태를 바꿔 끼운다 (DB 조회 없음) */
+function snap(){return {JOB,CAT,HIST}}
+function restore(s){if(!s)return;JOB=String(s.JOB||'');CAT=String(s.CAT||'');HIST=s.HIST instanceof Map?s.HIST:new Map()}
+async function loadMany(jobs,category){
+ const out=new Map(),C=String(category||'');
+ (jobs||[]).forEach(j=>out.set(String(j),{JOB:String(j),CAT:C,HIST:new Map()}));
+ if(!C||!online()||!out.size)return out;
+ const list=[...out.keys()];
+ for(let i=0;i<list.length;i+=40){
+  const inl=encodeURIComponent('('+list.slice(i,i+40).map(x=>'"'+x.replace(/"/g,'')+'"').join(',')+')');
+  const q=e=>`select=job_no,part_no,cycle_no,reason,memo,started_by,started_at${e?',ended_at,end_reason,end_memo,ended_by':''}&job_no=in.${inl}&category=eq.${encodeURIComponent(C)}&order=cycle_no`;
+  let rs=[];try{try{rs=await MESDB.table('part_cycles').select(q(1),{fresh:true})}catch(e){rs=await MESDB.table('part_cycles').select(q(0),{fresh:true})}}catch(e){rs=[]}
+  (rs||[]).forEach(r=>{const s=out.get(String(r.job_no));if(!s)return;const k=key(r.part_no);const a=s.HIST.get(k)||[];a.push(toEntry(r));s.HIST.set(k,a)});
+ }
+ return out;
+}
 async function load(job,category){
  JOB=String(job||'');CAT=String(category||'');HIST=new Map();
  if(!JOB||!CAT||!online())return HIST;
  try{
   const q=e=>`select=part_no,cycle_no,reason,memo,started_by,started_at${e?',ended_at,end_reason,end_memo,ended_by':''}&job_no=eq.${encodeURIComponent(JOB)}&category=eq.${encodeURIComponent(CAT)}&order=cycle_no`;
   let rs;try{rs=await MESDB.table('part_cycles').select(q(1),{fresh:true})}catch(e){rs=await MESDB.table('part_cycles').select(q(0),{fresh:true})}   /* v227: sql_v227 미실행이어도 돈다 */
-  (rs||[]).forEach(r=>{const k=key(r.part_no);const a=HIST.get(k)||[];a.push({no:Number(r.cycle_no)||1,reason:r.reason||'',memo:r.memo||'',by:r.started_by||'',at:String(r.started_at||'').slice(0,10),
-    ended:!!r.ended_at,endAt:String(r.ended_at||'').slice(0,10),endReason:r.end_reason||'',endMemo:r.end_memo||'',endBy:r.ended_by||''});HIST.set(k,a)});
+  (rs||[]).forEach(r=>{const k=key(r.part_no);const a=HIST.get(k)||[];a.push(toEntry(r));HIST.set(k,a)});
  }catch(e){/* 표(part_cycles)가 아직 없으면 전부 1차로 본다 */}
  return HIST;
 }
@@ -169,5 +187,5 @@ async function manageFor(o){
  (o.parts||[]).forEach(p=>{const n=cur(p.part);for(let c=1;c<=n;c++){const g=map.get(key(p.part)+'|'+c)||{total:0,open:[],partial:0};rows.push({part:p.part,name:p.name||'',no:c,total:g.total,open:g.open,partial:g.partial})}});
  manage(Object.assign({},o,{rows}));
 }
-window.MESCYCLE={load,cur,reason,info,isEnded,linesByCycle,manageFor,hist,rowsOf,lineNo,badge,title,start,manage,close,REASONS,END_REASONS,get job(){return JOB},get category(){return CAT}};
+window.MESCYCLE={load,loadMany,snap,restore,cur,reason,info,isEnded,linesByCycle,manageFor,hist,rowsOf,lineNo,badge,title,start,manage,close,REASONS,END_REASONS,get job(){return JOB},get category(){return CAT}};
 })();
