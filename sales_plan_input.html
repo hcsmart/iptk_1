@@ -277,7 +277,15 @@ function autoDist(){
  const op=num(order_price.value);if(!op){msg('수주가를 먼저 입력하세요.');order_price.focus();return}
  const pf=num(ad_profit.value);if(pf<0){msg('목표 이익금은 0 이상이어야 합니다.');return}
  const base=op-pf;if(base<=0){msg(`목표 이익금(${fmt(pf)})이 수주가(${fmt(op)}) 이상입니다.`);ad_profit.focus();return}
- const tot=adSum();if(tot!==100){msg(`항목별 비율 합계가 ${tot}% 입니다. 100%가 되도록 맞추세요.`);return}
+ let tot=adSum();
+ if(tot!==100){
+  /* v273: 합계가 100% 가 아니면 하단 문구만 바뀌어 "배분이 안 된다"고 보였다 → 창으로 묻고, 원하면 100% 기준으로 환산해 배분 */
+  if(!tot){try{(window.MESPOP||window.parent?.MESPOP)?.warn('항목별 비율이 비어 있습니다. 비율(%)을 입력하세요.','자동배분')}catch(e){}msg('항목별 비율을 입력하세요.');return}
+  if(!confirm(`항목별 비율 합계가 ${tot}% 입니다. (100% 가 아님)\n\n입력한 비율을 100% 기준으로 환산해서 배분할까요?\n[취소] 를 누르면 비율을 직접 고칠 수 있습니다.`)){msg(`비율 합계 ${tot}% — 100% 가 되도록 맞춘 뒤 다시 [자동배분] 하세요.`);return}
+  const r=adGet(),sc=r.map(v=>Math.round(v/tot*100));let d=100-sc.reduce((x,y)=>x+y,0);
+  if(d){const mx=sc.indexOf(Math.max(...sc));sc[mx]+=d}
+  adPut(sc);tot=adSum();
+ }
  let has=false;for(let i=1;i<=8;i++)if(num(document.getElementById('a'+i).value))has=true;
  if(has&&!confirm('입력된 금액을 자동배분 금액으로 덮어씁니다. 계속할까요?'))return;
  const U=100000;let sum=0;
