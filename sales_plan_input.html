@@ -160,7 +160,7 @@ table.ev td .dcell .wd.late{background:#ffe45c;color:#5a4400;font-weight:700}
     <td><!-- v275: 사내/외주/세트 표시 삭제 — 외주 여부는 아래 외주업체 칸에 업체가 있으면 외주 --><div class="chk src" style="display:none"><label><input type="radio" name="machining_src" value="사내" checked>사내</label><label><input type="radio" name="machining_src" value="외주">외주</label>
      <label><input type="checkbox" id="machining_set_outsourced">세트</label></div></td></tr>
    <tr class="sub"><th>외주업체</th><td></td>
-    <td><input id="design_vendor" class="cbo" list="dl_vd_design" autocomplete="off" placeholder="설계 외주업체" title="설계 외주업체 — 외주설계발주 화면에서도 기록됩니다 (v276)" style="width:100%"></td>
+    <td><input id="design_vendor" class="cbo" list="dl_vd_design" autocomplete="off" placeholder="수주등록 외주설계 체크 시" disabled title="설계 외주업체 — 외주설계발주 화면에서도 기록됩니다 (v276)" style="width:100%"></td>
     <td><input id="machining_vendor" class="cbo" list="dl_vd_mach" autocomplete="off" placeholder="가공 외주업체" title="가공 외주업체 — 넣으면 가공 외주" style="width:100%"></td>
     <td><input id="assembly_vendor" class="cbo" list="dl_vd_asm" autocomplete="off" placeholder="조립 외주업체" title="조립(SET) 외주업체 — SET외주발주 화면에서도 기록됩니다 (v275)" style="width:100%"></td>
     <td><input id="tryout_vendor" class="cbo" list="dl_vd_mach" autocomplete="off" placeholder="초품 외주업체" title="초품 외주업체 (v275)" style="width:100%"></td>
@@ -227,6 +227,16 @@ const isOut=k=>{const v=document.getElementById(k+'_vendor');return !!(v&&String
 const setOut=(k,v)=>{const r=document.querySelector(`input[name="${k}_src"][value="${v===true?'외주':'사내'}"]`);if(r)r.checked=true;vendorGate(k)};
 /* 외주일 때만 외주업체 입력 가능. 사내로 바꾸면 업체는 비운다 */
 function vendorGate(k){}   /* v275: 외주업체 칸은 항상 입력 가능 */
+/* v278: 설계 외주업체 칸은 수주등록 개발유형에 「외주설계」가 체크된 관리제번에서만 입력 가능 */
+function designGate(so){
+ const on=(so||[]).some(r=>/외주설계|(^|[,\s])외주($|[,\s])/.test(String(r.development_type||'')));
+ const v=document.getElementById('design_vendor');if(!v)return on;
+ v.disabled=!on;v.setAttribute('placeholder',on?'설계 외주업체':'수주등록 외주설계 체크 시');v.title=on?'설계 외주업체 — 외주설계발주 화면에서도 기록됩니다':'수주등록의 개발유형에서 「외주설계」를 체크한 관리제번만 입력할 수 있습니다';
+ if(!on)v.value='';
+ const fix=()=>{const b=v.__mescbBox;if(b){b.inp.disabled=!on;b.inp.placeholder=v.getAttribute('placeholder');b.inp.title=v.title;if(!on)b.inp.value=''}};
+ fix();setTimeout(fix,600);
+ return on;
+}
 ['machining'].forEach(k=>document.querySelectorAll(`input[name="${k}_src"]`).forEach(r=>r.addEventListener('change',()=>vendorGate(k))));
 /* 모든 입력칸이 input(+datalist) 이라 목록에 없는 값도 그대로 유지된다 */
 function setSel(id,v){const el=typeof id==='string'?document.getElementById(id):id;if(el)el.value=v==null?'':String(v)}
@@ -418,6 +428,7 @@ function clearForm(quiet){
  document.getElementById('remark').value='';PLOG=[];plRender();shapeShow('');markLate();
  ['design','machining','assembly'].forEach(calcDays);
  ['design','machining','assembly'].forEach(k=>setOut(k,false));
+ try{designGate([])}catch(e){}
  recalc();try{adSum()}catch(e){}if(!quiet)message.textContent='입력값을 비웠습니다.';
 }
 /* v28: 영업계획을 sales_plans 테이블에 실제 저장 + 수주정보 연동 */
@@ -537,6 +548,7 @@ async function loadJob(j){
    load(o);setSel('job_no',baseLabel(b));
    /* v238: 계획에 비어 있는 양산처·도번은 수주등록 값으로 채운다 */
    if(so&&so[0]){if(!mass_vendor.value)setSel('mass_vendor',so[0].mass_production_vendor_name);if(!drawing_no.value)setSel('drawing_no',so[0].drawing_no);if(!design_partner.value&&so[0].design_vendor_name)setSel('design_partner',so[0].design_vendor_name)}   /* v242: 수주등록 설계업체 */
+   if(designGate(so)&&!design_vendor.value&&so&&so[0]&&so[0].design_vendor_name)setSel('design_vendor',so[0].design_vendor_name);   /* v278 */
    if(soSum)order_price.value=fmt(soSum);recalc();
    msg(`${b} ${rg} 기존 제작계획을 불러왔습니다. (공정 제번 ${jobs.length}건 중 계획 ${ex.length}건${ex.length<jobs.length?' — 저장하면 나머지 공정에도 들어갑니다':''})`);return}
   if(!so||!so[0]){msg(`${b} 수주정보가 없습니다. 수주등록을 먼저 진행하세요.`);return}
@@ -549,6 +561,7 @@ async function loadJob(j){
   setSel('drawing_no',s0.drawing_no);setSel('receipt_date',s0.order_date);
   setSel('mass_vendor',s0.mass_production_vendor_name);   /* v238: 수주등록의 양산처 */
   if(s0.design_vendor_name)setSel('design_partner',s0.design_vendor_name);   /* v242: 수주등록의 설계업체 → 설계처 */
+  if(designGate(so)&&s0.design_vendor_name)setSel('design_vendor',s0.design_vendor_name);   /* v278: 외주설계 체크 시 설계 외주업체 칸도 채움 */
   /* v168: 새 계획은 EVENT 표의 빈 날짜 칸을 전부 오늘로 채운다 — 휠로 밀어 가며 잡기 쉽게 */
   fillTodayAll();markLate();
   order_price.value=soSum?fmt(soSum):'';
