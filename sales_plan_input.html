@@ -158,7 +158,8 @@ table.ev td .dcell .wd.late{background:#ffe45c;color:#5a4400;font-weight:700}
     <td><input id="complete_manager" class="cbo" list="dl_emp" autocomplete="off" placeholder="완료" title="완료(납품) 담당자 (v186)"></td>
     <td><!-- v275: 사내/외주/세트 표시 삭제 — 외주 여부는 아래 외주업체 칸에 업체가 있으면 외주 --><div class="chk src" style="display:none"><label><input type="radio" name="machining_src" value="사내" checked>사내</label><label><input type="radio" name="machining_src" value="외주">외주</label>
      <label><input type="checkbox" id="machining_set_outsourced">세트</label></div></td></tr>
-   <tr class="sub"><th>외주업체</th><td></td><td></td>
+   <tr class="sub"><th>외주업체</th><td></td>
+    <td><input id="design_vendor" class="cbo" list="dl_vd_design" autocomplete="off" placeholder="설계 외주업체" title="설계 외주업체 — 외주설계발주 화면에서도 기록됩니다 (v276)" style="width:100%"></td>
     <td><input id="machining_vendor" class="cbo" list="dl_vd_mach" autocomplete="off" placeholder="가공 외주업체" title="가공 외주업체 — 넣으면 가공 외주" style="width:100%"></td>
     <td><input id="assembly_vendor" class="cbo" list="dl_vd_asm" autocomplete="off" placeholder="조립 외주업체" title="조립(SET) 외주업체 — SET외주발주 화면에서도 기록됩니다 (v275)" style="width:100%"></td>
     <td><input id="tryout_vendor" class="cbo" list="dl_vd_mach" autocomplete="off" placeholder="초품 외주업체" title="초품 외주업체 (v275)" style="width:100%"></td>
@@ -405,7 +406,7 @@ function load(o){
  {const c=document.getElementById('machining_set_outsourced');if(c)c.checked=!!o.machining_set_outsourced}
  setOut('machining',o.machining_outsourced);
  {const v=document.getElementById('machining_vendor');if(v)v.value=o.machining_vendor||''}
- ['assembly_vendor','tryout_vendor','complete_vendor'].forEach(k=>{const v=document.getElementById(k);if(v)v.value=o[k]||''});
+ ['design_vendor','assembly_vendor','tryout_vendor','complete_vendor'].forEach(k=>{const v=document.getElementById(k);if(v)v.value=o[k]||''});
  AK.forEach((k,i)=>{const n=document.getElementById('a'+(i+1));if(n)n.value=num(o[k])?fmt(num(o[k])):''});
  ['design','machining','assembly'].forEach(p=>{if(!document.getElementById(p+'_days').value)calcDays(p)});
  order_price.value=num(order_price.value)?fmt(num(order_price.value)):'';
@@ -427,7 +428,7 @@ const PCT={design_internal_amount:'design_internal_pct',design_external_amount:'
 const EXTK=['receipt_manager','tryout_manager','complete_manager','tryout_start_date','complete_start_date','drawing_no','make_type','material_spec','size_spec','customer_contact','design_partner','maker_name','mass_vendor','image_url',
  'receipt_date','req_receipt_date','req_design_date','req_machining_date','req_assembly_date','req_tryout_date','req_complete_date',
  'can_receipt_date','can_design_date','can_machining_date','can_assembly_date','can_tryout_date','can_complete_date'];
-const HK=['job_no','product_name','customer_name','process_set_qty','item_name','order_date','assembly_vendor','tryout_vendor','complete_vendor',
+const HK=['job_no','product_name','customer_name','process_set_qty','item_name','order_date','design_vendor','assembly_vendor','tryout_vendor','complete_vendor',
  'mold_type_name','s1_planned_date','model','delivery_planned_date','design_start_date','design_end_date',
  'design_days','design_manager','machining_start_date','machining_end_date','machining_manager',
  'assembly_start_date','assembly_end_date','assembly_manager','order_price','target_price',
@@ -453,8 +454,9 @@ function collect(){
  {const c=document.getElementById('machining_set_outsourced');o.machining_set_outsourced=!!(c&&c.checked)}
  if(!o.machining_outsourced)o.machining_vendor=null;
  /* v275: 조립·초품·완료 외주업체 — 비어 있으면 null. 조립은 업체가 있으면 외주로 표시 */
- ['assembly_vendor','tryout_vendor','complete_vendor'].forEach(k=>{const v=document.getElementById(k);o[k]=(v&&String(v.value||'').trim())||null});
+ ['design_vendor','assembly_vendor','tryout_vendor','complete_vendor'].forEach(k=>{const v=document.getElementById(k);o[k]=(v&&String(v.value||'').trim())||null});
  if(o.assembly_vendor)o.assembly_outsourced=true;
+ if(o.design_vendor)o.design_outsourced=true;   /* v276: 설계 외주업체가 있으면 설계 외주 */
  let s=0;AK.forEach((k,i)=>s+=num(document.getElementById('a'+(i+1)).value));
  AK.forEach((k,i)=>{const a=num(document.getElementById('a'+(i+1)).value);
   o[k]=a||null;o[PCT[k]]=s?Math.round(a/s*1000)/10:0});
