@@ -98,6 +98,59 @@ async function attachSplit(inputId,opt){
   sync();
   return bases.length;
 }
+/* ── v268: 관리제번 ▼ | 제번 (입력 또는 선택) 두 칸 ─────────────────────
+ *   MESJOB.attachFilter('q_job',{onPick:fn})
+ *   attachSplit 과 같지만 두 번째 칸이 「공정 ▼」 대신 「제번」 입력칸(datalist)이다 —
+ *   관리제번을 고르면 그 관리제번의 공정 제번(A·B·C…)만 목록에 뜨고 첫 제번이 자동 선택된다.
+ *   관리제번을 비우면 전체 제번이 목록에 뜬다. 제번을 직접 타이핑하면 관리제번 칸이 따라간다. */
+async function attachFilter(inputId,opt){
+  opt=opt||{};
+  const el=typeof inputId==='string'?document.getElementById(inputId):inputId;
+  if(!el||el.__mesjobSplit)return;
+  el.__mesjobSplit=1;
+  const rs=await list();
+  const groups=new Map();
+  rs.forEach(r=>{const s=splitJob(r.job_no);let g=groups.get(s.base);if(!g){g={base:s.base,jobs:[],item:'',cust:''};groups.set(s.base,g)}
+    g.jobs.push({job:String(r.job_no),seq:s.seq,item:String(r.item_name||'')});if(!g.item&&r.item_name)g.item=String(r.item_name);if(!g.cust&&r.customer_name)g.cust=String(r.customer_name)});
+  groups.forEach(g=>g.jobs.sort((a,b)=>a.seq.localeCompare(b.seq)));
+  const bases=[...groups.values()].sort((a,b)=>b.base.localeCompare(a.base));
+  const esc=v=>String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const w=el.style.width||'';
+  const sb=document.createElement('select');sb.id=el.id+'_base';sb.className=el.className||'field';sb.style.width=(parseInt(w,10)>=240?w:'250px');sb.title='관리제번 (공정 문자를 뺀 제번)';
+  const ji=document.createElement('input');ji.id=el.id+'_job';ji.className=el.className||'field';ji.style.width='170px';ji.autocomplete='off';ji.placeholder='입력 또는 선택';ji.title='제번 — 관리제번을 고르면 그 공정 제번만, 비우면 전체';
+  const dl=document.createElement('datalist');dl.id=el.id+'_jobdl';ji.setAttribute('list',dl.id);
+  ji.__mesJob=1;   /* 공용 제번목록(mes_ctx)이 전체 목록으로 덮어쓰지 않게 — 이 칸은 관리제번으로 걸러진 목록을 쓴다 */
+  const lb=document.createElement('span');lb.className='lb';lb.textContent='제번';lb.style.marginLeft='6px';
+  sb.innerHTML=`<option value="">${bases.length?`관리제번 선택 (${bases.length}건)`:'등록된 수주가 없습니다'}</option>`+
+    bases.map(g=>`<option value="${esc(g.base)}">${esc(g.base)}${g.item?' · '+esc(g.item):''}${g.jobs.length>1||g.jobs[0].seq?' ('+g.jobs.map(j=>j.seq||'단일').join('·')+')':''}</option>`).join('');
+  el.style.display='none';el.setAttribute('data-nocombo','1');
+  let anchor=el;const wrap=el.parentNode&&el.parentNode.classList&&el.parentNode.classList.contains('mescb')?el.parentNode:null;
+  if(wrap){wrap.style.display='none';anchor=wrap}
+  anchor.parentNode.insertBefore(sb,anchor);anchor.parentNode.insertBefore(lb,anchor);anchor.parentNode.insertBefore(ji,anchor);anchor.parentNode.insertBefore(dl,anchor);
+  function fillDL(base){
+    const js=base&&groups.has(base)?groups.get(base).jobs:[].concat(...bases.map(g=>g.jobs));
+    dl.innerHTML=js.map(j=>`<option value="${esc(j.job)}">${j.seq?j.seq+' 공정':'단일'}${j.item?' · '+esc(j.item):''}</option>`).join('');
+  }
+  function setJob(v,fire){
+    v=(v||'').trim();
+    if(el.value!==v){el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}))}
+    if(ji.value!==v)ji.value=v;
+    if(fire&&v&&opt.onPick)opt.onPick(v);
+  }
+  sb.addEventListener('change',()=>{const g=groups.get(sb.value);fillDL(sb.value);setJob(g?g.jobs[0].job:'',true)});
+  const jobFire=()=>{const v=(ji.value||'').trim();if(!v)return;
+    const s=splitJob(v);if(groups.has(s.base)&&sb.value!==s.base){sb.value=s.base;fillDL(s.base)}
+    setJob(v,rs.some(r=>String(r.job_no)===v))};
+  ji.addEventListener('change',jobFire);
+  ji.addEventListener('input',()=>{const v=(ji.value||'').trim();if(rs.some(r=>String(r.job_no)===v))jobFire()});
+  ji.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();jobFire();if(opt.onEnter)opt.onEnter((ji.value||'').trim())}});
+  function sync(){const v=(el.value||'').trim();if(!v){return}const s=splitJob(v);
+    if(groups.has(s.base)){sb.value=s.base}else{sb.value=''}fillDL(sb.value);ji.value=v}
+  el.addEventListener('change',sync);
+  el.__mesjobSync=sync;
+  fillDL('');sync();
+  return bases.length;
+}
 function syncSplit(inputId){const el=typeof inputId==='string'?document.getElementById(inputId):inputId;if(el&&el.__mesjobSync)el.__mesjobSync()}
-window.MESJOB={attach,attachSplit,syncSplit,splitJob,list,invalidate};
+window.MESJOB={attach,attachSplit,attachFilter,syncSplit,splitJob,list,invalidate};
 })();

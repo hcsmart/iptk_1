@@ -37,8 +37,9 @@ tbody tr:nth-child(even) td{background:#fafcfd}tbody tr:hover td{background:#edf
 <div class="title"><h1>PartList 등록(원재료)</h1><small>설계관리 · PARTLIST</small></div>
 
 <section class="filt">
- <span class="lb" title="관리제번을 고르고 공정(A·B·C)을 고르면 그 공정 제번의 PartList 가 열립니다 (v180)">관리제번</span><input id="q_job" class="field" style="width:190px" autocomplete="off">
- <span class="lb">품번</span><input id="q_pn" class="field" style="width:150px;background:#f4f7f9" placeholder="자동" readonly title="고른 제번의 품번(수주등록)">
+ <span class="lb" title="관리제번을 고르면 그 공정 제번(A·B·C…)만 제번 칸에 뜹니다 (v268)">관리제번</span><input id="q_job" class="field" style="width:190px" autocomplete="off">
+ <span class="lb">품번</span><input id="q_pn" class="field" style="width:150px" placeholder="품번 입력/선택" list="pnDL" autocomplete="off" title="수주등록의 품번 — 고르면 그 제번을 엽니다"><datalist id="pnDL"></datalist>
+ <button class="btn" onclick="search()" style="height:28px">⌕ 검색</button>
  <span class="hint">관리제번 · 공정 선택 → 엑셀 <b>금형번호·품명·재질·규격·두께·수량</b> 복사(<b>Ctrl+C</b>) → <b>Ctrl+V</b> → 리스트에 추가 → 체크 → <b>[▤ 등록]</b></span>
 </section>
 
@@ -560,7 +561,7 @@ function pnPick(){
  if(!list.length){msg(`품번 ${v} 로 등록된 제번이 없습니다. 수주등록의 품번을 확인하세요.`);return}
  const jobs=[...new Set(list.map(x=>x.job))];
  if(jobs.length>1){msg(`품번 ${v} 에 제번이 ${jobs.length}건 있습니다 — ${jobs.slice(0,6).join(', ')}${jobs.length>6?' …':''} · 제번 칸에서 고르세요.`);return}
- q_job.value=jobs[0];
+ q_job.value=jobs[0];try{MESJOB.syncSplit('q_job')}catch(e){}
  if(typeof loadJob==='function')loadJob(jobs[0]);
  msg(`품번 ${list[0].model} → 제번 ${jobs[0]} 를 열었습니다.`);
 }
@@ -577,11 +578,11 @@ window.MES={search,save,saveChecked,setMessage:msg,reload:loadJob,manOpen};rende
 </script>
 <script src="mes_ctx.js?v=169"></script>
 <script src="mes_imgedit.js?v=196"></script>
-<script src="mes_jobpick.js?v=180"></script>
+<script src="mes_jobpick.js?v=268"></script>
 <script>/* 제번 직접 타이핑 → 등록된 수주 목록에서 선택 */
 /* v180: 관리제번 ▼ | 공정 ▼ 두 칸 — 공정을 고르면 그 제번을 열고 품번을 자동으로 채운다 */
-try{MESJOB.attachSplit("q_job",{onPick:j=>{if(typeof loadJob==="function")loadJob(j);try{pnSync(j)}catch(e){}}}).then(()=>{try{pnSync(curJobNo())}catch(e){}})}catch(e){}
-try{pnLoad();
+try{MESJOB.attachFilter("q_job",{onPick:j=>{if(typeof loadJob==="function")loadJob(j);try{pnSync(j)}catch(e){}},onEnter:()=>search()}).then(()=>{try{pnSync(curJobNo())}catch(e){}})}catch(e){}
+try{pnLoad();q_pn.addEventListener("change",()=>{try{pnPick()}catch(e){}});
  q_pn.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();try{pnPick()}catch(_){}}});}catch(e){}</script>
 <script>
 function sampleFill(){
