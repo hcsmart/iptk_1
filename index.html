@@ -158,6 +158,8 @@ input,select{font:inherit}
 
 @media (max-width:1100px){.modcard{grid-template-columns:repeat(2,1fr)}.home>.card{grid-column:span 12!important}}
 @media (max-width:900px){.top-menu,.ubtn .txt{display:none}.search{width:170px}}
+/* v283: 모바일(≤600px) 상단바 폭 초과(가로 스크롤) 수정 */
+@media (max-width:600px){.top{padding:0 6px 0 0}.brand{padding:0 8px;gap:6px}.brand .name small{display:none}.search{width:auto;flex:1 1 auto;min-width:0}.search kbd{display:none}.search input{padding:0 8px 0 28px}.search .ico{left:9px}.top-actions{margin-left:6px;gap:0}.icon-btn{width:30px}.icon-btn.txt{padding:0 7px}.ubtn{margin-left:2px;padding:4px}}
 a.menu-off,a.menu-off:hover{color:#9aa5ae!important;opacity:.55;cursor:not-allowed!important;background:none!important;text-decoration:none}
 </style>
 </head>
@@ -232,7 +234,7 @@ a.menu-off,a.menu-off:hover{color:#9aa5ae!important;opacity:.55;cursor:not-allow
 </div>
 
 <script>
-const APP_VER='282';
+const APP_VER='283';
 const APP={
   '영업관리':{
     secondary:[

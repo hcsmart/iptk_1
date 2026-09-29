@@ -99,11 +99,11 @@ async function loadJobs(keep){
    MESDB.table('job_pool').select('select=job_no,model,item_name,set_qty&order=row_no').catch(()=>[]),
    MESDB.table('processes').select('select=process_code,process_name,sort_order&order=sort_order,process_code').catch(()=>[]),
    MESDB.table('sales_plans').select('select=job_no,design_end_date,s1_planned_date').catch(()=>[]),
-   MESDB.table('users').select('select=user_name,name,is_active&limit=500').catch(()=>[])]);
+   MESDB.table('users').select('select=*&limit=500').catch(()=>[])]);
   const hit=(ps||[]).find(p=>WORK.procRe.test(String(p.process_name||'')))||(ps||[]).find(p=>WORK.procRe2.test(String(p.process_name||'')));
   if(hit){PROC={code:String(hit.process_code).toUpperCase(),name:hit.process_name}}
   $('thProc').textContent=PROC.name;
-  WORKERS=(us||[]).filter(u=>u.is_active!==false).map(u=>u.user_name||u.name).filter(Boolean);
+  WORKERS=(us||[]).filter(u=>u.is_active!==false).map(u=>u.name||u.user_id||u.user_key).filter(Boolean);
   const M={};(pool||[]).forEach(r=>M[r.job_no]=r);const SP={};(sp||[]).forEach(r=>SP[r.job_no]=r);
   JOBS.length=0;
   (ap&&ap.length?ap:(pool||[]).map(r=>({job_no:r.job_no}))).forEach(r=>{const p=M[r.job_no]||{};
