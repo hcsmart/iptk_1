@@ -93,9 +93,9 @@ table.sheet{table-layout:auto;width:auto;min-width:100%}
 </style></head><body><div class="screen"><div class="title"><h1>제작진행현황</h1><small>영업관리 · 제작계획</small></div><section class="filt"><div class="f2"><div class="lb" title="관리제번 또는 공정 제번(A·B·C) 일부">관리제번</div><div><input id="q_job" class="field" list="dl_base" autocomplete="off" oninput="search()" placeholder="관리제번 입력/선택"><datalist id="dl_base"></datalist></div><div class="lb">품번</div><div><input id="q_model" class="field" oninput="search()" placeholder="품번 입력/선택"></div><div></div><div style="display:flex;gap:12px;align-items:center;white-space:nowrap"><label style="display:flex;gap:4px;align-items:center" title="가능일정이 목표보다 늦은 제번만"><input type="checkbox" id="q_late" onchange="search()"> 지연만</label><label style="display:flex;gap:4px;align-items:center" title="완료 목표일이 지난 제번은 숨깁니다"><input type="checkbox" id="q_hideDone" onchange="search()"> 완료 숨김</label><span style="color:#6b7a86;font-size:11px">칸 색: <i class="sw late"></i>목표보다 늦음 <i class="sw early"></i>앞당김 · 행 더블클릭 → 상세</span></div></div></section><div class="gridbox"><table class="sheet">
 <thead>
  <tr><th rowspan="2">NO</th><th rowspan="2">관리제번</th><th rowspan="2">도번 · 품명 · 품번</th><th rowspan="2">제품형상</th><th rowspan="2">제작<br>구분</th><th rowspan="2">조수</th>
-  <th colspan="7" class="grp">금형제작 EVENT</th><th rowspan="2">진척현황</th><th rowspan="2">특기사항</th><th rowspan="2">수주가</th><th rowspan="2">목표가</th><th rowspan="2">이익률</th></tr>
+  <th colspan="7" class="grp">금형제작 EVENT</th><th rowspan="2">진척현황</th><th rowspan="2">설계처<br>제작처·양산처</th><th rowspan="2">특기사항</th><th rowspan="2">수주가</th><th rowspan="2">목표가</th><th rowspan="2">이익률</th></tr>
  <tr><th>구분</th><th>접수</th><th>설계</th><th>가공</th><th>조립</th><th>초품</th><th>완료</th></tr>
-</thead><tbody id="body"></tbody><tfoot><tr class="gtot"><td colspan="18" class="c" id="totline">조회 0건</td></tr></tfoot></table></div><footer class="foot"><button class="btn" onclick="detail()">⌕ 상세보기</button><button class="btn" onclick="search()">⌕ 검색</button><button class="btn" onclick="csv()">▤ EXCEL</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">행을 선택하고 상세보기를 누르면 계획등록 창이 열립니다.</span><span class="right" id="countText"></span></footer><div class="mask" id="mask" onmousedown="mask._d=(event.target===mask)" onclick="if(event.target===mask&&mask._d)closePlan()"><div class="dlg"><div class="dh"><span id="planTitle">제작계획</span><button onclick="closePlan()">×</button></div><div class="db" id="planBody"></div><div style="display:flex;justify-content:center;gap:10px;padding:8px"><button class="btn" onclick="editPlan()">▤ 수정</button><button class="btn" onclick="delPlan()">✕ 삭제</button><button class="btn" onclick="closePlan()">⊠ 닫기</button></div></div></div></div><script>
+</thead><tbody id="body"></tbody><tfoot><tr class="gtot"><td colspan="19" class="c" id="totline">조회 0건</td></tr></tfoot></table></div><footer class="foot"><button class="btn" onclick="detail()">⌕ 상세보기</button><button class="btn" onclick="search()">⌕ 검색</button><button class="btn" onclick="csv()">▤ EXCEL</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">행을 선택하고 상세보기를 누르면 계획등록 창이 열립니다.</span><span class="right" id="countText"></span></footer><div class="mask" id="mask" onmousedown="mask._d=(event.target===mask)" onclick="if(event.target===mask&&mask._d)closePlan()"><div class="dlg"><div class="dh"><span id="planTitle">제작계획</span><button onclick="closePlan()">×</button></div><div class="db" id="planBody"></div><div style="display:flex;justify-content:center;gap:10px;padding:8px"><button class="btn" onclick="editPlan()">▤ 수정</button><button class="btn" onclick="delPlan()">✕ 삭제</button><button class="btn" onclick="closePlan()">⊠ 닫기</button></div></div></div></div><script>
 /* v68: 화면 하드코딩 초기 데이터 제거 — 전부 DB(sales_plan_status_rows / sales_plans) 에서 */
 const data=[];const plans=[];
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -143,11 +143,15 @@ function plog(pl){
  const last=L.slice(-3);
  return `<div class="plog" title="${esc(L.map(e=>MDT(e.d)+' '+e.t).join('\n'))}">${last.map(e=>`<div>● <b>${MD(e.d)}</b> ${esc(e.t)}</div>`).join('')}${L.length>3?`<div style="color:#8b98a3">… 외 ${L.length-3}건 (더블클릭 → 상세)</div>`:''}</div>`;
 }
+/* v284: 설계처·제작처·양산처는 따로 보이고, 특기사항 칸은 제작계획등록의 특기사항 그대로 (두 화면 내용이 같게) */
 function notes(pl){
  if(!pl)return '';
  const a=[];if(pl.design_partner)a.push('설계처 : '+pl.design_partner);if(pl.maker_name)a.push('제작처 : '+pl.maker_name);a.push('양산처 : '+(pl.mass_vendor||'미확정'));
- if(pl.remark)a.push(String(pl.remark).split('\n')[0]);
- return `<div class="notes" title="${esc((pl.remark||''))}">${a.map(x=>`<div>${esc(x)}</div>`).join('')}</div>`;
+ return `<div class="notes">${a.map(x=>`<div>${esc(x)}</div>`).join('')}</div>`;
+}
+function remarkCell(pl){
+ const t=pl&&pl.remark?String(pl.remark):'';
+ return t?`<div class="notes" style="white-space:pre-wrap">${esc(t)}</div>`:'<span style="color:#9aa7b1">-</span>';
 }
 /* ── v187: 관리제번 단위 표시 — 공정 제번(A·B·C…)을 한 줄로 묶는다.
  *  제작계획은 관리제번으로 저장되어 공정마다 같은 일정이므로 계획이 있는 첫 공정의 계획을 보여주고,
@@ -204,7 +208,7 @@ function render(){
     const v=get(k,g);let c='';
     const gv=k==='receipt'?(pl[g]||pl.order_date):pl[g];if(cls==='can'&&v&&gv){c=v>gv?' late':(v<gv?' early':'')}
     return `<td class="c ev${c}" title="${esc(v||'')}">${MD(v)}</td>`}).join('');
-  const tail=`<td rowspan="3">${plog(pl)}</td><td rowspan="3">${notes(pl)}</td>
+  const tail=`<td rowspan="3">${plog(pl)}</td><td rowspan="3">${notes(pl)}</td><td rowspan="3">${remarkCell(pl)}</td>
    <td rowspan="3" class="num">${n(r.order_price)}</td><td rowspan="3" class="num">${n(r.target_price)}</td>
    <td rowspan="3" class="num">${r.profit_rate_pct==null||r.profit_rate_pct===''?'':Number(r.profit_rate_pct).toFixed(1)}</td>`;
   const on=`onclick="pick(${i},this)" ondblclick="pick(${i},this);detail()"`;
