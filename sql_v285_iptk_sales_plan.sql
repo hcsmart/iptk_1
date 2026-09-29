@@ -6,7 +6,9 @@
 --   · 이미 있는 제번 → 비어 있는 칸만 채우고, 진척현황은 기록이 없을 때만 넣는다 (화면에서 입력한 값은 유지)
 
 -- 관리제번별 값 (공정 제번 전체에 같은 계획 — 제작계획등록 화면 v183 과 같은 방식)
-create temp table _plan as
+-- (v285b: SQL Editor 는 문장마다 접속이 달라 임시표가 사라지므로 보통 표로 만들었다가 맨 끝에 지운다)
+drop table if exists public._iptk_plan_tmp;
+create table public._iptk_plan_tmp as
 select v.job_no, h.*
 from (values
   ('26DSA055', 'BASE PLATE-RECL INR, LH', 'MQ4i', '28731-MQI740', '(미입력)', '프레스금형', 6,
@@ -47,7 +49,7 @@ select p.job_no, p.product_name, p.model, p.drawing_no, p.customer_name, p.item_
   p.assembly_end_date + 1, p.s1_planned_date, p.s1_planned_date + 1, p.delivery_planned_date,
   p.can_receipt_date, p.can_design_date, p.can_machining_date, p.can_assembly_date, p.can_tryout_date, p.can_complete_date,
   p.progress_log, p.remark
-from _plan p
+from public._iptk_plan_tmp p
 where p.job_no in (select job_no from public.jobs)
   and not exists (select 1 from public.sales_plans s where s.job_no = p.job_no);
 
@@ -77,17 +79,17 @@ update public.sales_plans s set
   can_complete_date  = coalesce(s.can_complete_date, p.can_complete_date),
   progress_log = case when s.progress_log is null or jsonb_array_length(s.progress_log) = 0 then p.progress_log else s.progress_log end,
   remark       = coalesce(nullif(s.remark,''), p.remark)
-from _plan p
+from public._iptk_plan_tmp p
 where s.job_no = p.job_no;
 
 -- 3) 제작계획현황 행 (없을 때만)
 insert into public.sales_plan_status_rows (job_no, item_name, design_start_date, design_end_date, delivery_planned_date)
 select p.job_no, p.item_name, p.receipt_date, p.design_end_date, p.delivery_planned_date
-from _plan p
+from public._iptk_plan_tmp p
 where p.job_no in (select job_no from public.jobs)
   and not exists (select 1 from public.sales_plan_status_rows r where r.job_no = p.job_no);
 
-drop table _plan;
+drop table public._iptk_plan_tmp;
 
 -- 확인
 -- select job_no, receipt_date, design_end_date, s1_planned_date, delivery_planned_date, can_design_date, progress_log
