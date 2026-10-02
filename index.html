@@ -234,7 +234,7 @@ a.menu-off,a.menu-off:hover{color:#9aa5ae!important;opacity:.55;cursor:not-allow
 </div>
 
 <script>
-const APP_VER='284';
+const APP_VER='285';
 const APP={
   '영업관리':{
     secondary:[
@@ -342,6 +342,14 @@ const APP={
       '협력업체':[{name:'협력업체',items:['협력업체 평가등록','협력업체 인증서등록','협력업체 등급현황','협력업체 인증현황']}]
     }
   },
+  '보고서':{   /* v285: 월간보고서 (PPT) */
+    secondary:[
+      {name:'월간',icon:'▥'}
+    ],
+    menus:{
+      '월간':[{name:'월간보고서',items:['월간보고서']}]
+    }
+  },
   '사용메뉴얼':{
     secondary:[
       {name:'사용메뉴얼',icon:'📖'}
@@ -373,7 +381,7 @@ const APP={
     }
   }
 };
-const MODULES=['영업관리','설계관리','구매관리','조립관리','원가관리','SQ','기준정보','사용메뉴얼'];
+const MODULES=['영업관리','설계관리','구매관리','조립관리','원가관리','SQ','기준정보','보고서','사용메뉴얼'];
 const pageRegistry={
 '가공공정관리':{id:'machining_process_management',file:'machining_process_management.html',title:'가공공정관리'},
 '공정관리':{id:'machining_process_management',file:'machining_process_management.html',title:'가공공정관리'},
@@ -500,12 +508,13 @@ const pageRegistry={
 '협력업체 인증서등록':{id:'vendor_certificate_input',file:'vendor_certificate_input.html',title:'협력업체 인증서등록'},
 '협력업체 등급현황':{id:'vendor_grade_status',file:'vendor_grade_status.html',title:'협력업체 등급현황'},
 '협력업체 인증현황':{id:'vendor_certificate_status',file:'vendor_certificate_status.html',title:'협력업체 인증현황'},
+'월간보고서':{id:'monthly_report',file:'monthly_report.html',title:'월간보고서'},   /* v285 */
 '사용메뉴얼':{id:'user_manual',file:'user_manual.html',title:'사용메뉴얼'},
 '수정요청게시판':{id:'mod_request_board',file:'mod_request_board.html',title:'수정요청게시판'},
 '조직도':{id:'org_chart',file:'org_chart.html',title:'조직도'}
 };
-const MOD_ICON={'영업관리':'▣','설계관리':'✎','구매관리':'▤','조립관리':'⚙','원가관리':'◴','조직도':'⛶','SQ':'◈','기준정보':'▦','사용메뉴얼':'📖'};
-const MOD_DESC={'영업관리':'수주 · 제작계획 · 설계외주 · SET외주','설계관리':'사내설계 · PARTLIST','구매관리':'원재료 · 구매품 · 사내가공 실적 · 외주가공','조립관리':'사내조립 · 검사','원가관리':'제조원가 · 부품별 원가내역 · 업체별 가공비 · 경비 · 매입/매출 · 재고','SQ':'품질목표 · 심사 · 부적합 · 4M · 계측기 · 문서/도면 · 추적성','기준정보':'공정 · 부품 · 자재 · 설비 · 업체 · 사용자 · 단가','사용메뉴얼':'시스템 사용 안내'};
+const MOD_ICON={'영업관리':'▣','설계관리':'✎','구매관리':'▤','조립관리':'⚙','원가관리':'◴','조직도':'⛶','SQ':'◈','기준정보':'▦','보고서':'▥','사용메뉴얼':'📖'};
+const MOD_DESC={'영업관리':'수주 · 제작계획 · 설계외주 · SET외주','설계관리':'사내설계 · PARTLIST','구매관리':'원재료 · 구매품 · 사내가공 실적 · 외주가공','조립관리':'사내조립 · 검사','원가관리':'제조원가 · 부품별 원가내역 · 업체별 가공비 · 경비 · 매입/매출 · 재고','SQ':'품질목표 · 심사 · 부적합 · 4M · 계측기 · 문서/도면 · 추적성','기준정보':'공정 · 부품 · 자재 · 설비 · 업체 · 사용자 · 단가','보고서':'월간보고서 (PPT 내려받기)','사용메뉴얼':'시스템 사용 안내'};
 const HOME={id:'home',title:'홈',file:null,home:true};
 
 let activeModule='', activeId='', prevId='';
