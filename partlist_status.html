@@ -31,6 +31,7 @@ tbody tr.sel{background:#d6e7f8}
 .btn.pri{background:#2f75b5;border-color:#2f75b5;color:#fff}
 .msg{margin-left:10px;color:#2f5f8a;font-weight:700}
 .right{margin-left:auto;color:#7a8894}
+td.cp{cursor:copy}td.cp:hover{text-decoration:underline;color:#1d5da3}
 </style></head><body><div class="screen">
 <div class="title"><h1>PartList 현황</h1><small>설계관리 · PARTLIST</small></div>
 
@@ -101,7 +102,7 @@ function view(){
 function setSort(k){if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=1}render()}
 function render(){
  const v=view();
- body.innerHTML=v.length?v.map((r,i)=>`<tr class="${chk.has(r._id)?'sel':''}" onclick="rowClick(${r._id},event)"><td class="c"><input type="checkbox" ${chk.has(r._id)?'checked':''} onclick="toggleChk(${r._id},this.checked)"></td><td class="c">${i+1}</td><td>${esc(r.job_no||'')}</td><td>${esc(r.part_no)}</td><td>${esc(r.part_name||'')}</td><td class="c">${r.image_url&&window.MESDB&&MESDB.imgBox?MESDB.imgBox(r.image_url,22):''}</td><td class="c">${esc(r.order_type||'')}</td><td class="c">${esc(r.material||'')}</td><td class="c">${esc(r.shape||'')}</td><td>${esc(r.design_dimension||r.spec||'')}</td><td class="num">${fmt(r.qty)}</td><td class="c">${esc(r.registered_by||'')}</td><td class="c">${esc(r.registered_date||'')}</td></tr>`).join('')
+ body.innerHTML=v.length?v.map((r,i)=>`<tr class="${chk.has(r._id)?'sel':''}" onclick="rowClick(${r._id},event)"><td class="c"><input type="checkbox" ${chk.has(r._id)?'checked':''} onclick="toggleChk(${r._id},this.checked)"></td><td class="c">${i+1}</td><td class="cp" title="클릭 → 제번 복사">${esc(r.job_no||'')}</td><td class="cp" title="클릭 → 제번 복사">${esc(r.part_no)}</td><td>${esc(r.part_name||'')}</td><td class="c">${r.image_url&&window.MESDB&&MESDB.imgBox?MESDB.imgBox(r.image_url,22):''}</td><td class="c">${esc(r.order_type||'')}</td><td class="c">${esc(r.material||'')}</td><td class="c">${esc(r.shape||'')}</td><td>${esc(r.design_dimension||r.spec||'')}</td><td class="num">${fmt(r.qty)}</td><td class="c">${esc(r.registered_by||'')}</td><td class="c">${esc(r.registered_date||'')}</td></tr>`).join('')
   :`<tr><td colspan="13" class="c" style="height:120px;color:#8a97a2">${loaded?'검색 결과가 없습니다.':'조건을 선택하거나 제번·품번을 빈칸으로 두고 [조회]를 누르세요.'}</td></tr>`;
  chkAll.checked=v.length>0&&v.every(r=>chk.has(r._id));
  const sc=v.filter(r=>chk.has(r._id)).length;
@@ -111,7 +112,12 @@ function render(){
 }
 function toggleChk(id,on){on?chk.add(id):chk.delete(id);render()}
 function chkAllRows(on){view().forEach(r=>on?chk.add(r._id):chk.delete(r._id));render()}
-function rowClick(id,e){if(e&&e.target&&e.target.type==='checkbox')return;toggleChk(id,!chk.has(id))}
+function rowClick(id,e){if(e&&e.target&&e.target.type==='checkbox')return;toggleChk(id,!chk.has(id));
+ /* v286: 제번·품번 칸을 클릭하면 체크와 함께 그 행의 제번을 클립보드에 복사 */
+ const td=e&&e.target&&e.target.closest&&e.target.closest('td.cp');if(td){const r=rowById(id);if(r&&r.job_no)copyJob(r.job_no)}}
+function copyJob(j){const done=()=>msg(`제번 ${j} 을(를) 복사했습니다. (Ctrl+V 로 붙여넣기)`),fail=()=>msg(`복사 실패 — 제번 ${j}`);
+ if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(j).then(done,()=>legacyCopy(j)?done():fail())}else{legacyCopy(j)?done():fail()}}
+function legacyCopy(t){try{const ta=document.createElement('textarea');ta.value=t;ta.style.cssText='position:fixed;left:-9999px';document.body.appendChild(ta);ta.select();const ok=document.execCommand('copy');ta.remove();return ok}catch(e){return false}}
 
 function fillFilters(){
  const jv=curJobNo(),pv=selectedPn();
