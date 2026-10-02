@@ -31,6 +31,8 @@ tbody tr.sel{background:#d6e7f8}
 .btn.pri{background:#2f75b5;border-color:#2f75b5;color:#fff}
 .msg{margin-left:10px;color:#2f5f8a;font-weight:700}
 .right{margin-left:auto;color:#7a8894}
+/* v287: 제번 글자 색 — 발주 전(파랑) · 진행 중(주황 굵게) · 완료(초록) */
+.j-wait{color:#1d5da3}.j-run{color:#d9731a;font-weight:700}.j-done{color:#2e7d32}
 td.cp{cursor:copy}td.cp:hover{text-decoration:underline;color:#1d5da3}
 </style></head><body><div class="screen">
 <div class="title"><h1>PartList 현황</h1><small>설계관리 · PARTLIST</small></div>
@@ -44,6 +46,7 @@ td.cp{cursor:copy}td.cp:hover{text-decoration:underline;color:#1d5da3}
  <select id="q_pn" class="field" style="width:210px" title="맨 위 빈칸은 전체검색"><option value=""></option></select>
  <button class="btn" onclick="search()" style="height:26px;margin-left:2px">⌕ 조회</button>
  <span class="hint">제번·품번의 맨 위 빈칸은 전체검색입니다. 행 체크 → [✕ 삭제]</span>
+ <span class="hint" style="margin-left:10px" title="제번 글자 색 = 그 제번·품번의 발주 상태 (원재료 발주 · 구매품 발주)">제번 색 : <b class="j-wait">발주 전</b> · <b class="j-run">발주 진행 중</b> · <b class="j-done">발주 완료</b></span>
 </section>
 
 <div class="gridbox"><table style="min-width:1360px"><thead><tr>
@@ -99,10 +102,25 @@ function view(){
   return av.localeCompare(bv,'ko',{numeric:true,sensitivity:'base'})*sortDir;
  });
 }
+/* v287: 발주 상태 — order_lines 에서 제번·품번·구분별 상태를 모아 제번 글자 색으로 보여준다
+   진행 중 = 입고확정 전 발주(발주·입고)가 하나라도 있음 · 완료 = 발주가 모두 입고확정 · 발주 전 = 기록 없음 (취소는 뺀다) */
+const ORD=new Map();   /* job|part|category → {run,done} */
+async function loadOrd(){
+ ORD.clear();const jobs=[...new Set(data.map(r=>String(r.job_no||'')).filter(Boolean))];if(!jobs.length)return;
+ for(let i=0;i<jobs.length;i+=40){
+  const q=`select=job_no,part_no,category,status&job_no=in.(${jobs.slice(i,i+40).map(encodeURIComponent).join(',')})&category=in.(원재료,구매품)`;
+  const rs=await MESDB.table('order_lines').select(q,{fresh:true});
+  (rs||[]).forEach(l=>{if(l.status==='취소')return;const k=`${l.job_no}|${l.part_no}|${l.category}`;const o=ORD.get(k)||{run:0,done:0};
+   if(l.status==='입고확정')o.done++;else o.run++;ORD.set(k,o)});
+ }
+}
+const ordOf=r=>ORD.get(`${r.job_no}|${r.part_no}|${r.order_type}`);
+function ordCls(r){const o=ordOf(r);return !o?'j-wait':o.run?'j-run':'j-done'}
+function ordTitle(r){const o=ordOf(r);return !o?'발주 전 (발주 기록 없음)':o.run?`발주 진행 중 — 미확정 ${o.run}건${o.done?` · 확정 ${o.done}건`:''}`:`발주 완료 — 입고확정 ${o.done}건`}
 function setSort(k){if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=1}render()}
 function render(){
  const v=view();
- body.innerHTML=v.length?v.map((r,i)=>`<tr class="${chk.has(r._id)?'sel':''}" onclick="rowClick(${r._id},event)"><td class="c"><input type="checkbox" ${chk.has(r._id)?'checked':''} onclick="toggleChk(${r._id},this.checked)"></td><td class="c">${i+1}</td><td class="cp" title="클릭 → 제번 복사">${esc(r.job_no||'')}</td><td class="cp" title="클릭 → 제번 복사">${esc(r.part_no)}</td><td>${esc(r.part_name||'')}</td><td class="c">${r.image_url&&window.MESDB&&MESDB.imgBox?MESDB.imgBox(r.image_url,22):''}</td><td class="c">${esc(r.order_type||'')}</td><td class="c">${esc(r.material||'')}</td><td class="c">${esc(r.shape||'')}</td><td>${esc(r.design_dimension||r.spec||'')}</td><td class="num">${fmt(r.qty)}</td><td class="c">${esc(r.registered_by||'')}</td><td class="c">${esc(r.registered_date||'')}</td></tr>`).join('')
+ body.innerHTML=v.length?v.map((r,i)=>`<tr class="${chk.has(r._id)?'sel':''}" onclick="rowClick(${r._id},event)"><td class="c"><input type="checkbox" ${chk.has(r._id)?'checked':''} onclick="toggleChk(${r._id},this.checked)"></td><td class="c">${i+1}</td><td class="cp ${ordCls(r)}" title="${ordTitle(r)} · 클릭 → 제번 복사">${esc(r.job_no||'')}</td><td class="cp" title="클릭 → 제번 복사">${esc(r.part_no)}</td><td>${esc(r.part_name||'')}</td><td class="c">${r.image_url&&window.MESDB&&MESDB.imgBox?MESDB.imgBox(r.image_url,22):''}</td><td class="c">${esc(r.order_type||'')}</td><td class="c">${esc(r.material||'')}</td><td class="c">${esc(r.shape||'')}</td><td>${esc(r.design_dimension||r.spec||'')}</td><td class="num">${fmt(r.qty)}</td><td class="c">${esc(r.registered_by||'')}</td><td class="c">${esc(r.registered_date||'')}</td></tr>`).join('')
   :`<tr><td colspan="13" class="c" style="height:120px;color:#8a97a2">${loaded?'검색 결과가 없습니다.':'조건을 선택하거나 제번·품번을 빈칸으로 두고 [조회]를 누르세요.'}</td></tr>`;
  chkAll.checked=v.length>0&&v.every(r=>chk.has(r._id));
  const sc=v.filter(r=>chk.has(r._id)).length;
@@ -174,6 +192,7 @@ async function search(){
    }
   }catch(e){}
   chk.clear();loaded=true;render();
+  try{await loadOrd()}catch(e){}render();
   const v=view(),nm=v.filter(r=>r.order_type==='원재료').length,np=v.filter(r=>r.order_type==='구매품').length;
   const cond=[curJobNo()?`제번 ${curJobNo()}`:'전체 제번',selectedPn()?`품번 ${selectedPn()}`:'전체 품번',q_kind.value].join(' · ');
   msg(`${cond} : ${v.length}건 (원재료 ${nm} / 구매품 ${np})`);
