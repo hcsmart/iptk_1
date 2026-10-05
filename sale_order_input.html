@@ -100,7 +100,7 @@ html[data-mw="md"] .formgrid .wide,html[data-mw="sm"] .formgrid .wide,html[data-
  <!-- v245: 수주등록 배치 성격별 8줄 재정렬 (식별/제품/일정/금액/수주분류/거래처·담당/금형·개발/기타). 입력칸 id·저장 로직은 그대로 -->
  <!-- 1 식별 -->
  <div class="label" title="관리제번. 공정수가 2 이상이면 저장할 때 관리제번 뒤에 A·B·C… 를 붙인 제번이 공정 수만큼 생깁니다 (v179)">관리제번</div><div><input id="base_job" class="field" placeholder="예) 26IPA001" style="text-transform:uppercase"></div>
- <div class="label" title="공정(SET) 수. 2 이상이면 저장 시 관리제번+A·B·C… 제번이 공정 수만큼 만들어집니다. 원가 배부 단위가 됩니다.">공정수</div><div><input id="proc_cnt" class="field num" placeholder="1" inputmode="numeric"></div>
+ <div class="label" title="공정(SET) 수. 저장 시 관리제번+A·B·C… 제번이 공정 수만큼 만들어집니다 (1공정도 A). 원가 배부 단위가 됩니다.">공정수</div><div><input id="proc_cnt" class="field num" placeholder="1" inputmode="numeric"></div>
  <div class="label" title="저장하면 만들어지는(또는 이미 있는) 제번">생성 제번</div><div class="span2"><input id="job_preview" class="field" readonly style="background:#f4f7f9;color:#2f5f8a;font-weight:700" title="관리제번 + 공정수로 정해집니다"></div>
  <div class="gbreak"></div>
  <!-- 2 제품 -->
@@ -248,12 +248,13 @@ async function saveOne(mode){
 }
 const SAVE0=saveOne;   /* v121: 공정 자동생성이 쓰는 원본(제번 1건) 저장 */
 /* ── v179: 상단 공정·제번 칸을 없애고 관리제번 + 공정수로 저장한다 ──
- *  공정수 1 → 제번 = 관리제번 그대로
+ *  공정수 1 → 제번 = 관리제번+A (v288)
  *  공정수 n(2~26) → 관리제번+A, +B, … n건을 한 번에 저장 (공통 항목은 입력칸 값, 금액은 균등 분할)
  *  이미 있는 공정 제번은 공통 항목만 덮어쓰고, 공정별 카테고리·설비사양·금액은
  *  입력칸 합계가 기존 합계와 같으면 그대로 둔다 (공정별로 나눠 둔 값 보존).       */
 const PROC_N=()=>{const n=parseInt(String(proc_cnt.value||'').replace(/[^0-9]/g,''),10);return n>0?Math.min(26,n):1};
-const JOBS_OF=(b,n)=>{b=String(b||'').trim().toUpperCase();if(!b)return [];return n>=2?Array.from({length:n},(_,i)=>b+String.fromCharCode(65+i)):[b]};
+/* v288: 공정수 1 이어도 A 를 붙인다 (IPTK 제번 체계 — 26ILA054A 처럼) */
+const JOBS_OF=(b,n)=>{b=String(b||'').trim().toUpperCase();if(!b)return [];return Array.from({length:Math.max(1,n)},(_,i)=>b+String.fromCharCode(65+i))};
 function jobPreview(){const b=(base_job.value||'').trim().toUpperCase(),n=PROC_N();const js=JOBS_OF(b,n);
  const el=document.getElementById('job_preview');if(el)el.value=js.length?(n>=2?`${js.join(', ')}  (공정 ${n}개)`:js[0]):'';
  job_no.value=js[0]||'';proc_seq.value='';return js}
@@ -271,7 +272,7 @@ async function save(mode){
  if(/외주설계/.test(devtype.value||'')&&!design_vendor.value.trim()&&!confirm('개발유형이 「외주설계」 인데 설계업체가 비어 있습니다.\n설계업체 없이 저장할까요? (나중에 수주등록에서 채울 수 있습니다)')){design_vendor.focus();msg('설계업체를 입력한 뒤 저장하세요.');return false}
  base_job.value=b;
  const n=PROC_N(),jobs=jobPreview();
- if(n<2){job_no.value=jobs[0];proc_seq.value='';return SAVE0(ACT)}
+ if(n<2){job_no.value=jobs[0];proc_seq.value='A';return SAVE0(ACT)}
  const ex=await existingJobs(b);const exMap=new Map(ex.map(r=>[r.job_no,r]));
  const N=v=>{const x=Number(String(v??'').replace(/[^0-9.-]/g,''));return Number.isNaN(x)?0:x};
  const tq=N(quo_price.value),to=N(order_price.value),tn=N(nego_amount.value);
