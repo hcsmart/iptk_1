@@ -1109,9 +1109,7 @@ window.MESCTX={confirm:dlgConfirm};
      화면(가공계획등록 기준공정 열 등)에서 드래그와 길게 누르기가 겹치기 때문.
      e.detail 은 브라우저가 세는 연속 클릭 수(더블클릭 간격·이동 허용치 기준). */
   if(cl){if(e.detail>=3){e.preventDefault();enter(cl,false);hint('오른쪽 핸들을 끌거나 폭을 입력하세요 — 열 폭')}return}
-  /* v83: 버튼 길게 누르기 → 자유 이동 (놓기 전까지 버튼 동작은 막는다) */
-  if(bt){press={el:bt,x:e.clientX,y:e.clientY,t:setTimeout(()=>{press=null;swallow=true;enter(bt,false);
-    if(on)drag=freeDrag(bt)},600)}}
+  /* v289: 버튼 길게 누르기 → 편집모드 진입 기능 삭제 (버튼은 길게 눌러도 편집되지 않음) */
  },true);
  /* 편집모드에서, 또는 길게 누른 직후의 클릭은 버튼 동작을 실행하지 않는다 */
  let swallow=false;
