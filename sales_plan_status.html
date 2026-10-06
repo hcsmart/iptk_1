@@ -207,7 +207,7 @@ function render(){
    <td rowspan="3" class="c">${esc(pl.process_set_qty??r.process_set_qty??'')}</td>`;
   const evRow=(lab,cls,get)=>`<th class="rl ${cls}">${lab}</th>`+EV.map(([k,g])=>{
     const v=get(k,g);let c='';
-    const gv=k==='receipt'?(pl[g]||pl.order_date):pl[g];if(cls==='can'&&v&&gv){c=v>gv?' late':(v<gv?' early':'')}
+    const gv=pl[g];if(cls==='can'&&v&&gv){c=v>gv?' late':(v<gv?' early':'')}
     return `<td class="c ev${c}" title="${esc(v||'')}">${MD(v)}</td>`}).join('');
   const tail=`<td rowspan="3">${plog(pl)}</td><td rowspan="3">${notes(pl)}</td><td rowspan="3">${remarkCell(pl)}</td>
    <td rowspan="3" class="num">${n(r.order_price)}</td><td rowspan="3" class="num">${n(r.target_price)}</td>
