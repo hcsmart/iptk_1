@@ -128,7 +128,8 @@ function tags(job){
  const t=(lab,v)=>`<span class="tag ${v===true?'out':'in'}" title="${lab} ${v===true?'외주':'사내'}">${lab}${v===true?'외':'사'}</span>`;
  return t('설',pl.design_outsourced)+t('가',pl.machining_outsourced)+t('조',pl.assembly_outsourced);
 }
-/* v167: 엑셀(제번관리) 시트처럼 — 제번마다 요구/목표/가능 3줄, 가능일정이 목표보다 늦으면 노랑 */
+/* v290: 목표일정은 제작계획등록에 입력한 값만 표시 (접수 빈칸을 수주일로 채우지 않음)
+ * v167: 엑셀(제번관리) 시트처럼 — 제번마다 요구/목표/가능 3줄, 가능일정이 목표보다 늦으면 노랑 */
 const EV=[['receipt','receipt_date'],['design','design_end_date'],['machining','machining_end_date'],['assembly','assembly_end_date'],['tryout','s1_planned_date'],['complete','delivery_planned_date']];
 const WDN=['일','월','화','수','목','금','토'];
 const MDT=v=>MD(v).replace(/<[^>]+>/g,'');
@@ -136,7 +137,7 @@ const MD=v=>{const t=String(v||'').slice(0,10);if(!/^\d{4}-\d{2}-\d{2}$/.test(t)
  return `${Number(t.slice(5,7))}/${Number(t.slice(8,10))}<small class="wd${w==='토'?' sat':w==='일'?' sun':''}">(${w})</small>`};
 const dd=(a,b)=>Math.round((new Date(b)-new Date(a))/86400000);
 function lateOf(pl){ /* 지연 일수 최대값 (없으면 0) */
- if(!pl)return 0;let m=0;EV.forEach(([k,g])=>{const c=pl['can_'+k+'_date'],t=k==='receipt'?(pl[g]||pl.order_date):pl[g];if(c&&t&&c>t)m=Math.max(m,dd(t,c))});return m}
+ if(!pl)return 0;let m=0;EV.forEach(([k,g])=>{const c=pl['can_'+k+'_date'],t=pl[g];if(c&&t&&c>t)m=Math.max(m,dd(t,c))});return m}
 function plog(pl){
  let L=pl&&pl.progress_log;if(typeof L==='string'){try{L=JSON.parse(L)}catch(e){L=[]}}
  if(!Array.isArray(L)||!L.length)return '<span style="color:#9aa7b1">-</span>';
@@ -213,7 +214,7 @@ function render(){
    <td rowspan="3" class="num">${r.profit_rate_pct==null||r.profit_rate_pct===''?'':Number(r.profit_rate_pct).toFixed(1)}</td>`;
   const on=`onclick="pick(${i},this)" ondblclick="pick(${i},this);detail()"`;
   return `<tr class="g1${lt?' haslate':''}" data-i="${i}" ${on}>${idCell}${evRow('요구일정','req',(k)=>pl['req_'+k+'_date'])}${tail}</tr>`
-   +`<tr class="g2" data-i="${i}" ${on}>${evRow('목표일정','goal',(k,g)=>k==='receipt'?(pl[g]||pl.order_date):pl[g])}</tr>`
+   +`<tr class="g2" data-i="${i}" ${on}>${evRow('목표일정','goal',(k,g)=>pl[g])}</tr>`
    +`<tr class="g3" data-i="${i}" ${on}>${evRow('가능일정','can',(k)=>pl['can_'+k+'_date'])}</tr>`;
  }).join('')
  :'<tr><td colspan="18" class="c" style="height:100px;color:#8a97a2">등록된 제작계획이 없습니다.</td></tr>';
