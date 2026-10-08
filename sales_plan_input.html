@@ -526,6 +526,7 @@ async function loadMasters(){
  if(!bind()){let n=0;const iv=setInterval(()=>{if(bind()||++n>40)clearInterval(iv)},100)}})();
 
 /* 관리제번 선택 → 공정 제번 중 기존 계획이 있으면 그것, 없으면 수주정보(sale_orders)로 헤더 채움 */
+const DEF_MAKER='일평기연';   /* v293: 제작계획등록 제작처 기본값 */
 async function loadJob(j){
  if(typeof j==='string'&&j)setSel('job_no',j);
  const b=curBase();if(!b){clearForm(true);msg('관리제번을 입력하거나 목록에서 고르세요.');return}
@@ -546,6 +547,7 @@ async function loadJob(j){
    load(o);setSel('job_no',baseLabel(b));
    /* v238: 계획에 비어 있는 양산처·도번은 수주등록 값으로 채운다 */
    if(so&&so[0]){if(!mass_vendor.value)setSel('mass_vendor',so[0].mass_production_vendor_name);if(!drawing_no.value)setSel('drawing_no',so[0].drawing_no);if(!design_partner.value&&so[0].design_vendor_name)setSel('design_partner',so[0].design_vendor_name)}   /* v242: 수주등록 설계업체 */
+   if(!maker_name.value)setSel('maker_name',DEF_MAKER);   /* v293: 비어 있는 제작처는 기본값 */
    if(designGate(so)&&!design_vendor.value&&so&&so[0]&&so[0].design_vendor_name)setSel('design_vendor',so[0].design_vendor_name);   /* v278 */
    if(soSum)order_price.value=fmt(soSum);recalc();
    msg(`${b} ${rg} 기존 제작계획을 불러왔습니다. (공정 제번 ${jobs.length}건 중 계획 ${ex.length}건${ex.length<jobs.length?' — 저장하면 나머지 공정에도 들어갑니다':''})`);return}
@@ -558,6 +560,7 @@ async function loadJob(j){
   setSel('process_set_qty',s0.process_set_qty);
   setSel('drawing_no',s0.drawing_no);setSel('receipt_date',s0.order_date);
   setSel('mass_vendor',s0.mass_production_vendor_name);   /* v238: 수주등록의 양산처 */
+  setSel('maker_name',DEF_MAKER);   /* v293: 제작처 기본값 */
   if(s0.design_vendor_name)setSel('design_partner',s0.design_vendor_name);   /* v242: 수주등록의 설계업체 → 설계처 */
   if(designGate(so)&&s0.design_vendor_name)setSel('design_vendor',s0.design_vendor_name);   /* v278: 외주설계 체크 시 설계 외주업체 칸도 채움 */
   /* v168: 새 계획은 EVENT 표의 빈 날짜 칸을 전부 오늘로 채운다 — 휠로 밀어 가며 잡기 쉽게 */

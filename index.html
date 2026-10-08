@@ -234,7 +234,7 @@ a.menu-off,a.menu-off:hover{color:#9aa5ae!important;opacity:.55;cursor:not-allow
 </div>
 
 <script>
-const APP_VER='291';
+const APP_VER='293';
 const APP={
   '영업관리':{
     secondary:[
@@ -381,6 +381,8 @@ const APP={
     }
   }
 };
+/* v293: 상단 메뉴 표시 이름 — 내부 키(권한·탭 저장값)는 그대로 두고 화면에 보이는 이름만 바꾼다 */
+const MOD_LABEL={'구매관리':'생산구매관리'};const ML=m=>MOD_LABEL[m]||m;
 const MODULES=['영업관리','설계관리','구매관리','조립관리','원가관리','SQ','기준정보','보고서','사용메뉴얼'];
 const pageRegistry={
 '가공공정관리':{id:'machining_process_management',file:'machining_process_management.html',title:'가공공정관리'},
@@ -566,7 +568,7 @@ function buildTop(){
   const ul=$('#topMenu');ul.innerHTML='';
   visibleModules().forEach(mod=>{
     const li=el('li',mod===activeModule?'on':'');
-    const b=el('button','',mod);b.onclick=()=>{const was=li.classList.contains('pin');if(was)setModule(mod);else pinModule(mod)};li.appendChild(b);
+    const b=el('button','',esc(ML(mod)));b.dataset.mod=mod;b.onclick=()=>{const was=li.classList.contains('pin');if(was)setModule(mod);else pinModule(mod)};li.appendChild(b);
     const mega=el('div','mega');let any=false;
     (APP[mod]?.secondary||[]).forEach(sec=>{
       const gs=groupsOf(mod,sec.name);if(!gs.length)return;any=true;
@@ -611,8 +613,8 @@ function menuLink(n,mod){
   a.onmouseover=()=>{if(p&&p.file)prefetch(p.file+(p.file.includes('?')?'&':'?')+'v='+APP_VER)};
   return a;
 }
-function setModule(m){activeModule=m;buildTop();statusMsg.textContent=`${m} 메뉴를 선택했습니다.`}
-function pinModule(m){setModule(m);const li=[...document.querySelectorAll('#topMenu>li')].find(x=>x.querySelector('button').textContent===m);if(li){li.classList.add('pin');placeMega(li,li.querySelector('.mega'))}}
+function setModule(m){activeModule=m;buildTop();statusMsg.textContent=`${ML(m)} 메뉴를 선택했습니다.`}
+function pinModule(m){setModule(m);const li=[...document.querySelectorAll('#topMenu>li')].find(x=>x.querySelector('button').dataset.mod===m);if(li){li.classList.add('pin');placeMega(li,li.querySelector('.mega'))}}
 
 /* ---------- 즐겨찾기 ---------- */
 function toggleFav(n){
@@ -662,7 +664,7 @@ function activate(id){if(activeId!==id)prevId=activeId;activeId=id;const p=openT
 function renderCrumb(){
   const p=openTabs.get(activeId);const c=$('#crumb');
   if(!p){c.innerHTML='<span>IPTK MES</span>';return}
-  c.innerHTML=`<span>IPTK MES</span>${p.mod?`<span>›</span><span>${esc(p.mod)}</span><span>›</span><span>${esc(p.sec)}</span>`:''}<span>›</span><b>${esc(p.title)}</b><span class="right"><span>${p.file?esc(p.file):''}</span></span>`;
+  c.innerHTML=`<span>IPTK MES</span>${p.mod?`<span>›</span><span>${esc(ML(p.mod))}</span><span>›</span><span>${esc(p.sec)}</span>`:''}<span>›</span><b>${esc(p.title)}</b><span class="right"><span>${p.file?esc(p.file):''}</span></span>`;
 }
 
 /* ---------- 탭 ---------- */
@@ -755,7 +757,7 @@ function homeHTML(){
   return `<div class="home">
   <!-- v282: 업무 모듈 카드 숨김 (상단 메뉴로 충분) -->
   <div class="card" style="grid-column:span 8;display:none"><h3>업무 모듈 <span>상단 메뉴에 마우스를 올리면 세부 메뉴가 열립니다</span></h3>
-   <div class="modcard">${mods.map(m=>`<button onclick="pinModule('${m}')"><b>${MOD_ICON[m]||'▪'} ${esc(m)}</b><small>${esc(MOD_DESC[m]||'')}</small></button>`).join('')}</div></div>
+   <div class="modcard">${mods.map(m=>`<button onclick="pinModule('${m}')"><b>${MOD_ICON[m]||'▪'} ${esc(ML(m))}</b><small>${esc(MOD_DESC[m]||'')}</small></button>`).join('')}</div></div>
   <div class="card" style="grid-column:span 12"><h3>즐겨찾기 <span>★ ${favs.length}</span></h3>
    <div class="favlist">${favs.filter(n=>locate(n)).length?favs.filter(n=>locate(n)).map(n=>{const l=locate(n);return `<button onclick="openByName('${esc(n)}')"><span>${esc(MENU_LABEL[n]||n)}</span><small>${l?esc(l.mod):''}</small></button>`}).join(''):'<small style="color:var(--ink-3)">상단 메뉴 항목의 ★ 를 눌러 추가</small>'}</div></div>
   <div class="card" style="grid-column:span 8"><h3>바로가기</h3>
@@ -769,8 +771,8 @@ function homeHTML(){
 const sIn=$('#menuSearch'),sRes=$('#searchRes');let sel=0;
 sIn.oninput=()=>{
   const q=sIn.value.trim().toLowerCase();if(!q){sRes.classList.remove('open');return}
-  const hits=flatMenu().filter(m=>m.name.toLowerCase().includes(q)||String(MENU_LABEL[m.name]||'').toLowerCase().includes(q)||m.sec.toLowerCase().includes(q)||m.mod.toLowerCase().includes(q)).slice(0,14);sel=0;
-  sRes.innerHTML=hits.length?hits.map((m,i)=>`<button data-name="${esc(m.name)}" class="${i===0?'sel':''}"><span>${esc(MENU_LABEL[m.name]||m.name)}</span><small>${esc(m.mod+' › '+m.sec)}</small></button>`).join(''):'<button disabled><small>검색 결과 없음</small></button>';
+  const hits=flatMenu().filter(m=>m.name.toLowerCase().includes(q)||String(MENU_LABEL[m.name]||'').toLowerCase().includes(q)||m.sec.toLowerCase().includes(q)||m.mod.toLowerCase().includes(q)||ML(m.mod).toLowerCase().includes(q)).slice(0,14);sel=0;
+  sRes.innerHTML=hits.length?hits.map((m,i)=>`<button data-name="${esc(m.name)}" class="${i===0?'sel':''}"><span>${esc(MENU_LABEL[m.name]||m.name)}</span><small>${esc(ML(m.mod)+' › '+m.sec)}</small></button>`).join(''):'<button disabled><small>검색 결과 없음</small></button>';
   sRes.querySelectorAll('button[data-name]').forEach(b=>b.onclick=()=>pick(b.dataset.name));sRes.classList.add('open');
 };
 function pick(n){openByName(n);sIn.value='';sRes.classList.remove('open');sIn.blur()}
