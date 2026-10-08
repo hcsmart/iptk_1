@@ -424,9 +424,11 @@ function load(o){
  order_price.value=num(order_price.value)?fmt(num(order_price.value)):'';
  recalc();
 }
+var DEF_MAKER='일평기연';   /* v293: 제작계획등록 제작처 기본값 */
 function clearForm(quiet){
  document.querySelectorAll('input:not(.adr)').forEach(n=>{if(n.type==='checkbox')n.checked=false;else if(n.type!=='radio')n.value=''});
  document.getElementById('remark').value='';PLOG=[];plRender();shapeShow('');markLate();
+ setSel('maker_name',DEF_MAKER);   /* v294: 빈 화면에서도 제작처 기본값 */
  ['design','machining','assembly'].forEach(calcDays);
  ['design','machining','assembly'].forEach(k=>setOut(k,false));
  try{designGate([])}catch(e){}
@@ -515,7 +517,8 @@ async function loadMasters(){
  fillDL('dl_emp',await pull('employee'),r=>r.name,r=>r.department_name||'');
  /* 외주업체: 설계=외주설계 협력업체, 가공=외주가공 협력업체, 조립=협력업체 전체 */
  fillDL('dl_vd_design',await pull('design_partner'),r=>r.partner_name,r=>'외주설계');
- fillDL('dl_vd_mach',await pull('vendor_outsourcing'),r=>r.vendor_name,r=>r.vendor_code||'');
+ /* v294: 제작처 목록 맨 위에 자사(일평기연)를 넣는다 — 기본값이 목록에서 선택된 상태로 보이게 */
+ fillDL('dl_vd_mach',[{vendor_name:DEF_MAKER,vendor_code:'자사'},...(await pull('vendor_outsourcing')).filter(r=>r.vendor_name!==DEF_MAKER)],r=>r.vendor_name,r=>r.vendor_code||'');
  fillDL('dl_vd_mass',await pull('mass_production'),r=>r.vendor_name,r=>r.vendor_code||'');   /* v238: 양산처 드롭다운 */
  fillDL('dl_vd_asm',(await pull('vendor')).filter(r=>r.vendor_type==='협력업체'),r=>r.vendor_name,r=>r.vendor_code||'');
  ['design','machining','assembly'].forEach(vendorGate);
@@ -526,7 +529,6 @@ async function loadMasters(){
  if(!bind()){let n=0;const iv=setInterval(()=>{if(bind()||++n>40)clearInterval(iv)},100)}})();
 
 /* 관리제번 선택 → 공정 제번 중 기존 계획이 있으면 그것, 없으면 수주정보(sale_orders)로 헤더 채움 */
-const DEF_MAKER='일평기연';   /* v293: 제작계획등록 제작처 기본값 */
 async function loadJob(j){
  if(typeof j==='string'&&j)setSel('job_no',j);
  const b=curBase();if(!b){clearForm(true);msg('관리제번을 입력하거나 목록에서 고르세요.');return}
