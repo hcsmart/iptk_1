@@ -124,7 +124,30 @@ function batchNote(list, what) {
     <div style="font-size:11px;margin-top:2px">${_esc(names)}${list.length > 6 ? ' …' : ''}</div></div>`;
 }
 const useBatch = () => { const c = $('sxBatch'); return !!(c && c.checked); };
+/* v313: 체크한 행을 위에서 아래로 한 건씩 — [→ 다음].
+   함께 처리(같은 값 일괄)와 달리, 이 건만 입력한 값으로 처리한 뒤 아래쪽 다음 체크 행의 창을 바로 연다. */
+const posOf = ev => ({ clientX: ev && ev.clientX != null ? ev.clientX : 40, clientY: ev && ev.clientY != null ? ev.clientY : 40, preventDefault() {}, stopPropagation() {} });
+function nextChecked(r) {
+  const chk = CHKS(), view = VIEW(); if (!chk || !chk.size) return null;
+  const i = view.indexOf(r);
+  return view.slice(i + 1).find(x => chk.has(Number(x.no))) || view.find(x => x !== r && chk.has(Number(x.no))) || null;
+}
+const seqCount = r => { const chk = CHKS(); return chk ? VIEW().filter(x => x !== r && chk.has(Number(x.no))).length : 0; };
+async function thenNext(fn) {
+  const r = CTX && CTX.r; if (!r) return;
+  const nx = nextChecked(r);
+  const c = $('sxBatch'); if (c) c.checked = false;          /* 이 건만 처리 */
+  CTX.seqNext = nx ? Number(nx.no) : null;
+  try { await fn(); } finally { if (CTX) CTX.seqNext = null; }
+}
+function skipNext() {
+  const r = CTX && CTX.r; if (!r) return;
+  const nx = nextChecked(r), pos = CTX.pos; if (!nx) return say('다음 체크 행이 없습니다.');
+  close(); openRow(pos, nx);
+}
+const seqBtns = (r, list) => seqCount(r) ? [...list, { t: '다음 ▶', title: '이 건은 그대로 두고 아래 체크한 다음 행으로', fn: skipNext }] : [];
 async function after(text, popTitle) {
+  const nx = CTX && CTX.seqNext ? Number(CTX.seqNext) : null, pos = CTX && CTX.pos;   /* v313: [→ 다음] 이면 처리 후 다음 체크 행 */
   try { MESDB.dropCache && MESDB.dropCache('order_lines'); } catch (e) {}
   try { MESDB.notify && MESDB.notify(OSP() ? ['order_lines', 'outsourcing_moves'] : ['order_lines']); } catch (e) {}
   try { OSP() && window.MESMOVE && MESMOVE.invalidate(); } catch (e) {}
@@ -135,13 +158,18 @@ async function after(text, popTitle) {
   try { typeof window._filterNow === 'function' ? window._filterNow() : (typeof window.search === 'function' && window.search()); } catch (e) {}
   say(text);
   try { (window.MESPOP || window.parent?.MESPOP)?.ok(text, popTitle || '처리 완료'); } catch (e) {}
+  if (nx != null) {
+    const row = VIEW().find(x => Number(x.no) === nx);
+    if (row) setTimeout(() => { try { openRow(posOf(pos), row); } catch (e) {} }, 60);
+    else say(text + ' · 다음 체크 행이 목록에 없어 멈췄습니다 (조회 조건을 확인하세요).');
+  }
 }
 function busy(id, on, label) { const b = $(id); if (!b) return; b.disabled = !!on; if (on) { b.dataset.t = b.textContent; b.textContent = '처리 중…'; } else b.textContent = label || b.dataset.t || b.textContent; }
 
 /* ── ① 발주 → 입고 / 입고+확정 / 발주취소 ─────────────────── */
 function formReceive(ev, r) {
   if (OSP()) return formReceiveOsp(ev, r);
-  CTX = { r };
+  CTX = { r, pos: posOf(ev) };
   const bt = batchRows(r);
   open(ev, `${r.part || ''} — 입고 처리`, 'k-in', headHtml(r) + `
    <div class="g">
@@ -152,10 +180,13 @@ function formReceive(ev, r) {
     <label>네고율(%)</label><input id="sxRate" class="r" value="0" inputmode="decimal" title="입고+확정 때만 적용">
     <label>확정가</label><input id="sxFix" class="r" value="${_won(buy(r))}" inputmode="numeric" title="입고+확정 때만 적용">
    </div>
-   ${batchNote(bt, '입고 (수량은 각 발주수량, 단가는 각 발주단가)')}
+   ${batchNote(bt, '입고 (수량은 각 발주수량, 단가는 각 발주단가) — 한 건씩 따로 넣으려면 아래 [→ 다음] 버튼')}
    <div class="note">[입고]는 입고 상태까지, [입고+확정]은 네고율·확정가까지 한 번에 처리해 제조원가에 반영합니다.</div>`,
    [{ t: '▣ 입고', cls: 'go', id: 'sxGo', fn: () => doReceive(false) },
     { t: '▣ 입고+확정', cls: 'go', id: 'sxGo2', fn: () => doReceive(true) },
+    ...seqBtns(r, [
+      { t: '▣ 입고 → 다음', cls: 'go', title: '이 건만 입고 처리하고 아래 체크한 다음 행의 창을 엽니다', fn: () => thenNext(() => doReceive(false)) },
+      { t: '▣ 입고+확정 → 다음', cls: 'go', title: '이 건만 입고+확정하고 아래 체크한 다음 행의 창을 엽니다', fn: () => thenNext(() => doReceive(true)) }]),
     { t: '✖ 발주취소', cls: 'warn', title: '발주 라인을 삭제합니다', fn: doOrderCancel },
     { t: '닫기', fn: close }]);
   CTX.batch = bt;
@@ -270,7 +301,7 @@ async function doOrderCancel() {
 
 /* ── ② 입고 → 입고확정 / 입고취소 ─────────────────────────── */
 function formConfirm(ev, r) {
-  CTX = { r };
+  CTX = { r, pos: posOf(ev) };
   const bt = batchRows(r);
   const quote = OSP() ? (Number(r.quote) || 0) : buy(r), fix = _n(r.fix) || quote;
   const mid = OSP() ? `
@@ -287,9 +318,10 @@ function formConfirm(ev, r) {
     <label>네고율(%)</label><input id="sxRate" class="r" value="${quote ? ((1 - fix / quote) * 100).toFixed(1) : '0'}" inputmode="decimal">
     <label>확정가</label><input id="sxFix" class="r" value="${_won(fix)}" inputmode="numeric">
    </div>
-   ${batchNote(bt, '입고확정 (이 창의 확정일·네고율을 각 매입가에 적용)')}
+   ${batchNote(bt, '입고확정 (이 창의 확정일·네고율을 각 매입가에 적용) — 확정가를 한 건씩 따로 넣으려면 아래 [→ 다음] 버튼')}
    <div class="note">확정가가 제조원가(${_esc(CFG.category)}비)에 반영됩니다. 네고율을 넣으면 확정가가, 확정가를 고치면 네고율이 맞춰집니다.</div>`,
    [{ t: '▣ 입고확정', cls: 'go', id: 'sxGo', fn: doConfirm },
+    ...seqBtns(r, [{ t: '▣ 입고확정 → 다음', cls: 'go', title: '이 건만 확정하고 아래 체크한 다음 행의 창을 엽니다', fn: () => thenNext(doConfirm) }]),
     { t: '✖ 입고취소', cls: 'warn', title: '입고를 취소하고 발주 상태로 되돌립니다', fn: doReceiveCancel },
     { t: '닫기', fn: close }]);
   CTX.batch = bt;
