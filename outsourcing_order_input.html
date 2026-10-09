@@ -88,6 +88,8 @@ td.route.s-out{background:#ffe9d1!important;color:#7a4a12;font-weight:700}td.rou
 /* v320: 함께 발주 표 — 품번·부품명은 줄바꿈해서 전부, 우클릭 품번 행은 굵게, 금액은 입력칸 */
 #ctxPop table.stp.multi td:first-child{white-space:nowrap}#ctxPop table.stp tr.main td:first-child{font-weight:700;color:#1d4f80}   /* v321: 부품명 열 제거, 품번 한 줄 */
 #ctxPop table.stp td input{width:100%;height:22px;border:1px solid #c7d1da;padding:0 4px;font-size:11px;box-sizing:border-box;text-align:right}#ctxPop table.stp td input.manual{background:#fff6c8}
+/* v326: 함께 입고 표(발주건별 입고수량·단가·금액·확정가) */
+#ctxPop table.hist#cxRcv td input{width:100%;height:22px;border:1px solid #c7d1da;padding:0 4px;font-size:11px;box-sizing:border-box;text-align:right}#ctxPop table.hist#cxRcv td input.manual{background:#fff6c8}#ctxPop table.hist#cxRcv tr.main td:first-child{font-weight:700;color:#1d4f80}
 #ctxPop table.stp thead th{background:linear-gradient(#dbe9f4,#c7d9e8);color:#405266}
 #ctxPop table.stp tfoot th{background:#f2f6f9;color:#20456b}
 #ctxPop table.stp .c{text-align:center}#ctxPop table.stp .r{text-align:right}
@@ -1263,32 +1265,80 @@ function ctxReceive(ev,head){
  const others=open.filter(x=>Number(x.line_id)!==Number(l.line_id));
  const same=ctxSameVendorOpen();
  const anyGot=ctxLines().some(x=>_n(x.receipt_qty)>0);
+ /* v326: 체크한 다른 품번의 같은 공정 미입고 발주건 — 공통(입고일·비고·네고율)은 위, 발주건별 입고수량·단가·금액·확정가는 아래 표 */
+ const rcv=[];
+ for(const key of [...PICK.keys()]){const ri2=Number(key);if(ri2===CTX.ri)continue;const r2=ROUTES[ri2];if(!r2||r2.job!==(CTX.r||{}).job||r2.old)continue;
+  const codes=(r2.steps||[]).map(stepCode);for(let k=0;k<codes.length;k++){if(codes[k]!==c||isHouse(r2,k))continue;const o2=stepInfo(r2,k);
+   (o2.openLines||[]).forEach(x=>{const rem2=Math.max((_n(x.order_qty)||1)-_n(x.receipt_qty),0);if(rem2>0&&!rcv.some(y=>Number(y.line.line_id)===Number(x.line_id)))rcv.push({line:x,r:r2,k,rem:rem2})})}}
+ CTX.rcv=rcv.length?[{line:l,r:CTX.r,k:i,rem,main:true},...rcv]:null;
+ const rh=CTX.rcv?' hidden':'';
+ const rcvHtml=CTX.rcv?`<div class="ttl">함께 입고 <span class="cnt">체크한 품번의 같은 공정(${_esc(procName(c))}) 미입고 발주건 ${rcv.length}건 — 위는 공통 항목(입고일·비고·네고율), 아래 표에서 발주건별 <b>입고수량·단가·금액·확정가</b>를 각각 넣으세요 (금액은 자동 계산되지만 직접 고칠 수 있습니다)</span></div>
+  <table class="hist" id="cxRcv"><thead><tr><th>품번</th><th>공정</th><th>발주건</th><th>잔량</th><th style="width:60px">입고수량</th><th style="width:86px">단가</th><th style="width:90px">금액</th><th style="width:90px">확정가</th></tr></thead><tbody>${
+   CTX.rcv.map(x=>{const id=Number(x.line.line_id),p=_n(x.line.unit_price),a=Math.round(p*x.rem);return `<tr${x.main?' class="main"':''}><td title="${_esc(x.r.name||'')}${x.main?' (우클릭한 품번)':''}">${_esc(x.r.part)}</td><td class="c">공정${x.k+1} ${_esc(procName(c))}</td><td class="c">#${id}</td><td class="r">${x.rem}</td><td><input id="cxRQ${id}" class="r" value="${x.rem}" inputmode="numeric" onchange="ctxRcvCalc()"></td><td><input id="cxRP${id}" class="r" value="${p?_won(p):''}" placeholder="단가" inputmode="numeric" onchange="ctxRcvCalc()"></td><td><input id="cxRA${id}" class="r" value="${a?_won(a):''}" placeholder="자동" inputmode="numeric" title="단가×입고수량으로 자동 계산 — 직접 고칠 수 있습니다" onchange="ctxRcvEdit(this)"></td><td><input id="cxRF${id}" class="r" value="${a?_won(a):''}" placeholder="예: 42,750" inputmode="numeric" title="[입고+확정]일 때 제조원가에 반영 — 비우면 금액×(1−네고율)" onchange="ctxRcvEdit(this)"></td></tr>`}).join('')}</tbody>
+   <tfoot><tr><th colspan="6" class="r">합계</th><th class="r" id="cxRcvA"></th><th class="r" id="cxRcvF"></th></tr></tfoot></table>`:'';
  ctxOpen(ev,`공정${i+1} ${procName(c)} — 입고`,'k-in',head+
   ctxLineSel(open,l.line_id,ctxReceive)+`
   <div class="info" style="margin-bottom:8px"><b>공정 합계</b><span>발주 ${totalOrd} / 입고 ${totalGot} / 미입고 ${totalRem}</span><b>현재 발주건</b><span>#${l.line_id||''} ${openN>1?`(미입고 발주 ${openN}건 중 1건)`:'(미입고 발주 처리)'}</span><b>발주일</b><span>${_dt(l.order_date)}</span><b>입고요구일</b><span>${_dt(l.required_date)}</span><b>발주/기입고</b><span>${ord} / ${got} (잔량 ${rem})</span><b>발주금액</b><span>${_won(l.quote_price)}원</span></div>
   <div class="g">
-   <label>입고수량</label><input id="cxInQty" class="r" value="${rem}" inputmode="numeric">
+   <label${rh}>입고수량</label><input id="cxInQty" class="r" value="${rem}" inputmode="numeric"${rh}>
    <label>입고일</label><input id="cxInDate" type="date" value="${T0()}">
    <label></label><label class="chk"><input type="checkbox" id="cxShort" style="width:auto;height:auto"> 잔량은 입고하지 않음 (부족분 마감)</label>
    ${others.length?`<label></label><label class="chk"><input type="checkbox" id="cxAllOpen" style="width:auto;height:auto"> 이 공정의 다른 미입고 발주건 <b>${others.length}건</b>도 잔량 전부 함께 입고 (${others.map(x=>`#${x.line_id} ${Math.max((_n(x.order_qty)||1)-_n(x.receipt_qty),0)}개`).join(', ')})</label>`:''}
    <label>비고</label><input id="cxInRemark" class="full" placeholder="선택">
    <label title="[입고+확정]일 때만 쓰입니다">네고율(%)</label><input id="cxInRate" class="r" value="0" inputmode="decimal" onchange="ctxInFixFromRate()" title="[입고+확정]일 때 적용 — 견적가에서 깎는 비율">
-   <label title="[입고+확정]일 때만 쓰입니다">확정가</label><input id="cxInFix" class="r" value="${_won(_n(l.quote_price))}" inputmode="numeric" onchange="ctxInRateFromFix()" title="[입고+확정]일 때 제조원가에 반영되는 금액. 함께 입고하는 다른 발주건은 같은 네고율을 적용">
+   <label title="[입고+확정]일 때만 쓰입니다"${rh}>확정가</label><input id="cxInFix" class="r"${rh} value="${_won(_n(l.quote_price))}" inputmode="numeric" onchange="ctxInRateFromFix()" title="[입고+확정]일 때 제조원가에 반영되는 금액. 함께 입고하는 다른 발주건은 같은 네고율을 적용">
   </div>
   <div class="note">[입고 처리]는 입고까지만, <b>[입고+확정]</b>은 위 <b>확정가</b>로 입고확정까지 끝냅니다 (함께 입고하는 발주건은 같은 네고율). 확정가는 나중에 입고 칸을 우클릭해 다시 잡을 수 있습니다.</div>
-  ${same.length?`<div class="ttl">함께 입고 <span class="cnt">같은 업체(${_esc(l.vendor_name||o.vendor||'')}) 미입고 발주건 ${same.length}건 — 체크한 건은 잔량 전부를 같은 입고일로 입고</span><label><input type="checkbox" onchange="document.querySelectorAll('#cxSame input[data-id]').forEach(x=>x.checked=this.checked)">전체</label></div>
+  ${CTX.rcv?rcvHtml:same.length?`<div class="ttl">함께 입고 <span class="cnt">같은 업체(${_esc(l.vendor_name||o.vendor||'')}) 미입고 발주건 ${same.length}건 — 체크한 건은 잔량 전부를 같은 입고일로 입고</span><label><input type="checkbox" onchange="document.querySelectorAll('#cxSame input[data-id]').forEach(x=>x.checked=this.checked)">전체</label></div>
   <table class="hist" id="cxSame"><thead><tr><th></th><th>품번</th><th>공정</th><th>발주건</th><th>발주</th><th>기입고</th><th>잔량</th><th>입고요구일</th></tr></thead><tbody>${
    same.map(x=>{const xo=_n(x.order_qty)||1,xg=_n(x.receipt_qty);return `<tr><td class="c"><input type="checkbox" data-id="${x.line_id}" style="width:auto;height:auto"></td><td>${_esc(x.part_no||'')}</td><td class="c">공정${x.step_no||''} ${_esc(procName(x.machining_process_code)||'')}</td><td class="c">#${x.line_id}</td><td class="r">${xo}</td><td class="r">${xg}</td><td class="r">${Math.max(xo-xg,0)}</td><td class="c">${_dt(x.required_date)}</td></tr>`}).join('')}</tbody></table>`:''}
   <div id="cxHist"></div>`,
-  `<button class="btn go k-in" id="cxGo" onclick="ctxReceiveNow(false)">▣ 입고 처리</button>
-   <button class="btn go" id="cxGo2" onclick="ctxReceiveNow(true)" title="입고 처리와 입고확정(위의 확정가·네고율)을 한 번에 끝냅니다. 잔량이 남으면 입고만 됩니다">▣ 입고+확정</button>
+  `<button class="btn go k-in" id="cxGo" onclick="ctxReceiveNow(false)">▣ 입고 처리${CTX.rcv?' ('+CTX.rcv.length+'건)':''}</button>
+   <button class="btn go" id="cxGo2" onclick="ctxReceiveNow(true)" title="입고 처리와 입고확정(위의 확정가·네고율)을 한 번에 끝냅니다. 잔량이 남으면 입고만 됩니다">▣ 입고+확정${CTX.rcv?' ('+CTX.rcv.length+'건)':''}</button>
    ${(()=>{const rv=ctxLines().filter(x=>_n(x.receipt_qty)>0||/입고/.test(String(x.status||'')));if(!rv.length)return '';
      return (rv.length>1?`<select id="cxRcv" class="sel1" style="width:auto;height:27px" title="입고를 취소할 발주건">${rv.map(x=>`<option value="${x.line_id}">#${x.line_id} · ${_esc(x.vendor_name||'')} · 입고 ${_n(x.receipt_qty)}</option>`).join('')}</select>`:'')+
       `<button class="btn k-cancel" onclick="ctxRecvCancelLine(${rv.length>1?'null':Number(rv[0].line_id)})" title="이미 입고된 발주건의 입고를 취소하고 발주(출고) 상태로 되돌립니다">✖ 입고취소${rv.length===1?` (#${rv[0].line_id})`:''}</button>`})()}
    <button class="btn k-cancel" onclick="ctxOrderCancel()" title="이 발주건(미입고)을 삭제합니다 — 사내외가공 발주 화면에서 다시 발주할 수 있습니다">✖ 발주취소</button>
    ${SHEET_BTN}<button class="btn" onclick="ctxClose()">닫기</button>`);
+ if(CTX.rcv){const rt=document.getElementById('cxInRate');if(rt)rt.addEventListener('change',ctxRcvCalc);ctxRcvCalc()}
  ctxHistLoad(ctxLines().map(x=>x.line_id),true);
  return false;
+}
+/* v326: 함께 입고 표 — 행 값 읽기 · 계산 · 직접 수정 */
+function ctxRcvRows(){const rows=(CTX&&CTX.rcv)||[],rate=_n(_v('cxInRate'));return rows.map(x=>{const id=Number(x.line.line_id);
+ const q=Math.max(0,Math.round(_n(_v('cxRQ'+id)))),p=_n(_v('cxRP'+id));const aEl=document.getElementById('cxRA'+id),fEl=document.getElementById('cxRF'+id);
+ const amt=(aEl&&aEl.dataset.manual==='1')?_n(aEl.value):Math.round(p*q);
+ const fix=(fEl&&fEl.dataset.manual==='1')?_n(fEl.value):Math.round((amt||_n(x.line.quote_price))*(1-rate/100));
+ return {...x,q,price:p,amt,fix}})}
+function ctxRcvCalc(){let ta=0,tf=0;for(const x of ctxRcvRows()){const id=Number(x.line.line_id);const pEl=document.getElementById('cxRP'+id),a=document.getElementById('cxRA'+id),f=document.getElementById('cxRF'+id);
+ if(pEl)pEl.value=x.price?_won(x.price):'';if(a){a.value=x.amt?_won(x.amt):'';a.classList.toggle('manual',a.dataset.manual==='1')}if(f){f.value=x.fix?_won(x.fix):'';f.classList.toggle('manual',f.dataset.manual==='1')}ta+=x.amt||0;tf+=x.fix||0}
+ const A=document.getElementById('cxRcvA'),F=document.getElementById('cxRcvF');if(A)A.textContent=_won(ta);if(F)F.textContent=_won(tf)}
+function ctxRcvEdit(el){if(el)el.dataset.manual=_n(el.value)?'1':'';ctxRcvCalc()}
+/* v326: 함께 입고 실행 — 발주건마다 fn_osp_receive, 단가·금액·확정가는 표 값 */
+async function ctxReceiveMany(withConfirm){
+ const {c,o,job}=CTX;const rows=ctxRcvRows();
+ const bad=rows.filter(x=>!(x.q>0)).map(x=>x.r.part+' #'+x.line.line_id);if(bad.length)return msg('입고수량을 입력하세요: '+bad.join(', '));
+ const over=rows.filter(x=>x.q>x.rem).map(x=>`${x.r.part} #${x.line.line_id} (잔량 ${x.rem})`);if(over.length)return msg('잔량을 초과했습니다: '+over.join(', '));
+ if(withConfirm){const zero=rows.filter(x=>!x.fix).map(x=>x.r.part);if(zero.length&&!confirm(`확정가가 0원인 건이 있습니다: ${zero.join(', ')}\n제조원가에 0원으로 반영됩니다. 계속할까요?`))return}
+ const b=document.getElementById(withConfirm?'cxGo2':'cxGo'),b0=b?b.textContent:'';if(b){b.disabled=true;b.textContent='처리 중…'}
+ const d=_v('cxInDate')||T0(),remark=_v('cxInRemark')||null,ts=new Date().toISOString();
+ const shortOn=!!(document.getElementById('cxShort')&&document.getElementById('cxShort').checked);
+ const upRows=[],done=[],fails=[];let openLeft=false;
+ try{
+  for(const x of rows){
+   const rest=Math.max(x.rem-x.q,0),short=shortOn&&rest>0?rest:0;
+   try{const closed=await ctxRecvOne(x.line,x.q,d,short,remark);if(!closed)openLeft=true;
+    const up={line_id:Number(x.line.line_id),updated_at:ts};let touch=false;
+    if(x.price&&x.price!==_n(x.line.unit_price)){up.unit_price=x.price;touch=true}
+    if(x.amt){up.receipt_amount=x.amt;touch=true}
+    if(withConfirm&&closed){up.status='입고확정';up.confirm_date=d;up.confirm_price=x.fix||null;const base=x.amt||_n(x.line.quote_price);up.nego_rate=base?Number(((1-x.fix/base)*100).toFixed(2)):0;touch=true}
+    if(touch)upRows.push(up);
+    done.push(`${x.r.part} #${x.line.line_id} ${x.q}개${withConfirm&&closed?' 확정 '+_won(x.fix)+'원':''}`)}
+   catch(e){fails.push(`${x.r.part} #${x.line.line_id}: ${String(e.message||e).slice(0,60)}`)}
+  }
+  if(upRows.length)await MESDB.table('order_lines').upsert(upRows,'line_id');
+  await ctxAfter(job.job,`${procName(c)} ${withConfirm?'입고+확정':'입고'} ${done.length}건: ${done.join(', ')}`+(fails.length?` · 실패 ${fails.length}건: ${fails.join(' / ')}`:'')+(withConfirm&&openLeft?' — 잔량이 남은 건은 입고만 처리됐습니다.':''));
+ }catch(e){msg('입고 실패: '+String(e.message||e).slice(0,120));if(b){b.disabled=false;b.textContent=b0}}
 }
 /* v177: 이 창의 발주취소·입고취소·완료취소는 자체 확인문(품번·공정·업체·수량)을 띄우므로 공용 삭제확인창(mes_ctx)은 건너뛴다 */
 (function(){try{const opt=window.MES_CTX_OPT||{};const mine=/ctxOrderCancel|ctxRecvCancel|ctxRecvCancelLine|ctxRoundCancel|ctxConfirmCancel|ctxHouseUndo/;const prev=opt.noGuard;
@@ -1317,6 +1367,7 @@ async function ctxReceiveNow(withConfirm){
  const {r,i,c,o,job}=CTX;const l=o.line||{};
  if(!l.line_id)return msg('발주 라인을 찾을 수 없습니다. [새로고침] 후 다시 시도하세요.');
  if(!_online())return msg('DB 미연결 - 입고 처리를 할 수 없습니다.');
+ if(CTX.rcv)return ctxReceiveMany(withConfirm);   /* v326: 체크한 품번 함께 입고(표) */
  const ord=_n(l.order_qty)||1,got=_n(l.receipt_qty),rem=Math.max(ord-got,0),q=_n(_v('cxInQty'));
  if(!(q>0))return msg('입고수량을 입력하세요.');
  if(q>rem)return msg(`잔량 ${rem}을 초과했습니다.`);
