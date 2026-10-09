@@ -296,7 +296,7 @@ function close() { const m = $('oxMask'), p = $('oxPop'); if (m) m.classList.rem
 function open(ev, title, kind, bodyHtml, footBtns) {
   ensureUI();
   const p = $('oxPop');
-  p.style.width = /id="oxBt"/.test(bodyHtml) ? '640px' : '';
+  p.style.width = /id="oxBt"|id="oxCf"/.test(bodyHtml) ? '680px' : '';
   $('oxTitle').textContent = title;
   $('oxHead').className = 'ch ' + (kind || '');
   $('oxBody').innerHTML = bodyHtml;
@@ -649,7 +649,7 @@ const sheetBtn = l => ({ t: '🧾 발주서', title: '이 발주건이 포함된
 const bN = () => ((CTX && CTX.batchIn) || []).reduce((n, x) => n + x.lines.length, 0);
 const cN = () => ((CTX && CTX.batchCfm) || []).reduce((n, x) => n + x.lines.length, 0);
 function formReceive(ev, l) {
-  const { b } = CTX; CTX.line = l;
+  const { b } = CTX; CTX.line = l; if (ev && ev.clientX != null) CTX.ev = { clientX: ev.clientX, clientY: ev.clientY };
   const ord = Number(l.order_qty) || 0, got = Number(l.receipt_qty) || 0;
   const rem = Math.max(ord - got, 0) || ord;
   open(ev, `${b.part} — 입고`, 'k-in', headHtml() + `
@@ -728,43 +728,97 @@ async function doReceive(withConfirm) {
   const ord = Number(l.order_qty) || 0;
   if (ord && q > ord && !confirm(`발주수량 ${ord} 보다 많습니다. 그래도 입고 처리할까요?`)) return;
   const price = _n(_v('oxInPrice')), amt = _n(_v('oxInAmt'));
-  const btn = $(withConfirm ? 'oxGo2' : 'oxGo'), b0 = btn ? btn.textContent : '';
+  const rate = withConfirm ? _n(_v('oxInRate')) : 0;
+  const fixMain = withConfirm ? (_n(_v('oxInFix')) || Math.round((amt || _n(l.quote_price)) * (1 - rate / 100))) : 0;
+  const main = { b, line: l, q, price, kg: CFG.useWeight ? _n(_v('oxInWt')) : 0, amt, fix: fixMain,
+    date: _v('oxInDate') || T0(), remark: (_v('oxInRemark') || '').trim() };
+  /* v169: 체크한 품번의 발주 라인도 같은 날짜로 입고 — 수량은 각 잔량, 단가·중량은 각 발주값 */
+  const extras = [];
+  for (const x of (CTX.batchIn || [])) for (const el of x.lines) {
+    if (Number(el.line_id) === Number(l.line_id)) continue;
+    const eo = Number(el.order_qty) || 0, eg = Number(el.receipt_qty) || 0, eq = Math.max(eo - eg, 0) || eo || 1;
+    const ep = _n(el.unit_price), ow = Number(el.order_weight) || 0;
+    const ew = CFG.useWeight ? Math.round(((ow && eo) ? ow / eo * eq : autoKg(x.b.spec, eq)) * 100) / 100 : 0;
+    const ea = Math.round(ep * (ew || eq));
+    extras.push({ b: x.b, line: el, q: eq, price: ep, kg: ew, amt: ea, ow, eo, fix: Math.round((ea || _n(el.quote_price)) * (1 - rate / 100)) });
+  }
+  /* v319: 입고+확정을 여러 건 함께 할 때는 품번별 확정가를 따로 받는 창을 먼저 연다 */
+  if (withConfirm && extras.length) return formConfirmMany(main, extras, rate);
+  return execReceive(main, extras, withConfirm, rate, withConfirm ? 'oxGo2' : 'oxGo');
+}
+/* v319: 입고(+확정) 실행 — main·extras 에 적힌 품번별 수량·단가·금액·확정가 그대로 */
+async function execReceive(main, extras, withConfirm, rate, btnId) {
+  const { b, line: l } = main;
+  const btn = $(btnId), b0 = btn ? btn.textContent : '';
   if (btn) { btn.disabled = true; btn.textContent = '처리 중…'; }
+  const rateOf = (amt, fix) => amt ? Number(((1 - fix / amt) * 100).toFixed(2)) : rate;
   try {
     const row = {
       line_id: Number(l.line_id), status: '입고',
-      receipt_qty: q, receipt_date: _v('oxInDate') || T0(),
-      receipt_weight: (CFG.useWeight ? _n(_v('oxInWt')) : 0) || null,
-      unit_price: price || null, receipt_amount: amt || null,
-      remark: withCycleRemark((_v('oxInRemark') || '').trim(), cycleOf(l) || cycleIdFor(b.part)),
+      receipt_qty: main.q, receipt_date: main.date,
+      receipt_weight: (CFG.useWeight ? main.kg : 0) || null,
+      unit_price: main.price || null, receipt_amount: main.amt || null,
+      remark: withCycleRemark(main.remark, cycleOf(l) || cycleIdFor(b.part)),
       updated_at: new Date().toISOString()
     };
-    /* v201: 입고+확정 — 입고 창의 확정가/네고율로 확정 (함께 입고 품번은 같은 네고율을 각 입고금액에) */
-    const rate = withConfirm ? _n(_v('oxInRate')) : 0;
-    const fixMain = withConfirm ? (_n(_v('oxInFix')) || Math.round((amt || _n(l.quote_price)) * (1 - rate / 100))) : 0;
-    if (withConfirm) { row.status = '입고확정'; row.confirm_date = row.receipt_date; row.confirm_price = fixMain || null; row.nego_rate = rate; }
-    /* v169: 체크한 품번의 발주 라인도 같은 날짜로 입고 — 수량은 각 잔량, 단가·중량은 각 발주값 */
+    if (withConfirm) { row.status = '입고확정'; row.confirm_date = row.receipt_date; row.confirm_price = main.fix || null; row.nego_rate = rateOf(main.amt || _n(l.quote_price), main.fix); }
     const rows = [row], done = [];
-    for (const x of (CTX.batchIn || [])) for (const el of x.lines) {
-      if (Number(el.line_id) === Number(l.line_id)) continue;
-      const eo = Number(el.order_qty) || 0, eg = Number(el.receipt_qty) || 0, eq = Math.max(eo - eg, 0) || eo || 1;
-      const ep = _n(el.unit_price), ow = Number(el.order_weight) || 0;
-      const ew = CFG.useWeight ? Math.round(((ow && eo) ? ow / eo * eq : autoKg(x.b.spec, eq)) * 100) / 100 : 0;
-      const ea = Math.round(ep * (ew || eq));
-      const r2 = { line_id: Number(el.line_id), status: '입고', receipt_qty: eq, receipt_date: row.receipt_date,
-        receipt_weight: ew || null, unit_price: ep || null, receipt_amount: ea || null, updated_at: row.updated_at };
-      if (withConfirm) { r2.status = '입고확정'; r2.confirm_date = row.receipt_date; r2.confirm_price = Math.round((ea || _n(el.quote_price)) * (1 - rate / 100)) || null; r2.nego_rate = rate; }
-      rows.push(r2); done.push(`${x.b.part} ${eq}개`);
+    for (const e of extras) {
+      const r2 = { line_id: Number(e.line.line_id), status: '입고', receipt_qty: e.q, receipt_date: row.receipt_date,
+        receipt_weight: e.kg || null, unit_price: e.price || null, receipt_amount: e.amt || null, updated_at: row.updated_at };
+      if (withConfirm) { r2.status = '입고확정'; r2.confirm_date = row.receipt_date; r2.confirm_price = e.fix || null; r2.nego_rate = rateOf(e.amt || _n(e.line.quote_price), e.fix); }
+      rows.push(r2); done.push(`${e.b.part} ${e.q}개` + (withConfirm ? ` ${_won(e.fix)}원` : ''));
     }
     await MESDB.table('order_lines').upsert(rows, 'line_id');
     const more = done.length ? ` · 함께 ${withConfirm ? '입고확정' : '입고'} ${done.length}건: ${done.join(', ')}` : '';
     await after(withConfirm
-      ? `${b.part} ${l.vendor_name || ''} 입고 ${q}개 + 입고확정 (확정가 ${_won(row.confirm_price)}원, 네고 ${rate}%) — 제조원가에 반영됩니다.` + more
-      : `${b.part} ${l.vendor_name || ''} 입고 ${q}개 처리 — 입고확정(네고·확정가)은 다시 우클릭하세요.` + more);
+      ? `${b.part} ${l.vendor_name || ''} 입고 ${main.q}개 + 입고확정 (확정가 ${_won(row.confirm_price)}원, 네고 ${row.nego_rate}%) — 제조원가에 반영됩니다.` + more
+      : `${b.part} ${l.vendor_name || ''} 입고 ${main.q}개 처리 — 입고확정(네고·확정가)은 다시 우클릭하세요.` + more);
   } catch (e) {
     say('입고 실패: ' + String(e.message || e).slice(0, 120));
     if (btn) { btn.disabled = false; btn.textContent = b0; }
   }
+}
+/* v319: 여러 건 입고+확정 — 품번별 입고수량·입고단가·확정가 입력 창 */
+function formConfirmMany(main, extras, rate) {
+  if (!CTX) CTX = { b: main.b, line: main.line, job: curJob() || {} };
+  CTX.cfm = { main, extras, rate };
+  const all = [main, ...extras];
+  const html = `<div class="sub"><b>${_esc((CTX.job && CTX.job.job) || '')}</b> · 입고+확정 <b>${all.length}건</b> — 품번별 <b>입고수량 · 입고단가 · 확정가</b>를 확인하거나 고치세요.
+    확정가를 비우면 입고금액 × (1 − 네고율 ${rate}%)로 넣습니다.</div>
+   <table class="ln bt" id="oxCf"><thead><tr><th>품번</th><th>부품명</th><th>업체</th><th style="width:54px">입고수량</th><th style="width:84px">입고단가</th><th style="width:88px">입고금액</th><th style="width:88px">확정가</th></tr></thead><tbody>${
+    all.map((e, k) => `<tr data-k="${k}"><td>${_esc(e.b.part)}</td><td>${_esc(e.b.name || '')}</td><td>${_esc(e.line.vendor_name || '')}</td>
+      <td><input class="r cq" value="${e.q}" inputmode="numeric"></td><td><input class="r cp" value="${_w0(e.price)}" placeholder="예: 45,000" inputmode="numeric"></td>
+      <td><input class="r ca" value="${_w0(e.amt)}" readonly></td><td><input class="r cf" value="${_w0(e.fix)}" placeholder="예: 42,750" inputmode="numeric"></td></tr>`).join('')}</tbody>
+    <tfoot><tr><th colspan="5" class="r">합계</th><th class="r" id="oxCfA"></th><th class="r" id="oxCfF"></th></tr></tfoot></table>
+   <div class="note">입고일 <b>${_esc(main.date)}</b> · 기본 네고율 ${rate}% · 확정가를 고치면 그 건의 네고율은 자동으로 맞춰집니다. 확정가가 제조원가에 반영됩니다.</div>`;
+  open(CTX.ev || null, `${main.b.part} 외 ${extras.length}건 — 입고+확정 (확정가 입력)`, 'k-in', html,
+    [{ t: `▣ 입고+확정 실행 (${all.length}건)`, cls: 'go', id: 'oxGo2', fn: cfmRun },
+     { t: '← 돌아가기', title: '입고 창으로 돌아갑니다', fn: e => formReceive(e, main.line) },
+     { t: '닫기', fn: close }]);
+  const t = $('oxCf');
+  const calc = tr => { const k = Number(tr.dataset.k), e = all[k]; if (!e) return;
+    const q = Math.max(1, Math.round(_n(tr.querySelector('.cq').value))), pr = _n(tr.querySelector('.cp').value);
+    if (CFG.useWeight && k > 0) e.kg = Math.round(((e.ow && e.eo) ? e.ow / e.eo * q : autoKg(e.b.spec, q)) * 100) / 100;
+    e.q = q; e.price = pr; e.amt = Math.round(pr * ((CFG.useWeight && e.kg) || q));
+    tr.querySelector('.cq').value = q; tr.querySelector('.cp').value = _w0(pr); tr.querySelector('.ca').value = _w0(e.amt);
+    const f = tr.querySelector('.cf'); if (f.dataset.manual !== '1') { e.fix = Math.round((e.amt || _n(e.line.quote_price)) * (1 - rate / 100)); f.value = _w0(e.fix); } };
+  const tot = () => { let a = 0, f = 0; all.forEach(e => { a += e.amt || 0; f += e.fix || 0; }); $('oxCfA').textContent = _won(a); $('oxCfF').textContent = _won(f); };
+  t.querySelectorAll('.cq,.cp').forEach(i => i.onchange = () => { calc(i.closest('tr')); tot(); });
+  t.querySelectorAll('.cf').forEach(i => i.onchange = () => { const tr = i.closest('tr'), e = all[Number(tr.dataset.k)]; i.dataset.manual = '1'; e.fix = _n(i.value); i.value = _w0(e.fix); tot(); });
+  tot();
+  return false;
+}
+function cfmRun() {
+  const c = CTX && CTX.cfm; if (!c) return;
+  const all = [c.main, ...c.extras];
+  const t = $('oxCf'); if (t) t.querySelectorAll('tbody tr').forEach(tr => { const e = all[Number(tr.dataset.k)]; if (!e) return;
+    e.q = Math.max(1, Math.round(_n(tr.querySelector('.cq').value))); e.price = _n(tr.querySelector('.cp').value);
+    e.amt = Math.round(e.price * ((CFG.useWeight && e.kg) || e.q));
+    const f = _n(tr.querySelector('.cf').value); e.fix = f || Math.round((e.amt || _n(e.line.quote_price)) * (1 - c.rate / 100)); });
+  const zero = all.filter(e => !e.fix).map(e => e.b.part);
+  if (zero.length && !confirm(`확정가가 0원인 품번이 있습니다: ${zero.join(', ')}\n제조원가에 0원으로 반영됩니다. 계속할까요?`)) return;
+  return execReceive(c.main, c.extras, true, c.rate, 'oxGo2');
 }
 
 async function doOrderCancel() {
@@ -1014,5 +1068,5 @@ function init(opt) {
   setTimeout(refresh, 1500);
 }
 
-window.MESORDCTX = { init, refresh, loadLines, partState, close, startNewCycle, activeCycleRows, cycleIdFor, withCycleRemark, newCycleId, rowIdx };
+window.MESORDCTX = { init, refresh, loadLines, partState, close, startNewCycle, activeCycleRows, cycleIdFor, withCycleRemark, newCycleId, rowIdx, confirmMany: formConfirmMany };
 })();
