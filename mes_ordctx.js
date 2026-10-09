@@ -37,6 +37,7 @@ const T0    = () => new Date().toISOString().slice(0, 10);
 const _esc  = v => String(v ?? '').replace(/[&<>"]/g, x => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[x]));
 const _n    = v => Number(String(v ?? '').replace(/[^0-9.\-]/g, '')) || 0;
 const _won  = v => _n(v).toLocaleString('ko-KR');
+const _w0   = v => (_n(v) > 0 ? _won(v) : '');   /* v316: 0 이면 빈칸 (예시만 보임) */
 const _dt   = v => String(v || '').slice(0, 10);
 const _online = () => !!(window.MESDB && window.MESDB.online);
 const $  = id => document.getElementById(id);
@@ -659,7 +660,7 @@ function formReceive(ev, l) {
    <div class="g">
     <label>입고수량</label><input id="oxInQty" class="r" value="${rem}" inputmode="numeric">
     <label>입고일</label><input id="oxInDate" type="date" value="${T0()}">
-    <label>입고단가</label><input id="oxInPrice" class="r" value="${_won(l.unit_price)}" inputmode="numeric">
+    <label>입고단가</label><input id="oxInPrice" class="r" value="${_w0(l.unit_price)}" placeholder="예: 45,000" inputmode="numeric">
     ${CFG.useWeight
       ? '<label>중량(kg)</label><span class="wtbox">' +
         '<input id="oxInWt" class="r" inputmode="decimal" title="발주 중량을 입고수량에 맞춰 환산합니다. 실측 중량이 다르면 직접 고쳐 넣으세요.">' +
@@ -667,8 +668,8 @@ function formReceive(ev, l) {
       : '<label></label><span></span>'}
     <label>입고금액</label><input id="oxInAmt" class="r" readonly>
     <label>비고</label><input id="oxInRemark" class="full" placeholder="선택" value="${_esc(cleanCycleRemark(l.remark))}">
-    <label title="[입고+확정]일 때만 쓰입니다">네고율(%)</label><input id="oxInRate" class="r" value="0" inputmode="decimal" title="[입고+확정]일 때 적용 — 입고금액(매입가)에서 깎는 비율. 함께 입고하는 품번에도 같은 비율">
-    <label title="[입고+확정]일 때만 쓰입니다">확정가</label><input id="oxInFix" class="r" inputmode="numeric" title="[입고+확정]일 때 제조원가에 반영되는 금액">
+    <label title="[입고+확정]일 때만 쓰입니다">네고율(%)</label><input id="oxInRate" class="r" placeholder="예: 5" inputmode="decimal" title="[입고+확정]일 때 적용 — 입고금액(매입가)에서 깎는 비율. 함께 입고하는 품번에도 같은 비율">
+    <label title="[입고+확정]일 때만 쓰입니다">확정가</label><input id="oxInFix" class="r" placeholder="예: 42,750" inputmode="numeric" title="[입고+확정]일 때 제조원가에 반영되는 금액">
    </div>
    ${(() => { const bt = batchFor('발주'); const ok = bt.filter(x => x.lines.length), skip = bt.filter(x => !x.lines.length).map(x => x.b.part);
       const ex = (CTX.extraLines || []).filter(x => x && x.status === '발주'); if (ex.length) ok.unshift({ b, lines: ex });
@@ -698,14 +699,14 @@ function formReceive(ev, l) {
     }
     $('oxInPrice').value = p ? _won(p) : '';
     const amt = Math.round(p * (w || q || 0));
-    $('oxInAmt').value = _won(amt);
+    $('oxInAmt').value = _w0(amt);
     /* v201: 확정가 = 입고금액 × (1 − 네고율). 확정가를 손으로 고치면 네고율이 따라온다 */
     const fx = $('oxInFix'), rt = $('oxInRate');
-    if (fx && rt && fx.dataset.manual !== '1') fx.value = _won(Math.round(amt * (1 - _n(rt.value) / 100)));
+    if (fx && rt && fx.dataset.manual !== '1') fx.value = _w0(Math.round(amt * (1 - _n(rt.value) / 100)));
   };
   { const fx = $('oxInFix'), rt = $('oxInRate');
     if (rt) rt.onchange = () => { if (fx) fx.dataset.manual = ''; f(); };
-    if (fx) fx.onchange = () => { const amt = _n(_v('oxInAmt')); fx.dataset.manual = '1'; fx.value = _won(_n(fx.value)); if (rt) rt.value = amt ? ((1 - _n(fx.value) / amt) * 100).toFixed(1) : '0'; }; }
+    if (fx) fx.onchange = () => { const amt = _n(_v('oxInAmt')); fx.dataset.manual = '1'; fx.value = _w0(fx.value); if (rt) { const r0 = amt ? (1 - _n(fx.value) / amt) * 100 : 0; rt.value = r0 ? r0.toFixed(1) : ''; } }; }
   if (wi) {
     wi.oninput  = () => { wi.dataset.manual = '1'; wi.classList.add('manual'); };
     wi.onchange = () => { wi.dataset.manual = '1'; const v = _n(wi.value); wi.value = v ? v.toFixed(2) : ''; f(); };
