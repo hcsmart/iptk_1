@@ -118,6 +118,14 @@ const lkey = (p, c) => String(p || '') + '|' + (Number(c) || 1);
 const linesOf = b => LINES.get(typeof b === 'object' && b ? lkey(b.part, b.cyc || cycNo(b.part)) : lkey(b, cycNo(b))) || [];
 const bCyc = b => (typeof b === 'object' && b && b.cyc) ? Number(b.cyc) : cycNo(typeof b === 'object' && b ? b.part : b);
 const isOldCycle = b => bCyc(b) < cycNo(typeof b === 'object' && b ? b.part : b);
+/* v311: 화면 줄 ↔ 자재표 행을 줄 번호 대신 품번+차수로 맞춘다.
+   차수 전개(expandBom)로 j.bom 이 바뀐 뒤 다시 그리기 전에 우클릭하면 옆 줄(다른 금형번호)이 열리던 문제 */
+const rowIdx = (tr, fallback) => {
+  const j = curJob(); if (!j || !tr || !tr.dataset || !tr.dataset.oxPart) return fallback;
+  const p = tr.dataset.oxPart, c = Number(tr.dataset.oxCyc) || 1;
+  const k = (j.bom || []).findIndex(x => x && x.part === p && bCyc(x) === c);
+  return k >= 0 ? k : fallback;
+};
 const curJob  = () => (GV('jobView') || [])[GV('jobIdx')] || null;
 const vendorList = () => GV('VENDORS') || [];
 
@@ -143,7 +151,7 @@ function checkedBoms() {
   const j = curJob(); if (!j || !j.bom) return [];
   const tb = $('bomBody'); if (!tb) return [];
   return [...tb.querySelectorAll('input[type=checkbox][data-i]:checked:not(:disabled)')]
-    .map(cb => ({ i: Number(cb.dataset.i), b: j.bom[Number(cb.dataset.i)] })).filter(x => x.b);
+    .map(cb => { const i = rowIdx(cb.closest('tr'), Number(cb.dataset.i)); return { i, b: j.bom[i] }; }).filter(x => x.b);
 }
 /* 일괄 대상 : 상태별로 걸러 {b, lines} 로 */
 function batchFor(status) {
@@ -904,6 +912,7 @@ function decorate() {
   tb.querySelectorAll('input[type=checkbox][data-i]').forEach(cb => {
     const i = Number(cb.dataset.i), b = j.bom[i]; if (!b) return;
     const tr = cb.closest('tr'); if (!tr) return;
+    tr.dataset.oxPart = b.part; tr.dataset.oxCyc = bCyc(b);   /* v311: 줄의 품번·차수 (rowIdx 용) */
     let td = tr.querySelector('td.ox');
     if (!td) { td = document.createElement('td'); td.className = 'ox'; tr.insertBefore(td, tr.cells[tr.cells.length - 1]); }
     if (!ready) { td.className = 'ox'; td.textContent = '…'; td.title = '발주 내역을 불러오는 중'; return; }
@@ -917,11 +926,11 @@ function decorate() {
       ? '우클릭 → 발주 (업체·수량·단가를 넣고 즉시 등록)'
       : `${a.length}건 · ` + a.map(l => `${l.vendor_name || ''} ${Number(l.order_qty) || 0}개 ${l.status}`).join(' / ')) +
       '\n우클릭(또는 더블클릭) → 발주 · 입고 · 입고확정 · 취소';
-    tr.oncontextmenu = ev => openPart(ev, i);
-    tr.ondblclick    = ev => openPart(ev, i);
+    tr.oncontextmenu = ev => openPart(ev, rowIdx(tr, i));
+    tr.ondblclick    = ev => openPart(ev, rowIdx(tr, i));
     /* 모바일 : 길게 누르기 */
     let tm = null;
-    tr.ontouchstart = ev => { tm = setTimeout(() => openPart({ preventDefault(){}, stopPropagation(){}, clientX: ev.touches[0].clientX, clientY: ev.touches[0].clientY }, i), 500); };
+    tr.ontouchstart = ev => { tm = setTimeout(() => openPart({ preventDefault(){}, stopPropagation(){}, clientX: ev.touches[0].clientX, clientY: ev.touches[0].clientY }, rowIdx(tr, i)), 500); };
     tr.ontouchend = tr.ontouchmove = () => { clearTimeout(tm); };
   });
 }
@@ -994,5 +1003,5 @@ function init(opt) {
   setTimeout(refresh, 1500);
 }
 
-window.MESORDCTX = { init, refresh, loadLines, partState, close, startNewCycle, activeCycleRows, cycleIdFor, withCycleRemark, newCycleId };
+window.MESORDCTX = { init, refresh, loadLines, partState, close, startNewCycle, activeCycleRows, cycleIdFor, withCycleRemark, newCycleId, rowIdx };
 })();
