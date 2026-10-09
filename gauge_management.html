@@ -101,5 +101,5 @@ window.MES={search,add,delete:remove,save,exportCsv,setMessage:msg};render();
 <script>MESDB.master({page:"gauge_management",table:"gauges",pk:"code",
   map:{"code": "gauge_code", "name": "gauge_name", "gtype": "gauge_type", "range": "spec_range", "reso": "resolution", "maker": "maker", "serial": "serial_no", "loc": "location", "owner": "owner", "cycle": {"col": "cycle_months", "type": "num"}, "lastcal": {"col": "last_cal_date", "type": "text"}, "nextcal": {"col": "next_cal_date", "type": "text"}, "gstatus": "gauge_status", "use": {"col": "is_active", "type": "ynbool"}, "remark": "remark"},get:()=>data,render:()=>{view=[...data];render()}});
 </script>
-<script src="mes_ctx.js?v=169"></script>
+<script src="mes_ctx.js?v=306"></script>
 </body></html>

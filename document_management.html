@@ -101,5 +101,5 @@ window.MES={search,add,delete:remove,save,exportCsv,setMessage:msg};render();
 <script>MESDB.master({page:"document_management",table:"documents",pk:"dno",
   map:{"dno": "doc_no", "dname": "doc_name", "dtype": "doc_type", "dclass": "doc_class", "dept": "department", "owner": "owner", "rev": "current_rev", "rdate": {"col": "rev_date", "type": "text"}, "enact": {"col": "enact_date", "type": "text"}, "cycle": {"col": "review_cycle_months", "type": "num"}, "review": {"col": "next_review_date", "type": "text"}, "status": "doc_status", "loc": "location", "url": "file_url", "remark": "remark"},get:()=>data,render:()=>{view=[...data];render()}});
 </script>
-<script src="mes_ctx.js?v=169"></script>
+<script src="mes_ctx.js?v=306"></script>
 </body></html>

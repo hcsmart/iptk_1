@@ -111,5 +111,5 @@ document.addEventListener('change',e=>{if(e.target.id==='ano')makeFno()});
 <script>MESDB.master({page:"audit_finding_input",table:"quality_audit_findings",pk:"fno",
   map:{"fno": "finding_no", "ano": "audit_no", "item": "item_no", "area": "finding_area", "grade": "finding_grade", "req": "requirement", "desc": "description", "evid": "evidence", "owner": "owner", "due": {"col": "due_date", "type": "text"}, "plan": "action_plan", "done": {"col": "done_date", "type": "text"}, "verify": "verify_result", "status": "finding_status", "car": "car_no", "remark": "remark"},get:()=>data,render:()=>{view=[...data];render()}});
 fillRef('ano','quality_audits','audit_no.desc','audit_no','audit_type');</script>
-<script src="mes_ctx.js?v=169"></script>
+<script src="mes_ctx.js?v=306"></script>
 </body></html>

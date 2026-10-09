@@ -101,5 +101,5 @@ window.MES={search,add,delete:remove,save,exportCsv,setMessage:msg};render();
 <script>MESDB.master({page:"corrective_action_input",table:"corrective_actions",pk:"carno",
   map:{"carno": "car_no", "ncno": "nc_no", "fno": "finding_no", "issuedate": {"col": "issue_date", "type": "text"}, "cause": "cause_analysis", "root": "root_cause", "plan": "action_plan", "owner": "action_owner", "due": {"col": "due_date", "type": "text"}, "done": {"col": "done_date", "type": "text"}, "verify": "verification", "effective": {"col": "is_effective", "type": "ynbool"}, "deploy": "horizontal_deploy", "status": "car_status", "remark": "remark"},get:()=>data,render:()=>{view=[...data];render()}});
 fillRef('ncno','nonconformances','nc_no','nc_no','part_name');fillRef('fno','quality_audit_findings','finding_no','finding_no','finding_grade');</script>
-<script src="mes_ctx.js?v=169"></script>
+<script src="mes_ctx.js?v=306"></script>
 </body></html>

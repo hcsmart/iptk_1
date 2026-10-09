@@ -101,5 +101,5 @@ window.MES={search,add,delete:remove,save,exportCsv,setMessage:msg};render();
 <script>MESDB.master({page:"quality_audit_input",table:"quality_audits",pk:"ano",
   map:{"ano": "audit_no", "dir": "audit_direction", "atype": "audit_type", "adate": {"col": "audit_date", "type": "text"}, "edate": {"col": "audit_end_date", "type": "text"}, "org": "auditor_org", "auditor": "auditor_name", "vendor": "vendor_name", "lead": "our_lead", "scope": "audit_scope", "std": "standard_name", "score": {"col": "score", "type": "num"}, "maxscore": {"col": "max_score", "type": "num"}, "grade": "grade", "result": "audit_result", "next": {"col": "next_audit_date", "type": "text"}, "report": "report_no", "url": "file_url", "status": "audit_status", "remark": "remark"},get:()=>data,render:()=>{view=[...data];render()}});
 </script>
-<script src="mes_ctx.js?v=169"></script>
+<script src="mes_ctx.js?v=306"></script>
 </body></html>

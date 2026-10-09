@@ -706,7 +706,7 @@ window.MESCTX={confirm:dlgConfirm};
 })();
 
 /* ── v72→v81: 배치 편집 (전 화면 공용) ────────────────────────────────
- * 마스터가 입력칸 또는 리스트제목(패널 머리글)을 0.6초 길게 누르면 편집모드.
+ * (v306) 길게 누르기 진입은 삭제됨. 표 머리글 3회 클릭으로만 편집모드(열 폭)에 들어간다.
  *   [입력칸]     오른쪽 주황 핸들 = 폭 · 칸 드래그해 다른 칸에 놓기 = 자리 바꿈
  *                v84: 줄마다 grid 가 나뉜 폼(.formgrid 등)에서도 줄을 넘나들며 바꿀 수 있다
  *   [리스트제목] 오른쪽 핸들 = 폭 · 아래쪽 핸들 = 높이 · 제목 드래그해 다른
@@ -1094,16 +1094,8 @@ window.MESCTX={confirm:dlgConfirm};
    return;
   }
   if(!isMaster())return;
-  /* v79: 그리드가 아닌 입력바(flex 등)에서도 폭 조절은 되게 한다. 자리 이동만 그리드 전용 */
-  if(el&&el.id){
-   press={el,x:e.clientX,y:e.clientY,t:setTimeout(()=>{press=null;enter(el,false);
-    try{el.blur();if(el.__mescbBox)el.__mescbBox.inp.blur();document.activeElement&&document.activeElement.blur()}catch(x){}
-    const p=posOf(el);drag={mode:'move',el,x0:e.clientX,y0:e.clientY,px:p.x,py:p.y,moved:false,over:null,was:isFree(el)}},600)};return}
-  /* v81: 리스트제목 길게 누르기 → 블록(패널) 편집 */
-  if(bk){press={el:bk,x:e.clientX,y:e.clientY,t:setTimeout(()=>{press=null;enter(bk,true);
-    drag={mode:'bmove',el:bk,x0:e.clientX,y0:e.clientY,moved:false,over:null}},600)};return}
-  /* v107: 라벨 길게 누르기 → 단독 자유 이동 */
-  if(lb){press={el:lb,x:e.clientX,y:e.clientY,t:setTimeout(()=>{press=null;enter(lb,false);drag=labDrag(lb)},600)};return}
+  /* v306: 길게 누르기(0.6초) 편집모드 진입 삭제 — 입력칸·패널·라벨은 길게 눌러도 편집되지 않는다.
+     표 머리글 3회 연속 클릭(열 폭)만 남김 */
   /* v104: 표 머리글 → 열 폭 편집.
      v114: 진입을 길게 누르기에서 '3회 연속 클릭'으로 변경 — 머리글을 끌어 쓰는
      화면(가공계획등록 기준공정 열 등)에서 드래그와 길게 누르기가 겹치기 때문.

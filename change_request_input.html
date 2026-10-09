@@ -101,5 +101,5 @@ window.MES={search,add,delete:remove,save,exportCsv,setMessage:msg};render();
 <script>MESDB.master({page:"change_request_input",table:"change_requests",pk:"chno",
   map:{"chno": "change_no", "rdate": {"col": "request_date", "type": "text"}, "ctype": "change_type", "cclass": "change_class", "job": "job_no", "part": "part_no", "pname": "part_name", "vendor": "vendor_name", "before": "before_content", "after": "after_content", "reason": "reason", "effect": "effect_review", "requester": "requester", "approver": "approver", "adate": {"col": "approval_date", "type": "text"}, "customer": "customer_name", "notified": {"col": "customer_notified", "type": "ynbool"}, "ndate": {"col": "notify_date", "type": "text"}, "capno": "customer_approval_no", "cadate": {"col": "customer_approval_date", "type": "text"}, "apply": {"col": "apply_date", "type": "text"}, "status": "change_status", "remark": "remark"},get:()=>data,render:()=>{view=[...data];render()}});
 </script>
-<script src="mes_ctx.js?v=169"></script>
+<script src="mes_ctx.js?v=306"></script>
 </body></html>

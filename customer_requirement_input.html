@@ -101,5 +101,5 @@ window.MES={search,add,delete:remove,save,exportCsv,setMessage:msg};render();
 <script>MESDB.master({page:"customer_requirement_input",table:"customer_requirements",pk:"rno",
   map:{"rno": "req_no", "rdate": {"col": "receipt_date", "type": "text"}, "cust": "customer_name", "rtype": "req_type", "title": "req_title", "content": "req_content", "src": "source_doc", "job": "job_no", "mold": "mold_type", "receiver": "receiver", "result": "review_result", "reviewer": "reviewer", "rvdate": {"col": "review_date", "type": "text"}, "doc": "internal_doc_no", "deploy": {"col": "deploy_to_vendor", "type": "ynbool"}, "vendors": "deploy_vendors", "ddate": {"col": "deploy_date", "type": "text"}, "apply": {"col": "apply_date", "type": "text"}, "status": "req_status", "remark": "remark"},get:()=>data,render:()=>{view=[...data];render()}});
 fillRef('doc','documents','doc_no','doc_no','doc_name');</script>
-<script src="mes_ctx.js?v=169"></script>
+<script src="mes_ctx.js?v=306"></script>
 </body></html>

@@ -51,7 +51,7 @@ input.cell{width:100%;height:20px;border:1px solid #cbd4dc;padding:0 3px;text-al
         <div class="label">관리제번</div><input id="fJob" class="field" readonly><div class="label">공정</div><input id="fProc" class="field" readonly>
         <div class="label">협력업체</div><input id="fVen" class="field" readonly><div class="label">네고가</div><input id="fNego" class="field r" readonly>
         <div class="label">입고일</div><input id="fDate" class="field" type="date"><div class="label">진척률(%)</div><input id="fRate" class="field r" type="number" min="0" max="100" step="5" value="100">
-        <div class="label">입고금액</div><input id="fAmt" class="field r" type="number" min="0"><div class="label">검수자</div><input id="fInsp" class="field" value="권태윤">
+        <div class="label">입고금액</div><input id="fAmt" class="field r" type="number" min="0"><div class="label">검수자</div><input id="fInsp" class="field" list="dl_insp" autocomplete="off" placeholder="사원 선택/입력"><datalist id="dl_insp"></datalist>
         <div class="label">비고</div><input id="fRemark" class="wide field" placeholder="SET(조립) 입고 내용">
       </div></div>
     <div class="box"><div class="box-title">입고 이력</div><div class="tablewrap"><table>
@@ -142,6 +142,10 @@ function exportCsv(){const out=[['제번','공정','협력업체','입고일','�
 function msg(t){message.textContent=t}
 const FALLBACK_ORD=[];
 const FALLBACK_RCP=[];
+const me=()=>{try{const a=window.MES_AUTH||window.parent.MES_AUTH;if(!a)return '';const em=a.session&&a.session.user&&a.session.user.email;return a.name||a.user_name||(em?String(em).split('@')[0]:'')||''}catch(e){return ''}};
+/* v306: 검수자 = 사용자정보(사원) 목록에서 선택 — 사용중인 계정만 */
+async function fillInsp(){try{const us=await MESDB.table('users').select('select=name,user_id,is_active&order=name');const dl=document.getElementById('dl_insp');
+ if(dl)dl.innerHTML=(us||[]).filter(u=>u.name&&u.is_active===true&&u.user_id&&String(u.user_id)!=='hcsmart').map(u=>`<option value="${String(u.name).replace(/"/g,'&quot;')}">`).join('')}catch(e){}}
 async function load(){
  /* v39: 거래이력 초기화 상태에서 샘플이 남지 않도록 빈 배열로 시작 */
  ORD=[];RCP=[];
@@ -149,13 +153,15 @@ async function load(){
  if(window.MESDB&&MESDB.ready){try{await MESDB.ready}catch(e){}}
  if(window.MESDB&&MESDB.online){
   try{RCP=await MESDB.table('set_outsourcing_receipts').select('select=*&order=receipt_no')}catch(e){}
+  fillInsp();
  }
+ if(!fInsp.value)fInsp.value=me()||'권태윤';   /* v306: 기본 검수자 = 로그인 사용자 */
 search()}
 load();window.MES={search,save:receive,exportCsv,setMessage:msg};
 </script>
 <script src="mes_sample.js?v=169"></script><script src="mes_scene.js?v=67"></script><script src="mes_demo.js?v=67"></script><script src="mes_db.js?v=230"></script>
 <script>MESDB.lines({page:"set_outsourcing_receipt_input",category:"외주SET",statuses:[],map:{"seq": {"col": "line_id", "type": "num"}, "job_no": "job_no", "item_name": "item_name", "partner_name": "vendor_name", "process_code": "process_code", "process_name": "process_name", "order_date": {"col": "order_date", "type": "date"}, "expected_date": {"col": "required_date", "type": "date"}, "nego_price": {"col": "confirm_price", "type": "num"}, "quote_price": {"col": "quote_price", "type": "num"}, "progress_rate": {"col": "nego_rate", "type": "num"}, "receipt_date": {"col": "receipt_date", "type": "date"}},get:()=>ORD,render:()=>{fillVen();search()}});</script>
-<script src="mes_ctx.js?v=230"></script>
+<script src="mes_ctx.js?v=306"></script>
 <script>
 function sampleFill(){
   if(window.MESDEMO)return MESDEMO.run('set_outsourcing_receipt_input',{});
