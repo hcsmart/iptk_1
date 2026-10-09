@@ -215,7 +215,7 @@ table.ev td .dcell .wd.late{background:#ffe45c;color:#5a4400;font-weight:700}
 <footer class="foot"><button class="btn" onclick="save()">▤ 저장</button><button class="btn" onclick="clearForm()">✕ 삭제</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">관리제번을 고르면 수주정보가 채워지고, 저장하면 공정 제번(A~D 등) 모두에 같은 계획이 들어갑니다.</span></footer>
 </div>
 <datalist id="dl_job"></datalist><datalist id="dl_make"><option value="신규제작"><option value="수정"><option value="추가"><option value="보완"><option value="양산이관"></datalist><datalist id="dl_cust"></datalist><datalist id="dl_vd_mass"></datalist><datalist id="dl_item"></datalist><datalist id="dl_mold"></datalist><datalist id="dl_emp"></datalist><datalist id="dl_vd_design"></datalist><datalist id="dl_vd_mach"></datalist><datalist id="dl_vd_asm"></datalist>
-<script src="mes_lookup.js?v=296"></script><script>
+<script src="mes_lookup.js?v=299"></script><script>
 /* v68: 제번·고객사·아이템·금형타입·담당자를 기준정보 드롭다운으로 (하드코딩 seed 제거) */
 const AK=['design_internal_amount','design_external_amount','raw_material_amount','purchase_amount','machining_internal_amount','machining_external_amount','assembly_internal_amount','assembly_external_amount'];
 const num=v=>Number(String(v??'').replace(/[^0-9.-]/g,''))||0;
