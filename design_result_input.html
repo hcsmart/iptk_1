@@ -13,7 +13,7 @@
 .hint{margin-left:6px;padding:3px 9px;border:1px solid #c9d6e2;background:#eef4fa;border-radius:12px;color:#3d5163;font-size:11px}.hint b{color:#1d5da3}
 .panes{display:grid;grid-template-columns:.9fr 1.9fr;gap:6px;padding:7px 14px 0;flex:1;min-height:0}
 .pane{border:1px solid var(--line);display:flex;flex-direction:column;min-height:0;min-width:0}.pane .ph{height:26px;line-height:26px;text-align:center;font-weight:700;background:linear-gradient(#e9f1f8,#d3e1ee);border-bottom:1px solid var(--line2);display:flex;align-items:center;justify-content:center;gap:12px}
-.pane .ph .lg{font-weight:400;font-size:11px;color:#55677a;display:flex;gap:9px}.lg i{display:inline-block;width:10px;height:10px;margin-right:2px;vertical-align:-1px;border:1px solid #9aa}
+.pane .ph .lg{font-weight:400;font-size:11px;color:#55677a;display:inline-flex;align-items:center;gap:10px;vertical-align:middle}.lg>span{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}.lg i{display:inline-block;width:10px;height:10px;border:1px solid #9aa;flex:none}   /* v308: 범례 네모를 글자 가운데에 맞춤 */
 .pane .pb{flex:1;overflow:auto;min-height:0}
 table{border-collapse:collapse;width:100%}th,td{border-right:1px solid var(--line2);border-bottom:1px solid var(--line2);height:27px;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}th{position:sticky;top:0;z-index:2;background:linear-gradient(#e9f1f8,#d3e1ee);color:#405266;text-align:center;font-weight:700}
 .c{text-align:center}.r{text-align:right}
@@ -55,7 +55,7 @@ tr.all td{background:#fff9ea;font-weight:700}tr.all td.asm{background:#f3e3b8}tr
  </div>
  <div class="panes">
   <div class="pane"><div class="ph">제번리스트</div><div class="pb"><table><thead><tr><th style="width:110px">제번</th><th>품번</th><th style="width:84px">설계완료예정</th><th style="width:84px">T/O 예정</th><th style="width:60px">누적 h</th><th style="width:84px">설계비</th><th style="width:44px">검사</th></tr></thead><tbody id="jobBody"></tbody></table></div></div>
-  <div class="pane"><div class="ph">부품별 설계실적 <span class="lg"><i style="background:#efe0bf"></i>미등록 <i style="background:#cbb894"></i>실적 있음(누적 시간·설계비)</span></div>
+  <div class="pane"><div class="ph">부품별 설계실적 <span class="lg"><span><i style="background:#efe0bf"></i>미등록</span><span><i style="background:#cbb894"></i>실적 있음(누적 시간·설계비)</span></span></div>
    <div class="pb"><table><thead><tr><th style="width:30px"><input type="checkbox" id="chkAll" onclick="checkAll(this.checked)" title="전체선택/해제"></th><th style="width:34px">조</th><th style="width:100px">부품코드</th><th>부품명</th><th style="width:60px">소요수</th><th style="width:210px" id="thProc">설계</th><th style="width:130px">최근 작업</th></tr></thead><tbody id="partBody"></tbody></table></div></div>
  </div>
  <footer class="foot"><button class="btn" onclick="window.parent?.openScreen?.('설계실적조회')" title="설계·조립·검사 실적 목록">↗ 설계실적조회</button><button class="btn" onclick="exportCsv()">▤ EXCEL</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">제번을 선택하면 부품별 설계실적이 조회됩니다.</span></footer>
