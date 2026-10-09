@@ -141,6 +141,8 @@ tr.rdone td{color:#8b98a3}
 #routeBody tr.jhead .jcnt{margin-left:10px;color:#6b7f93;font-weight:400;font-size:11px}
 .vftag{display:inline-block;margin-left:4px;padding:3px 9px;border-radius:12px;background:#fff3d6;border:1px solid #e3c98a;color:#7a5200;cursor:pointer;white-space:nowrap}
 .vftag:hover{background:#ffe9b3}
+/* v317: 부품 행 앞 5칸(조·그림·부품코드·부품명·소요수)은 클릭하면 그림보드 */
+#routeBody tr[data-ri]>td:nth-child(n+2):nth-child(-n+6){cursor:pointer}#routeBody tr[data-ri]>td:nth-child(n+2):nth-child(-n+6):hover{box-shadow:inset 0 0 0 1px #2f75b5}
 </style>
 </head>
 <body>
@@ -153,7 +155,7 @@ tr.rdone td{color:#8b98a3}
     <span class="label">업체</span><input id="venF" class="field" style="width:130px" placeholder="업체 입력/선택" list="venDL" autocomplete="off"><datalist id="venDL"></datalist>
     <span class="label">최종완료</span><select id="doneF" class="field" onchange="renderRoutes()" title="전 공정이 입고된 줄(이전 차수 포함)을 숨기거나 보입니다"><option value="x">제외</option><option value="i">포함</option></select>
     <button class="btn" onclick="doQuery()" title="제번·품번·관리제번을 비우고 누르면 전체 부품, 업체를 넣으면 그 업체에 발주된 부품만">⌕ 조회</button><span id="vfTag" class="vftag" style="display:none" onclick="vfClear()" title="눌러서 업체 필터 해제"></span>
-    <button class="btn" id="btnRefresh" onclick="refreshAll()" title="DB에서 제번·부품별 가공공정을 다시 불러옵니다 (다른 화면의 발주·입고 반영)">⟳ 새로고침</button><button class="btn" onclick="cycOpen()" title="이미 가공 진행 중인 부품을 공정1부터 다시 — 기존 발주·입고 이력은 이전 차수로 남고 새 차수(빈 공정 칸)로 시작합니다. 부품 행을 체크하면 그 부품만 고릅니다" style="color:#7a4a12;font-weight:700">↻ 신규진행</button><button class="btn" onclick="cycManage()" title="차수 되돌리기(잘못 누른 신규진행 취소) · 차수 종료(미입고 발주를 지우고 닫기)">⚙ 차수 관리</button><span class="ctxhint" title="공정 칸에서 마우스 오른쪽 버튼을 누르면 상태에 맞는 처리 창이 열립니다 (더블클릭도 같은 창).&#10;입고·완료 칸에서는 회차별 입고취소 · 입고 전체취소 · 확정취소, 같은 업체 발주건 함께 입고(다중입고)가 됩니다.&#10;연속 공정을 한 업체에 맡길 때는 마지막 공정 칸을 우클릭하면 그 사이 공정이 한꺼번에 발주됩니다.&#10;부품 그림 칸을 누르면 그림보드가 열려 공정 순서 끌어 바꾸기, 기준공정 불러오기, 가공계획 적용을 할 수 있습니다.">※ <b style="color:#7a4a12">외주 칸</b> 우클릭 → 발주 · 입고 · 확정 · 묶음 · <b>취소</b> <b>|</b> <b style="color:#8a6d3b">사내 칸</b> 우클릭 → <b>가공완료 등록</b> <b>|</b> 부품 행(그림·부품코드·부품명) 우클릭 또는 그림 클릭 → <b>그림보드(공정 순서·기준공정·QR)</b></span>
+    <button class="btn" id="btnRefresh" onclick="refreshAll()" title="DB에서 제번·부품별 가공공정을 다시 불러옵니다 (다른 화면의 발주·입고 반영)">⟳ 새로고침</button><button class="btn" onclick="cycOpen()" title="이미 가공 진행 중인 부품을 공정1부터 다시 — 기존 발주·입고 이력은 이전 차수로 남고 새 차수(빈 공정 칸)로 시작합니다. 부품 행을 체크하면 그 부품만 고릅니다" style="color:#7a4a12;font-weight:700">↻ 신규진행</button><button class="btn" onclick="cycManage()" title="차수 되돌리기(잘못 누른 신규진행 취소) · 차수 종료(미입고 발주를 지우고 닫기)">⚙ 차수 관리</button><span class="ctxhint" title="공정 칸에서 마우스 오른쪽 버튼을 누르면 상태에 맞는 처리 창이 열립니다 (더블클릭도 같은 창).&#10;입고·완료 칸에서는 회차별 입고취소 · 입고 전체취소 · 확정취소, 같은 업체 발주건 함께 입고(다중입고)가 됩니다.&#10;연속 공정을 한 업체에 맡길 때는 마지막 공정 칸을 우클릭하면 그 사이 공정이 한꺼번에 발주됩니다.&#10;부품 그림 칸을 누르면 그림보드가 열려 공정 순서 끌어 바꾸기, 기준공정 불러오기, 가공계획 적용을 할 수 있습니다.">※ <b style="color:#7a4a12">외주 칸</b> 우클릭 → 발주 · 입고 · 확정 · 묶음 · <b>취소</b> <b>|</b> <b style="color:#8a6d3b">사내 칸</b> 우클릭 → <b>가공완료 등록</b> <b>|</b> 부품 행(조·그림·부품코드·부품명·소요수) 클릭 → <b>그림보드(공정 순서·기준공정·QR)</b></span>
   </section>
   <section class="panes">
     <div class="box"><div class="box-title">제번리스트</div><div class="tablewrap"><table id="jobListTable">
@@ -380,7 +382,7 @@ function renderRoutes(){
   HID[ri]=hideDone||vHide;
   const tag=cyc+(n===0?'':allDone?'<span class="tagd">전공정 완료</span>':wait?`<span class="tagd">공정${wp+1} ${wp>=0?stepState(r,wp):''} 대기</span>`:nx>0?`<span class="tagd">${nx}/${n} 진행</span>`:'')+fixTag;
   const tip=allDone?'모든 가공공정이 입고되었습니다':wait?'직전 공정이 아직 입고되지 않아 다음 공정을 발주할 수 없습니다 (직전 공정 칸 우클릭 → 입고 처리)':'';
-  return `<tr data-ri="${ri}" class="${dis&&n?'rdone':''}${r.old?' cycold':''}"${HID[ri]?' style="display:none"':''}${tip?` title="${_esc(tip)}"`:''} oncontextmenu="return rowCtx(event,${ri})">`+
+  return `<tr data-ri="${ri}" class="${dis&&n?'rdone':''}${r.old?' cycold':''}"${HID[ri]?' style="display:none"':''}${tip?` title="${_esc(tip)}"`:''} onclick="return rowClk(event,${ri})">`+
    `<td class="c"><input type="checkbox" data-i="${ri}"${dis?' disabled':''}${picks.length?' checked':''} onchange="pickRow(${ri},this.checked)"></td>`+
    `<td class="c">${_esc(String(r.jo||'').replace(/조$/,''))}</td>`+
    `<td class="pimg" onclick="event.stopPropagation();drawBoard(${ri})" title="${_esc(r.part)} — 클릭하면 그림보드 (공정 순서 표시 · 인쇄 · PDF)">${PIMG[r.part]?`<img src="${_esc(window.MESDB&&MESDB.thumbUrl?MESDB.thumbUrl(PIMG[r.part]):PIMG[r.part])}" data-full="${_esc(PIMG[r.part])}" onerror="window.MESDB&&MESDB.thumbFallback&&MESDB.thumbFallback(this)" loading="lazy">`:'<span style="color:#b8c2ca;font-size:11px;cursor:pointer" title="그림 없음 — 그래도 그림보드는 열 수 있습니다">보드</span>'}</td>`+
@@ -1458,8 +1460,11 @@ function ctxExtraOrder(){
  return ctxOrder(ev,head);
 }
 
-/* v196: 부품 행(그림·부품코드·부품명·소요수량 칸) 우클릭 → 그림보드. 공정 칸은 기존 우클릭 메뉴(발주·입고…) 그대로 */
-function rowCtx(ev,ri){const td=ev.target.closest('td');if(!td||td.classList.contains('route')||td.querySelector('input[type=checkbox]'))return true;
+/* v196: 부품 행 우클릭 → 그림보드.  v317: 우클릭 삭제, 왼쪽 클릭으로 통일 — 조·그림·부품코드·부품명·소요수 칸(앞 5칸) 어디를 눌러도 그림보드.
+   공정 칸은 기존 우클릭 메뉴(발주·입고…) 그대로 */
+function rowClk(ev,ri){const td=ev.target.closest('td');if(!td||td.cellIndex<1||td.cellIndex>5||td.classList.contains('route')||td.querySelector('input[type=checkbox]'))return true;
+ if(ev.target.closest('a,button,input,img'))return true;   /* 그림·링크는 자기 동작 */
+ try{if(String(window.getSelection&&window.getSelection().toString()||'').length)return true}catch(e){}   /* 글자 긁는 중이면 그대로 */
  ev.preventDefault();drawBoard(ri);return false}
 /* v203: 부품 그림보드 — 그림 위에 가공공정 순서를 표시해 인쇄·PDF 저장 (mes_drawboard.js) */
 function boardData(ri){
