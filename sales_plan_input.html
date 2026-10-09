@@ -105,6 +105,9 @@ table.ev td .dcell .wd.late{background:#ffe45c;color:#5a4400;font-weight:700}
 .pllist li b{color:#1d5da3;min-width:42px}
 .pllist li span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .pllist li button{border:0;background:transparent;color:#b3261e;cursor:pointer;padding:0 3px}
+/* v307: 진척현황 줄을 끌어서 위아래 순서 바꾸기 */
+.pllist li[draggable]{cursor:grab}.pllist li .grip{color:#aab4bd;font-size:11px;letter-spacing:-2px;cursor:grab;user-select:none}
+.pllist li.dragging{opacity:.35}.pllist li.over-top{box-shadow:inset 0 2px 0 #2f75b5}.pllist li.over-bot{box-shadow:inset 0 -2px 0 #2f75b5}
 .pllist li.empty{color:#9aa5ad;justify-content:center}.pllist li.empty:before{content:''}
 .remark{width:calc(100% - 16px);height:150px;margin:8px;border:1px solid #b5c0c9;padding:5px 6px;font:inherit;resize:vertical}
 @media(max-width:1100px){.blk.two{flex-wrap:wrap}.blk.two>div:first-child{min-width:0;flex-basis:100%!important}.blk.two>div:last-child{flex:1 1 100%!important;width:auto!important;border-left:1px solid var(--line);border-top:0}}
@@ -373,17 +376,30 @@ document.getElementById('order_date').addEventListener('change',()=>{const r=doc
 let PLOG=[];
 function plRender(){
  const ul=document.getElementById('plList');
- ul.innerHTML=PLOG.length?PLOG.map((e,i)=>`<li><b>${esc(String(e.d||'').slice(5).replace('-','/'))}</b><span title="${esc(e.t)}">${esc(e.t)}</span><button type="button" onclick="plDel(${i})" title="지우기">✕</button></li>`).join('')
+ ul.innerHTML=PLOG.length?PLOG.map((e,i)=>`<li draggable="true" data-i="${i}" title="끌어서 순서를 바꿀 수 있습니다"><span class="grip">⋮⋮</span><b>${esc(String(e.d||'').slice(5).replace('-','/'))}</b><span title="${esc(e.t)}">${esc(e.t)}</span><button type="button" onclick="plDel(${i})" title="지우기">✕</button></li>`).join('')
   :'<li class="empty">아직 기록이 없습니다.</li>';
  ul.scrollTop=ul.scrollHeight;
 }
 function plAdd(){
  const d=document.getElementById('pl_date').value||new Date().toLocaleDateString('sv-SE'),t=(document.getElementById('pl_text').value||'').trim();
  if(!t){msg('진척 내용을 입력하세요.');document.getElementById('pl_text').focus();return}
- PLOG.push({d,t});PLOG.sort((a,b)=>String(a.d).localeCompare(String(b.d)));
+ /* v307: 전체 재정렬 대신 같은/이전 날짜 마지막 뒤에 끼워 넣는다 — 끌어서 바꾼 순서가 유지되게 */
+ let at=PLOG.length;while(at>0&&String(PLOG[at-1].d)>String(d))at--;PLOG.splice(at,0,{d,t});
  document.getElementById('pl_text').value='';plRender();msg(`진척현황 추가 — 저장을 눌러야 DB에 반영됩니다.`);
 }
 function plDel(i){PLOG.splice(i,1);plRender()}
+/* v307: 진척현황 끌어서 위아래 이동 (HTML5 drag & drop) */
+(function(){const ul=document.getElementById('plList');if(!ul)return;let from=-1;
+ const li=t=>t&&t.closest&&t.closest('li[data-i]');const clr=()=>ul.querySelectorAll('li').forEach(x=>x.classList.remove('over-top','over-bot'));
+ ul.addEventListener('dragstart',e=>{const l=li(e.target);if(!l)return;from=+l.dataset.i;l.classList.add('dragging');e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain',String(from))}catch(x){}});
+ ul.addEventListener('dragover',e=>{const l=li(e.target);if(!l||from<0)return;e.preventDefault();e.dataTransfer.dropEffect='move';clr();
+  const r=l.getBoundingClientRect();l.classList.add(e.clientY<r.top+r.height/2?'over-top':'over-bot')});
+ ul.addEventListener('dragleave',e=>{if(!ul.contains(e.relatedTarget))clr()});
+ ul.addEventListener('drop',e=>{const l=li(e.target);if(!l||from<0)return;e.preventDefault();
+  const r=l.getBoundingClientRect();let to=+l.dataset.i+(e.clientY<r.top+r.height/2?0:1);if(to>from)to--;
+  const it=PLOG.splice(from,1)[0];PLOG.splice(to,0,it);from=-1;plRender();msg('진척현황 순서를 바꿨습니다 — 저장을 눌러야 DB에 반영됩니다.')});
+ ul.addEventListener('dragend',()=>{from=-1;clr();ul.querySelectorAll('li.dragging').forEach(x=>x.classList.remove('dragging'))});
+})();
 
 /* v167 제품 형상 그림 — mes-attach 버킷 (부품 이미지와 같은 곳) */
 function shapePick(){const f=document.getElementById('shapeFile');f.value='';f.click()}
