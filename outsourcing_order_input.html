@@ -1578,17 +1578,8 @@ async function boardImage(d){
 window.addEventListener('message',ev=>{const d=ev.data;if(!d||d.type!=='mes_drawboard_apply')return;if(ev.origin!==location.origin)return;
  const reply=x=>{try{ev.source&&ev.source.postMessage(Object.assign({type:'mes_drawboard_apply_done',id:d.id},x),location.origin)}catch(e){}};
  boardApply(d).then(x=>reply(x||{ok:true}),e=>{const m=String(e&&e.message||e);msg('가공계획 적용 실패: '+m);reply({ok:false,err:m})})});
-async function boardApply(d){
- const fail=m=>{msg(m);return {ok:false,err:m}};
- const j=jobView[jobIdx]||{};if(!j.job||j.job!==d.job)return fail('그림보드의 제번('+d.job+')과 사내외가공 발주 화면의 제번('+(j.job||'-')+')이 달라 적용하지 않았습니다. 발주 화면에서 그 제번을 고른 뒤 다시 적용하세요.');
- if(!_online())return fail('DB 미연결 - 가공계획을 저장할 수 없습니다.');
- const r=ROUTES.find(x=>x.part===d.part&&String(x.jo??'')===String(d.jo??'')&&!x.old&&sameJ(x))||ROUTES.find(x=>x.part===d.part&&!x.old&&sameJ(x))||ROUTES[d.ri];
- if(!r||r.part!==d.part)return fail('부품 '+d.part+' 을(를) 목록에서 찾지 못했습니다.');
- const steps=(d.steps||[]).map(x=>({code:String(x.code||'').trim(),house:!!x.house})).filter(x=>x.code).slice(0,MAXSTEP);
- if(!steps.length)return fail('선택한 공정이 없습니다.');
- const started=(r.steps||[]).some((s,i)=>!isHouse(r,i)&&stepState(r,i));
- /* 확인은 그림보드 창에서 받는다 (force) */
- if(started&&!d.force)return {ok:false,need:'confirm',err:r.part+' 은(는) 이미 발주가 진행된 공정이 있습니다.\n적용하면 발주 이력을 새 순서의 같은 공정 자리로 옮깁니다. 그래도 적용할까요?'};
+/* v323: 한 부품에 공정 순서 적용 (가공계획 저장 + 중복 행 정리 + 발주된 공정의 자리 이동). 옮긴 발주 건수를 돌려준다 */
+async function applyPlanOne(j,r,steps){
  const jo=String(r.jo??'1');
  const base={job_no:j.job,process_code:jo,part_no:r.part,part_name:r.name||null,qty:(r.qty!=null?Number(r.qty):1),standard_process:r.stdName||null,steps:steps.map(x=>x.code),inhouse:steps.map(x=>x.house)};
  const ex=await MESDB.table('machining_plans').select(`select=row_no&job_no=eq.${encodeURIComponent(j.job)}&process_code=eq.${encodeURIComponent(jo)}&limit=1`).catch(()=>[]);
@@ -1616,10 +1607,29 @@ async function boardApply(d){
    if(k<0)return;if(Number(l.step_no)===k+1)return;up.push({line_id:Number(l.line_id),step_no:k+1,updated_at:new Date().toISOString()})});
   if(up.length){await MESDB.table('order_lines').upsert(up,'line_id');moved=up.length;try{MESDB.dropCache&&MESDB.dropCache('order_lines')}catch(e){}}
  }catch(e){}
+
+ return moved;
+}
+async function boardApply(d){
+ const fail=m=>{msg(m);return {ok:false,err:m}};
+ const j=jobView[jobIdx]||{};if(!j.job||j.job!==d.job)return fail('그림보드의 제번('+d.job+')과 사내외가공 발주 화면의 제번('+(j.job||'-')+')이 달라 적용하지 않았습니다. 발주 화면에서 그 제번을 고른 뒤 다시 적용하세요.');
+ if(!_online())return fail('DB 미연결 - 가공계획을 저장할 수 없습니다.');
+ const r=ROUTES.find(x=>x.part===d.part&&String(x.jo??'')===String(d.jo??'')&&!x.old&&sameJ(x))||ROUTES.find(x=>x.part===d.part&&!x.old&&sameJ(x))||ROUTES[d.ri];
+ if(!r||r.part!==d.part)return fail('부품 '+d.part+' 을(를) 목록에서 찾지 못했습니다.');
+ const steps=(d.steps||[]).map(x=>({code:String(x.code||'').trim(),house:!!x.house})).filter(x=>x.code).slice(0,MAXSTEP);
+ if(!steps.length)return fail('선택한 공정이 없습니다.');
+ /* v323: 체크한 다른 품번에도 같은 공정 순서를 함께 적용한다 */
+ const targets=[r],others=[];
+ for(const key of [...PICK.keys()]){const r2=ROUTES[Number(key)];if(!r2||r2.part===r.part||r2.old||!sameJ(r2))continue;
+  if(targets.some(t=>t.part===r2.part&&String(t.jo??'')===String(r2.jo??'')))continue;targets.push(r2);others.push(r2)}
+ const startedParts=targets.filter(t=>(t.steps||[]).some((s,i)=>!isHouse(t,i)&&stepState(t,i))).map(t=>t.part);
+ /* 확인은 그림보드 창에서 받는다 (force) */
+ if(startedParts.length&&!d.force)return {ok:false,need:'confirm',err:startedParts.join(', ')+' 은(는) 이미 발주가 진행된 공정이 있습니다.\n적용하면 발주 이력을 새 순서의 같은 공정 자리로 옮깁니다. 그래도 적용할까요?'+(others.length?'\n(체크한 품번 '+others.map(x=>x.part).join(', ')+' 에도 같은 공정 순서를 적용합니다)':'')};
+ let moved=0;for(const t of targets)moved+=await applyPlanOne(j,t,steps);
  try{MESDB.dropCache&&['machining_plan_parts','machining_plans'].forEach(t=>MESDB.dropCache(t))}catch(e){}
  try{MESDB.notify&&MESDB.notify(['machining_plan_parts','machining_plans'])}catch(e){}
  await loadRoutes();renderRoutes();
- const txt=r.part+' 가공계획 적용 (그림보드) — 공정 '+steps.length+'개: '+steps.map(x=>procName(x.code)+(x.house?'[사내]':'')).join(' → ')+(moved?` · 발주 ${moved}건 자리 이동`:'');
+ const txt=r.part+(others.length?' 외 '+others.length+'개('+others.map(x=>x.part).join(', ')+')':'')+' 가공계획 적용 (그림보드) — 공정 '+steps.length+'개: '+steps.map(x=>procName(x.code)+(x.house?'[사내]':'')).join(' → ')+(moved?` · 발주 ${moved}건 자리 이동`:'');
  msg(txt);
  /* 새로 저장된 자료(순서·저장여부)를 그림보드에 돌려준다 — 이전/다음 품번으로 오갔다 와도 새 순서가 보이게 */
  const ni=ROUTES.findIndex(x=>x.part===r.part&&String(x.jo??'')===String(r.jo??'')&&!x.old&&sameJ(x));
