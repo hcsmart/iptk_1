@@ -122,7 +122,8 @@ html[data-mw="md"] .formgrid .wide,html[data-mw="sm"] .formgrid .wide,html[data-
  <div class="label">네고사유</div><div><input id="nego_note" class="field"></div>
  <div class="gbreak"></div>
  <!-- 5 수주 분류 -->
- <div class="label" title="공정 성격 (기준정보 › 공정카테고리). 회의록 1-4. 공정별로 다르게 두려면 [⚙ 공정 자동생성]">카테고리</div><div><select id="proc_cat" class="field"><option value=""></option></select></div>
+ <!-- v302: 카테고리는 기록하지 않기로 해 화면에서 숨김 (DB 컬럼·다른 화면 로직은 유지, 빈값 저장) -->
+ <div class="label" style="display:none" title="공정 성격 (기준정보 › 공정카테고리)">카테고리</div><div style="display:none"><select id="proc_cat" class="field"><option value=""></option></select></div>
  <div class="label">수주유형</div><div><select id="otype" class="field"><option>신작</option><option>개조</option><option>수리</option></select></div>
  <div class="label">수주상태</div><div><select id="status" class="field"><option>진행</option><option>보류</option><option>완료</option><option>취소</option></select></div>
  <div class="label">국내/해외</div><div><select id="dom" class="field"><option>국내</option><option>해외</option></select></div>
