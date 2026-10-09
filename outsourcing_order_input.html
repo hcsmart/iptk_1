@@ -85,6 +85,9 @@ td.route.s-out{background:#ffe9d1!important;color:#7a4a12;font-weight:700}td.rou
 /* v143: 연속 공정 묶음 발주 — 공정별 단가/금액 표 */
 #ctxPop table.stp{width:100%;border-collapse:collapse;margin-top:8px}
 #ctxPop table.stp th,#ctxPop table.stp td{border:1px solid #d5dde3;height:26px;padding:0 5px;font-size:11px;white-space:nowrap}
+/* v320: 함께 발주 표 — 품번·부품명은 줄바꿈해서 전부, 우클릭 품번 행은 굵게, 금액은 입력칸 */
+#ctxPop table.stp.multi td:nth-child(-n+2){white-space:normal;word-break:break-all;line-height:1.25}#ctxPop table.stp tr.main td:nth-child(-n+2){font-weight:700;color:#1d4f80}
+#ctxPop table.stp td input{width:100%;height:22px;border:1px solid #c7d1da;padding:0 4px;font-size:11px;box-sizing:border-box;text-align:right}#ctxPop table.stp td input.manual{background:#fff6c8}
 #ctxPop table.stp thead th{background:linear-gradient(#dbe9f4,#c7d9e8);color:#405266}
 #ctxPop table.stp tfoot th{background:#f2f6f9;color:#20456b}
 #ctxPop table.stp .c{text-align:center}#ctxPop table.stp .r{text-align:right}
@@ -798,7 +801,7 @@ function ctxDragInit(){
 }
 function ctxOpen(ev,title,kind,bodyHtml,footHtml){
  const pop=document.getElementById('ctxPop');ctxDragInit();
- pop.classList.toggle('wide',/class="hist"|id="cxHist"/.test(String(bodyHtml||'')));   /* v178: 입고이력·함께입고 표가 있는 창은 넓게 */
+ pop.classList.toggle('wide',/class="hist"|id="cxHist"|id="cxExtraOn"/.test(String(bodyHtml||'')));   /* v178: 입고이력·함께입고 표가 있는 창은 넓게 */
  document.getElementById('ctxTitle').textContent=title;
  document.getElementById('ctxHead').className='ch '+(kind||'');
  document.getElementById('ctxBody').innerHTML=bodyHtml;
@@ -979,6 +982,9 @@ async function ctxOrder(ev,head){
    if(nextStep(r2)!==k2){skipped.push(r2.part+'(발주 순서 아님)');continue}
    extras.push({ri:ri2,r:r2,k:k2})}}
  CTX.extras=extras;
+ /* v320: 표에는 우클릭한 품번(첫 행)도 넣고, 위에는 공통 항목(업체·발주일·입고요구일·비고)만 남긴다 */
+ CTX.tableRows=extras.length?[{ri:CTX.ri,r,k:i,main:true},...extras]:null;
+ const eh=extras.length?' hidden':'';
  const vopts=VENDORS.map(v=>`<option value="${_esc(v)}"${v===curVendor()?' selected':''}>${_esc(v)}</option>`).join('');
  const today=T0(),rd=reqDate.value||new Date(Date.now()+12*864e5).toISOString().slice(0,10);
  const hb=houseTodoBefore(r,(ctxSteps()[0]??i));
@@ -987,7 +993,7 @@ async function ctxOrder(ev,head){
   :CTX.extra?`<div class="note" style="border-color:#e5ad62;background:#fff7ea;color:#8a4f08"><b>추가발주</b> — 입고가 끝난 이 공정에 발주를 한 건 더 냅니다(재가공·추가 수량). 기존 발주·입고 이력은 그대로 두고, 공정 칸에는 합계 발주/입고 수량이 보이며 새 건이 입고될 때까지 <b>출고</b> 상태가 됩니다. 뒤 공정은 바뀌지 않습니다.</div>`:'';
  const common=`
    <label>협력업체</label><select id="cxVendor" class="full" onchange="ctxPrice()"><option value="">(업체 선택)</option>${vopts}</select>
-   <label>발주수량</label><input id="cxQty" class="r" value="${Number(r.qty)||1}" inputmode="numeric" onchange="ctxAmt()">
+   <label${eh}>발주수량</label><input id="cxQty" class="r" value="${Number(r.qty)||1}" inputmode="numeric" onchange="ctxAmt()"${eh}>
    <label>발주일</label><input id="cxOdate" type="date" value="${today}" onchange="ctxPrice()">
    <label>입고요구일</label><input id="cxRdate" type="date" value="${rd}">`;
  let title,body;
@@ -1012,20 +1018,20 @@ async function ctxOrder(ev,head){
   const c=stepCode(r.steps[i]);
   title=`${CTX.newCycle?'신규발주 · ':CTX.extra?'추가발주 · ':''}공정${i+1} ${procName(c)} — 발주`;
   body=`<div class="g">${common}
-    <label>단가</label><input id="cxPrice" class="r" value="" placeholder="예: 45,000" inputmode="numeric" onchange="ctxPriceEdit(this)">
-    <label>발주금액</label><input id="cxAmt" class="r" value="" placeholder="단가 입력 시 자동" readonly>
+    <label${eh}>단가</label><input id="cxPrice" class="r" value="" placeholder="예: 45,000" inputmode="numeric" onchange="ctxPriceEdit(this)"${eh}>
+    <label${eh}>발주금액</label><input id="cxAmt" class="r" value="" placeholder="단가 입력 시 자동" readonly${eh}>
     <label>비고</label><input id="cxRemark" class="full" placeholder="선택">
    </div>
-   ${extras.length?`<div class="note" style="margin-top:6px;background:#eef7e9;border-color:#9ccb8a;color:#2f5f1f"><label style="cursor:pointer"><input type="checkbox" id="cxExtraOn" checked onchange="ctxAmt()"> 체크한 <b>${extras.length}개 품번</b>의 같은 공정(${_esc(procName(c))})도 함께 발주 — 아래 표에서 품번별 <b>수량·단가</b>를 각각 넣으세요</label></div>
-   <table class="stp"><thead><tr><th>품번</th><th>부품명</th><th style="width:58px">공정</th><th style="width:56px">수량</th><th style="width:94px">단가</th><th style="width:94px">금액</th></tr></thead>
-    <tbody>${extras.map(x=>`<tr><td>${_esc(x.r.part)}</td><td>${_esc(x.r.name||'')}</td><td class="c">공정${x.k+1}</td><td><input id="cxEQ${x.ri}" class="r" value="${Number(x.r.qty)||1}" inputmode="numeric" onchange="ctxAmt()"></td><td><input id="cxEP${x.ri}" inputmode="numeric" placeholder="단가" onchange="ctxPriceEdit(this)"></td><td class="r" id="cxEA${x.ri}">-</td></tr>`).join('')}</tbody>
-    <tfoot><tr><th colspan="5" class="r">함께 발주 합계</th><th class="r" id="cxETot">0</th></tr></tfoot></table>`:''}
+   ${extras.length?`<div class="note" style="margin-top:6px;background:#eef7e9;border-color:#9ccb8a;color:#2f5f1f"><label style="cursor:pointer"><input type="checkbox" id="cxExtraOn" checked onchange="ctxAmt()"> 체크한 <b>${extras.length}개 품번</b>의 같은 공정(${_esc(procName(c))})도 함께 발주 — 위는 공통 항목, 아래 표에서 품번별 <b>수량·단가·금액</b>을 각각 넣으세요 (금액은 자동 계산되지만 직접 고칠 수 있습니다)</label></div>
+   <table class="stp multi"><thead><tr><th>품번</th><th>부품명</th><th style="width:58px">공정</th><th style="width:56px">수량</th><th style="width:94px">단가</th><th style="width:94px">금액</th></tr></thead>
+    <tbody>${CTX.tableRows.map(x=>`<tr${x.main?' class="main" title="우클릭한 품번"':''}><td>${_esc(x.r.part)}</td><td>${_esc(x.r.name||'')}</td><td class="c">공정${x.k+1}</td><td><input id="cxEQ${x.ri}" class="r" value="${Number(x.r.qty)||1}" inputmode="numeric" onchange="ctxAmt()"></td><td><input id="cxEP${x.ri}" inputmode="numeric" placeholder="단가" onchange="ctxPriceEdit(this)"></td><td><input id="cxEA${x.ri}" inputmode="numeric" placeholder="자동" title="단가×수량으로 자동 계산 — 직접 고칠 수 있습니다" onchange="ctxAmtEdit(this)"></td></tr>`).join('')}</tbody>
+    <tfoot><tr><th colspan="5" class="r">발주 합계</th><th class="r" id="cxETot">0</th></tr></tfoot></table>`:''}
    ${skipped.length?`<div class="note">함께 발주에서 제외: ${_esc(skipped.join(', '))}</div>`:''}
    ${houseWarn}${cycleNote}<div class="note" id="cxNote">업체를 선택하면 공정단가변동등록에서 발주일 기준 단가를 자동 조회합니다. 이력이 없으면 단가를 직접 입력하세요.</div>`;
  }
  ctxOpen(ev,title,'k-order',head+body,
   `<button class="btn" style="display:none" onclick="ctxAddReq()" title="바로 등록하지 않고 아래 구매요청 리스트에 넣습니다">↓ 요청 리스트</button>
-   <button class="btn go k-order" id="cxGo" onclick="ctxOrderNow()">▣ ${multi?idx.length+'개 공정 즉시 발주':'즉시 발주'+(extras.length?' (+'+extras.length+'개)':'')}</button>
+   <button class="btn go k-order" id="cxGo" onclick="ctxOrderNow()">▣ ${multi?idx.length+'개 공정 즉시 발주':'즉시 발주'+(extras.length?' ('+(extras.length+1)+'개)':'')}</button>
    <button class="btn" onclick="ctxClose()">취소</button>`);
  await ctxPrice();
  return false;
@@ -1047,8 +1053,8 @@ async function ctxPrice(){
   else{if(el.dataset.auto==='1'||!_n(el.value)){el.value='';el.dataset.auto=''}miss.push(procName(c))}
  }
  /* v318: 함께 발주 품번(같은 공정)도 자동조회 — 직접 고친 칸은 두고, 자동으로 채운 칸만 바꾼다 */
- if(CTX.extras&&CTX.extras.length){let h2=null;try{h2=await MESPRICE.process(CTX.c,v,{asOf:d})}catch(e){}
-  for(const x of CTX.extras){const el=document.getElementById('cxEP'+x.ri);if(!el)continue;
+ if(CTX.tableRows&&CTX.tableRows.length){let h2=null;try{h2=await MESPRICE.process(CTX.c,v,{asOf:d})}catch(e){}
+  for(const x of CTX.tableRows){const el=document.getElementById('cxEP'+x.ri);if(!el)continue;
    if(h2&&h2.price){if(el.dataset.auto==='1'||!_n(el.value)){el.value=_won(h2.price);el.dataset.auto='1'}}
    else if(el.dataset.auto==='1'||!_n(el.value)){el.value='';el.dataset.auto=''}}}
  if(note)note.textContent=miss.length
@@ -1074,12 +1080,16 @@ function ctxAmt(){
   if(p)p.value=price?_won(price):'';
   if(a)a.value=price?_won(price*qty):'';
  }
- /* v318: 함께 발주 품번 — 품번별 수량·단가·금액 */
- if(CTX.extras&&CTX.extras.length){const onEl=document.getElementById('cxExtraOn'),on=!onEl||onEl.checked;let et=0;
-  for(const x of CTX.extras){const p=document.getElementById('cxEP'+x.ri),q=document.getElementById('cxEQ'+x.ri),a=document.getElementById('cxEA'+x.ri);if(!p)continue;
-   const v=_n(p.value);p.value=v?_won(v):'';const qq=Math.max(1,Math.round(_n(q?q.value:1)));if(q)q.value=qq;const am=v*qq;if(on)et+=am;if(a)a.textContent=v?_won(am):'-'}
+ /* v318: 함께 발주 품번 — 품번별 수량·단가·금액 (v320: 우클릭 품번도 표에, 금액은 자동이지만 직접 고친 값 우선) */
+ if(CTX.tableRows&&CTX.tableRows.length){const onEl=document.getElementById('cxExtraOn'),on=!onEl||onEl.checked;let et=0;
+  for(const x of CTX.tableRows){const p=document.getElementById('cxEP'+x.ri),q=document.getElementById('cxEQ'+x.ri),a=document.getElementById('cxEA'+x.ri);if(!p||!a)continue;
+   const v=_n(p.value);p.value=v?_won(v):'';const qq=Math.max(1,Math.round(_n(q?q.value:1)));if(q)q.value=qq;
+   const am=a.dataset.manual==='1'?_n(a.value):v*qq;a.value=am?_won(am):'';a.classList.toggle('manual',a.dataset.manual==='1');
+   if(x.main||on)et+=am}
   const t=document.getElementById('cxETot');if(t)t.textContent=_won(et)}
 }
+/* v320: 표의 금액을 직접 고치면 그 값을 쓴다 — 비우면 다시 자동 */
+function ctxAmtEdit(el){if(el)el.dataset.manual=_n(el.value)?'1':'';ctxAmt()}
 /* 발주 행들 (묶음이면 공정 순서대로 여러 건) */
 function ctxRows(){
  const {r,idx,job}=CTX;
@@ -1094,11 +1104,14 @@ function ctxRows(){
    proc:(r.jo||job.proc||'1'),procName:joName(r.jo||job.proc||'1',job.setQty||1),
    part:r.part,partName:r.name,sn:k+1,snOf:n,mp:c,mpName:procName(c),
    qty,odate:od,rdate:rd,remark:rm,writer:OWNER,price,amount:price*qty,cycleId,cyc:rowCyc(r),newCycle:!!CTX.newCycle}});
- /* v318: 체크한 다른 품번의 같은 공정 — 표에 적은 품번별 수량·단가 그대로 */
- if(CTX.extras&&CTX.extras.length){const onEl=document.getElementById('cxExtraOn');if(!onEl||onEl.checked)for(const x of CTX.extras){const r2=x.r,k=x.k,c2=stepCode(r2.steps[k]);
+ /* v318/v320: 표(우클릭 품번 + 체크한 품번의 같은 공정) 에 적은 품번별 수량·단가·금액 그대로 */
+ if(CTX.tableRows&&CTX.tableRows.length){const onEl=document.getElementById('cxExtraOn'),on=!onEl||onEl.checked;const res=[];let no2=no;
+  for(const x of CTX.tableRows){if(!x.main&&!on)continue;const r2=x.r,k=x.k,c2=stepCode(r2.steps[k]);
    const n2=(r2.steps||[]).map(stepCode).filter(Boolean).length,q2=Math.max(1,Math.round(_n(_v('cxEQ'+x.ri)))),p2=_n(_v('cxEP'+x.ri));
-   out.push({no:no++,vendor,job:job.job,item:job.item,proc:(r2.jo||job.proc||'1'),procName:joName(r2.jo||job.proc||'1',job.setQty||1),
-    part:r2.part,partName:r2.name,sn:k+1,snOf:n2,mp:c2,mpName:procName(c2),qty:q2,odate:od,rdate:rd,remark:rm,writer:OWNER,price:p2,amount:p2*q2,cycleId,cyc:rowCyc(r2),newCycle:false})}}
+   const aEl=document.getElementById('cxEA'+x.ri),a2=(aEl&&aEl.dataset.manual==='1')?_n(aEl.value):p2*q2;
+   res.push({no:no2++,vendor,job:job.job,item:job.item,proc:(r2.jo||job.proc||'1'),procName:joName(r2.jo||job.proc||'1',job.setQty||1),
+    part:r2.part,partName:r2.name,sn:k+1,snOf:n2,mp:c2,mpName:procName(c2),qty:q2,odate:od,rdate:rd,remark:rm,writer:OWNER,price:p2,amount:a2,cycleId,cyc:rowCyc(r2),newCycle:!!(x.main&&CTX.newCycle)})}
+  return res}
  return out;
 }
 function ctxAddReq(){

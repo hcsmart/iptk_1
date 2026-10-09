@@ -215,6 +215,8 @@ function ensureUI() {
 #oxPop table.bt{margin:4px 0 6px}#oxPop table.bt tbody tr{cursor:default}#oxPop table.bt td{padding:0 2px}
 #oxPop table.bt td input{width:100%;height:22px;border:1px solid #c7d1da;padding:0 4px;font-size:11px;box-sizing:border-box}
 #oxPop table.bt td input[readonly]{background:#f3f6f8}#oxPop table.bt td input.manual{background:#fff6c8}
+/* v320: 품번·부품명·재질은 줄바꿈해서 전부 보이게, 우클릭한 품번 행은 굵게 */
+#oxPop table.bt td:nth-child(-n+3){white-space:normal;word-break:break-all;line-height:1.25}#oxPop table.bt tr.main td:nth-child(-n+3){font-weight:700;color:#1d4f80}
 #oxPop table.bt td input[data-auto="1"]{color:#1d5da3}
 #oxPop table.ln td.r{text-align:right}#oxPop table.ln td.c{text-align:center}
 #oxPop .badge{display:inline-block;padding:0 5px;border-radius:7px;color:#fff;font-size:10px}
@@ -296,7 +298,7 @@ function close() { const m = $('oxMask'), p = $('oxPop'); if (m) m.classList.rem
 function open(ev, title, kind, bodyHtml, footBtns) {
   ensureUI();
   const p = $('oxPop');
-  p.style.width = /id="oxBt"|id="oxCf"/.test(bodyHtml) ? '680px' : '';
+  p.style.width = /id="oxBt"|id="oxCf"|class="batch"/.test(bodyHtml) ? '680px' : '';
   $('oxTitle').textContent = title;
   $('oxHead').className = 'ch ' + (kind || '');
   $('oxBody').innerHTML = bodyHtml;
@@ -426,10 +428,11 @@ function batchTable(ok) {
   if (!ok.length) return '';
   const W = CFG.useWeight;
   return `<table class="ln bt" id="oxBt"><thead><tr><th>품번</th><th>부품명</th><th>재질·규격</th><th style="width:52px">수량</th>${W ? '<th style="width:64px">중량kg</th>' : ''}<th style="width:78px">단가</th><th style="width:86px">금액(견적가)</th></tr></thead><tbody>${
-    ok.map((x, k) => { const q = Math.max(1, remain(x.b) || Number(x.b.qty) || 1), kg = W ? Math.round(autoKg(x.b.spec, q) * 100) / 100 : 0;
-      return `<tr data-k="${k}"><td>${_esc(x.b.part)}</td><td>${_esc(x.b.name || '')}</td><td>${_esc([x.b.mat, x.b.spec].filter(Boolean).join(' '))}</td>
+    ok.map((x, k) => { const q = Math.max(1, x.qty || remain(x.b) || Number(x.b.qty) || 1), kg = W ? Math.round(autoKg(x.b.spec, q) * 100) / 100 : 0;
+      return `<tr data-k="${k}"${x.main ? ' class="main" title="우클릭한 품번"' : ''}><td>${_esc(x.b.part)}</td><td>${_esc(x.b.name || '')}</td><td>${_esc([x.b.mat, x.b.spec].filter(Boolean).join(' '))}</td>
         <td><input class="r bq" value="${q}" inputmode="numeric"></td>${W ? `<td><input class="r bw" value="${kg ? kg.toFixed(2) : ''}" inputmode="decimal"></td>` : ''}
-        <td><input class="r bp" placeholder="단가" inputmode="numeric" data-auto="1" title="이 품번의 단가 — 비우면 0원으로 발주"></td><td><input class="r ba" readonly></td></tr>`; }).join('')}</tbody></table>`;
+        <td><input class="r bp" placeholder="단가" inputmode="numeric" data-auto="1" title="이 품번의 단가 — 비우면 0원으로 발주"></td><td><input class="r ba" placeholder="자동" inputmode="numeric" title="단가×수량(중량)으로 자동 계산 — 직접 고칠 수 있습니다"></td></tr>`; }).join('')}</tbody>
+   <tfoot><tr><th colspan="${W ? 6 : 5}" class="r">합계</th><th class="r" id="oxBtTot"></th></tr></tfoot></table>`;
 }
 function batchRows() {
   const t = $('oxBt'); if (!t) return [];
@@ -437,12 +440,16 @@ function batchRows() {
     const k = Number(tr.dataset.k), x = (CTX.batchOrder || [])[k]; if (!x) return null;
     const q = Math.max(1, Math.round(_n(tr.querySelector('.bq').value)));
     const wEl = tr.querySelector('.bw'), kg = wEl ? _n(wEl.value) : 0, price = _n(tr.querySelector('.bp').value);
-    const amt = Math.round(price * (kg || q));
-    return { b: x.b, tr, q, kg, price, amt, auto: tr.querySelector('.bp').dataset.auto === '1' };
+    const aEl = tr.querySelector('.ba'), manual = aEl.dataset.manual === '1';
+    const amt = manual ? _n(aEl.value) : Math.round(price * (kg || q));   /* v320: 금액은 자동이지만 직접 고친 값이 우선 */
+    return { b: x.b, tr, q, kg, price, amt, manual, main: !!x.main, auto: tr.querySelector('.bp').dataset.auto === '1' };
   }).filter(Boolean);
 }
 function batchCalc() {
-  batchRows().forEach(r => { r.tr.querySelector('.ba').value = r.price ? _won(r.amt) : ''; const p = r.tr.querySelector('.bp'); if (r.price) p.value = _won(r.price); });
+  let tot = 0;
+  batchRows().forEach(r => { const a = r.tr.querySelector('.ba'); if (r.manual) { a.value = _w0(r.amt); a.classList.add('manual'); } else { a.value = r.price ? _won(r.amt) : ''; a.classList.remove('manual'); }
+    const p = r.tr.querySelector('.bp'); if (r.price) p.value = _won(r.price); tot += r.amt || 0; });
+  const t = $('oxBtTot'); if (t) t.textContent = tot ? _won(tot) : '';
 }
 async function batchPrice() {
   const v = _v('oxVendor'), d = _v('oxOdate') || T0(); if (!v || !window.MESPRICE) return batchCalc();
@@ -460,6 +467,8 @@ function bindBatch() {
   t.querySelectorAll('.bq').forEach(i => i.onchange = () => { const tr = i.closest('tr'), w = tr.querySelector('.bw'); if (w && w.dataset.manual !== '1') { const x = CTX.batchOrder[Number(tr.dataset.k)]; const kg = Math.round(autoKg(x.b.spec, Math.max(1, _n(i.value))) * 100) / 100; w.value = kg ? kg.toFixed(2) : ''; } batchCalc(); });
   t.querySelectorAll('.bw').forEach(i => { i.oninput = () => { i.dataset.manual = '1'; i.classList.add('manual'); }; i.onchange = batchCalc; });
   t.querySelectorAll('.bp').forEach(i => i.onchange = () => { i.dataset.auto = ''; batchCalc(); });
+  /* v320: 금액 직접 수정 — 비우면 다시 자동 */
+  t.querySelectorAll('.ba').forEach(i => i.onchange = () => { i.dataset.manual = _n(i.value) ? '1' : ''; batchCalc(); });
 }
 /* ── ① 발주 ────────────────────────────────────────────────── */
 function formOrder(ev) {
@@ -469,29 +478,33 @@ function formOrder(ev) {
   const vs = vendorList();
   const rem = (CTX && CTX.newCycle) ? (Number(b.qty) || 1) : (remain(b) || Number(b.qty) || 1);
   const rd = (() => { try { return $('reqDate').value || T0(); } catch (e) { return T0(); } })();
+  /* v320: 체크한 품번이 있으면 공통 항목(업체·발주일·입고요구일·재발주·비고)만 위에 두고,
+     우클릭한 품번까지 포함한 모든 품번의 수량·단가·금액은 아래 표에서 각각 넣는다 */
+  const bt0 = (CTX.newCycle ? [] : batchFor()), ok0 = bt0.filter(x => remain(x.b) > 0 && !isOldCycle(x.b)), skip0 = bt0.filter(x => !(remain(x.b) > 0) || isOldCycle(x.b)).map(x => x.b.part + (isOldCycle(x.b) ? '(이전차수)' : ''));
+  const multi = ok0.length > 0, H = multi ? ' hidden' : '';
+  CTX.batchOrder = multi ? [{ b, main: true, qty: rem }, ...ok0] : [];
   open(ev, `${b.part} — 발주`, 'k-order', headHtml() + `
    <div class="g">
     <label>협력업체</label><select id="oxVendor" class="full"><option value="">(업체 선택)</option>${
       vs.map(v => `<option value="${_esc(v)}">${_esc(v)}</option>`).join('')}</select>
-    <label>발주수량</label><input id="oxQty" class="r" value="${rem}" inputmode="numeric">
+    <label${H}>발주수량</label><input id="oxQty" class="r" value="${rem}" inputmode="numeric"${H}>
     <label>발주일</label><input id="oxOdate" type="date" value="${T0()}">
     <label>입고요구일</label><input id="oxRdate" type="date" value="${_esc(rd)}">
-    <label>단가</label><input id="oxPrice" class="r" placeholder="예: 45,000" inputmode="numeric">
+    <label${H}>단가</label><input id="oxPrice" class="r" placeholder="예: 45,000" inputmode="numeric"${H}>
     ${CFG.useWeight
-      ? '<label>중량(kg)</label><span class="wtbox">' +
+      ? `<label${H}>중량(kg)</label><span class="wtbox"${H}>` +
         '<input id="oxWt" class="r" inputmode="decimal" title="설계치수·발주수량 기준으로 자동 계산됩니다. 실제 소재 중량이 다르면 직접 고쳐 넣으세요.">' +
         '<button type="button" id="oxWtAuto" title="자동계산 값으로 되돌립니다">자동</button></span>'
-      : '<label></label><span></span>'}
-    <label>발주금액</label><input id="oxAmt" class="r" readonly placeholder="단가 입력 시 자동">
+      : `<label${H}></label><span${H}></span>`}
+    <label${H}>발주금액</label><input id="oxAmt" class="r" readonly placeholder="단가 입력 시 자동"${H}>
     <label>재발주</label><select id="oxRe"><option value="">(정상 발주)</option><option>불량</option><option>실수</option><option>예비품</option><option>기타</option></select>
     <label>비고</label><input id="oxRemark" placeholder="선택">
    </div>
    ${(CTX && CTX.newCycle) ? `<div class="note" style="border-color:#e5ad62;background:#fff7ea;color:#8a4f08"><b>신규발주</b> — 기존 이력은 이전 차수로 그대로 남고, 이 발주부터 소요수량 전체를 기준으로 새 차수가 시작됩니다.</div>` : ''}
-   ${(() => { const bt = (CTX.newCycle ? [] : batchFor()); const ok = bt.filter(x => remain(x.b) > 0 && !isOldCycle(x.b)), skip = bt.filter(x => !(remain(x.b) > 0) || isOldCycle(x.b)).map(x => x.b.part + (isOldCycle(x.b) ? '(이전차수)' : ''));
-      CTX.batchOrder = ok; return batchNote(ok.length, '발주 — 아래 표에서 품번별 수량·단가·금액을 각각 고칠 수 있습니다', skip) + batchTable(ok); })()}
+   ${multi ? batchNote(ok0.length, '발주 — 위는 공통 항목, 아래 표에서 품번별 수량·단가·금액을 각각 넣으세요 (금액은 자동 계산되지만 직접 고칠 수 있습니다)', skip0) + batchTable(CTX.batchOrder) : ''}
    <div class="note" id="oxNote">업체를 고르면 단가변동등록에서 발주일 기준 단가를 자동 조회합니다. 이력이 없으면 직접 입력하세요.</div>
    ${CFG.useWeight ? '<div class="note">중량(kg)은 설계치수로 자동 계산되지만 <b>직접 입력</b>할 수 있습니다. 손으로 넣은 중량은 노랗게 표시되며 발주금액(단가×중량)에 그대로 쓰입니다. [자동]을 누르면 계산값으로 돌아갑니다.</div>' : ''}`,
-   [{ t: '▣ 즉시 발주' + ((CTX.batchOrder || []).length ? ` (+${CTX.batchOrder.length}개)` : ''), cls: 'go k-order', id: 'oxGo', fn: doOrder },
+   [{ t: '▣ 즉시 발주' + ((CTX.batchOrder || []).length > 1 ? ` (${CTX.batchOrder.length}개)` : ''), cls: 'go k-order', id: 'oxGo', fn: doOrder },
     { t: '닫기', fn: close }]);
   $('oxVendor').onchange = () => { autoPrice(); batchPrice(); };
   $('oxOdate').onchange  = () => { autoPrice(); batchPrice(); };
@@ -564,9 +577,11 @@ async function doOrder() {
   const vendor = _v('oxVendor');
   if (!vendor) return say('협력업체를 선택하세요.');
   if (!_online()) return say('DB 미연결 - 즉시 발주는 사용할 수 없습니다. [요청추가]로 넣어두세요.');
-  const qty = Math.max(1, Math.round(_n(_v('oxQty'))));
-  const price = _n(_v('oxPrice'));
-  const amt = _n(_v('oxAmt'));
+  /* v320: 체크한 품번이 있으면 우클릭한 품번의 수량·단가·금액도 아래 표(첫 행)에서 읽는다 */
+  const mainRow = batchRows().find(r => r.main) || null;
+  const qty = mainRow ? mainRow.q : Math.max(1, Math.round(_n(_v('oxQty'))));
+  const price = mainRow ? mainRow.price : _n(_v('oxPrice'));
+  const amt = mainRow ? mainRow.amt : _n(_v('oxAmt'));
   const re = _v('oxRe'), remark0 = (_v('oxRemark') || '').trim();
   const fresh = !!(CTX && CTX.newCycle), rem = fresh ? (Number(b.qty)||0) : remain(b);
 
@@ -590,9 +605,10 @@ async function doOrder() {
   /* v169: 체크한 품번들 — 표에 적힌 수량·중량·단가·금액을 그대로 쓴다 (자동값이든 손으로 고친 값이든) */
   const extra = [], noPrice = [];
   if (!fresh) for (const r of batchRows()) {
+    if (r.main) continue;
     const eb = r.b; let ep = r.price;
     if (!ep && r.auto && price && CFG.priceKey(eb) === CFG.priceKey(b)) ep = price;
-    const eamt = Math.round(ep * (r.kg || r.q));
+    const eamt = r.manual ? r.amt : Math.round(ep * (r.kg || r.q));   /* v320: 직접 고친 금액 우선 */
     if (!ep) noPrice.push(eb.part);
     extra.push({ b: eb, row: {
       category: CFG.category, status: '발주',
@@ -618,7 +634,7 @@ async function doOrder() {
       part_no: b.part, part_name: b.name || null,
       material: b.mat || null, spec: b.spec || null,
       order_qty: qty,
-      order_weight: (CFG.useWeight ? _n(_v('oxWt')) : 0) || null,   /* v158: 자동계산이든 수동입력이든 그대로 저장 */
+      order_weight: (CFG.useWeight ? (mainRow ? mainRow.kg : _n(_v('oxWt'))) : 0) || null,   /* v158: 자동계산이든 수동입력이든 그대로 저장 */
       unit_price  : price || null,
       quote_price : amt || null,
       confirm_price: amt || null,
@@ -684,6 +700,23 @@ function formReceive(ev, l) {
     /* v196: 신규발주 버튼 제거 — 추가발주로 대신한다 (차수 집계 코드는 그대로) */
     { t: '✖ 발주취소' + (bN() ? ` (+${bN()}건)` : ''), cls: 'warn', title: bN() ? '이 발주건과 체크한 품번의 발주건을 함께 삭제합니다' : '이 발주 라인을 삭제합니다', fn: doOrderCancel },
     sheetBtn(l), { t: '닫기', fn: close }]);
+  /* v320: 체크한 품번이 있으면 — 위에는 공통(입고일·비고·네고율)만 남기고, 우클릭 품번을 포함한 품번별 표를 아래에 붙인다 */
+  CTX.cfm = null;
+  if (bN()) {
+    const rate0 = _n(_v('oxInRate'));
+    const ord0 = Number(l.order_qty) || 0, got0 = Number(l.receipt_qty) || 0, q0 = Math.max(ord0 - got0, 0) || ord0 || 1, p0 = _n(l.unit_price);
+    const ow0 = Number(l.order_weight) || 0, kg0 = CFG.useWeight ? Math.round(((ow0 && ord0) ? ow0 / ord0 * q0 : autoKg(b.spec, q0)) * 100) / 100 : 0;
+    const a0 = Math.round(p0 * (kg0 || q0));
+    const main = { b, line: l, q: q0, price: p0, kg: kg0, amt: a0, ow: ow0, eo: ord0, fix: Math.round((a0 || _n(l.quote_price)) * (1 - rate0 / 100)), date: _v('oxInDate') || T0(), remark: '' };
+    const c = { main, extras: receiveExtras(l, rate0), rate: rate0, inline: true }; CTX.cfm = c;
+    ['oxInQty', 'oxInPrice', 'oxInWt', 'oxInAmt', 'oxInFix'].forEach(id => { const e = $(id); if (!e) return; const cell = e.closest('span.wtbox') || e; const lab = cell.previousElementSibling; cell.hidden = true; if (lab && lab.tagName === 'LABEL') lab.hidden = true; });
+    const bx = $('oxBody').querySelector('.batch');
+    const wrap = document.createElement('div'); wrap.innerHTML = cfmTable([main, ...c.extras], rate0);
+    if (bx) bx.insertAdjacentElement('afterend', wrap.firstElementChild); else $('oxBody').appendChild(wrap.firstElementChild);
+    if (bx) { const lb = bx.querySelector('label'); if (lb) lb.innerHTML = lb.innerHTML.replace(/함께 입고 \(.*?\)/, '함께 입고 — 위는 공통 항목(입고일·비고·네고율), 아래 표에서 품번별 입고수량·입고단가·입고금액·확정가를 각각 넣으세요 (금액은 자동 계산되지만 직접 고칠 수 있습니다)'); }
+    cfmBind(c);
+    const rt = $('oxInRate'); if (rt) rt.addEventListener('change', () => { c.rate = _n(rt.value); c.recalc && c.recalc(); });   /* 기존 onchange(상단 확정가 계산)와 함께 동작 */
+  }
   /* v158: 입고 중량 — 발주 중량(order_weight)을 입고수량에 맞춰 환산, 없으면 설계치수로 자동계산.
            수동 입력한 값은 수량을 바꿔도 덮어쓰지 않는다 ([자동]으로 해제) */
   const inKg = q => {
@@ -719,20 +752,8 @@ function formReceive(ev, l) {
   return false;
 }
 
-async function doReceive(withConfirm) {
-  const { b, line: l } = CTX;
-  if (!l || !l.line_id) return say('발주 라인을 찾을 수 없습니다. 다시 조회하세요.');
-  if (!_online()) return say('DB 미연결 - 입고 처리를 할 수 없습니다.');
-  const q = _n(_v('oxInQty'));
-  if (!(q > 0)) return say('입고수량을 입력하세요.');
-  const ord = Number(l.order_qty) || 0;
-  if (ord && q > ord && !confirm(`발주수량 ${ord} 보다 많습니다. 그래도 입고 처리할까요?`)) return;
-  const price = _n(_v('oxInPrice')), amt = _n(_v('oxInAmt'));
-  const rate = withConfirm ? _n(_v('oxInRate')) : 0;
-  const fixMain = withConfirm ? (_n(_v('oxInFix')) || Math.round((amt || _n(l.quote_price)) * (1 - rate / 100))) : 0;
-  const main = { b, line: l, q, price, kg: CFG.useWeight ? _n(_v('oxInWt')) : 0, amt, fix: fixMain,
-    date: _v('oxInDate') || T0(), remark: (_v('oxInRemark') || '').trim() };
-  /* v169: 체크한 품번의 발주 라인도 같은 날짜로 입고 — 수량은 각 잔량, 단가·중량은 각 발주값 */
+/* v320: 함께 입고할 발주건 목록 — 수량은 각 잔량, 단가·중량은 각 발주값, 확정가는 입고금액×(1−네고율) */
+function receiveExtras(l, rate) {
   const extras = [];
   for (const x of (CTX.batchIn || [])) for (const el of x.lines) {
     if (Number(el.line_id) === Number(l.line_id)) continue;
@@ -742,9 +763,64 @@ async function doReceive(withConfirm) {
     const ea = Math.round(ep * (ew || eq));
     extras.push({ b: x.b, line: el, q: eq, price: ep, kg: ew, amt: ea, ow, eo, fix: Math.round((ea || _n(el.quote_price)) * (1 - rate / 100)) });
   }
-  /* v319: 입고+확정을 여러 건 함께 할 때는 품번별 확정가를 따로 받는 창을 먼저 연다 */
+  return extras;
+}
+async function doReceive(withConfirm) {
+  const { b, line: l } = CTX;
+  if (!l || !l.line_id) return say('발주 라인을 찾을 수 없습니다. 다시 조회하세요.');
+  if (!_online()) return say('DB 미연결 - 입고 처리를 할 수 없습니다.');
+  const rate = withConfirm ? _n(_v('oxInRate')) : 0;
+  /* v320: 체크한 품번이 있으면 아래 표(우클릭 품번 포함)에서 품번별 수량·단가·금액·확정가를 읽는다 */
+  if (CTX.cfm && CTX.cfm.inline) {
+    const c = CTX.cfm; c.rate = rate; cfmRead(c);
+    const bad = [c.main, ...c.extras].filter(e => !(e.q > 0)).map(e => e.b.part);
+    if (bad.length) return say('입고수량을 입력하세요: ' + bad.join(', '));
+    if (withConfirm) { const zero = [c.main, ...c.extras].filter(e => !e.fix).map(e => e.b.part);
+      if (zero.length && !confirm(`확정가가 0원인 품번이 있습니다: ${zero.join(', ')}\n제조원가에 0원으로 반영됩니다. 계속할까요?`)) return; }
+    c.main.date = _v('oxInDate') || T0(); c.main.remark = (_v('oxInRemark') || '').trim();
+    return execReceive(c.main, c.extras, withConfirm, rate, withConfirm ? 'oxGo2' : 'oxGo');
+  }
+  const q = _n(_v('oxInQty'));
+  if (!(q > 0)) return say('입고수량을 입력하세요.');
+  const ord = Number(l.order_qty) || 0;
+  if (ord && q > ord && !confirm(`발주수량 ${ord} 보다 많습니다. 그래도 입고 처리할까요?`)) return;
+  const price = _n(_v('oxInPrice')), amt = _n(_v('oxInAmt'));
+  const fixMain = withConfirm ? (_n(_v('oxInFix')) || Math.round((amt || _n(l.quote_price)) * (1 - rate / 100))) : 0;
+  const main = { b, line: l, q, price, kg: CFG.useWeight ? _n(_v('oxInWt')) : 0, amt, fix: fixMain,
+    date: _v('oxInDate') || T0(), remark: (_v('oxInRemark') || '').trim() };
+  const extras = receiveExtras(l, rate);
   if (withConfirm && extras.length) return formConfirmMany(main, extras, rate);
   return execReceive(main, extras, withConfirm, rate, withConfirm ? 'oxGo2' : 'oxGo');
+}
+/* v320: 품번별 입고 표 (입고 창 안에 바로 붙는다) */
+function cfmTable(all, rate) {
+  return `<table class="ln bt" id="oxCf"><thead><tr><th>품번</th><th>부품명</th><th>업체</th><th style="width:54px">입고수량</th><th style="width:84px">입고단가</th><th style="width:88px">입고금액</th><th style="width:88px">확정가</th></tr></thead><tbody>${
+    all.map((e, k) => `<tr data-k="${k}"${k === 0 ? ' class="main" title="우클릭한 품번"' : ''}><td>${_esc(e.b.part)}</td><td>${_esc(e.b.name || '')}</td><td>${_esc(e.line.vendor_name || '')}</td>
+      <td><input class="r cq" value="${e.q}" inputmode="numeric"></td><td><input class="r cp" value="${_w0(e.price)}" placeholder="예: 45,000" inputmode="numeric"></td>
+      <td><input class="r ca" value="${_w0(e.amt)}" placeholder="자동" inputmode="numeric" title="입고단가×수량(중량)으로 자동 계산 — 직접 고칠 수 있습니다"></td><td><input class="r cf" value="${_w0(e.fix)}" placeholder="예: 42,750" inputmode="numeric" title="[입고+확정]일 때 제조원가에 반영 — 비우면 입고금액×(1−네고율)"></td></tr>`).join('')}</tbody>
+    <tfoot><tr><th colspan="5" class="r">합계</th><th class="r" id="oxCfA"></th><th class="r" id="oxCfF"></th></tr></tfoot></table>`;
+}
+function cfmBind(c) {
+  const all = [c.main, ...c.extras], t = $('oxCf'); if (!t) return;
+  const calc = tr => { const k = Number(tr.dataset.k), e = all[k]; if (!e) return;
+    const q = Math.max(1, Math.round(_n(tr.querySelector('.cq').value))), pr = _n(tr.querySelector('.cp').value), aEl = tr.querySelector('.ca');
+    if (CFG.useWeight && k > 0) e.kg = Math.round(((e.ow && e.eo) ? e.ow / e.eo * q : autoKg(e.b.spec, q)) * 100) / 100;
+    e.q = q; e.price = pr; e.amt = aEl.dataset.manual === '1' ? _n(aEl.value) : Math.round(pr * ((CFG.useWeight && e.kg) || q));
+    tr.querySelector('.cq').value = q; tr.querySelector('.cp').value = _w0(pr); aEl.value = _w0(e.amt); aEl.classList.toggle('manual', aEl.dataset.manual === '1');
+    const f = tr.querySelector('.cf'); if (f.dataset.manual !== '1') { e.fix = Math.round((e.amt || _n(e.line.quote_price)) * (1 - (c.rate || 0) / 100)); f.value = _w0(e.fix); } };
+  const tot = () => { let a = 0, f = 0; all.forEach(e => { a += e.amt || 0; f += e.fix || 0; }); $('oxCfA').textContent = _won(a); $('oxCfF').textContent = _won(f); };
+  t.querySelectorAll('.cq,.cp').forEach(i => i.onchange = () => { calc(i.closest('tr')); tot(); });
+  t.querySelectorAll('.ca').forEach(i => i.onchange = () => { i.dataset.manual = _n(i.value) ? '1' : ''; calc(i.closest('tr')); tot(); });
+  t.querySelectorAll('.cf').forEach(i => i.onchange = () => { const tr = i.closest('tr'), e = all[Number(tr.dataset.k)]; i.dataset.manual = _n(i.value) ? '1' : ''; if (i.dataset.manual) { e.fix = _n(i.value); i.value = _w0(e.fix); } else calc(tr); tot(); });
+  c.recalc = () => { t.querySelectorAll('tbody tr').forEach(calc); tot(); };
+  tot();
+}
+function cfmRead(c) {
+  const all = [c.main, ...c.extras], t = $('oxCf'); if (!t) return;
+  t.querySelectorAll('tbody tr').forEach(tr => { const e = all[Number(tr.dataset.k)]; if (!e) return;
+    e.q = Math.max(0, Math.round(_n(tr.querySelector('.cq').value))); e.price = _n(tr.querySelector('.cp').value);
+    const aEl = tr.querySelector('.ca'); e.amt = aEl.dataset.manual === '1' ? _n(aEl.value) : Math.round(e.price * ((CFG.useWeight && e.kg) || e.q));
+    const f = _n(tr.querySelector('.cf').value); e.fix = f || Math.round((e.amt || _n(e.line.quote_price)) * (1 - (c.rate || 0) / 100)); });
 }
 /* v319: 입고(+확정) 실행 — main·extras 에 적힌 품번별 수량·단가·금액·확정가 그대로 */
 async function execReceive(main, extras, withConfirm, rate, btnId) {
@@ -752,6 +828,7 @@ async function execReceive(main, extras, withConfirm, rate, btnId) {
   const btn = $(btnId), b0 = btn ? btn.textContent : '';
   if (btn) { btn.disabled = true; btn.textContent = '처리 중…'; }
   const rateOf = (amt, fix) => amt ? Number(((1 - fix / amt) * 100).toFixed(2)) : rate;
+  if (main.q > 0 === false) { if (btn) { btn.disabled = false; btn.textContent = b0; } return say('입고수량을 입력하세요.'); }
   try {
     const row = {
       line_id: Number(l.line_id), status: '입고',
@@ -864,6 +941,31 @@ function formConfirm(ev, l) {
     /* v196: 신규발주 버튼 제거 — 추가발주로 대신한다 (차수 집계 코드는 그대로) */
     { t: '✖ 입고취소', cls: 'warn', title: '입고를 취소하고 발주 상태로 되돌립니다', fn: doReceiveCancel },
     sheetBtn(l), { t: '닫기', fn: close }]);
+  /* v320: 체크한 품번이 있으면 — 위에는 공통(확정일·네고율)만, 아래 표에 우클릭 품번 포함 품번별 매입가·확정가 */
+  CTX.cfmList = null;
+  if (cN()) {
+    const rate0 = quote ? Number(((1 - fix / quote) * 100).toFixed(2)) : 0;
+    const list = [{ b, line: l, amt: quote, fix }];
+    for (const x of (CTX.batchCfm || [])) for (const el of x.lines) { if (Number(el.line_id) === Number(l.line_id)) continue;
+      const a = _n(el.receipt_amount) || _n(el.quote_price); list.push({ b: x.b, line: el, amt: a, fix: Math.round(a * (1 - rate0 / 100)) }); }
+    CTX.cfmList = list;
+    ['oxQuote', 'oxFix'].forEach(id => { const e = $(id); if (!e) return; const lab = e.previousElementSibling; e.hidden = true; if (lab && lab.tagName === 'LABEL') lab.hidden = true; });
+    const html = `<table class="ln bt" id="oxCfm"><thead><tr><th>품번</th><th>부품명</th><th>업체</th><th style="width:60px">입고수량</th><th style="width:92px">매입가</th><th style="width:92px">확정가</th></tr></thead><tbody>${
+      list.map((e, k) => `<tr data-k="${k}"${k === 0 ? ' class="main" title="우클릭한 품번"' : ''}><td>${_esc(e.b.part)}</td><td>${_esc(e.b.name || '')}</td><td>${_esc(e.line.vendor_name || '')}</td><td class="r">${Number(e.line.receipt_qty) || Number(e.line.order_qty) || ''}</td>
+        <td><input class="r ma" value="${_w0(e.amt)}" placeholder="매입가" inputmode="numeric" title="입고금액 — 직접 고칠 수 있습니다"></td><td><input class="r mf" value="${_w0(e.fix)}" placeholder="예: 42,750" inputmode="numeric" title="제조원가에 반영되는 확정가 — 비우면 매입가×(1−네고율)"></td></tr>`).join('')}</tbody>
+      <tfoot><tr><th colspan="4" class="r">합계</th><th class="r" id="oxCfmA"></th><th class="r" id="oxCfmF"></th></tr></tfoot></table>`;
+    const bx = $('oxBody').querySelector('.batch'); const wrap = document.createElement('div'); wrap.innerHTML = html;
+    if (bx) bx.insertAdjacentElement('afterend', wrap.firstElementChild); else $('oxBody').appendChild(wrap.firstElementChild);
+    if (bx) { const lb = bx.querySelector('label'); if (lb) lb.innerHTML = lb.innerHTML.replace(/함께 입고확정 \(.*?\)/, '함께 입고확정 — 위는 공통 항목(확정일·네고율), 아래 표에서 품번별 매입가·확정가를 각각 넣으세요'); }
+    const t = $('oxCfm'), rt = $('oxRate');
+    const tot = () => { let a = 0, f = 0; list.forEach(e => { a += e.amt || 0; f += e.fix || 0; }); $('oxCfmA').textContent = _won(a); $('oxCfmF').textContent = _won(f); };
+    const calcRow = tr => { const e = list[Number(tr.dataset.k)]; if (!e) return; e.amt = _n(tr.querySelector('.ma').value); const f = tr.querySelector('.mf');
+      if (f.dataset.manual !== '1') { e.fix = Math.round(e.amt * (1 - _n(rt ? rt.value : 0) / 100)); f.value = _w0(e.fix); } else e.fix = _n(f.value); };
+    t.querySelectorAll('.ma').forEach(i => i.onchange = () => { i.value = _w0(i.value); calcRow(i.closest('tr')); tot(); });
+    t.querySelectorAll('.mf').forEach(i => i.onchange = () => { i.dataset.manual = _n(i.value) ? '1' : ''; i.value = _w0(i.value); calcRow(i.closest('tr')); tot(); });
+    if (rt) rt.onchange = () => { t.querySelectorAll('tbody tr').forEach(calcRow); tot(); };
+    tot();
+  }
   $('oxRate').onchange = () => { const q = _n(_v('oxQuote')); $('oxFix').value = _won(Math.round(q * (1 - _n(_v('oxRate')) / 100))); };
   $('oxFix').onchange  = () => { const q = _n(_v('oxQuote')); $('oxRate').value = q ? ((1 - _n(_v('oxFix')) / q) * 100).toFixed(1) : '0'; };
   return false;
@@ -873,14 +975,22 @@ async function doConfirm() {
   const { b, line: l } = CTX;
   if (!l || !l.line_id) return say('발주 라인을 찾을 수 없습니다.');
   if (!_online()) return say('DB 미연결 - 입고확정을 할 수 없습니다.');
-  const quote = _n(_v('oxQuote')), fix = _n(_v('oxFix'));
+  /* v320: 체크한 품번이 있으면 아래 표(우클릭 품번 포함)에서 품번별 매입가·확정가를 읽는다 */
+  const list = CTX.cfmList;
+  if (list) { const t = $('oxCfm'); if (t) t.querySelectorAll('tbody tr').forEach(tr => { const e = list[Number(tr.dataset.k)]; if (!e) return; e.amt = _n(tr.querySelector('.ma').value); const f = _n(tr.querySelector('.mf').value); e.fix = f || Math.round(e.amt * (1 - _n(_v('oxRate')) / 100)); }); }
+  const quote = list ? list[0].amt : _n(_v('oxQuote')), fix = list ? list[0].fix : _n(_v('oxFix'));
   const btn = $('oxGo'); if (btn) { btn.disabled = true; btn.textContent = '처리 중…'; }
   try {
     const rate = quote ? Number(((1 - fix / quote) * 100).toFixed(2)) : 0, cd = _v('oxCdate') || T0(), ts = new Date().toISOString();
     const rows = [{ line_id: Number(l.line_id), status: '입고확정', confirm_date: cd, confirm_price: fix || null, nego_rate: quote ? rate : null, updated_at: ts }];
-    /* v169: 체크한 품번의 입고 라인도 같은 확정일·네고율로 확정 */
+    if (list) rows[0].receipt_amount = quote || null;
+    /* v169: 체크한 품번의 입고 라인도 함께 확정 (v320: 표에 적힌 품번별 매입가·확정가 그대로) */
     const done = [];
-    for (const x of (CTX.batchCfm || [])) for (const el of x.lines) {
+    if (list) for (const e of list.slice(1)) {
+      const rr = e.amt ? Number(((1 - e.fix / e.amt) * 100).toFixed(2)) : null;
+      rows.push({ line_id: Number(e.line.line_id), status: '입고확정', confirm_date: cd, receipt_amount: e.amt || null, confirm_price: e.fix || null, nego_rate: rr, updated_at: ts });
+      done.push(`${e.b.part} ${_won(e.fix)}원`);
+    } else for (const x of (CTX.batchCfm || [])) for (const el of x.lines) {
       if (Number(el.line_id) === Number(l.line_id)) continue;
       const eqt = _n(el.receipt_amount) || _n(el.quote_price), efix = Math.round(eqt * (1 - rate / 100));
       rows.push({ line_id: Number(el.line_id), status: '입고확정', confirm_date: cd, confirm_price: efix || null, nego_rate: eqt ? rate : null, updated_at: ts });
