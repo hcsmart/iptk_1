@@ -12,6 +12,8 @@ const $ = id => document.getElementById(id);
 const T0 = () => { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); };
 const _n = v => Number(String(v == null ? '' : v).replace(/[^\d.\-]/g, '')) || 0;
 const _won = v => (Math.round(Number(v) || 0)).toLocaleString('ko-KR');
+/* v316: 0 이면 빈칸 — 기본값 0 대신 예시(placeholder)만 보인다 */
+const _w0 = v => (_n(v) > 0 ? _won(v) : '');
 const _esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const _dt = v => v ? String(v).slice(0, 10) : '';
 const _online = () => !!(window.MESDB && MESDB.online);
@@ -199,10 +201,10 @@ function formReceive(ev, r) {
    <div class="g">
     <label>입고일</label><input id="sxDate" type="date" value="${T0()}">
     <label>입고수량</label><input id="sxQty" class="r" value="${Number(r.qty) || 0}" inputmode="numeric">
-    <label>단가</label><input id="sxPrice" class="r" value="${_won(r.price)}" inputmode="numeric">
-    <label>매입가</label><input id="sxAmt" class="r" value="${_won(buy(r))}" readonly title="입고수량 × 단가">
-    <label>네고율(%)</label><input id="sxRate" class="r" value="0" inputmode="decimal" title="입고+확정 때만 적용">
-    <label>확정가</label><input id="sxFix" class="r" value="${_won(buy(r))}" inputmode="numeric" title="입고+확정 때만 적용">
+    <label>단가</label><input id="sxPrice" class="r" value="${_w0(r.price)}" placeholder="예: 45,000" inputmode="numeric">
+    <label>매입가</label><input id="sxAmt" class="r" value="${_w0(buy(r))}" placeholder="수량 × 단가" readonly title="입고수량 × 단가">
+    <label>네고율(%)</label><input id="sxRate" class="r" placeholder="예: 5" inputmode="decimal" title="입고+확정 때만 적용">
+    <label>확정가</label><input id="sxFix" class="r" value="${_w0(buy(r))}" placeholder="예: 42,750" inputmode="numeric" title="입고+확정 때만 적용">
    </div>
    ${batchNote(bt, '입고 (수량은 각 발주수량, 단가는 각 발주단가) — 한 건씩 따로 넣으려면 아래 [→ 다음] 버튼')}
    <div class="note">[입고]는 입고 상태까지, [입고+확정]은 네고율·확정가까지 한 번에 처리해 제조원가에 반영합니다.</div>`,
@@ -214,10 +216,10 @@ function formReceive(ev, r) {
     { t: '✖ 발주취소', cls: 'warn', title: '발주 라인을 삭제합니다', fn: doOrderCancel },
     { t: '닫기', fn: close }]);
   CTX.batch = bt;
-  const f = () => { const a = Math.round(_n($('sxQty').value) * _n($('sxPrice').value)); $('sxAmt').value = _won(a); $('sxPrice').value = _won(_n($('sxPrice').value)); $('sxFix').value = _won(Math.round(a * (1 - _n($('sxRate').value) / 100))); };
+  const f = () => { const a = Math.round(_n($('sxQty').value) * _n($('sxPrice').value)); $('sxAmt').value = _w0(a); $('sxPrice').value = _w0($('sxPrice').value); $('sxFix').value = _w0(Math.round(a * (1 - _n($('sxRate').value) / 100))); };
   $('sxQty').onchange = f; $('sxPrice').onchange = f;
-  $('sxRate').onchange = () => { $('sxFix').value = _won(Math.round(_n($('sxAmt').value) * (1 - _n($('sxRate').value) / 100))); };
-  $('sxFix').onchange = () => { const a = _n($('sxAmt').value); $('sxFix').value = _won(_n($('sxFix').value)); $('sxRate').value = a ? ((1 - _n($('sxFix').value) / a) * 100).toFixed(1) : '0'; };
+  $('sxRate').onchange = () => { $('sxFix').value = _w0(Math.round(_n($('sxAmt').value) * (1 - _n($('sxRate').value) / 100))); };
+  $('sxFix').onchange = () => { const a = _n($('sxAmt').value); $('sxFix').value = _w0($('sxFix').value); const rt = a ? (1 - _n($('sxFix').value) / a) * 100 : 0; $('sxRate').value = rt ? rt.toFixed(1) : ''; };
   return false;
 }
 async function doReceive(withConfirm) {
@@ -330,17 +332,17 @@ function formConfirm(ev, r) {
   const quote = OSP() ? (Number(r.quote) || 0) : buy(r), fix = _n(r.fix) || quote;
   const mid = OSP() ? `
     <label>입고수량</label><input class="r" value="${Number(r.got) || Number(r.ord) || 1}" readonly>
-    <label>견적가</label><input id="sxAmt" class="r" value="${_won(quote)}" readonly>` : `
+    <label>견적가</label><input id="sxAmt" class="r" value="${_w0(quote)}" placeholder="견적가 없음" readonly>` : `
     <label>입고수량</label><input id="sxQty" class="r" value="${Number(r.got) || Number(r.qty) || 0}" inputmode="numeric">
-    <label>단가</label><input id="sxPrice" class="r" value="${_won(r.price)}" inputmode="numeric">
-    <label>매입가</label><input id="sxAmt" class="r" value="${_won(quote)}" readonly title="입고수량 × 단가">
+    <label>단가</label><input id="sxPrice" class="r" value="${_w0(r.price)}" placeholder="예: 45,000" inputmode="numeric">
+    <label>매입가</label><input id="sxAmt" class="r" value="${_w0(quote)}" placeholder="수량 × 단가" readonly title="입고수량 × 단가">
     <label></label><span></span>`;
   open(ev, `${r.part || ''} — 입고확정`, 'k-cfm', headHtml(r) + `
    <div class="g">
     <label>입고일</label><input value="${_esc(_dt(r.idate))}" readonly>
     <label>확정일</label><input id="sxCdate" type="date" value="${T0()}">${mid}
-    <label>네고율(%)</label><input id="sxRate" class="r" value="${quote ? ((1 - fix / quote) * 100).toFixed(1) : '0'}" inputmode="decimal">
-    <label>확정가</label><input id="sxFix" class="r" value="${_won(fix)}" inputmode="numeric">
+    <label>네고율(%)</label><input id="sxRate" class="r" value="${quote && fix && fix !== quote ? ((1 - fix / quote) * 100).toFixed(1) : ''}" placeholder="예: 5" inputmode="decimal">
+    <label>확정가</label><input id="sxFix" class="r" value="${_w0(fix)}" placeholder="예: 42,750" inputmode="numeric">
    </div>
    ${batchNote(bt, '입고확정 (이 창의 확정일·네고율을 각 매입가에 적용) — 확정가를 한 건씩 따로 넣으려면 아래 [→ 다음] 버튼')}
    <div class="note">확정가가 제조원가(${_esc(CFG.category)}비)에 반영됩니다. 네고율을 넣으면 확정가가, 확정가를 고치면 네고율이 맞춰집니다.</div>`,
@@ -349,10 +351,10 @@ function formConfirm(ev, r) {
     { t: '✖ 입고취소', cls: 'warn', title: '입고를 취소하고 발주 상태로 되돌립니다', fn: doReceiveCancel },
     { t: '닫기', fn: close }]);
   CTX.batch = bt;
-  const f = () => { const a = Math.round(_n($('sxQty').value) * _n($('sxPrice').value)); $('sxAmt').value = _won(a); $('sxPrice').value = _won(_n($('sxPrice').value)); $('sxFix').value = _won(Math.round(a * (1 - _n($('sxRate').value) / 100))); };
+  const f = () => { const a = Math.round(_n($('sxQty').value) * _n($('sxPrice').value)); $('sxAmt').value = _w0(a); $('sxPrice').value = _w0($('sxPrice').value); $('sxFix').value = _w0(Math.round(a * (1 - _n($('sxRate').value) / 100))); };
   if ($('sxQty')) { $('sxQty').onchange = f; $('sxPrice').onchange = f; }
-  $('sxRate').onchange = () => { $('sxFix').value = _won(Math.round(_n($('sxAmt').value) * (1 - _n($('sxRate').value) / 100))); };
-  $('sxFix').onchange = () => { const a = _n($('sxAmt').value); $('sxFix').value = _won(_n($('sxFix').value)); $('sxRate').value = a ? ((1 - _n($('sxFix').value) / a) * 100).toFixed(1) : '0'; };
+  $('sxRate').onchange = () => { $('sxFix').value = _w0(Math.round(_n($('sxAmt').value) * (1 - _n($('sxRate').value) / 100))); };
+  $('sxFix').onchange = () => { const a = _n($('sxAmt').value); $('sxFix').value = _w0($('sxFix').value); const rt = a ? (1 - _n($('sxFix').value) / a) * 100 : 0; $('sxRate').value = rt ? rt.toFixed(1) : ''; };
   return false;
 }
 async function doConfirm() {
