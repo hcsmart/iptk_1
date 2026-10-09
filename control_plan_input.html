@@ -114,5 +114,5 @@ document.addEventListener('input',e=>{if(e.target.id==='proc')makePno()});
 <script>MESDB.master({page:"control_plan_input",table:"control_plans",pk:"pno",
   map:{"pno": "plan_no", "proc": "process_code", "pname": "process_name", "seq": {"col": "item_seq", "type": "num"}, "item": "control_item", "cls": "spec_class", "spec": "control_spec", "lo": {"col": "spec_lower", "type": "num"}, "hi": {"col": "spec_upper", "type": "num"}, "unit": "unit", "cycle": "inspection_cycle", "sample": "sample_size", "method": "measure_method", "gauge": "gauge_code", "form": "record_form", "react": "reaction_plan", "resp": "responsible", "use": {"col": "is_active", "type": "ynbool"}, "remark": "remark"},get:()=>data,render:()=>{view=[...data];render()}});
 fillRef('gauge','gauges','gauge_code','gauge_code','gauge_name');</script>
-<script src="mes_ctx.js?v=169"></script>
+<script src="mes_ctx.js?v=306"></script>
 </body></html>

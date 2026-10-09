@@ -168,7 +168,7 @@ renderParts();renderRes();
 (async()=>{await waitDB();if(online())await loadMasters();const j=(jobQ.value||'').trim();if(j)loadJob(j)})();
 </script>
 <script src="mes_db.js?v=196"></script>
-<script src="mes_ctx.js?v=169"></script>
+<script src="mes_ctx.js?v=306"></script>
 <script src="mes_jobpick.js?v=162"></script>
 <script>try{MESJOB.attach("jobQ",{onPick:j=>loadJob(j)})}catch(e){}
 jobQ.addEventListener('keydown',e=>{if(e.key==='Enter')search()});</script>

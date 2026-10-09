@@ -108,5 +108,5 @@ document.addEventListener('input',e=>{if(e.target.id==='rev')makeKey()});
 <script>MESDB.master({page:"document_revision_input",table:"document_revisions",pk:"key",
   map:{"key": "rev_key", "dno": "doc_no", "rev": "rev", "rdate": {"col": "rev_date", "type": "text"}, "rtype": "rev_type", "reason": "rev_reason", "chno": "change_no", "fno": "finding_no", "drafter": "drafter", "reviewer": "reviewer", "approver": "approver", "adate": {"col": "approval_date", "type": "text"}, "dist": "distributed_to", "obsolete": {"col": "obsolete_confirmed", "type": "ynbool"}, "url": "file_url", "remark": "remark"},get:()=>data,render:()=>{view=[...data];render()}});
 fillRef('dno','documents','doc_no','doc_no','doc_name');fillRef('chno','change_requests','change_no','change_no','change_type');fillRef('fno','quality_audit_findings','finding_no','finding_no','finding_grade');</script>
-<script src="mes_ctx.js?v=169"></script>
+<script src="mes_ctx.js?v=306"></script>
 </body></html>

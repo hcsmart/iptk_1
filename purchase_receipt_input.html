@@ -94,7 +94,7 @@ inDate.value=new Date().toISOString().slice(0,10);applyFilter();render();window.
 </script>
 <script src="mes_sample.js?v=169"></script><script src="mes_scene.js?v=67"></script><script src="mes_demo.js?v=67"></script><script src="mes_db.js?v=171"></script>
 <script>MESDB.lines({page:"purchase_receipt_input",category:"구매품",statuses:["발주", "입고"],map:{"no": {"col": "line_id", "type": "num"}, "vendor": "vendor_name", "job": "job_no", "item": "item_name", "proc": "process_code", "procName": "process_name", "part": "part_no", "partName": "part_name", "mat": "material", "spec": "spec", "ord": {"col": "order_qty", "type": "num"}, "inQty": {"col": "receipt_qty", "type": "num"}, "price": {"col": "unit_price", "type": "num"}, "amt": {"col": "receipt_amount", "type": "num"}, "odate": {"col": "order_date", "type": "date"}, "edate": {"col": "required_date", "type": "date"}, "idate": {"col": "receipt_date", "type": "date"}, "owner": "owner_name", "status": {"col": "status", "type": "status"}},get:()=>rows,render:()=>{applyFilter();render()}});</script>
-<script src="mes_ctx.js?v=169"></script>
+<script src="mes_ctx.js?v=306"></script>
 <script>
 function sampleFill(){
   if(window.MESDEMO)return MESDEMO.run('purchase_receipt_input',{});

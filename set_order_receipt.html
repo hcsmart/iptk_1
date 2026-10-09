@@ -45,7 +45,7 @@ input.cell{width:100%;height:20px;border:1px solid #cbd4dc;padding:0 3px;text-al
         <div class="label">제번</div><input id="fJob" class="field" readonly><div class="label">조수</div><input id="fSeq" class="field" readonly>
         <div class="label">협력업체</div><input id="fVen" class="field" readonly><div class="label">네고가</div><input id="fNego" class="field r" readonly>
         <div class="label">입고일</div><input id="fDate" class="field" type="date"><div class="label">진척률(%)</div><input id="fRate" class="field r" type="number" min="0" max="100" step="5" value="100">
-        <div class="label">입고금액</div><input id="fAmt" class="field r" type="number" min="0"><div class="label">검수자</div><input id="fInsp" class="field">
+        <div class="label">입고금액</div><input id="fAmt" class="field r" type="number" min="0"><div class="label">검수자</div><input id="fInsp" class="field" list="dl_insp" autocomplete="off" placeholder="사원 선택/입력"><datalist id="dl_insp"></datalist>
         <div class="label">비고</div><input id="fRemark" class="wide field" placeholder="입고 검수 내용">
       </div></div>
     <div class="box"><div class="box-title">입고 이력</div><div class="tablewrap"><table>
@@ -66,6 +66,9 @@ const money=v=>Number(v||0).toLocaleString('ko-KR');
 const today=()=>new Date().toISOString().slice(0,10);
 const online=()=>!!(window.MESDB&&MESDB.online);
 const me=()=>{try{const a=window.MES_AUTH||window.parent.MES_AUTH;if(!a)return '';const em=a.session&&a.session.user&&a.session.user.email;return a.name||a.user_name||(em?String(em).split('@')[0]:'')||''}catch(e){return ''}};
+/* v306: 검수자 = 사용자정보(사원) 목록에서 선택 — 사용중인 계정만 */
+async function fillInsp(){try{const us=await MESDB.table('users').select('select=name,user_id,is_active&order=name');const dl=document.getElementById('dl_insp');
+ if(dl)dl.innerHTML=(us||[]).filter(u=>u.name&&u.is_active===true&&u.user_id&&String(u.user_id)!=='hcsmart').map(u=>`<option value="${String(u.name).replace(/"/g,'&quot;')}">`).join('')}catch(e){}}
 const msg=t=>message.textContent=t;
 const rate=o=>Number(o.progress_rate)||0;
 function statusOf(o){return rate(o)>=100?'입고완료':rate(o)>0?'부분입고':(o.receipt_planned_date&&o.receipt_planned_date<today()?'지연':'대기')}
@@ -167,6 +170,7 @@ async function load(){
    ORD=(ls||[]).map(l=>({...l,item_name:item[l.job_no]||'',progress_rate:Number(l.progress_rate)||(l.status!=='발주'?100:0)}));
    RCP=[...(his||[])];
   }catch(e){msg('조회 실패: '+String(e.message||e).slice(0,120))}
+  fillInsp();
  }
  fillVen();search();
 }
@@ -176,7 +180,7 @@ async function load(){
 load();window.MES={search,save:receive,receive,cancelReceipt,cancelOrder,exportCsv,setMessage:msg,reload:load};
 </script>
 <script src="mes_sample.js?v=169"></script><script src="mes_scene.js?v=77"></script><script src="mes_demo.js?v=77"></script><script src="mes_db.js?v=171"></script>
-<script src="mes_ctx.js?v=169"></script>
+<script src="mes_ctx.js?v=306"></script>
 <script>
 function sampleFill(){
   if(window.MESDEMO)return MESDEMO.run('set_order_receipt',{});

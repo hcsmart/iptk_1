@@ -107,5 +107,5 @@ document.addEventListener('input',e=>{if(e.target.id==='attendees')countAttendee
 <script>MESDB.master({page:"training_input",table:"trainings",pk:"tno",
   map:{"tno": "training_no", "tdate": {"col": "training_date", "type": "text"}, "tname": "training_name", "ttype": "training_type", "area": "training_area", "instructor": "instructor", "institute": "institute", "hours": {"col": "hours", "type": "num"}, "cnt": {"col": "attendee_cnt", "type": "num"}, "attendees": "attendees", "content": "content", "effect": "effectiveness", "qcode": "qual_code", "url": "file_url", "remark": "remark"},get:()=>data,render:()=>{view=[...data];render()}});
 fillRef('qcode','qualification_types','qual_code','qual_code','qual_name');</script>
-<script src="mes_ctx.js?v=169"></script>
+<script src="mes_ctx.js?v=306"></script>
 </body></html>
