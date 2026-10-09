@@ -215,7 +215,7 @@ table.ev td .dcell .wd.late{background:#ffe45c;color:#5a4400;font-weight:700}
 <footer class="foot"><button class="btn" onclick="save()">▤ 저장</button><button class="btn" onclick="clearForm()">✕ 삭제</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">관리제번을 고르면 수주정보가 채워지고, 저장하면 공정 제번(A~D 등) 모두에 같은 계획이 들어갑니다.</span></footer>
 </div>
 <datalist id="dl_job"></datalist><datalist id="dl_make"><option value="신규제작"><option value="수정"><option value="추가"><option value="보완"><option value="양산이관"></datalist><datalist id="dl_cust"></datalist><datalist id="dl_vd_mass"></datalist><datalist id="dl_item"></datalist><datalist id="dl_mold"></datalist><datalist id="dl_emp"></datalist><datalist id="dl_vd_design"></datalist><datalist id="dl_vd_mach"></datalist><datalist id="dl_vd_asm"></datalist>
-<script src="mes_lookup.js?v=71"></script><script>
+<script src="mes_lookup.js?v=296"></script><script>
 /* v68: 제번·고객사·아이템·금형타입·담당자를 기준정보 드롭다운으로 (하드코딩 seed 제거) */
 const AK=['design_internal_amount','design_external_amount','raw_material_amount','purchase_amount','machining_internal_amount','machining_external_amount','assembly_internal_amount','assembly_external_amount'];
 const num=v=>Number(String(v??'').replace(/[^0-9.-]/g,''))||0;
@@ -520,7 +520,7 @@ async function loadMasters(){
  /* v294: 제작처 목록 맨 위에 자사(일평기연)를 넣는다 — 기본값이 목록에서 선택된 상태로 보이게 */
  fillDL('dl_vd_mach',[{vendor_name:DEF_MAKER,vendor_code:'자사'},...(await pull('vendor_outsourcing')).filter(r=>r.vendor_name!==DEF_MAKER)],r=>r.vendor_name,r=>r.vendor_code||'');
  fillDL('dl_vd_mass',await pull('mass_production'),r=>r.vendor_name,r=>r.vendor_code||'');   /* v238: 양산처 드롭다운 */
- fillDL('dl_vd_asm',(await pull('vendor')).filter(r=>r.vendor_type==='협력업체'),r=>r.vendor_name,r=>r.vendor_code||'');
+ fillDL('dl_vd_asm',(await pull('vendor')).filter(r=>String(r.vendor_type||'').split(/[,\/ ]+/).includes('협력업체')),r=>r.vendor_name,r=>r.vendor_code||'');   /* v296: 구분 복수값("고객사,협력업체") 대응 */
  ['design','machining','assembly'].forEach(vendorGate);
 }
 

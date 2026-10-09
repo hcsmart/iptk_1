@@ -167,7 +167,7 @@ confirmDate.value=new Date().toISOString().slice(0,10);render();window.MES={sear
 </script>
 <script src="mes_sample.js?v=169"></script><script src="mes_scene.js?v=67"></script><script src="mes_demo.js?v=67"></script><script src="mes_db.js?v=171"></script><script src="mes_cycle.js?v=225"></script>
 <script>MESDB.lines({page:"material_receipt_confirmation",category:"원재료",statuses:["입고", "입고확정"],map:{"no": {"col": "line_id", "type": "num"}, "vendor": "vendor_name", "job": "job_no", "item": "item_name", "proc": "process_code", "procName": "process_name", "part": "part_no", "cyc": {"col": "cycle_no", "type": "num"}, "cycWhy": "cycle_reason", "partName": "part_name", "mat": "material", "odate": {"col": "order_date", "type": "date"}, "idate": {"col": "receipt_date", "type": "date"}, "cdate": {"col": "confirm_date", "type": "date"}, "ord": {"col": "order_qty", "type": "num"}, "got": {"col": "receipt_qty", "type": "num"}, "unit": {"col": "unit_price", "type": "num"}, "price": {"col": "quote_price", "type": "num"}, "rate": {"col": "nego_rate", "type": "num"}, "fix": {"col": "confirm_price", "type": "num"}, "status": {"col": "status", "type": "status"}},get:()=>rows,render:()=>{view=[...rows];search()}});</script>
-<script src="mes_lookup.js?v=230"></script>
+<script src="mes_lookup.js?v=296"></script>
 <script src="mes_ctx.js?v=169"></script>
 <script>
 function sampleFill(){

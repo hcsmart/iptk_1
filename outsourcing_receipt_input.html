@@ -170,7 +170,7 @@ setTimeout(()=>{const jb=document.getElementById('jobQ');
 </script>
 <script src="mes_sample.js?v=169"></script><script src="mes_scene.js?v=92"></script><script src="mes_demo.js?v=92"></script><script src="mes_db.js?v=171"></script><script src="mes_cycle.js?v=225"></script>
 <script>MESDB.lines({page:"outsourcing_receipt_input",category:"외주가공",statuses:["발주"],map:{"no": {"col": "line_id", "type": "num"}, "vendor": "vendor_name", "job": "job_no", "item": "item_name", "proc": "process_code", "procName": "process_name", "part": "part_no", "cyc": {"col": "cycle_no", "type": "num"}, "cycWhy": "cycle_reason", "partName": "part_name", "mp": "machining_process_code", "mpName": "machining_process_name", "odate": {"col": "order_date", "type": "date"}, "edate": {"col": "required_date", "type": "date"}, "ord": {"col": "order_qty", "type": "num"}, "got": {"col": "receipt_qty", "type": "num"}},get:()=>rows,render:()=>{view=[...rows];renderWait();renderIn();try{loadProcSel()}catch(e){}}});</script>
-<script src="mes_lookup.js?v=92"></script>
+<script src="mes_lookup.js?v=296"></script>
 <script>
 /* v86: 협력업체 — 기준정보(업체 관리)의 외주가공 협력사를 드롭다운으로 선택 */
 async function loadVendorSel(){
