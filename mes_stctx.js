@@ -49,7 +49,7 @@ const CSS = `
 #sxPop{position:fixed;z-index:9001;width:440px;max-width:96vw;max-height:92vh;overflow:auto;background:#fff;border:1px solid #6f8090;
  box-shadow:0 8px 26px rgba(0,0,0,.28);display:none;font:12px/1.5 "Malgun Gothic","맑은 고딕",Arial,sans-serif;color:#22303a}
 #sxPop.on{display:block}
-#sxPop .ch{display:flex;align-items:center;gap:8px;padding:0 8px 0 11px;height:31px;color:#fff;font-weight:700;background:linear-gradient(#5f7f9f,#3f5f7d);user-select:none}
+#sxPop .ch{display:flex;align-items:center;gap:8px;padding:0 8px 0 11px;height:31px;color:#fff;font-weight:700;background:linear-gradient(#5f7f9f,#3f5f7d);user-select:none;cursor:move;touch-action:none}
 #sxPop .ch.k-in{background:linear-gradient(#e08a2b,#b8681a)}#sxPop .ch.k-cfm{background:linear-gradient(#3f7fc4,#2a5d95)}#sxPop .ch.k-done{background:linear-gradient(#5a9a72,#3f7a56)}
 #sxPop .ch .x{margin-left:auto;border:0;background:transparent;color:#fff;cursor:pointer;font:inherit;font-size:14px}
 #sxPop .cb{padding:9px 11px 6px}
@@ -79,6 +79,30 @@ function ensureUI() {
     <div class="cb" id="sxBody"></div><div class="cf" id="sxFoot"></div>`;
   pop.querySelector('.x').onclick = close;
   document.body.appendChild(mask); document.body.appendChild(pop);
+  /* v315: 머리글을 잡고 끌어서 창 옮기기 (발주 화면 팝업과 같은 방식) */
+  const head = pop.querySelector('#sxHead');
+  if (head && !head.__mesDrag) {
+    head.__mesDrag = 1;
+    let d = null;
+    head.addEventListener('pointerdown', e => {
+      if (e.button != null && e.button !== 0) return;
+      if (e.target.closest('button,.x')) return;
+      const r = pop.getBoundingClientRect();
+      d = { id: e.pointerId, x: e.clientX, y: e.clientY, l: r.left, t: r.top, w: r.width, h: r.height };
+      try { head.setPointerCapture(e.pointerId); } catch (x) {}
+      e.preventDefault();
+    });
+    head.addEventListener('pointermove', e => {
+      if (!d || (e.pointerId != null && e.pointerId !== d.id)) return;
+      const nx = Math.max(4, Math.min(window.innerWidth  - d.w - 4, d.l + e.clientX - d.x));
+      const ny = Math.max(4, Math.min(window.innerHeight - d.h - 4, d.t + e.clientY - d.y));
+      pop.style.right = 'auto'; pop.style.bottom = 'auto';
+      pop.style.left = nx + 'px'; pop.style.top = ny + 'px';
+      e.preventDefault();
+    });
+    const stop = e => { if (!d || (e.pointerId != null && e.pointerId !== d.id)) return; try { head.releasePointerCapture(d.id); } catch (x) {} d = null; };
+    head.addEventListener('pointerup', stop); head.addEventListener('pointercancel', stop);
+  }
   document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
 }
 function close() { const m = $('sxMask'), p = $('sxPop'); if (m) m.classList.remove('on'); if (p) p.classList.remove('on'); CTX = null; }
