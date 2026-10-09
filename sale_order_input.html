@@ -136,7 +136,7 @@ html[data-mw="md"] .formgrid .wide,html[data-mw="sm"] .formgrid .wide,html[data-
  <div class="gbreak"></div>
  <!-- 7 금형·개발 -->
  <div class="label">금형타입</div><div class="lk"><input id="mold_code"><input id="mold_name" readonly><button onclick="openLook('mold','mold_code','mold_name')">…</button></div>
- <div class="label" title="설계·조립을 사내/외주 중 어디서 하는지 (여러 개 체크 가능). SET외주발주에는 「사외조립」 체크된 제번만 나옵니다">개발유형</div><div class="devbox"><input id="devtype" type="hidden"><label><input type="checkbox" data-dev="사내설계" onchange="devToValue()">사내설계</label><label><input type="checkbox" data-dev="외주설계" onchange="devToValue()">외주설계</label><label><input type="checkbox" data-dev="사내조립" onchange="devToValue()">사내조립</label><label><input type="checkbox" data-dev="사외조립" onchange="devToValue()">사외조립</label></div>
+ <div class="label" title="설계는 사내설계/외주설계 중 하나(택일), 제작은 사내제작/사외제작 체크(여러 개 가능). SET외주발주에는 「사외제작」 체크된 제번만 나옵니다">개발유형</div><div class="devbox"><input id="devtype" type="hidden"><label><input type="radio" name="devDesign" data-dev="사내설계" onchange="devToValue()">사내설계</label><label><input type="radio" name="devDesign" data-dev="외주설계" onchange="devToValue()">외주설계</label><label><input type="checkbox" data-dev="사내제작" onchange="devToValue()">사내제작</label><label><input type="checkbox" data-dev="사외제작" onchange="devToValue()">사외제작</label></div>
  <div class="label" id="dvLabel" title="개발유형에서 「외주설계」 를 체크하면 입력할 수 있습니다. 제작계획등록의 설계처와 설계외주발주 업체 선택에 이어집니다">설계업체</div><div><input id="design_vendor" class="field cbo" list="dl_design_vendor" autocomplete="off" placeholder="외주설계 체크 시 입력/선택" disabled><datalist id="dl_design_vendor"></datalist></div>
  <div class="label">기계사양</div><div class="lk"><input id="ms_code"><input id="ms_name" readonly><button onclick="openLook('mspec','ms_code','ms_name')">…</button></div>
  <div class="gbreak"></div>
@@ -181,8 +181,9 @@ const MAP={job_no:'job_no',order_date:'order_date',s1p:'s1_planned_date',
  s1c:'s1_completed_date',dlvc:'delivery_completed_date',eco:'eco',remark:'remark',
  order_price:'order_price',comp_date:'completion_date',nego_amount:'nego_amount',nego_note:'nego_note',proc_cat:'process_category'};
 function load(o){for(const[el,k]of Object.entries(MAP)){const n=document.getElementById(el);if(n)n.value=o[k]??''}devFromValue()}
-/* v241: 개발유형 = 체크박스 4개 (사내설계·외주설계·사내조립·사외조립) → development_type 에 쉼표로 저장. 옛 값 '사내'/'외주' 는 설계 기준으로 읽는다 */
-const DEVS=['사내설계','외주설계','사내조립','사외조립'];
+/* v241: 개발유형 → development_type 에 쉼표로 저장. 옛 값 '사내'/'외주' 는 설계 기준으로 읽는다
+ * v303: 설계는 라디오(택일), 사내조립·사외조립 → 사내제작·사외제작 으로 명칭 변경 (옛 값은 읽을 때 바꿔 준다) */
+const DEVS=['사내설계','외주설계','사내제작','사외제작'];
 const devBoxes=()=>[...document.querySelectorAll('.devbox input[data-dev]')];
 function devToValue(){devtype.value=devBoxes().filter(b=>b.checked).map(b=>b.dataset.dev).join(',');devGate()}
 /* v242: 외주설계를 체크했을 때만 설계업체 입력 */
@@ -191,6 +192,7 @@ function devGate(){const on=/외주설계/.test(devtype.value||'');const e=docum
  if(on&&!e.__dl){e.__dl=1;(async()=>{try{const ns=await MESLOOK.names('design_partner');dl_design_vendor.innerHTML=ns.map(n=>`<option value="${esc(n)}">`).join('')}catch(x){}})()}}
 function devFromValue(){const v=String(devtype.value||'');const set=new Set(v.split(/[,\s/·]+/).filter(Boolean));
  if(set.has('사내')){set.delete('사내');set.add('사내설계')}if(set.has('외주')){set.delete('외주');set.add('외주설계')}
+ if(set.has('사내조립')){set.delete('사내조립');set.add('사내제작')}if(set.has('사외조립')){set.delete('사외조립');set.add('사외제작')}
  devBoxes().forEach(b=>b.checked=set.has(b.dataset.dev));devtype.value=[...set].filter(x=>DEVS.includes(x)).join(',');devGate()}
 function clearForm(){for(const el of Object.keys(MAP)){const n=document.getElementById(el);if(n)n.value=''}devFromValue();document.getElementById('status').value='진행';otype.value='신작';dom.value='국내';ATT.length=0;renderAtt();msg('신규 입력 상태입니다.')}
 const NUMF=['quotation_price','order_price','nego_amount'];   /* v119: 네고조정(회의록 6-1) */   /* v62: 공정(process_set_qty)은 '1/1' 형식 text — 숫자변환 제외 */
