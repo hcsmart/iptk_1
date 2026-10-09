@@ -55,7 +55,7 @@ tfoot tr:not(:last-child) td{bottom:var(--grandH,27px)}
  <span class="lb" style="margin-left:6px">품번</span><input id="partQ" class="field" style="width:150px" placeholder="품번/부품명" oninput="render()">
  <label style="display:flex;align-items:center;gap:4px" title="원재료·가공 기록이 하나도 없는 부품을 숨깁니다"><input type="checkbox" id="hideEmpty" onchange="render()"> 기록 있는 부품만</label>
  <button class="btn" onclick="load()">⌕ 조회</button>
- <span style="color:#6b7a86">공정 열은 공정명 가나다순입니다. 셀 위 =<b style="color:#1d5da3">사내 시간</b>, 아래 =<b style="color:#7a4a12">외주 금액</b>, <span style="color:#9aa5ad">(회색)</span> = 미확정 · <b>칸을 우클릭하면 근거 화면으로 이동</b></span>
+ <span style="color:#6b7a86">공정 열은 공정명 가나다순입니다. 셀 위 =<b style="color:#1d5da3">사내 시간</b>, 아래 =<b style="color:#7a4a12">외주 금액</b>, <span style="color:#9aa5ad">(회색)</span> = 미확정 · <b>칸을 클릭하면 근거 화면으로 이동</b></span>
 </section>
 <div class="tabs">
  <button id="tab1" class="on" onclick="setTab('cost')">▤ 원가내역</button>
@@ -214,11 +214,15 @@ function goTarget(td){
   if(s['설계'])return {name:'설계실적등록',p:{job,part}};
   return {name:'사내외가공 발주',p:{job,part,proc:c}}}
  return null}
-/* v222: 더블클릭 → 우클릭으로 변경 */
-document.addEventListener('contextmenu',e=>{const td=e.target.closest&&e.target.closest('#body td.go');if(!td||e.target.closest('img'))return;e.preventDefault();
+/* v222: 더블클릭 → 우클릭으로 변경 · v314: 왼쪽 클릭으로도 이동 (우클릭도 그대로) */
+function goCell(e){const td=e.target.closest&&e.target.closest('#body td.go');if(!td||e.target.closest('img,a,button,input'))return;
+ if(e.type==='click'&&String(window.getSelection&&window.getSelection().toString()||'').length)return;   /* 글자 긁는 중이면 이동하지 않음 */
+ e.preventDefault();
  const t=goTarget(td);if(!t)return;
  if(!window.MESGO||!MESGO.open(t.name,t.p))return msg('메인 화면(IPTK MES)에서 열어야 이동할 수 있습니다.');
- msg(`${t.p.job}${t.p.part&&t.p.part!=='★'?' · '+t.p.part:''} → ${t.name} 화면으로 이동합니다.`)});
+ msg(`${t.p.job}${t.p.part&&t.p.part!=='★'?' · '+t.p.part:''} → ${t.name} 화면으로 이동합니다.`)}
+document.addEventListener('contextmenu',goCell);
+document.addEventListener('click',goCell);
 function view(){
  const q=(partQ.value||'').trim().toLowerCase();
  return ROWS.filter(x=>(!q||x.part.toLowerCase().includes(q)||String(x.name).toLowerCase().includes(q))
@@ -259,7 +263,7 @@ function render(){
     ['insp','검사 (금형 전체)',C.insp.n?`부품에 매지 않은 검사 ${hh(C.insp.min)} · ${C.insp.n}건`:'없음',C.insp.amt],
     ['exp','경비',C.exp.n?`경비 ${C.exp.n}건`:'경비 없음',C.exp.amt]];
    if(C.etc.n)items.push(['etc','기타 (부품 미지정)',`품번 없이 들어온 발주·실적 ${C.etc.n}건`+(C.etc.min?` · 사내 ${hh(C.etc.min)}`:''),C.etc.amt]);
-   body.innerHTML+=`<tr class="cmh"><td colspan="${all}">금형 공통비 <span>— 부품에 딸리지 않는 비용 · 우클릭하면 근거 화면으로 이동</span></td></tr>`+
+   body.innerHTML+=`<tr class="cmh"><td colspan="${all}">금형 공통비 <span>— 부품에 딸리지 않는 비용 · 클릭하면 근거 화면으로 이동</span></td></tr>`+
     items.map(([k,lab,det,amt])=>`<tr class="cm${amt?'':' zero'}" data-common="${k}"><td class="go" data-go="common" data-kind="${k}" colspan="${all-1}"><b>${lab}</b><span class="det">${esc(det)}</span></td><td class="num go" data-go="common" data-kind="${k}">${amt?F(amt):'0'}</td></tr>`).join('')}
   const S=k=>v.reduce((a,x)=>a+N(x[k]),0);
   const CT=COMMON?COMMON.total:0;
