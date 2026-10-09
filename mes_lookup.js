@@ -17,7 +17,7 @@
  */
 (function(){
 if(window.MESLOOK)return;
-const VER='71';   /* 팝업 제목 옆에 표시된다. 화면에 v69 가 안 보이면 옛 파일이 캐시된 것 */
+const VER='72';   /* 팝업 제목 옆에 표시된다. 화면에 v69 가 안 보이면 옛 파일이 캐시된 것 */
 
 /* ── v60 마스터 인라인 CRUD 정의 ───────────────────────────────────
  * crud 가 있는 kind 는 조회 팝업 하단에 [등록][수정][삭제][기준정보] 가 붙는다.
@@ -40,6 +40,7 @@ const VENDOR_FIELDS=[
  /* v295: 협력업체구분(partner_type) 입력란 제거 → 취급구분 체크로 통일 */
  {col:'design_flag',          label:'설계',    type:'check'},
  {col:'set_outsourcing_flag', label:'SET외주', type:'check'},
+ {col:'etc_flag',             label:'기타',    type:'check'},   /* v299: 취급구분 해당 없음 */
 ];
 /* 신규 등록 시 kind 별 기본값 — 어느 팝업에서 등록해도 그 목록에 바로 보이도록 */
 const VENDOR_DEFAULTS={
