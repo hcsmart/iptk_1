@@ -172,7 +172,7 @@ table.ev td .dcell .wd.late{background:#ffe45c;color:#5a4400;font-weight:700}
  </div>
  <div class="shape">
   <div class="bt">제품 형상</div>
-  <div class="shapebox" id="shapeBox" onclick="shapePick()" title="클릭하면 그림을 올립니다"><span id="shapeHint">클릭해서 제품 그림 올리기<br><small>PNG·JPG · 8MB 이하</small></span><img id="shapeImg" style="display:none"></div>
+  <div class="shapebox" id="shapeBox" onclick="shapePick()" title="클릭해서 파일 선택, 캡처한 그림은 Ctrl+V, 파일은 끌어다 놓기"><span id="shapeHint">클릭해서 제품 그림 올리기<br><small>캡처 후 Ctrl+V 붙여넣기 · 파일 끌어다 놓기 · PNG·JPG · 8MB 이하</small></span><img id="shapeImg" style="display:none"></div>
   <div class="shapebtn"><button class="btn" type="button" onclick="shapePick()">📷 올리기</button><button class="btn" type="button" onclick="shapeClear()">지우기</button></div>
   <input type="file" id="shapeFile" accept="image/*" style="display:none" onchange="shapeUp(this)"><input type="hidden" id="image_url">
  </div>
@@ -395,14 +395,34 @@ function shapeShow(url){
 function shapeClear(){shapeShow('');msg('제품 그림을 지웠습니다 — 저장하면 반영됩니다.')}
 async function shapeUp(inp){
  const f=inp.files&&inp.files[0];if(!f)return;
+ try{await shapeUpload(f)}finally{inp.value=''}
+}
+/* v305: 파일 하나를 제품 형상으로 올린다 — 클릭 선택 · Ctrl+V 붙여넣기 · 끌어다 놓기 공용 */
+async function shapeUpload(f){
+ if(!f||!/^image\//.test(f.type||''))return msg('그림 파일(PNG·JPG)만 올릴 수 있습니다.');
+ if(f.size>8*1024*1024)return msg('그림이 8MB 를 넘습니다. 더 작게 캡처하거나 줄여서 올리세요.');
  const job=curBase();
  try{
   msg('그림 올리는 중…');
   const url=await MESDB.imgUpload(f,job||'공통','shape');
   shapeShow(url);msg('제품 그림을 올렸습니다 — [▤ 저장]을 눌러야 계획에 기록됩니다.');
  }catch(e){msg('그림 올리기 실패: '+String(e.message||e).slice(0,120))}
- finally{inp.value=''}
 }
+/* v305: 캡처 이미지 Ctrl+V — 입력칸에 글자를 붙여넣는 중이면 건드리지 않고, 클립보드에 그림이 있을 때만 올린다 */
+document.addEventListener('paste',e=>{
+ const items=[...(e.clipboardData?.items||[])],it=items.find(x=>/^image\//.test(x.type));
+ if(!it)return;
+ const t=e.target,typing=t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA')&&(e.clipboardData.getData('text')||'');
+ if(typing)return;
+ e.preventDefault();const f=it.getAsFile();if(f)shapeUpload(f);
+});
+/* v305: 그림 파일을 제품 형상 칸에 끌어다 놓기 */
+(function(){const box=document.getElementById('shapeBox');if(!box)return;
+ box.addEventListener('dragover',e=>{e.preventDefault();box.style.borderColor='#2f75b5';box.style.background='#eef5fc'});
+ box.addEventListener('dragleave',()=>{box.style.borderColor='';box.style.background=''});
+ box.addEventListener('drop',e=>{e.preventDefault();box.style.borderColor='';box.style.background='';const f=e.dataTransfer?.files?.[0];if(f)shapeUpload(f)});
+})();
+
 ['design','machining','assembly'].forEach(p=>['_start_date','_end_date'].forEach(k=>document.getElementById(p+k).addEventListener('change',()=>calcDays(p))));
 
 function load(o){
