@@ -68,7 +68,8 @@ body.drag-on .screen{outline:3px dashed #2f75b5;outline-offset:-6px}
 <footer class="foot">
  <button class="btn" onclick="save()">▤ 등록</button>
  <button class="btn" onclick="del_()">✕ 삭제</button>
- <button class="btn red" onclick="bulkOpen()" title="제번 단위로 구매품 PartList 전체를 삭제합니다">⌧ 일괄삭제</button>
+ <!-- v309: 일괄삭제 버튼 숨김 — 체크박스 선택 후 [✕ 삭제] 로 지운다 (제번 단위 일괄삭제 창은 코드만 남김) -->
+ <button style="display:none" class="btn red" onclick="bulkOpen()" title="제번 단위로 구매품 PartList 전체를 삭제합니다">⌧ 일괄삭제</button>
  <button class="btn" onclick="manOpen()" title="엑셀 없이 한 행씩 직접 입력합니다">＋ 수동등록</button>
  <button class="btn" onclick="imgPick()" title="체크한 부품의 그림 — 캐드 캡쳐를 Ctrl+V 로 붙여넣고 흰 바탕·A4 로 정리, 화살표·글자 표시 후 등록">📷 이미지등록</button><button class="btn" onclick="imgDel()" title="체크한 부품(여러 개 가능)의 그림을 지웁니다">🗑 이미지삭제</button>
  <input type="file" id="imgFile" accept="image/*" style="display:none" onchange="imgUp(this.files[0])">
