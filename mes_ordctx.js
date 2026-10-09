@@ -429,7 +429,7 @@ function batchTable(ok) {
     ok.map((x, k) => { const q = Math.max(1, remain(x.b) || Number(x.b.qty) || 1), kg = W ? Math.round(autoKg(x.b.spec, q) * 100) / 100 : 0;
       return `<tr data-k="${k}"><td>${_esc(x.b.part)}</td><td>${_esc(x.b.name || '')}</td><td>${_esc([x.b.mat, x.b.spec].filter(Boolean).join(' '))}</td>
         <td><input class="r bq" value="${q}" inputmode="numeric"></td>${W ? `<td><input class="r bw" value="${kg ? kg.toFixed(2) : ''}" inputmode="decimal"></td>` : ''}
-        <td><input class="r bp" placeholder="자동" inputmode="numeric" data-auto="1"></td><td><input class="r ba" readonly></td></tr>`; }).join('')}</tbody></table>`;
+        <td><input class="r bp" placeholder="단가" inputmode="numeric" data-auto="1" title="이 품번의 단가 — 비우면 0원으로 발주"></td><td><input class="r ba" readonly></td></tr>`; }).join('')}</tbody></table>`;
 }
 function batchRows() {
   const t = $('oxBt'); if (!t) return [];
@@ -497,7 +497,9 @@ function formOrder(ev) {
   $('oxOdate').onchange  = () => { autoPrice(); batchPrice(); };
   bindBatch();
   $('oxQty').onchange    = calcAmt;
-  $('oxPrice').onchange  = () => { $('oxPrice').dataset.auto = ''; calcAmt(); };
+  $('oxPrice').onchange  = () => { $('oxPrice').dataset.auto = ''; calcAmt();
+    /* v318: 위 단가를 같은 자재(단가 키)인 함께 발주 행 중 아직 비어 있는 자동 칸에 채워 준다 — 행마다 고치면 그 값이 우선 */
+    const mp = _n(_v('oxPrice')); if (mp) batchRows().forEach(r => { const pEl = r.tr.querySelector('.bp'); if (pEl.dataset.auto === '1' && !_n(pEl.value) && CFG.priceKey(r.b) === CFG.priceKey(b)) pEl.value = _won(mp); }); batchCalc(); };
   /* v158: 중량 수동 입력 — 한 번 고치면 수량을 바꿔도 덮어쓰지 않는다 ([자동]으로 해제) */
   const w = $('oxWt');
   if (w) {
