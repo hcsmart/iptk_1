@@ -386,7 +386,7 @@ function renderRoutes(){
   const tag=cyc+(n===0?'':allDone?'<span class="tagd">전공정 완료</span>':wait?`<span class="tagd">공정${wp+1} ${wp>=0?stepState(r,wp):''} 대기</span>`:nx>0?`<span class="tagd">${nx}/${n} 진행</span>`:'')+fixTag;
   const tip=allDone?'모든 가공공정이 입고되었습니다':wait?'직전 공정이 아직 입고되지 않아 다음 공정을 발주할 수 없습니다 (직전 공정 칸 우클릭 → 입고 처리)':'';
   return `<tr data-ri="${ri}" class="${dis&&n?'rdone':''}${r.old?' cycold':''}"${HID[ri]?' style="display:none"':''}${tip?` title="${_esc(tip)}"`:''} onclick="return rowClk(event,${ri})">`+
-   `<td class="c"><input type="checkbox" data-i="${ri}"${dis?' disabled':''}${picks.length?' checked':''} onchange="pickRow(${ri},this.checked)"></td>`+
+   `<td class="c"><input type="checkbox" data-i="${ri}"${n===0?' disabled':''}${picks.length?' checked':''} onchange="pickRow(${ri},this.checked)" title="${n===0?'가공공정이 없습니다':'함께 발주 · 가공계획 함께 적용 등에 씁니다'}"></td>`+   /* v324: 공정이 없는 행만 체크 불가 — 발주 진행 중·완료 행도 체크 가능 (함께 발주는 순서 검사로 걸러진다) */
    `<td class="c">${_esc(String(r.jo||'').replace(/조$/,''))}</td>`+
    `<td class="pimg" onclick="event.stopPropagation();drawBoard(${ri})" title="${_esc(r.part)} — 클릭하면 그림보드 (공정 순서 표시 · 인쇄 · PDF)">${PIMG[r.part]?`<img src="${_esc(window.MESDB&&MESDB.thumbUrl?MESDB.thumbUrl(PIMG[r.part]):PIMG[r.part])}" data-full="${_esc(PIMG[r.part])}" onerror="window.MESDB&&MESDB.thumbFallback&&MESDB.thumbFallback(this)" loading="lazy">`:'<span style="color:#b8c2ca;font-size:11px;cursor:pointer" title="그림 없음 — 그래도 그림보드는 열 수 있습니다">보드</span>'}</td>`+
    `<td>${_esc(r.part)}${tag}</td>`+
