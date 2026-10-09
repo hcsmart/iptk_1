@@ -970,21 +970,22 @@ function init(opt) {
       s.innerHTML = '※ 자재표 <b>우클릭</b> → 발주 · 입고 · 입고확정 · 취소 · 추가발주 &nbsp;<b>☑ 체크</b>한 품번은 함께 처리';
       bar.appendChild(s);
     }
-    /* 옛 배치(협력업체리스트·구매요청 리스트·PRINT 발주서) 토글 — 선택은 브라우저에 기억 */
+    /* 옛 배치(협력업체리스트·구매요청 리스트·PRINT 발주서) 토글
+       v310: 선택을 브라우저에 기억하지 않는다 — PC 마다 배치가 달라지던 원인. 화면을 열면 항상 새 배치로 시작하고,
+       버튼은 그 자리에서 잠깐 옛 배치를 볼 때만 쓴다. 예전에 기억해 둔 값은 지운다. */
     if (bar && !$('oxToggle')) {
       const key = 'ox_classic_' + CFG.category;
+      try { Object.keys(localStorage).filter(k => k.startsWith('ox_classic_')).forEach(k => localStorage.removeItem(k)); } catch (e) {}
       const apply = on => {
         document.body.classList.toggle('ox-classic', !!on);
         const b = $('oxToggle'); if (b) b.textContent = on ? '▤ 요청 리스트 닫기' : '▤ 요청 리스트 · 발주서';
-        try { localStorage.setItem(key, on ? '1' : ''); } catch (e) {}
       };
       const b = document.createElement('button');
       b.type = 'button'; b.id = 'oxToggle';
       b.title = '여러 품번을 한 번에 발주하거나 발주서(PRINT)를 뽑을 때 — 협력업체리스트·구매요청 리스트를 다시 보입니다';
       b.onclick = () => apply(!document.body.classList.contains('ox-classic'));
       bar.appendChild(b);
-      let saved = ''; try { saved = localStorage.getItem(key) || ''; } catch (e) {}
-      apply(saved === '1');
+      apply(false);
     }
   } catch (e) {}
 
