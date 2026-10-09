@@ -17,7 +17,7 @@
  */
 (function(){
 if(window.MESLOOK)return;
-const VER='70';   /* 팝업 제목 옆에 표시된다. 화면에 v69 가 안 보이면 옛 파일이 캐시된 것 */
+const VER='71';   /* 팝업 제목 옆에 표시된다. 화면에 v69 가 안 보이면 옛 파일이 캐시된 것 */
 
 /* ── v60 마스터 인라인 CRUD 정의 ───────────────────────────────────
  * crud 가 있는 kind 는 조회 팝업 하단에 [등록][수정][삭제][기준정보] 가 붙는다.
@@ -25,7 +25,8 @@ const VER='70';   /* 팝업 제목 옆에 표시된다. 화면에 v69 가 안 �
 const VENDOR_FIELDS=[
  {col:'vendor_code',  label:'업체코드', req:1, pkf:1},
  {col:'vendor_name',  label:'업체명',   req:1},
- {col:'vendor_type',  label:'구분',     type:'select', opts:['고객사','협력업체','양산처']},
+ /* v296: 구분 복수 선택 (고객사이면서 양산처 등) — "고객사,양산처" 처럼 콤마로 저장 */
+ {col:'vendor_type',  label:'구분',     type:'multi', opts:['고객사','협력업체','양산처','자사']},
  {col:'location_type',label:'소재지',   type:'select', opts:['국내','해외']},
  {col:'ceo_name',     label:'대표자명'},
  {col:'phone',        label:'전화번호'},
@@ -59,30 +60,32 @@ const VENDOR_CRUD={
    if(g)m=Math.max(m,Number(g[1]))}return 'V'+String(m+1).padStart(3,'0')},
 };
 
+/* v296: 구분(vendor_type)이 "고객사,양산처" 처럼 여러 개일 수 있어 포함 여부로 판정 */
+const hasType=(r,t)=>String(r.vendor_type||'').split(/[,\/ ]+/).includes(t);
 const KINDS={
  vendor:   {title:'거래처 조회',    table:'vendors', order:'vendor_code',
             cols:['코드','거래처명','구분'], map:r=>[r.vendor_code,r.vendor_name,r.vendor_type||''], crud:VENDOR_CRUD},
  /* v42: 구분(vendor_type)대로만 목록에 나온다. 고객사엔 고객사만, 양산처엔 협력업체만. */
  customer: {title:'고객사 조회',    table:'vendors', order:'vendor_code',
             cols:['코드','고객사명'], map:r=>[r.vendor_code,r.vendor_name],
-            filter:r=>r.vendor_type==='고객사',
+            filter:r=>hasType(r,'고객사'),
             /* v60: 구분이 비어 있는 업체만 있으면 0건이 되어 고객사를 못 고른다 → 전체 표시로 대체 */
             fallback:r=>true, crud:VENDOR_CRUD},
  /* v68: 기준정보 '업체 관리' 에서 구분=양산처 로 등록한 업체만 나온다.
     아직 양산처가 한 곳도 없으면 고객사 목록으로 대체 (0건 방지). */
  mass_production:{title:'양산처 조회', table:'vendors', order:'vendor_code',
             cols:['코드','양산처명','구분'], map:r=>[r.vendor_code,r.vendor_name,r.vendor_type||''],
-            filter:r=>r.vendor_type==='양산처',
-            fallback:r=>r.vendor_type==='고객사', crud:VENDOR_CRUD},
+            filter:r=>hasType(r,'양산처'),
+            fallback:r=>hasType(r,'고객사'), crud:VENDOR_CRUD},
  vendor_purchase:{title:'협력업체(구매품)', table:'vendors', order:'vendor_name',
-            cols:['코드','업체명'], map:r=>[r.vendor_code,r.vendor_name], filter:r=>r.vendor_type==='협력업체'&&r.purchase_item_flag===true,
-            fallback:r=>r.vendor_type==='협력업체', crud:VENDOR_CRUD},
+            cols:['코드','업체명'], map:r=>[r.vendor_code,r.vendor_name], filter:r=>hasType(r,'협력업체')&&r.purchase_item_flag===true,
+            fallback:r=>hasType(r,'협력업체'), crud:VENDOR_CRUD},
  vendor_material:{title:'협력업체(원재료)', table:'vendors', order:'vendor_name',
-            cols:['코드','업체명'], map:r=>[r.vendor_code,r.vendor_name], filter:r=>r.vendor_type==='협력업체'&&r.raw_material_flag===true,
-            fallback:r=>r.vendor_type==='협력업체', crud:VENDOR_CRUD},
+            cols:['코드','업체명'], map:r=>[r.vendor_code,r.vendor_name], filter:r=>hasType(r,'협력업체')&&r.raw_material_flag===true,
+            fallback:r=>hasType(r,'협력업체'), crud:VENDOR_CRUD},
  vendor_outsourcing:{title:'협력업체(외주가공)', table:'vendors', order:'vendor_name',
-            cols:['코드','업체명'], map:r=>[r.vendor_code,r.vendor_name], filter:r=>r.vendor_type==='협력업체'&&r.outsourcing_flag===true,
-            fallback:r=>r.vendor_type==='협력업체', crud:VENDOR_CRUD},
+            cols:['코드','업체명'], map:r=>[r.vendor_code,r.vendor_name], filter:r=>hasType(r,'협력업체')&&r.outsourcing_flag===true,
+            fallback:r=>hasType(r,'협력업체'), crud:VENDOR_CRUD},
  design_partner:{title:'협력업체(외주설계)', table:'outsourced_design_partners', order:'seq',
             cols:['No','업체명'], map:r=>[r.seq,r.partner_name], code:r=>r.partner_name, name:r=>r.partner_name},
  /* v230: SET외주 협력업체 — SET외주제작등록(조립외주)의 협력업체 마스터(set_order_partners)를 같이 쓴다 */
@@ -464,9 +467,13 @@ function edOpen(mode){
   const ro=(mode==='edit'&&f.pkf)?' readonly':'';
   const cell=f.wide?' class="wide"':'';
   h+=`<label for="${id}">${esc(f.label)}${f.req?' *':''}</label>`;
-  h+=f.type==='select'
-   ? `<div${cell}><select id="${id}">${['',...f.opts].map(o=>`<option${String(v)===o?' selected':''}>${esc(o)}</option>`).join('')}</select></div>`
-   : `<div${cell}><input type="text" id="${id}" value="${esc(v)}"${ro}></div>`;
+  if(f.type==='select')
+   h+=`<div${cell}><select id="${id}">${['',...f.opts].map(o=>`<option${String(v)===o?' selected':''}>${esc(o)}</option>`).join('')}</select></div>`;
+  else if(f.type==='multi'){ /* v296: 복수 선택 체크 — "a,b" 로 저장 */
+   const cur=String(v).split(/[,\/ ]+/);
+   h+=`<div class="flags" id="${id}">`+f.opts.map(o=>`<label><input type="checkbox" value="${esc(o)}"${cur.includes(o)?' checked':''}> ${esc(o)}</label>`).join('')+`</div>`;
+  }else
+   h+=`<div${cell}><input type="text" id="${id}" value="${esc(v)}"${ro}></div>`;
  }
  if(checks.length){
   h+=`<label>거래유형</label><div class="flags">`+
@@ -476,7 +483,7 @@ function edOpen(mode){
  ui.querySelector('#meslk-ed').classList.add('on');
  ui.querySelector('#meslk').classList.add('editing');
  edErr('');
- const first=ui.querySelector(mode==='edit'?'#meslk-f-'+C.fields.find(f=>!f.pkf&&f.type!=='check').col:'#meslk-f-'+C.pk);
+ const first=ui.querySelector(mode==='edit'?'#meslk-f-'+C.fields.find(f=>!f.pkf&&f.type!=='check'&&f.type!=='multi').col:'#meslk-f-'+C.pk);
  first&&first.focus();
 }
 /* 안내문을 건수 자리에 잠깐 띄운다. 복원값은 항상 실제 건수 (연속 호출 시 문구가 굳지 않도록) */
@@ -493,7 +500,9 @@ async function edSave(){
  const row={};
  for(const f of C.fields){
   const el=document.getElementById('meslk-f-'+f.col); if(!el)continue;
-  row[f.col]=(f.type==='check')?!!el.checked:(String(el.value||'').trim()||null);
+  row[f.col]=(f.type==='check')?!!el.checked
+   :(f.type==='multi')?([...el.querySelectorAll('input:checked')].map(i=>i.value).join(',')||null)
+   :(String(el.value||'').trim()||null);
  }
  for(const f of C.fields)if(f.req&&!row[f.col])return edErr(`${f.label}은(는) 필수입니다.`);
  const key=row[C.pk];
