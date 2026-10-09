@@ -679,7 +679,7 @@ function formReceive(ev, l) {
     { t: '▣ 입고+확정' + (bN() ? ` (+${bN()}건)` : ''), cls: 'go', id: 'oxGo2', title: '입고 처리와 입고확정(위의 확정가·네고율)을 한 번에 끝냅니다', fn: () => doReceive(true) },
     { t: '＋ 추가 발주', cls: 'go k-order', title: '같은 품번을 다른 업체에 나눠 발주하거나 재발주합니다', fn: e => formOrder(e) },
     /* v196: 신규발주 버튼 제거 — 추가발주로 대신한다 (차수 집계 코드는 그대로) */
-    { t: '✖ 발주취소', cls: 'warn', title: '이 발주 라인을 삭제합니다', fn: doOrderCancel },
+    { t: '✖ 발주취소' + (bN() ? ` (+${bN()}건)` : ''), cls: 'warn', title: bN() ? '이 발주건과 체크한 품번의 발주건을 함께 삭제합니다' : '이 발주 라인을 삭제합니다', fn: doOrderCancel },
     sheetBtn(l), { t: '닫기', fn: close }]);
   /* v158: 입고 중량 — 발주 중량(order_weight)을 입고수량에 맞춰 환산, 없으면 설계치수로 자동계산.
            수동 입력한 값은 수량을 바꿔도 덮어쓰지 않는다 ([자동]으로 해제) */
@@ -768,10 +768,18 @@ async function doOrderCancel() {
   const { b, line: l } = CTX;
   if (!l || !l.line_id) return say('발주 라인을 찾을 수 없습니다.');
   if (!_online()) return say('DB 미연결 - 발주취소를 할 수 없습니다.');
-  if (!confirm(`${b.part} · ${l.vendor_name || ''} 발주 ${Number(l.order_qty) || 0}개를 취소(삭제)합니다.\n되돌릴 수 없습니다. 계속할까요?`)) return;
+  /* v312: 체크한 품번의 발주건(입고 처리와 같은 묶음)도 함께 취소 — 종전엔 우클릭한 1건만 지워졌다 */
+  const extra = [];
+  for (const x of (CTX.batchIn || [])) for (const el of (x.lines || []))
+    if (el && el.line_id && el.status === '발주' && Number(el.line_id) !== Number(l.line_id)) extra.push({ part: x.b.part, l: el });
+  const ids = [Number(l.line_id), ...extra.map(x => Number(x.l.line_id))];
+  const msgTxt = `${b.part} · ${l.vendor_name || ''} 발주 ${Number(l.order_qty) || 0}개` +
+    (extra.length ? ` 외 ${extra.length}건을 취소(삭제)합니다.\n\n` + extra.map(x => ` · ${x.part} ${x.l.vendor_name || ''} ${Number(x.l.order_qty) || 0}개 ${_dt(x.l.order_date)}`).join('\n') + '\n\n'
+                 : `를 취소(삭제)합니다.\n`) + '되돌릴 수 없습니다. 계속할까요?';
+  if (!confirm(msgTxt)) return;
   try {
-    await MESDB.delLines([Number(l.line_id)]);
-    await after(`${b.part} ${l.vendor_name || ''} 발주를 취소(삭제)했습니다.`);
+    await MESDB.delLines(ids);
+    await after(`${b.part} ${l.vendor_name || ''} 발주${extra.length ? ` 외 ${extra.length}건` : ''}을 취소(삭제)했습니다.`);
   } catch (e) { say('발주취소 실패: ' + String(e.message || e).slice(0, 120)); }
 }
 
