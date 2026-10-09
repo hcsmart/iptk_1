@@ -519,7 +519,7 @@ try{MESJOB.attach("jobQ",{onPick:()=>{try{onJobPick()}catch(e){}}})}catch(e){}
 });
 </script>
 <script src="mes_mail.js?v=174"></script>
-<script src="mes_cycle.js?v=227"></script><script src="mes_ordctx.js?v=310"></script>
+<script src="mes_cycle.js?v=227"></script><script src="mes_ordctx.js?v=311"></script>
 <script>
 /* v227: 차수 관리 — 체크한 품번(없으면 전체)의 차수 취소·종료 */
 async function cycManage(){const j=jobView[jobIdx];if(!j||!(j.bom0||[]).length)return msg('제번을 선택해 자재표를 먼저 조회하세요.');
@@ -531,7 +531,8 @@ async function cycManage(){const j=jobView[jobIdx];if(!j||!(j.bom0||[]).length)r
 async function cycOpen(){const j=jobView[jobIdx];if(!j||!(j.bom||[]).length)return msg('제번을 선택해 자재표를 먼저 조회하세요.');
  if(!window.MESCYCLE)return msg('차수 모듈(mes_cycle.js)이 없습니다.');if(!(window.MESDB&&MESDB.online))return msg('DB 미연결 — 신규진행은 DB 연결 상태에서만 됩니다.');
  try{await loadOrdQ(j.job)}catch(e){}
- const chk=new Set([...bomBody.querySelectorAll('input[type=checkbox][data-i]:checked')].map(c=>Number(c.dataset.i)));
+ /* v311: 체크한 줄을 줄 번호가 아니라 품번+차수로 찾는다 — 바로 위 loadOrdQ 가 j.bom 을 다시 전개해 번호가 어긋날 수 있다 */
+ const chk=new Set([...bomBody.querySelectorAll('input[type=checkbox][data-i]:checked')].map(c=>(window.MESORDCTX&&MESORDCTX.rowIdx)?MESORDCTX.rowIdx(c.closest('tr'),Number(c.dataset.i)):Number(c.dataset.i)));
  const parts=j.bom.map((b,i)=>{if(b.old)return null;const oq=(OQ_JOB===j.job?OQ[oqKey(b.part,b.cyc)]:0)||0,rq=(OQ_JOB===j.job?RQ[oqKey(b.part,b.cyc)]:0)||0;let st='';try{st=(MESORDCTX.partState(b)||{}).label||''}catch(e){}
   const has=oq>0||rq>0;return {part:b.part,name:b.name||'',info:has?`${st} · 발주 ${oq}${rq?' +재'+rq:''} / 수량 ${b.qty??''}`:'미발주',can:has,why:'현재 차수에 발주가 없어 신규진행할 것이 없습니다 (그냥 [요청추가]로 발주하세요)',_i:i}});
  const list=(chk.size?parts.filter(p=>p&&chk.has(p._i)):parts).filter(Boolean);
