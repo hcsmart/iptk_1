@@ -216,7 +216,7 @@ function ensureUI() {
 #oxPop table.bt td input{width:100%;height:22px;border:1px solid #c7d1da;padding:0 4px;font-size:11px;box-sizing:border-box}
 #oxPop table.bt td input[readonly]{background:#f3f6f8}#oxPop table.bt td input.manual{background:#fff6c8}
 /* v320: 품번·부품명·재질은 줄바꿈해서 전부 보이게, 우클릭한 품번 행은 굵게 */
-#oxPop table.bt td:nth-child(-n+3){white-space:normal;word-break:break-all;line-height:1.25}#oxPop table.bt tr.main td:nth-child(-n+3){font-weight:700;color:#1d4f80}
+#oxPop table.bt td:first-child{white-space:nowrap}#oxPop table.bt td:nth-child(2){white-space:normal;word-break:break-all;line-height:1.25}#oxPop table.bt tr.main td:nth-child(-n+2){font-weight:700;color:#1d4f80}   /* v321: 부품명 열 제거, 품번은 한 줄 */
 #oxPop table.bt td input[data-auto="1"]{color:#1d5da3}
 #oxPop table.ln td.r{text-align:right}#oxPop table.ln td.c{text-align:center}
 #oxPop .badge{display:inline-block;padding:0 5px;border-radius:7px;color:#fff;font-size:10px}
@@ -427,12 +427,12 @@ function formLine(ev, l) {
 function batchTable(ok) {
   if (!ok.length) return '';
   const W = CFG.useWeight;
-  return `<table class="ln bt" id="oxBt"><thead><tr><th>품번</th><th>부품명</th><th>재질·규격</th><th style="width:52px">수량</th>${W ? '<th style="width:64px">중량kg</th>' : ''}<th style="width:78px">단가</th><th style="width:86px">금액(견적가)</th></tr></thead><tbody>${
+  return `<table class="ln bt" id="oxBt"><thead><tr><th>품번</th><th>재질·규격</th><th style="width:52px">수량</th>${W ? '<th style="width:64px">중량kg</th>' : ''}<th style="width:78px">단가</th><th style="width:86px">금액(견적가)</th></tr></thead><tbody>${
     ok.map((x, k) => { const q = Math.max(1, x.qty || remain(x.b) || Number(x.b.qty) || 1), kg = W ? Math.round(autoKg(x.b.spec, q) * 100) / 100 : 0;
-      return `<tr data-k="${k}"${x.main ? ' class="main" title="우클릭한 품번"' : ''}><td>${_esc(x.b.part)}</td><td>${_esc(x.b.name || '')}</td><td>${_esc([x.b.mat, x.b.spec].filter(Boolean).join(' '))}</td>
+      return `<tr data-k="${k}"${x.main ? ' class="main" title="우클릭한 품번"' : ''}><td title="${_esc(x.b.name || '')}">${_esc(x.b.part)}</td><td>${_esc([x.b.mat, x.b.spec].filter(Boolean).join(' '))}</td>
         <td><input class="r bq" value="${q}" inputmode="numeric"></td>${W ? `<td><input class="r bw" value="${kg ? kg.toFixed(2) : ''}" inputmode="decimal"></td>` : ''}
         <td><input class="r bp" placeholder="단가" inputmode="numeric" data-auto="1" title="이 품번의 단가 — 비우면 0원으로 발주"></td><td><input class="r ba" placeholder="자동" inputmode="numeric" title="단가×수량(중량)으로 자동 계산 — 직접 고칠 수 있습니다"></td></tr>`; }).join('')}</tbody>
-   <tfoot><tr><th colspan="${W ? 6 : 5}" class="r">합계</th><th class="r" id="oxBtTot"></th></tr></tfoot></table>`;
+   <tfoot><tr><th colspan="${W ? 5 : 4}" class="r">합계</th><th class="r" id="oxBtTot"></th></tr></tfoot></table>`;
 }
 function batchRows() {
   const t = $('oxBt'); if (!t) return [];
@@ -710,6 +710,7 @@ function formReceive(ev, l) {
     const main = { b, line: l, q: q0, price: p0, kg: kg0, amt: a0, ow: ow0, eo: ord0, fix: Math.round((a0 || _n(l.quote_price)) * (1 - rate0 / 100)), date: _v('oxInDate') || T0(), remark: '' };
     const c = { main, extras: receiveExtras(l, rate0), rate: rate0, inline: true }; CTX.cfm = c;
     ['oxInQty', 'oxInPrice', 'oxInWt', 'oxInAmt', 'oxInFix'].forEach(id => { const e = $(id); if (!e) return; const cell = e.closest('span.wtbox') || e; const lab = cell.previousElementSibling; cell.hidden = true; if (lab && lab.tagName === 'LABEL') lab.hidden = true; });
+    $('oxPop').style.width = '680px';   /* v321: 표가 붙는 창은 넓게 */
     const bx = $('oxBody').querySelector('.batch');
     const wrap = document.createElement('div'); wrap.innerHTML = cfmTable([main, ...c.extras], rate0);
     if (bx) bx.insertAdjacentElement('afterend', wrap.firstElementChild); else $('oxBody').appendChild(wrap.firstElementChild);
@@ -794,11 +795,11 @@ async function doReceive(withConfirm) {
 }
 /* v320: 품번별 입고 표 (입고 창 안에 바로 붙는다) */
 function cfmTable(all, rate) {
-  return `<table class="ln bt" id="oxCf"><thead><tr><th>품번</th><th>부품명</th><th>업체</th><th style="width:54px">입고수량</th><th style="width:84px">입고단가</th><th style="width:88px">입고금액</th><th style="width:88px">확정가</th></tr></thead><tbody>${
-    all.map((e, k) => `<tr data-k="${k}"${k === 0 ? ' class="main" title="우클릭한 품번"' : ''}><td>${_esc(e.b.part)}</td><td>${_esc(e.b.name || '')}</td><td>${_esc(e.line.vendor_name || '')}</td>
+  return `<table class="ln bt" id="oxCf"><thead><tr><th>품번</th><th>업체</th><th style="width:54px">입고수량</th><th style="width:84px">입고단가</th><th style="width:88px">입고금액</th><th style="width:88px">확정가</th></tr></thead><tbody>${
+    all.map((e, k) => `<tr data-k="${k}"${k === 0 ? ' class="main" title="우클릭한 품번"' : ''}><td title="${_esc(e.b.name || '')}">${_esc(e.b.part)}</td><td>${_esc(e.line.vendor_name || '')}</td>
       <td><input class="r cq" value="${e.q}" inputmode="numeric"></td><td><input class="r cp" value="${_w0(e.price)}" placeholder="예: 45,000" inputmode="numeric"></td>
       <td><input class="r ca" value="${_w0(e.amt)}" placeholder="자동" inputmode="numeric" title="입고단가×수량(중량)으로 자동 계산 — 직접 고칠 수 있습니다"></td><td><input class="r cf" value="${_w0(e.fix)}" placeholder="예: 42,750" inputmode="numeric" title="[입고+확정]일 때 제조원가에 반영 — 비우면 입고금액×(1−네고율)"></td></tr>`).join('')}</tbody>
-    <tfoot><tr><th colspan="5" class="r">합계</th><th class="r" id="oxCfA"></th><th class="r" id="oxCfF"></th></tr></tfoot></table>`;
+    <tfoot><tr><th colspan="4" class="r">합계</th><th class="r" id="oxCfA"></th><th class="r" id="oxCfF"></th></tr></tfoot></table>`;
 }
 function cfmBind(c) {
   const all = [c.main, ...c.extras], t = $('oxCf'); if (!t) return;
@@ -950,10 +951,11 @@ function formConfirm(ev, l) {
       const a = _n(el.receipt_amount) || _n(el.quote_price); list.push({ b: x.b, line: el, amt: a, fix: Math.round(a * (1 - rate0 / 100)) }); }
     CTX.cfmList = list;
     ['oxQuote', 'oxFix'].forEach(id => { const e = $(id); if (!e) return; const lab = e.previousElementSibling; e.hidden = true; if (lab && lab.tagName === 'LABEL') lab.hidden = true; });
-    const html = `<table class="ln bt" id="oxCfm"><thead><tr><th>품번</th><th>부품명</th><th>업체</th><th style="width:60px">입고수량</th><th style="width:92px">매입가</th><th style="width:92px">확정가</th></tr></thead><tbody>${
-      list.map((e, k) => `<tr data-k="${k}"${k === 0 ? ' class="main" title="우클릭한 품번"' : ''}><td>${_esc(e.b.part)}</td><td>${_esc(e.b.name || '')}</td><td>${_esc(e.line.vendor_name || '')}</td><td class="r">${Number(e.line.receipt_qty) || Number(e.line.order_qty) || ''}</td>
+    const html = `<table class="ln bt" id="oxCfm"><thead><tr><th>품번</th><th>업체</th><th style="width:60px">입고수량</th><th style="width:92px">매입가</th><th style="width:92px">확정가</th></tr></thead><tbody>${
+      list.map((e, k) => `<tr data-k="${k}"${k === 0 ? ' class="main" title="우클릭한 품번"' : ''}><td title="${_esc(e.b.name || '')}">${_esc(e.b.part)}</td><td>${_esc(e.line.vendor_name || '')}</td><td class="r">${Number(e.line.receipt_qty) || Number(e.line.order_qty) || ''}</td>
         <td><input class="r ma" value="${_w0(e.amt)}" placeholder="매입가" inputmode="numeric" title="입고금액 — 직접 고칠 수 있습니다"></td><td><input class="r mf" value="${_w0(e.fix)}" placeholder="예: 42,750" inputmode="numeric" title="제조원가에 반영되는 확정가 — 비우면 매입가×(1−네고율)"></td></tr>`).join('')}</tbody>
-      <tfoot><tr><th colspan="4" class="r">합계</th><th class="r" id="oxCfmA"></th><th class="r" id="oxCfmF"></th></tr></tfoot></table>`;
+      <tfoot><tr><th colspan="3" class="r">합계</th><th class="r" id="oxCfmA"></th><th class="r" id="oxCfmF"></th></tr></tfoot></table>`;
+    $('oxPop').style.width = '680px';
     const bx = $('oxBody').querySelector('.batch'); const wrap = document.createElement('div'); wrap.innerHTML = html;
     if (bx) bx.insertAdjacentElement('afterend', wrap.firstElementChild); else $('oxBody').appendChild(wrap.firstElementChild);
     if (bx) { const lb = bx.querySelector('label'); if (lb) lb.innerHTML = lb.innerHTML.replace(/함께 입고확정 \(.*?\)/, '함께 입고확정 — 위는 공통 항목(확정일·네고율), 아래 표에서 품번별 매입가·확정가를 각각 넣으세요'); }

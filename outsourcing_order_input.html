@@ -86,7 +86,7 @@ td.route.s-out{background:#ffe9d1!important;color:#7a4a12;font-weight:700}td.rou
 #ctxPop table.stp{width:100%;border-collapse:collapse;margin-top:8px}
 #ctxPop table.stp th,#ctxPop table.stp td{border:1px solid #d5dde3;height:26px;padding:0 5px;font-size:11px;white-space:nowrap}
 /* v320: 함께 발주 표 — 품번·부품명은 줄바꿈해서 전부, 우클릭 품번 행은 굵게, 금액은 입력칸 */
-#ctxPop table.stp.multi td:nth-child(-n+2){white-space:normal;word-break:break-all;line-height:1.25}#ctxPop table.stp tr.main td:nth-child(-n+2){font-weight:700;color:#1d4f80}
+#ctxPop table.stp.multi td:first-child{white-space:nowrap}#ctxPop table.stp tr.main td:first-child{font-weight:700;color:#1d4f80}   /* v321: 부품명 열 제거, 품번 한 줄 */
 #ctxPop table.stp td input{width:100%;height:22px;border:1px solid #c7d1da;padding:0 4px;font-size:11px;box-sizing:border-box;text-align:right}#ctxPop table.stp td input.manual{background:#fff6c8}
 #ctxPop table.stp thead th{background:linear-gradient(#dbe9f4,#c7d9e8);color:#405266}
 #ctxPop table.stp tfoot th{background:#f2f6f9;color:#20456b}
@@ -1023,9 +1023,9 @@ async function ctxOrder(ev,head){
     <label>비고</label><input id="cxRemark" class="full" placeholder="선택">
    </div>
    ${extras.length?`<div class="note" style="margin-top:6px;background:#eef7e9;border-color:#9ccb8a;color:#2f5f1f"><label style="cursor:pointer"><input type="checkbox" id="cxExtraOn" checked onchange="ctxAmt()"> 체크한 <b>${extras.length}개 품번</b>의 같은 공정(${_esc(procName(c))})도 함께 발주 — 위는 공통 항목, 아래 표에서 품번별 <b>수량·단가·금액</b>을 각각 넣으세요 (금액은 자동 계산되지만 직접 고칠 수 있습니다)</label></div>
-   <table class="stp multi"><thead><tr><th>품번</th><th>부품명</th><th style="width:58px">공정</th><th style="width:56px">수량</th><th style="width:94px">단가</th><th style="width:94px">금액</th></tr></thead>
-    <tbody>${CTX.tableRows.map(x=>`<tr${x.main?' class="main" title="우클릭한 품번"':''}><td>${_esc(x.r.part)}</td><td>${_esc(x.r.name||'')}</td><td class="c">공정${x.k+1}</td><td><input id="cxEQ${x.ri}" class="r" value="${Number(x.r.qty)||1}" inputmode="numeric" onchange="ctxAmt()"></td><td><input id="cxEP${x.ri}" inputmode="numeric" placeholder="단가" onchange="ctxPriceEdit(this)"></td><td><input id="cxEA${x.ri}" inputmode="numeric" placeholder="자동" title="단가×수량으로 자동 계산 — 직접 고칠 수 있습니다" onchange="ctxAmtEdit(this)"></td></tr>`).join('')}</tbody>
-    <tfoot><tr><th colspan="5" class="r">발주 합계</th><th class="r" id="cxETot">0</th></tr></tfoot></table>`:''}
+   <table class="stp multi"><thead><tr><th>품번</th><th style="width:58px">공정</th><th style="width:56px">수량</th><th style="width:94px">단가</th><th style="width:94px">금액</th></tr></thead>
+    <tbody>${CTX.tableRows.map(x=>`<tr${x.main?' class="main"':''}><td title="${_esc(x.r.name||'')}${x.main?' (우클릭한 품번)':''}">${_esc(x.r.part)}</td><td class="c">공정${x.k+1}</td><td><input id="cxEQ${x.ri}" class="r" value="${Number(x.r.qty)||1}" inputmode="numeric" onchange="ctxAmt()"></td><td><input id="cxEP${x.ri}" inputmode="numeric" placeholder="단가" onchange="ctxPriceEdit(this)"></td><td><input id="cxEA${x.ri}" inputmode="numeric" placeholder="자동" title="단가×수량으로 자동 계산 — 직접 고칠 수 있습니다" onchange="ctxAmtEdit(this)"></td></tr>`).join('')}</tbody>
+    <tfoot><tr><th colspan="4" class="r">발주 합계</th><th class="r" id="cxETot">0</th></tr></tfoot></table>`:''}
    ${skipped.length?`<div class="note">함께 발주에서 제외: ${_esc(skipped.join(', '))}</div>`:''}
    ${houseWarn}${cycleNote}<div class="note" id="cxNote">업체를 선택하면 공정단가변동등록에서 발주일 기준 단가를 자동 조회합니다. 이력이 없으면 단가를 직접 입력하세요.</div>`;
  }
