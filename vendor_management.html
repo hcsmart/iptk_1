@@ -37,7 +37,11 @@ function typeSet(v){const s=String(v??'').split(/[,\/ ]+/);document.querySelecto
 /* v297: 취급구분 열은 Y 만 표시 (N·빈값은 빈칸) */
 const flagKeys=new Set(["raw", "milling", "purchase", "outsource", "design", "setout", "etc"]);
 const cell=(r,k)=>flagKeys.has(k)?((r[k]==='Y'||r[k]===true)?'Y':''):(r[k]??'');
-function render(){body.innerHTML=view.map((r,i)=>`<tr onclick="selectRow(&quot;${String(r[keyName]).replace(/&/g,'&amp;').replace(/"/g,'&quot;')}&quot;,this)"><td class="c">${i+1}</td>`+colKeys.map(k=>`<td${flagKeys.has(k)?' class="c"':''}>${esc(cell(r,k))}</td>`).join('')+`</tr>`).join('');countText.textContent=`${view.length}건`}
+/* v300: 기본정렬 = 구분 순(자사 → 고객사 → 협력업체 → 양산처), 같은 구분은 업체코드 순. 구분이 여러 개면 앞선 것 기준 */
+const TYPE_ORDER={'자사':0,'고객사':1,'협력업체':2,'양산처':3};
+const typeRank=r=>Math.min(9,...String(r.type??'').split(/[,\/ ]+/).map(t=>TYPE_ORDER[t]??9));
+function sortView(){view.sort((a,b)=>typeRank(a)-typeRank(b)||String(a.code??'').localeCompare(String(b.code??''),'ko',{numeric:true}))}
+function render(){sortView();body.innerHTML=view.map((r,i)=>`<tr onclick="selectRow(&quot;${String(r[keyName]).replace(/&/g,'&amp;').replace(/"/g,'&quot;')}&quot;,this)"><td class="c">${i+1}</td>`+colKeys.map(k=>`<td${flagKeys.has(k)?' class="c"':''}>${esc(cell(r,k))}</td>`).join('')+`</tr>`).join('');countText.textContent=`${view.length}건`}
 function selectRow(k,tr){selected=data.findIndex(x=>String(x[keyName])===String(k));document.querySelectorAll('tbody tr').forEach(x=>x.classList.remove('sel'));tr?.classList.add('sel');const r=data[selected];if(!r)return;fieldIds.forEach(id=>{const e=document.getElementById(id);if(!e)return;if(e.type==='checkbox')e.checked=(r[id]==='Y'||r[id]===true);else e.value=r[id]??''});typeSet(r.type);msg(`${k} 항목을 선택했습니다.`)}
 function search(){const q=query.value.trim().toLowerCase();view=!q?[...data]:data.filter(r=>Object.values(r).some(v=>String(v??'').toLowerCase().includes(q)));render();msg(`검색 결과 ${view.length}건입니다.`)}
 function clearSearch(){query.value='';view=[...data];render();msg('검색조건을 초기화했습니다.')}
