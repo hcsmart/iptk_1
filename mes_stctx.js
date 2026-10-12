@@ -1,5 +1,6 @@
-/* mes_stctx.js — v264
+/* mes_stctx.js — v327
  * 원재료·구매품·외주가공 「발주/입고현황」 행 우클릭 처리 (입고 · 입고+확정 · 입고확정 · 입고취소 · 확정취소 · 발주취소)
+ * v327: [✎ 수정] 열 — MESSTCTX.edit(ev, row) 발주 내용 수정창 (원재료·구매품)
  * 원재료·구매품은 발주 화면(mes_ordctx.js)과 같은 order_lines 컬럼을 쓰고,
  * 외주가공(osp:true)은 외주가공 발주 화면과 같이 fn_osp_receive / fn_osp_receive_cancel_all RPC 를 쓴다 (부분입고·회차).
  *   <script>MESSTCTX.init({category:'원재료'});</script>
@@ -452,6 +453,80 @@ async function doConfirmCancel() {
   } catch (e) { say('확정취소 실패: ' + String(e.message || e).slice(0, 120)); }
 }
 
+/* ── ④ v327: [✎ 수정] — 발주 내용 고치기 (원재료·구매품) ─────────────────
+ * 업체·재질·치수·수량·단가·일자·매입가·확정가·네고율을 한 창에서 고친다.
+ *  · 매입가 = 수량 × 단가. 매입가를 직접 고치면 단가가 맞춰진다 (현황 표의 매입가 계산과 같게)
+ *  · 네고율·확정가는 입고확정된 건만 고칠 수 있다 (제조원가 반영값)
+ *  · 발주 전(입고 안 됨)이면 [✖ 발주취소] 버튼이 함께 나온다 */
+const VKIND = () => CFG.vendorKind || (CFG.category === '원재료' ? 'vendor_material' : 'vendor_purchase');
+async function fillVendorDL() {
+  const dl = $('sxVendDL'); if (!dl) return;
+  let names = [];
+  try { if (window.MESLOOK) names = (await MESLOOK.rows(VKIND())).map(v => v.vendor_name).filter(Boolean); } catch (e) {}
+  if (!names.length) names = [...new Set(VIEW().map(x => x.vendor).filter(Boolean))];
+  dl.innerHTML = names.sort((a, b) => String(a).localeCompare(b, 'ko')).map(n => `<option value="${_esc(n)}"></option>`).join('');
+}
+function formEdit(ev, r) {
+  if (OSP()) return say('외주가공은 발주 화면에서 고치세요.');
+  if (!r) return false;
+  if (ev && ev.preventDefault) { ev.preventDefault(); ev.stopPropagation(); }
+  CTX = { r, pos: posOf(ev), batch: [] };
+  const st = stOf(r), fixed = st === '입고확정' || !!r.cdate, recv = fixed || st === '입고' || !!r.idate;
+  const dim = CFG.category === '원재료' ? '발주치수' : '스펙';
+  const amt = buy(r), fix = _n(r.fix);
+  const rate = r.rate != null && r.rate !== '' ? Number(r.rate) : (amt && fix ? (1 - fix / amt) * 100 : 0);
+  open(ev, `${r.part || ''} — 발주 내용 수정`, 'k-cfm', headHtml(r) + `
+   <div class="g">
+    <label>협력업체</label><input id="sxVend" list="sxVendDL" value="${_esc(r.vendor || '')}" placeholder="업체명" autocomplete="off"><datalist id="sxVendDL"></datalist>
+    <label>재질</label><input id="sxMat" value="${_esc(r.mat || '')}" placeholder="예: STD11">
+    <label>${dim}</label><input id="sxSpec" value="${_esc(r.spec || '')}" placeholder="${CFG.category === '원재료' ? '예: 10*120*250' : '예: SGPH 25-120'}">
+    <label>수량</label><input id="sxQty" class="r" value="${Number(r.qty) || ''}" inputmode="numeric">
+    <label>단가</label><input id="sxPrice" class="r" value="${_w0(r.price)}" placeholder="예: 45,000" inputmode="numeric">
+    <label>매입가</label><input id="sxAmt" class="r" value="${_w0(amt)}" placeholder="수량 × 단가" inputmode="numeric" title="직접 고치면 단가가 맞춰집니다">
+    <label>발주일</label><input id="sxOdate" type="date" value="${_esc(_dt(r.odate))}">
+    <label>입고요구일</label><input id="sxRdate" type="date" value="${_esc(_dt(r.rdate))}">
+    ${recv ? `<label>입고일</label><input id="sxIdate" type="date" value="${_esc(_dt(r.idate))}">` : ''}
+    ${fixed ? `<label>확정일</label><input id="sxCdate" type="date" value="${_esc(_dt(r.cdate))}">` : (recv ? '<label></label><span></span>' : '')}
+    <label>네고율(%)</label><input id="sxRate" class="r" value="${fixed && rate ? Number(rate).toFixed(1) : ''}" placeholder="${fixed ? '예: 5' : '입고확정 후'}" inputmode="decimal" ${fixed ? '' : 'readonly'}>
+    <label>확정가</label><input id="sxFix" class="r" value="${fixed ? _w0(fix) : ''}" placeholder="${fixed ? '예: 42,750' : '입고확정 후'}" inputmode="numeric" ${fixed ? '' : 'readonly'}>
+   </div>
+   <div class="note">상태(${_esc(st)})는 바뀌지 않습니다. 매입가는 수량 × 단가이며, 매입가를 직접 고치면 단가가 맞춰집니다.${fixed ? ' 네고율을 넣으면 확정가가, 확정가를 고치면 네고율이 맞춰집니다 (제조원가 반영).' : ' 네고율·확정가는 입고확정한 뒤 고칠 수 있습니다.'}</div>`,
+   [{ t: '▣ 저장', cls: 'go', id: 'sxGo', fn: doEdit },
+    ...(!recv ? [{ t: '✖ 발주취소', cls: 'warn', title: '발주 라인을 삭제합니다 (입고 전만 가능)', fn: doOrderCancel }] : []),
+    { t: '닫기', fn: close }]);
+  fillVendorDL();
+  const calcFix = () => { if (!fixed) return; $('sxFix').value = _w0(Math.round(_n($('sxAmt').value) * (1 - _n($('sxRate').value) / 100))); };
+  const f = () => { const a = Math.round(_n($('sxQty').value) * _n($('sxPrice').value)); $('sxPrice').value = _w0($('sxPrice').value); $('sxAmt').value = _w0(a); calcFix(); };
+  $('sxQty').onchange = f; $('sxPrice').onchange = f;
+  $('sxAmt').onchange = () => { const a = _n($('sxAmt').value), q = _n($('sxQty').value); $('sxAmt').value = _w0(a); if (q > 0 && a > 0) $('sxPrice').value = _w0(Math.round(a / q)); calcFix(); };
+  if (fixed) {
+    $('sxRate').onchange = calcFix;
+    $('sxFix').onchange = () => { const a = _n($('sxAmt').value); $('sxFix').value = _w0($('sxFix').value); const rt = a ? (1 - _n($('sxFix').value) / a) * 100 : 0; $('sxRate').value = rt ? rt.toFixed(1) : ''; };
+  }
+  return false;
+}
+async function doEdit() {
+  const r = CTX && CTX.r; if (!r) return;
+  if (!_online()) return say('DB 미연결 - 수정할 수 없습니다.');
+  const st = stOf(r), fixed = st === '입고확정' || !!r.cdate, recv = fixed || st === '입고' || !!r.idate;
+  const vend = $('sxVend').value.trim(), q = _n($('sxQty').value), price = _n($('sxPrice').value), amt = _n($('sxAmt').value);
+  if (!vend) return say('협력업체를 입력하세요.');
+  if (!(q > 0)) return say('수량을 입력하세요.');
+  const row = { line_id: Number(r.no), vendor_name: vend, material: $('sxMat').value.trim() || null, spec: $('sxSpec').value.trim() || null,
+    order_qty: q, unit_price: price || null, quote_price: amt || null,
+    order_date: $('sxOdate').value || null, required_date: $('sxRdate').value || null, updated_at: new Date().toISOString() };
+  if (recv) { row.receipt_date = ($('sxIdate') && $('sxIdate').value) || null; row.receipt_qty = Number(r.got) || q; row.receipt_amount = amt || null; }
+  if (fixed) {
+    const fix = _n($('sxFix').value), rate = amt ? Number(((1 - fix / amt) * 100).toFixed(2)) : _n($('sxRate').value);
+    row.confirm_date = ($('sxCdate') && $('sxCdate').value) || null; row.confirm_price = fix || null; row.nego_rate = amt ? rate : null;
+  }
+  busy('sxGo', true);
+  try {
+    await MESDB.table('order_lines').upsert([row], 'line_id');
+    await after(`${r.part || ''} ${vend} 발주 내용을 수정했습니다. (${q}개 · 단가 ${_won(price)}원 · 매입가 ${_won(amt)}원${fixed ? ' · 확정가 ' + _won(row.confirm_price) + '원' : ''})`, '수정 완료');
+  } catch (e) { say('수정 실패: ' + String(e.message || e).slice(0, 120)); busy('sxGo', false, '▣ 저장'); }
+}
+
 /* ── 진입점: 행 우클릭 / 길게 누르기 ───────────────────────── */
 function openRow(ev, r) {
   if (ev) { ev.preventDefault(); ev.stopPropagation(); }
@@ -479,9 +554,9 @@ function init(opt) {
   const bar = document.querySelector('.filters .frow:last-child');
   if (bar && !bar.querySelector('.sxhint')) {
     const s = document.createElement('span'); s.className = 'sxhint';
-    s.innerHTML = '행 <b>우클릭</b> → 입고 · 입고확정 · 취소 (체크한 행은 함께 처리)';
+    s.innerHTML = '행 <b>우클릭</b> → 입고 · 입고확정 · 취소 (체크한 행은 함께 처리)' + (OSP() ? '' : ' · 맨 오른쪽 <b>[✎ 수정]</b> → 발주 내용 고치기');
     bar.appendChild(s);
   }
 }
-window.MESSTCTX = { init, open: openRow, close };
+window.MESSTCTX = { init, open: openRow, edit: formEdit, close };
 })();
