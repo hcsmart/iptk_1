@@ -154,7 +154,8 @@ html[data-mw="md"] .formgrid .wide,html[data-mw="sm"] .formgrid .wide,html[data-
 <div class="mask" id="attMask" onmousedown="this._d=(event.target===this)" onclick="if(event.target===this&&this._d)attClose()"><div class="dlg attbox"><div class="dlghead">첨부파일 <span id="attJob" style="font-weight:400;color:#6b7a86;margin-left:8px"></span><button onclick="attClose()">✕</button></div><div class="dlgbody"><div class="toolbar"><button class="btn" onclick="attPick()">파일첨부</button><button class="btn" onclick="attOpen(1)">다운로드</button><button class="btn" onclick="attOpen()">미리보기</button><button class="btn" onclick="attDel()">파일삭제</button><input type="file" id="attFile" multiple style="display:none" onchange="attUpload(this.files)"><span id="attMsg" style="margin-left:10px;color:#b45309;font-size:12px"></span></div>
 <div class="att attdlg" id="attDrop" title="파일을 여기로 끌어놓아도 됩니다"><table style="min-width:640px"><thead><tr><th style="width:34px"></th><th>파일명</th><th style="width:150px">Version</th><th style="width:280px">파일내용</th><th style="width:90px">크기</th><th style="width:90px">확장자</th></tr></thead><tbody id="attBody"></tbody></table></div></div><div class="dlgfoot"><button class="btn" onclick="attClose()">닫기</button></div></div></div>
 
-<footer class="foot"><button class="btn attbtn" id="attBtn" onclick="attShow()">📎 첨부파일<b id="attCnt"></b></button><button class="btn" onclick="save()">▤ 저장</button><button class="btn" onclick="clearForm()">＋ 신규등록</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">관리제번·공정수 등 필수항목을 입력하고 저장하세요. 공정수가 2 이상이면 A·B·C… 제번이 공정 수만큼 만들어집니다.</span></footer>
+<div class="mask" id="xlMask"><div class="dlg" style="width:min(1100px,96vw);margin-top:30px"><div class="dlghead">엑셀 수주 일괄등록 <span id="xlInfo" style="font-weight:400;color:#6b7a86;margin-left:8px"></span><button onclick="xlClose()">✕</button></div><div class="dlgbody"><div style="display:flex;gap:12px;align-items:center;margin-bottom:6px"><label><input type="checkbox" id="xlOver" onchange="xlRender()"> 이미 있는 관리제번은 덮어쓰기</label><span style="color:#8a97a2">오류가 있는 줄은 저장하지 않습니다. 고쳐서 다시 올리세요.</span></div><div class="dlgwrap" style="height:min(420px,60vh)"><table style="min-width:900px"><thead><tr><th style="width:44px">행</th><th style="width:120px">관리제번</th><th style="width:50px">공정수</th><th style="width:90px">수주일</th><th style="width:120px">고객사</th><th style="width:110px">품번</th><th style="width:140px">품명</th><th style="width:60px">유형</th><th>상태</th></tr></thead><tbody id="xlBody"></tbody></table></div></div><div class="dlgfoot"><button class="btn" id="xlGo" onclick="xlSave()" style="font-weight:700">▤ 저장</button><button class="btn" onclick="xlClose()">닫기</button></div></div></div>
+<footer class="foot"><button class="btn attbtn" id="attBtn" onclick="attShow()">📎 첨부파일<b id="attCnt"></b></button><button class="btn" onclick="save()">▤ 저장</button><button class="btn" onclick="clearForm()">＋ 신규등록</button><button class="btn" onclick="xlTemplate()" title="수주 일괄등록용 엑셀 양식을 내려받습니다 (* 표시 = 필수)">▦ 엑셀양식</button><button class="btn" onclick="xlFile.click()" title="엑셀 양식에 적은 수주를 한 번에 등록합니다 — 미리보기에서 확인 후 저장">⇪ 엑셀등록</button><input type="file" id="xlFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="xlLoad(this.files[0]);this.value=''"><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message">관리제번·공정수 등 필수항목을 입력하고 저장하세요. 공정수가 2 이상이면 A·B·C… 제번이 공정 수만큼 만들어집니다.</span></footer>
 </div>
 
 
@@ -269,12 +270,13 @@ async function existingJobs(b){
  try{const rs=await MESDB.table('sale_orders').select(`select=*&job_no=like.${encodeURIComponent(b)}*&order=job_no`);
   return (rs||[]).filter(r=>(MESDB.jobSplit?MESDB.jobSplit(r.job_no).base:r.job_no)===b)}catch(e){return []}
 }
+let BULK=false;   /* 엑셀 일괄등록 중에는 확인창을 띄우지 않는다 (미리보기에서 한 번에 확인) */
 async function save(mode){
  const ACT=(typeof mode==='string'&&mode)?mode:'저장';
  const b=(base_job.value||'').trim().toUpperCase();
  if(!b){msg('관리제번은 필수입니다.');base_job.focus();return false}
  /* v242: 외주설계인데 설계업체가 비어 있으면 한 번 확인 */
- if(/외주설계/.test(devtype.value||'')&&!design_vendor.value.trim()&&!confirm('개발유형이 「외주설계」 인데 설계업체가 비어 있습니다.\n설계업체 없이 저장할까요? (나중에 수주등록에서 채울 수 있습니다)')){design_vendor.focus();msg('설계업체를 입력한 뒤 저장하세요.');return false}
+ if(!BULK&&/외주설계/.test(devtype.value||'')&&!design_vendor.value.trim()&&!confirm('개발유형이 「외주설계」 인데 설계업체가 비어 있습니다.\n설계업체 없이 저장할까요? (나중에 수주등록에서 채울 수 있습니다)')){design_vendor.focus();msg('설계업체를 입력한 뒤 저장하세요.');return false}
  base_job.value=b;
  const n=PROC_N(),jobs=jobPreview();
  if(n<2){job_no.value=jobs[0];proc_seq.value='A';return SAVE0(ACT)}
@@ -285,7 +287,7 @@ async function save(mode){
  const keepQ=ex.length&&sum('quotation_price')===tq,keepO=ex.length&&sum('order_price')===to,keepN=ex.length&&sum('nego_amount')===tn;
  const part=(tot,i)=>{const each=Math.round(tot/n);return i===n-1?tot-each*(n-1):each};
  const newJobs=jobs.filter(j=>!exMap.has(j)),extra=ex.map(r=>r.job_no).filter(j=>!jobs.includes(j));
- if(!confirm(`관리제번 ${b} · 공정 ${n}개\n제번: ${jobs.join(', ')}${newJobs.length&&newJobs.length<jobs.length?`\n(새로 만드는 제번: ${newJobs.join(', ')})`:''}${extra.length?`\n※ 공정수보다 많은 기존 제번 ${extra.join(', ')} 은(는) 그대로 둡니다.`:''}\n\n${ACT}할까요?`))return false;
+ if(!BULK&&!confirm(`관리제번 ${b} · 공정 ${n}개\n제번: ${jobs.join(', ')}${newJobs.length&&newJobs.length<jobs.length?`\n(새로 만드는 제번: ${newJobs.join(', ')})`:''}${extra.length?`\n※ 공정수보다 많은 기존 제번 ${extra.join(', ')} 은(는) 그대로 둡니다.`:''}\n\n${ACT}할까요?`))return false;
  const snap={};for(const el of Object.keys(MAP)){const x=document.getElementById(el);if(x)snap[el]=x.value}
  const snapAtt=ATT.slice();const catAll=proc_cat.value,specAll=ms_name.value,specCode=ms_code.value;
  let ok=0,fail=[],lastMsg='';
@@ -309,6 +311,7 @@ async function save(mode){
  msg(`${b} 공정 ${ok}건을 ${ACT}했습니다 (${jobs.join(', ')}). 수주현황은 관리제번 1줄로 보입니다.`);
  return true;   /* v240: 완료 팝업은 아래 저장 래퍼에서 한 번만 */
 }
+const SAVE_CORE=save;   /* 엑셀 일괄등록용 — 확인창·완료 팝업 래퍼를 거치지 않는 원본 */
 
 /* ── v46 첨부파일: Supabase Storage(mes-attach) 업로드 ─────────── */
 const ATT=[];   /* {name,path,size,ext,note} */
@@ -488,7 +491,147 @@ clearForm();
   try{document.dispatchEvent(new Event('change'))}catch(e){}}
  return ok};
  window.MES.save=window.save;})();
-</script><script src="mes_sample.js?v=169"></script><script src="mes_demo.js?v=116"></script><script src="mes_db.js?v=171"></script>
+</script>
+<script>
+/* ── 엑셀 양식으로 수주 일괄등록 ─────────────────────────────────────────
+ *  [▦ 엑셀양식] 양식 내려받기 (* = 필수) → 작성 → [⇪ 엑셀등록] → 미리보기에서 확인 → 저장
+ *  한 줄 = 관리제번 1건. 저장은 화면 [▤ 저장]과 같은 경로(공정수 n → 관리제번+A·B·C…)를 탄다.
+ *  고객사·아이템·금형타입·기계사양·양산처·담당자는 기준정보의 코드 또는 이름으로 적는다. */
+const XL_COLS=[   /* [머리글, 입력칸 id, 필수, 설명] */
+ ['관리제번','base_job',1,'예) 26IPA001 — 저장하면 공정수만큼 26IPA001A·B·C… 제번으로 나뉨 (공정수 1 → 26IPA001A)'],
+ ['공정수','proc_cnt',0,'비우면 1 (1~26)'],
+ ['수주일','order_date',1,'2026-10-13 형식 또는 엑셀 날짜'],
+ ['고객사','cust',1,'기준정보 업체(고객사)의 코드 또는 이름'],
+ ['품번','model',1,''],
+ ['품명','product_name',1,''],
+ ['수주유형','otype',1,'신작 / 개조 / 수리 중 하나 (관리제번 예: 신작 26DHA001 · 개조 26DHB001 · 수리 26DHC001)'],
+ ['수주상태','status',0,'진행 / 보류 / 완료 / 취소 (비우면 진행)'],
+ ['아이템','item',0,'기준정보 아이템 코드 또는 이름'],
+ ['금형타입','mold',0,'기준정보 금형타입 코드 또는 이름'],
+ ['기계사양','ms',0,'기준정보 기계사양 코드 또는 이름'],
+ ['양산처','mp',0,'기준정보 업체(양산처) 코드 또는 이름'],
+ ['담당자','mgr',0,'사용자 아이디 또는 성명'],
+ ['개발유형','devtype',0,'설계(사내설계 / 외주설계 중 하나) + 제작(사내제작 / 사외제작 중 하나) — 쉼표로. 예) 사내설계,사외제작'],
+ ['설계업체','design_vendor',0,'외주설계일 때만'],
+ ['도번','drawing_no',0,''],
+ ['견적서번호','quo',0,''],
+ ['견적가','quo_price',0,'숫자 (공정수 2 이상이면 공정별로 나눠 저장)'],
+ ['수주가','order_price',0,'숫자'],
+ ['네고조정','nego_amount',0,'숫자 (감액 +, 증액 −)'],
+ ['네고사유','nego_note',0,''],
+ ['사용재료','material_used',0,''],
+ ['T/O 예정일','s1p',0,'날짜'],
+ ['납기예정일','dlvp',0,'날짜'],
+ ['국내/해외','dom',0,'국내 / 해외 (비우면 국내)'],
+ ['비고','remark',0,'']];
+const XL_LOOK={cust:['customer','cust_code','cust_name'],item:['item','item_code','item_name'],mold:['mold','mold_code','mold_name'],
+ ms:['mspec','ms_code','ms_name'],mp:['mass_production','mp_code','mp_name'],mgr:['employee','mgr_code','mgr_name']};
+const XL_DATE=new Set(['order_date','s1p','dlvp']),XL_NUM=new Set(['quo_price','order_price','nego_amount']);
+const XL_SEL={otype:['신작','개조','수리'],status:['진행','보류','완료','취소'],dom:['국내','해외']};
+let XL=[];
+function xlLib(){if(window.XLSX)return Promise.resolve();return new Promise((ok,no)=>{const s=document.createElement('script');
+ s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';s.onload=()=>ok();s.onerror=()=>no(new Error('엑셀 모듈을 불러오지 못했습니다 (인터넷 연결 확인)'));document.head.appendChild(s)})}
+async function xlTemplate(){
+ try{await xlLib()}catch(e){return msg(e.message)}
+ const head=XL_COLS.map(c=>c[0]+(c[2]?'*':''));
+ const ex={관리제번:'26IPA001',공정수:1,수주일:new Date().toISOString().slice(0,10),고객사:'(고객사 이름)',품번:'(품번)',품명:'(품명)',수주유형:'신작',수주상태:'진행',개발유형:'사내설계,사내제작',납기예정일:'',국내해외:'국내'};
+ const row=XL_COLS.map(c=>ex[c[0].replace(/[\s/]/g,'')]??ex[c[0]]??'');
+ const ws=XLSX.utils.aoa_to_sheet([head,row]);ws['!cols']=XL_COLS.map(c=>({wch:Math.max(10,c[0].length*2+4)}));
+ const guide=XLSX.utils.aoa_to_sheet([['항목','필수','작성 방법'],...XL_COLS.map(c=>[c[0],c[2]?'필수':'',c[3]]),[],
+  ['※ 첫 줄(머리글)은 지우거나 바꾸지 마세요. 2번째 줄의 예시는 지우고 작성하세요.'],['※ 한 줄 = 관리제번 1건. 같은 관리제번을 두 줄에 쓰면 오류입니다.'],['※ 이미 등록된 관리제번은 미리보기에서 「덮어쓰기」를 체크해야 저장됩니다.']]);
+ guide['!cols']=[{wch:14},{wch:6},{wch:70}];
+ const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'수주등록');XLSX.utils.book_append_sheet(wb,guide,'작성안내');
+ XLSX.writeFile(wb,'수주등록_양식.xlsx');msg('수주등록 엑셀 양식을 내려받았습니다. * 표시 항목은 반드시 입력하세요.');
+}
+function xlDate(v){
+ if(v==null||v==='')return '';
+ if(typeof v==='number'&&v>20000&&v<80000){const d=new Date(Date.UTC(1899,11,30)+Math.round(v)*864e5);return d.toISOString().slice(0,10)}
+ const t=String(v).trim();let m=/^(\d{4})[-./](\d{1,2})[-./](\d{1,2})/.exec(t)||/^(\d{4})(\d{2})(\d{2})$/.exec(t);
+ if(m)return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+ return null}
+const xlKey=h=>String(h||'').replace(/[*\s]/g,'').replace(/\(.*\)$/,'');
+async function xlLoad(file){
+ if(!file)return;
+ try{await xlLib()}catch(e){return msg(e.message)}
+ if(!window.MESDB||!MESDB.online)return msg('DB 미연결 — 엑셀 등록을 할 수 없습니다.');
+ msg(file.name+' 읽는 중…');
+ let grid;
+ try{const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});const ws=wb.Sheets['수주등록']||wb.Sheets[wb.SheetNames[0]];
+  grid=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:'',blankrows:false})}catch(e){return msg('엑셀을 읽지 못했습니다: '+String(e.message||e).slice(0,100))}
+ const hi=grid.findIndex(r=>r.some(c=>xlKey(c)==='관리제번'));
+ if(hi<0)return msg('「관리제번」 머리글을 찾지 못했습니다. [▦ 엑셀양식]으로 받은 양식을 쓰세요.');
+ const col={};grid[hi].forEach((h,i)=>{const k=xlKey(h);const c=XL_COLS.find(x=>xlKey(x[0])===k);if(c&&col[c[1]]==null)col[c[1]]=i});
+ const miss=XL_COLS.filter(c=>c[2]&&col[c[1]]==null).map(c=>c[0]);
+ if(miss.length)return msg('엑셀에 필수 열이 없습니다: '+miss.join(', '));
+ /* 기준정보 (코드·이름 둘 다로 찾기) */
+ const ref={};
+ for(const[k,[kind]]of Object.entries(XL_LOOK)){if(col[k]==null)continue;
+  try{const K=MESLOOK.KINDS[kind],rs=await MESLOOK.rows(kind);ref[k]=rs.map(r=>{const m=K.map(r);return {code:String((K.code?K.code(r):m[0])??''),name:String((K.name?K.name(r):m[1])??'')}})}catch(e){ref[k]=null}}
+ let exist=new Set();
+ try{const rs=await MESDB.table('sale_orders').select('select=job_no',{fresh:true});exist=new Set((rs||[]).map(r=>MESDB.jobSplit?MESDB.jobSplit(r.job_no).base:r.job_no))}catch(e){}
+ XL=[];const seen=new Map();
+ grid.slice(hi+1).forEach((r,i)=>{
+  const get=id=>col[id]==null?'':r[col[id]];
+  if(XL_COLS.every(c=>String(get(c[1])??'').trim()===''))return;   /* 빈 줄 */
+  const v={},err=[];
+  for(const[h,id,req]of XL_COLS){let x=get(id);
+   if(XL_DATE.has(id)){const d=xlDate(x);if(d===null){err.push(`${h} 날짜 형식 오류(${x})`);x=''}else x=d}
+   else if(XL_NUM.has(id)){const t=String(x??'').replace(/[,\s원]/g,'');if(t!==''&&Number.isNaN(Number(t))){err.push(`${h} 숫자 아님(${x})`);x=''}else x=t}
+   else x=String(x??'').trim();
+   if(req&&x==='')err.push(h+' 비어 있음');
+   v[id]=x}
+  v.base_job=v.base_job.toUpperCase();
+  if(v.proc_cnt!==''){const n=Number(v.proc_cnt);if(!Number.isInteger(n)||n<1||n>26)err.push('공정수는 1~26')}
+  for(const[id,ok]of Object.entries(XL_SEL))if(v[id]&&!ok.includes(v[id]))err.push(`${XL_COLS.find(c=>c[1]===id)[0]} 「${v[id]}」 (${ok.join('/')} 중 하나)`);
+  if(v.devtype){const ds=v.devtype.split(/[,\s/·]+/).filter(Boolean),bad=ds.filter(x=>!DEVS.includes(x));if(bad.length)err.push('개발유형 「'+bad.join(',')+'」');
+   if(ds.includes('사내설계')&&ds.includes('외주설계'))err.push('개발유형 설계는 사내설계·외주설계 중 하나');
+   if(ds.includes('사내제작')&&ds.includes('사외제작'))err.push('개발유형 제작은 사내제작·사외제작 중 하나')}
+  for(const k of Object.keys(XL_LOOK)){if(!v[k])continue;const L=ref[k];
+   if(!L){err.push(XL_COLS.find(c=>c[1]===k)[0]+' 기준정보를 읽지 못함');continue}
+   const q=v[k].toLowerCase(),hit=L.find(x=>x.code.toLowerCase()===q)||L.find(x=>x.name.toLowerCase()===q);
+   if(!hit)err.push(`${XL_COLS.find(c=>c[1]===k)[0]} 「${v[k]}」 기준정보에 없음`);else v[k]=hit}
+  if(v.base_job){if(seen.has(v.base_job))err.push(`관리제번 중복 (${seen.get(v.base_job)}행과 같음)`);else seen.set(v.base_job,hi+i+2)}
+  XL.push({row:hi+i+2,v,err,exist:exist.has(v.base_job)})});
+ if(!XL.length)return msg('엑셀에 등록할 줄이 없습니다.');
+ xlOver.checked=false;xlRender();xlMask.classList.add('on');
+ msg(`${file.name} — ${XL.length}줄을 읽었습니다. 미리보기에서 확인 후 [▤ 저장]을 누르세요.`);
+}
+const xlOk=x=>!x.err.length&&(!x.exist||xlOver.checked)&&!x.done;
+function xlRender(){
+ const nm=v=>v&&typeof v==='object'?v.name:(v||'');
+ xlBody.innerHTML=XL.map(x=>{const v=x.v;
+  const st=x.done?`<span style="color:#1d6b3a">✔ ${esc(x.done)}</span>`:x.fail?`<span style="color:#b02a37">저장 실패 — ${esc(x.fail)}</span>`
+   :x.err.length?`<span style="color:#b02a37">✖ ${esc(x.err.join(' · '))}</span>`
+   :x.exist?(xlOver.checked?'<span style="color:#8a4f08">기존 수주 덮어쓰기</span>':'<span style="color:#8a97a2">이미 있음 — 건너뜀</span>'):'<span style="color:#1d5da3">신규 등록</span>';
+  return `<tr><td class="c">${x.row}</td><td>${esc(v.base_job)}</td><td class="c">${esc(v.proc_cnt||1)}</td><td class="c">${esc(v.order_date)}</td><td>${esc(nm(v.cust))}</td><td>${esc(v.model)}</td><td>${esc(v.product_name)}</td><td class="c">${esc(v.otype||'-')}</td><td title="${esc(x.err.join('\n'))}">${st}</td></tr>`}).join('');
+ const ok=XL.filter(xlOk).length,bad=XL.filter(x=>x.err.length).length;
+ xlInfo.textContent=`전체 ${XL.length}줄 · 저장 대상 ${ok}건${bad?` · 오류 ${bad}건`:''}`;
+ xlGo.disabled=!ok;
+}
+function xlClose(){xlMask.classList.remove('on')}
+async function xlSave(){
+ const todo=XL.filter(xlOk);if(!todo.length)return;
+ if(!confirm(`수주 ${todo.length}건을 저장합니다.${XL.some(x=>x.exist&&xlOk(x))?'\n(이미 있는 관리제번은 엑셀 내용으로 덮어씁니다)':''}\n계속할까요?`))return;
+ xlGo.disabled=true;let ok=0,ng=0;
+ BULK=true;
+ try{for(const x of todo){const v=x.v;
+  clearForm();
+  for(const[,id]of XL_COLS){if(XL_LOOK[id]){const[,c,n]=XL_LOOK[id];if(v[id]){document.getElementById(c).value=v[id].code;document.getElementById(n).value=v[id].name}continue}
+   const el=document.getElementById(id);if(el&&v[id]!=='')el.value=v[id]}
+  if(!v.otype)otype.value='신작';if(!v.status)document.getElementById('status').value='진행';if(!v.dom)dom.value='국내';
+  devFromValue();if(v.design_vendor&&!design_vendor.disabled)design_vendor.value=v.design_vendor;
+  if(x.exist){const ex=await existingJobs(v.base_job);
+   const a=(ex.find(r=>Array.isArray(r.attachments)&&r.attachments.length)||{}).attachments;if(a){ATT.length=0;ATT.push(...a)}}   /* 덮어쓸 때 첨부는 유지 */
+  msg(`엑셀 등록 중… ${ok+ng+1}/${todo.length} — ${v.base_job}`);
+  let r=false;try{r=await SAVE_CORE('저장')}catch(e){x.fail=String(e.message||e).slice(0,80)}
+  if(r===true){ok++;x.done=x.exist?'덮어씀':'등록됨'}else{ng++;x.fail=x.fail||message.textContent.slice(0,100)}
+  xlRender()}}
+ finally{BULK=false}
+ clearForm();xlRender();
+ msg(`엑셀 등록 완료 — 저장 ${ok}건${ng?` · 실패 ${ng}건 (미리보기 상태 칸 확인)`:''}`);
+}
+</script>
+<script src="mes_sample.js?v=169"></script><script src="mes_demo.js?v=116"></script><script src="mes_db.js?v=171"></script>
 <script src="mes_ctx.js?v=306"></script>
 
 <script>
