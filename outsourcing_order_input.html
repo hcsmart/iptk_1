@@ -1662,6 +1662,11 @@ async function applyPlanOne(j,r,steps){
  return moved;
 }
 async function boardApply(d){
+ /* 적용 중에는 자동 새로고침(onChange→refreshAll)을 멈춘다 — 적용 끝에 이미 다시 읽어 그리므로,
+    이 화면이 저장하며 낸 알림으로 전체를 한 번 더 읽어 표가 다시 바뀌던(깜빡임) 문제 */
+ window.__applyBusy=true;try{return await boardApply0(d)}finally{window.__applyBusy=false}
+}
+async function boardApply0(d){
  const fail=m=>{msg(m);return {ok:false,err:m}};
  const j=jobView[jobIdx]||{};if(!j.job||j.job!==d.job)return fail('그림보드의 제번('+d.job+')과 사내외가공 발주 화면의 제번('+(j.job||'-')+')이 달라 적용하지 않았습니다. 발주 화면에서 그 제번을 고른 뒤 다시 적용하세요.');
  if(!_online())return fail('DB 미연결 - 가공계획을 저장할 수 없습니다.');
@@ -1699,7 +1704,7 @@ async function ctxAfter(job,text){
 }
 window.MES={search,save,exportCsv,setMessage:msg,reload:refreshAll};
 /* 다른 화면에서 발주·입고가 저장되면 자동으로 다시 읽는다 */
-(function(){let t=null;const go=()=>{clearTimeout(t);t=setTimeout(refreshAll,500)};
+(function(){let t=null;const go=()=>{if(window.__applyBusy)return;clearTimeout(t);t=setTimeout(()=>{if(window.__applyBusy)return;refreshAll()},500)};   /* 가공계획 적용 중 이 화면이 낸 변경 알림은 무시 */
  const bind=()=>{if(window.MESDB&&MESDB.onChange){MESDB.onChange(['order_lines','machining_plan_parts','partlist_materials'],go);return true}return false};
  if(!bind()){let n=0;const iv=setInterval(()=>{if(bind()||++n>40)clearInterval(iv)},100)}})();
 </script>
