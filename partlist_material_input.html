@@ -553,6 +553,17 @@ function editOpen(id){
  eInfo.innerHTML=r._new?'<b>미등록</b> 행입니다. 리스트 값만 바뀌며, 체크 후 <b>[▤ 등록]</b>을 눌러야 저장됩니다.'
   :'저장하면 바로 DB 에 반영됩니다. (등록자·등록일자는 그대로)';
  eMask.classList.add('on');setTimeout(()=>eName.focus(),50);
+ editOrdWarn(r,id);
+}
+/* 이미 발주된 품목이면 알린다 — 발주는 발주 순간의 품명·규격·수량을 복사해 두므로 여기서 고쳐도 발주 내용은 바뀌지 않는다 */
+async function editOrdWarn(r,id){
+ const job=r.job_no||curJob||'';if(!job||!r.part_no||!online())return;
+ try{
+  const rs=await MESDB.table('order_lines').select(`select=category&job_no=eq.${encodeURIComponent(job)}&part_no=eq.${encodeURIComponent(r.part_no)}&category=in.(${encodeURIComponent('원재료,외주가공')})`,{fresh:true})||[];
+  if(EDIT!==id||!rs.length)return;
+  const cnt={};rs.forEach(x=>cnt[x.category]=(cnt[x.category]||0)+1);
+  eInfo.insertAdjacentHTML('beforeend',`<div style="margin-top:6px;padding:6px 8px;background:#fdecec;border:1px solid #e0b4b4;color:#8a3a3a">⚠ 이 품목은 이미 발주되었습니다 (${Object.entries(cnt).map(([k,v])=>`${esc(k)} 발주 ${v}건`).join(' · ')}).<br>여기서 고쳐도 <b>발주 내용(품명·규격·수량)은 바뀌지 않습니다.</b> 수량이 늘었다면 발주 화면에서 추가 발주하세요.</div>`);
+ }catch(e){}
 }
 function editClose(){eMask.classList.remove('on');EDIT=null}
 async function editSave(){
