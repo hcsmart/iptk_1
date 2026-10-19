@@ -62,7 +62,7 @@ body.drag-on .screen{outline:3px dashed #2f75b5;outline-offset:-6px}
 <div class="gridbox"><table style="min-width:900px"><thead><tr>
  <th style="width:36px"><input type="checkbox" id="chkAll" onclick="chkAllRows(this.checked)" title="전체 선택"></th>
  <th style="width:90px">No</th><th style="width:40px" title="부품 이미지 — 행을 체크하고 [📷 이미지]">📷</th><th style="width:130px">금형번호</th><th style="width:240px">품명</th>
- <th style="width:120px">형식</th><th>규격</th><th style="width:80px">수량</th>
+ <th style="width:120px">형식</th><th>규격</th><th style="width:80px">수량</th><th style="width:60px" title="행의 품명·형식·규격·수량을 고칩니다">수정</th>
 </tr></thead><tbody id="body"></tbody></table></div>
 
 <footer class="foot">
@@ -117,6 +117,18 @@ body.drag-on .screen{outline:3px dashed #2f75b5;outline-offset:-6px}
  </div>
 </div></div>
 
+<!-- 행 수정 -->
+<div class="xmask" id="eMask" onmousedown="eMask._d=(event.target===eMask)" onclick="if(event.target===eMask&&eMask._d)editClose()"><div class="xdlg" style="width:min(580px,94vw)">
+ <div class="xhead"><span>PartList 수정 - 구매품 · 제번 <b id="eJob"></b></span><button onclick="editClose()">&times;</button></div>
+ <div class="xbody" style="padding:12px">
+  <div class="xrow"><span class="lb" style="width:44px">금형번호</span><input id="ePn" class="field" style="flex:1 1 150px;background:#eef1f4" readonly title="금형번호는 바꿀 수 없습니다 — 바꾸려면 행을 지우고 새로 등록하세요"><span class="lb" style="width:44px">품명</span><input id="eName" class="field" style="flex:1 1 150px"></div>
+  <div class="xrow"><span class="lb" style="width:44px">형식</span><input id="eType" class="field" style="flex:1 1 150px"><span class="lb" style="width:44px">규격</span><input id="eSpec" class="field" style="flex:1 1 150px"></div>
+  <div class="xrow"><span class="lb" style="width:44px">수량</span><input id="eQty" class="field" style="width:110px" onkeydown="if(event.key==='Enter')editSave()"></div>
+  <div id="eInfo" style="padding:6px 8px;background:#eef4f9;border:1px solid #cfdce6;color:#4a5a68;line-height:1.7"></div>
+  <div style="display:flex;justify-content:center;gap:8px;margin-top:10px"><button class="btn pri" onclick="editSave()">✎ 저장</button><button class="btn" onclick="editClose()">⊠ 취소</button></div>
+ </div>
+</div></div>
+
 <!-- 일괄 등록 (등록자·등록일자) -->
 <div class="xmask" id="rMask" onmousedown="rMask._d=(event.target===rMask)" onclick="if(event.target===rMask&&rMask._d)regClose()"><div class="xdlg" style="width:min(440px,94vw)">
  <div class="xhead"><span>PartList 등록 - 구매품</span><button onclick="regClose()">&times;</button></div>
@@ -163,8 +175,8 @@ const view=()=>[...data,...pend];
 const rowById=id=>view().find(x=>x.row_no===id);
 function render(){
  const v=view();
- body.innerHTML=v.length?v.map((r,i)=>`<tr class="${r._new?'new':''}" onclick="rowClick(${r.row_no},event)"><td class="c"><input type="checkbox" ${chk.has(r.row_no)?'checked':''} onclick="toggleChk(${r.row_no},this.checked)"></td><td class="c">${i+1}${r._new?'<span class="tag">미등록</span>':''}</td><td class="c">${r.image_url?MESDB.imgBox(r.image_url,22):''}</td><td>${esc(r.part_no)}</td><td>${esc(r.part_name||'')}</td><td class="c">${esc(r.type||'')}</td><td>${esc(r.spec||'')}</td><td class="num">${fmt(r.qty)}</td></tr>`).join('')
-  :'<tr><td colspan="8" class="c" style="height:120px;color:#8a97a2">등록된 품목이 없습니다. 엑셀에서 복사(Ctrl+C) 후 이 화면에서 붙여넣기(Ctrl+V) 하세요.</td></tr>';
+ body.innerHTML=v.length?v.map((r,i)=>`<tr class="${r._new?'new':''}" onclick="rowClick(${r.row_no},event)"><td class="c"><input type="checkbox" ${chk.has(r.row_no)?'checked':''} onclick="toggleChk(${r.row_no},this.checked)"></td><td class="c">${i+1}${r._new?'<span class="tag">미등록</span>':''}</td><td class="c">${r.image_url?MESDB.imgBox(r.image_url,22):''}</td><td>${esc(r.part_no)}</td><td>${esc(r.part_name||'')}</td><td class="c">${esc(r.type||'')}</td><td>${esc(r.spec||'')}</td><td class="num">${fmt(r.qty)}</td><td class="c"><button class="btn" style="height:20px;padding:0 8px;font-size:11px" onclick="event.stopPropagation();editOpen(${r.row_no})" title="이 행 수정">✎ 수정</button></td></tr>`).join('')
+  :'<tr><td colspan="9" class="c" style="height:120px;color:#8a97a2">등록된 품목이 없습니다. 엑셀에서 복사(Ctrl+C) 후 이 화면에서 붙여넣기(Ctrl+V) 하세요.</td></tr>';
  chkAll.checked=v.length>0&&v.every(r=>chk.has(r.row_no));
  countText.textContent=`${v.length}건`+(pend.length?` (미등록 ${pend.length})`:'')+(chk.size?` · 선택 ${chk.size}`:'');
 }
@@ -561,6 +573,32 @@ function manAdd(){
   +'. 체크 후 [▤ 등록]을 누르세요.');
 }
 
+
+/* v332: 행 [✎ 수정] — 품명·형식·규격·수량을 고친다.
+   등록된 행은 바로 DB 에 저장, 미등록 행은 리스트 값만 바꾼다 (금형번호는 키라서 고정) */
+let EDIT=null;
+function editOpen(id){
+ const r=rowById(id);if(!r)return;EDIT=id;
+ eJob.textContent=r.job_no||curJob||'';ePn.value=r.part_no||'';eName.value=r.part_name||'';
+ eType.value=r.type||'';eSpec.value=r.spec||'';eQty.value=fmt(r.qty);
+ eInfo.innerHTML=r._new?'<b>미등록</b> 행입니다. 리스트 값만 바뀌며, 체크 후 <b>[▤ 등록]</b>을 눌러야 저장됩니다.'
+  :'저장하면 바로 DB 에 반영됩니다.';
+ eMask.classList.add('on');setTimeout(()=>eName.focus(),50);
+}
+function editClose(){eMask.classList.remove('on');EDIT=null}
+async function editSave(){
+ const r=rowById(EDIT);if(!r)return editClose();
+ const d={part_name:(eName.value||'').trim(),type:(eType.value||'').trim()||null,spec:(eSpec.value||'').trim()||null,qty:XNUM(eQty.value)};
+ if(r._new){Object.assign(r,d);editClose();render();msg(`${r.part_no} 을(를) 고쳤습니다 (미등록). 체크 후 [▤ 등록]을 누르세요.`);return}
+ if(!online()){msg('DB 미연결 상태에서는 수정할 수 없습니다.');return}
+ try{
+  if(MESDB.ensureRefs)await MESDB.ensureRefs([{part_no:r.part_no,part_name:d.part_name}]);
+  await MESDB.table(TBL).update({row_no:Number(r.row_no)},d);
+  Object.assign(r,d);editClose();notify();render();
+  msg(`${r.job_no||curJob} · ${r.part_no} 을(를) 수정했습니다.`);
+  try{(window.MESPOP||window.parent?.MESPOP)?.ok(`${r.part_no} 을(를) 수정했습니다.`,'수정 완료')}catch(e){}
+ }catch(e){alert('수정 실패: '+String(e.message||e).slice(0,160))}
+}
 
 /* ── v119: 품번(제품 품번)으로도 제번을 찾는다 — job_pool 의 job_no ↔ model ───── */
 const PNMAP=[];
