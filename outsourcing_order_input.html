@@ -366,8 +366,8 @@ function venFind(){const q=(venQ.value||'').trim().toLowerCase();
  msg(q?`협력업체 ${venView.length}건 검색`:`협력업체 ${venView.length}건`)}
 function renderVendors(){venBody.innerHTML=venView.map((v,i)=>`<tr class="${i===venIdx?'sel':''}" onclick="pickVendor(${i})"><td>${v}</td></tr>`).join('')}
 var MAXSTEP=10;  /* v149: 부품별 가공공정은 공정1~10 까지 (화면보다 넓으면 가로 스크롤) */
-/* v330: 공정10 칸 [✕ 삭제] — 잘못 등록된 품번 행 삭제 (전체 부품 보기·이전 차수 줄에서는 숨김) */
-const DELBTN=(r,ri)=>(ALL||r.old)?'':`<button class="btn" style="height:20px;padding:0 7px;font-size:11px;color:#a03235" onclick="event.stopPropagation();partDel(${ri})" title="잘못 등록된 품번 — 이 품번의 외주가공 발주·입고·차수·사내완료 기록과 가공계획·PartList(원재료) 행을 지웁니다">✕ 삭제</button>`;
+/* v330: 공정10 칸 [✕ 삭제] — 잘못 등록된 품번 행 삭제 (이전 차수 줄에서는 숨김) · v335: 전체 부품 보기에서도 보인다 */
+const DELBTN=(r,ri)=>r.old?'':`<button class="btn" style="height:20px;padding:0 7px;font-size:11px;color:#a03235" onclick="event.stopPropagation();partDel(${ri})" title="잘못 등록된 품번 — 이 품번의 외주가공 발주·입고·차수·사내완료 기록과 가공계획·PartList(원재료) 행을 지웁니다">✕ 삭제</button>`;
 function renderRoutes(){
  const A=ALL,HID=[],vf=String(VF.v||'').toLowerCase();
  const H=ROUTES.map((r,ri)=>{
@@ -1704,7 +1704,9 @@ async function boardApply0(d){
 /* 처리 후 공통: 캐시 비우고 → 알림 → 공정 리스트 재조회 */
 /* v330: 공정10 칸 [✕ 삭제] — 잘못 등록된 품번 행을 없앤다.
    그 품번의 이 제번 외주가공 발주(모든 차수)·입고 회차·차수·사내가공 완료 기록과 가공계획·PartList(원재료) 행을 지운다. */
-async function partDel(ri){const r=ROUTES[Number(ri)],job=curJobNo();if(!r||!job)return;
+async function partDel(ri){const r=ROUTES[Number(ri)];if(!r)return;
+ if(ALL&&r.job)useJob(r.job,true);   /* 전체 부품 보기: 그 행의 제번 상태로 맞춘다 */
+ const job=(ALL&&r.job)?r.job:curJobNo();if(!job)return;
  if(!_online())return msg('DB 미연결 — 삭제는 DB 연결 상태에서만 됩니다.');
  const J=encodeURIComponent(job),P=encodeURIComponent(r.part);
  let lines=[],pl=[];
@@ -1731,7 +1733,7 @@ async function partDel(ri){const r=ROUTES[Number(ri)],job=curJobNo();if(!r||!job
  try{await MESDB.table('machining_plan_parts').delete({job_no:job,part_no:r.part})}catch(e){ng.push('가공계획: '+String(e.message||e).slice(0,60))}
  for(const x of pl){try{await MESDB.table('partlist_materials').delete({row_no:Number(x.row_no)})}catch(e){ng.push('PartList: '+String(e.message||e).slice(0,60))}}
  try{['design_results','part_cycles','machining_plan_parts','partlist_materials'].forEach(t=>MESDB.dropCache&&MESDB.dropCache(t));MESDB.notify&&MESDB.notify(['design_results','part_cycles','machining_plan_parts','partlist_materials'])}catch(e){}
- PICK.clear();await loadRoutes();
+ PICK.clear();if(ALL)await refreshAll();else await loadRoutes();
  await ctxAfter(job,`${job} · ${r.part} 을(를) 삭제했습니다 — 발주 ${nl}건`+(nh?` · 사내완료 ${nh}건`:'')+` · 가공계획`+(pl.length?` · PartList ${pl.length}행`:'')+'.'+(ng.length?` · 실패 ${ng.length}건: ${ng.slice(0,3).join(' / ')}`:''));
 }
 /* v331: [✕ 진행삭제] — 잘못 등록된 품번의 외주가공 발주 취소.
