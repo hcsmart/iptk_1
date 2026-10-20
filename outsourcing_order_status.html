@@ -10,7 +10,7 @@
 .screen{height:100%;display:flex;flex-direction:column}.title{height:46px;padding:9px 14px 4px;border-bottom:2px solid #3977ad;display:flex;align-items:center;gap:14px}.title h1{margin:0;font-size:21px;font-weight:500;color:#4b5b69}.title h1:before{content:'◯';margin-right:6px;color:#8795a1}.title .plant{margin-left:auto;display:flex;align-items:center;gap:6px;color:#6b7885}
 .filters{padding:7px 14px;border-bottom:1px solid var(--line2);background:#fafbfc}.frow{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.frow+.frow{margin-top:5px}.label{font-weight:700}.field{height:26px;border:1px solid #b7c2cb;background:#fff;padding:0 6px;outline:none}.field:focus{border-color:#4e88bb}.radios{display:flex;gap:9px;color:#5f6d79}
 .gridbox{flex:1;min-height:0;margin:7px 14px;border:1px solid var(--line);display:flex;flex-direction:column;background:#fff}
-.tablewrap{flex:1;min-height:0;overflow:auto}table{border-collapse:collapse;min-width:1764px;width:100%;table-layout:fixed}th,td{height:25px;padding:0 5px;border-right:1px solid var(--line2);border-bottom:1px solid var(--line2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}th{position:sticky;top:0;z-index:2;text-align:center;background:linear-gradient(#dbe9f4,#c7d9e8);color:#405266;font-weight:700}tbody tr:nth-child(even) td{background:#fafcfd}tbody tr:hover td{background:#edf6fd}tbody tr.sel td{background:#2e78bd;color:#fff}.c{text-align:center}.r{text-align:right}
+.tablewrap{flex:1;min-height:0;overflow:auto}table{border-collapse:collapse;min-width:1800px;width:100%;table-layout:fixed}th,td{height:25px;padding:0 5px;border-right:1px solid var(--line2);border-bottom:1px solid var(--line2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}th{position:sticky;top:0;z-index:2;text-align:center;background:linear-gradient(#dbe9f4,#c7d9e8);color:#405266;font-weight:700}tbody tr:nth-child(even) td{background:#fafcfd}tbody tr:hover td{background:#edf6fd}tbody tr.sel td{background:#2e78bd;color:#fff}.c{text-align:center}.r{text-align:right}
 tfoot th{position:sticky;bottom:0;background:linear-gradient(#e6eef5,#d3e0ea)}
 .tag{display:inline-block;min-width:60px;text-align:center;border-radius:2px;padding:0 4px;color:#fff;background:#8e9aa6}
 /* v112: 화면 표기값(대기/입고/확정)에도 색을 준다 — 배경이 없으면 흰 글자가 안 보인다 */
@@ -45,10 +45,10 @@ tfoot th{position:sticky;bottom:0;background:linear-gradient(#e6eef5,#d3e0ea)}
     </div>
   </section>
   <div class="gridbox"><div class="tablewrap"><table>
-    <colgroup><col style="width:44px"><col style="width:76px"><col style="width:110px"><col style="width:120px"><col style="width:180px"><col style="width:48px"><col style="width:58px"><col style="width:70px"><col style="width:140px"><col style="width:52px"><col style="width:52px"><col style="width:84px"><col style="width:92px"><col style="width:96px"><col style="width:92px"><col style="width:96px"><col style="width:100px"><col style="width:100px"><col style="width:62px"></colgroup>
-    <thead><tr><th style="width:34px" title="전체 선택 / 해제"><input type="checkbox" id="chkAll" onclick="checkAll(this.checked)"></th><th>No</th><th>구분</th><th>협력업체</th><th>제번</th><th title="수주등록의 품번(제품)">품번(제품)</th><th>공정</th><th>공정명</th><th>품번</th><th>부품명</th><th title="발주수량">발주<br>수량</th><th title="입고수량">입고<br>수량</th><th>가공공정</th><th>발주일</th><th>입고예정일</th><th>입고일</th><th>입고확정일</th><th>견적가</th><th>확정가</th><th>수정</th></tr></thead>
+    <colgroup><col style="width:44px"><col style="width:76px"><col style="width:110px"><col style="width:120px"><col style="width:120px"><col style="width:60px"><col style="width:48px"><col style="width:64px"><col style="width:100px"><col style="width:90px"><col style="width:42px"><col style="width:42px"><col style="width:80px"><col style="width:90px"><col style="width:96px"><col style="width:92px"><col style="width:96px"><col style="width:84px"><col style="width:84px"><col style="width:62px"><col style="width:200px"></colgroup>   <!-- 제번·품번·발주수량·입고수량 폭 줄임, 메모 칸 추가 -->
+    <thead><tr><th style="width:34px" title="전체 선택 / 해제"><input type="checkbox" id="chkAll" onclick="checkAll(this.checked)"></th><th>No</th><th>구분</th><th>협력업체</th><th>제번</th><th title="수주등록의 품번(제품)">품번(제품)</th><th>공정</th><th>공정명</th><th>품번</th><th>부품명</th><th title="발주수량">발주<br>수량</th><th title="입고수량">입고<br>수량</th><th>가공공정</th><th>발주일</th><th>입고예정일</th><th>입고일</th><th>입고확정일</th><th>견적가</th><th>확정가</th><th>수정</th><th title="칸을 누르면 메모를 적을 수 있습니다 (Enter 저장 · Esc 취소). 발주의 비고와 같은 칸입니다">메모</th></tr></thead>
     <tbody id="body"></tbody>
-    <tfoot><tr><th colspan="17" class="r">합계</th><th class="r" id="sumQuote">0</th><th class="r" id="sumFix">0</th><th></th></tr></tfoot>
+    <tfoot><tr><th colspan="17" class="r">합계</th><th class="r" id="sumQuote">0</th><th class="r" id="sumFix">0</th><th></th><th></th></tr></tfoot>
   </table></div></div>
   <footer class="foot"><button class="btn" onclick="search()">⌕ 검색</button><button class="btn" onclick="editChecked()" title="체크한 한 행을 수정합니다">✎ 수정</button><button class="btn danger" onclick="delChecked()" title="체크한 발주를 삭제합니다 (입고 이력도 함께 삭제)">✕ 삭제</button><button class="btn primary" onclick="exportCsv()">▤ EXCEL</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫 기</button><span class="msg" id="message">외주가공 발주현황을 조회했습니다. (행을 더블클릭하면 수정)</span><span class="right" id="countText"></span></footer>
 </div>
@@ -57,9 +57,26 @@ const rows=[];
 let view=[...rows];
 const money=v=>Number(v||0).toLocaleString('ko-KR');
 function within(v,a,b){if(!a&&!b)return true;if(!v)return false;return (!a||v>=a)&&(!b||v<=b)}
-function render(){body.innerHTML=view.map((r,i)=>`<tr onclick="sel(this)" ondblclick="openEdit(${i})" title="더블클릭: 수정 · 우클릭: 입고·입고확정·취소"><td class="c"><input type="checkbox" data-no="${r.no}" ${CHK.has(Number(r.no))?'checked':''} onclick="event.stopPropagation();toggleChk(${Number(r.no)},this.checked)"></td><td class="c">${i+1}</td><td class="c"><span class="tag t-${r.st}">${r.st}</span></td><td>${r.vendor}</td><td>${r.job}</td><td>${PN(r.job)}</td><td class="c">${r.proc}</td><td class="c">${r.procName}</td><td>${r.part}${window.MESCYCLE?MESCYCLE.badge(r.cyc,null,r.cycWhy):''}</td><td>${r.partName}</td><td class="r">${Number(r.ord)||1}</td><td class="r">${Number(r.got)||0}</td><td class="c">${r.mp}</td><td class="c">${r.odate}</td><td class="c">${r.edate}</td><td class="c">${r.idate}</td><td class="c">${r.cdate}</td><td class="r">${money(r.quote)}</td><td class="r">${money(r.fix)}</td><td class="c"><button class="btn edit" onclick="event.stopPropagation();openEdit(${i})" title="이 행을 수정합니다">✎ 수정</button></td></tr>`).join('');
+function render(){body.innerHTML=view.map((r,i)=>`<tr onclick="sel(this)" ondblclick="openEdit(${i})" title="더블클릭: 수정 · 우클릭: 입고·입고확정·취소"><td class="c"><input type="checkbox" data-no="${r.no}" ${CHK.has(Number(r.no))?'checked':''} onclick="event.stopPropagation();toggleChk(${Number(r.no)},this.checked)"></td><td class="c">${i+1}</td><td class="c"><span class="tag t-${r.st}">${r.st}</span></td><td>${r.vendor}</td><td>${r.job}</td><td>${PN(r.job)}</td><td class="c">${r.proc}</td><td class="c">${r.procName}</td><td>${r.part}${window.MESCYCLE?MESCYCLE.badge(r.cyc,null,r.cycWhy):''}</td><td>${r.partName}</td><td class="r">${Number(r.ord)||1}</td><td class="r">${Number(r.got)||0}</td><td class="c">${r.mp}</td><td class="c">${r.odate}</td><td class="c">${r.edate}</td><td class="c">${r.idate}</td><td class="c">${r.cdate}</td><td class="r">${money(r.quote)}</td><td class="r">${money(r.fix)}</td><td class="c"><button class="btn edit" onclick="event.stopPropagation();openEdit(${i})" title="이 행을 수정합니다">✎ 수정</button></td><td class="memo" onclick="event.stopPropagation();memoEdit(${i},this)" ondblclick="event.stopPropagation()" title="${_mesc(r.memo)||'누르면 메모를 적을 수 있습니다'}">${_mesc(r.memo)}</td></tr>`).join('');
 sumQuote.textContent=money(view.reduce((a,r)=>a+(Number(r.quote)||0),0));sumFix.textContent=money(view.reduce((a,r)=>a+(Number(r.fix)||0),0));
  syncChkAll();countText.textContent=`${view.length}건`+(CHK.size?` · 선택 ${CHK.size}`:'');}
+/* 메모 — 발주(order_lines)의 비고(remark)를 표에서 바로 적고 고친다. 칸을 누르면 입력칸, Enter·칸 밖 클릭 저장, Esc 취소 */
+const _mesc=v=>String(v??'').replace(/\[신규발주:[^\]]*\]/g,'').trim().replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function memoEdit(i,td){const r=view[i];if(!r||td.querySelector('input'))return;
+ const old=String(r.memo||'').replace(/\[신규발주:[^\]]*\]/g,'').trim();
+ td.innerHTML='';const inp=document.createElement('input');inp.className='memoin';inp.value=old;inp.maxLength=200;td.appendChild(inp);inp.focus();inp.select();
+ let done=false;const fin=async ok=>{if(done)return;done=true;const v=inp.value.trim();
+  if(!ok||v===old){td.innerHTML=_mesc(r.memo);return}
+  if(!(window.MESDB&&MESDB.online)){td.innerHTML=_mesc(r.memo);msg('DB 미연결 — 메모를 저장할 수 없습니다.');return}
+  td.textContent=v;
+  try{await MESDB.table('order_lines').update({line_id:Number(r.no)},{remark:v||null,updated_at:new Date().toISOString()});
+   try{MESDB.dropCache&&MESDB.dropCache('order_lines');MESDB.notify&&MESDB.notify(['order_lines'])}catch(e){}
+   if(MESDB.reloadLines)await MESDB.reloadLines();
+   msg(`${r.job} · ${r.part} 메모를 저장했습니다.`)}
+  catch(e){td.innerHTML=_mesc(r.memo);msg('메모 저장 실패: '+String(e.message||e).slice(0,120))}};
+ inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();fin(true)}else if(e.key==='Escape'){e.preventDefault();fin(false)}});
+ inp.addEventListener('blur',()=>fin(true));inp.addEventListener('click',e=>e.stopPropagation());inp.addEventListener('dblclick',e=>e.stopPropagation());
+}
 function sel(tr){document.querySelectorAll('#body tr').forEach(x=>x.classList.remove('sel'));tr.classList.add('sel')}
 /* v88: [조회] 는 DB 를 다시 읽고 나서 거른다 — 다른 화면에서 새로 생긴 발주가 바로 보인다 */
 function search(){
@@ -239,6 +256,7 @@ render();window.MES={search,exportCsv,setMessage:msg};
 </script>
 <style>
 /* v112: 행 더블클릭 수정 팝업 */
+td.memo{cursor:text;color:#4a5866;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}td.memo:hover{background:#fffbe6}td.memo input.memoin{width:100%;height:21px;border:1px solid #6f9bd1;padding:0 4px;font:inherit;box-sizing:border-box}
 button.btn.edit{height:21px;min-width:0;padding:0 8px;font-size:11px;line-height:19px;border:1px solid #9cb5cb;background:linear-gradient(#fff,#eaf2f8);color:#2c6ca8;cursor:pointer;border-radius:3px}
 button.btn.edit:hover{background:#fff;border-color:#4e88bb}
 tbody tr.sel button.btn.edit{background:#fff;color:#2c6ca8}
@@ -265,7 +283,7 @@ tbody tr.sel button.btn.edit{background:#fff;color:#2c6ca8}
 <div id="edPop"><div class="h"><span id="edTitle">발주 수정</span><button class="x" onclick="closeEdit()">✕</button></div>
  <div class="b" id="edBody"></div><div class="f" id="edFoot"></div></div>
 <script src="mes_db.js?v=230"></script><script src="mes_cycle.js?v=225"></script>
-<script>MESDB.lines({page:"outsourcing_order_status",category:"외주가공",statuses:[],map:{"no": {"col": "line_id", "type": "num"}, "vendor": "vendor_name", "job": "job_no", "item": "item_name", "proc": "process_code", "procName": "process_name", "part": "part_no", "cyc": {"col": "cycle_no", "type": "num"}, "cycWhy": "cycle_reason", "partName": "part_name", "st": {"col": "status", "type": "status"}, "ord": {"col": "order_qty", "type": "num"}, "got": {"col": "receipt_qty", "type": "num"}, "mp": "machining_process_code", "odate": {"col": "order_date", "type": "date"}, "edate": {"col": "required_date", "type": "date"}, "idate": {"col": "receipt_date", "type": "date"}, "cdate": {"col": "confirm_date", "type": "date"}, "quote": {"col": "quote_price", "type": "num"}, "rate": {"col": "nego_rate", "type": "num"}, "fix": {"col": "confirm_price", "type": "num"}},get:()=>rows,render:()=>{try{_applyFilter()}catch(e){view=[...rows];render()}}});   /* v231: 재조회·자동갱신 때 조회조건 유지 */</script>
+<script>MESDB.lines({page:"outsourcing_order_status",category:"외주가공",statuses:[],map:{"no": {"col": "line_id", "type": "num"}, "vendor": "vendor_name", "job": "job_no", "item": "item_name", "proc": "process_code", "procName": "process_name", "part": "part_no", "cyc": {"col": "cycle_no", "type": "num"}, "cycWhy": "cycle_reason", "partName": "part_name", "st": {"col": "status", "type": "status"}, "ord": {"col": "order_qty", "type": "num"}, "got": {"col": "receipt_qty", "type": "num"}, "mp": "machining_process_code", "odate": {"col": "order_date", "type": "date"}, "edate": {"col": "required_date", "type": "date"}, "idate": {"col": "receipt_date", "type": "date"}, "cdate": {"col": "confirm_date", "type": "date"}, "quote": {"col": "quote_price", "type": "num"}, "rate": {"col": "nego_rate", "type": "num"}, "fix": {"col": "confirm_price", "type": "num"}, "memo": "remark"},get:()=>rows,render:()=>{try{_applyFilter()}catch(e){view=[...rows];render()}}});   /* v231: 재조회·자동갱신 때 조회조건 유지 */</script>
 <script src="mes_lookup.js?v=299"></script>
 <script>
 /* v86: 협력업체 — 기준정보(업체 관리)의 외주가공 협력사를 드롭다운으로 선택 */
