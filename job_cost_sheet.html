@@ -250,7 +250,7 @@ function targetHtml(cost,cols){
  const pct=P.target?cost/P.target*100:0,over=cost>P.target,remain=P.target-cost;
  const cls=over?'over':(pct>=90?'ok':''),bar=Math.min(100,Math.round(pct));
  const prof=P.profit||P.profitEst||0,curProfit=P.order?P.order-cost:0;
- const mg=P.mgmt?`관리비(목표) <b>${F(P.mgmt)}</b>${P.pct!=null?` <span style="color:#8a7a3a">(이익금의 ${N(P.pct)}%)</span>`:''}`
+ const mg=P.mgmt?`관리비(목표) <b>${F(P.mgmt)}</b>${P.pct!=null?` <span style="color:#8a7a3a">(수주가의 ${N(P.pct)}%)</span>`:''}`
   :`관리비(목표) <span style="color:#9aa5ad">미저장 — 제작계획을 다시 저장하면 표시됩니다</span>`;
  return `<tr class="tgt"><td colspan="${cols}" style="text-align:left;padding-left:10px">
    <b>목표 대비</b> &nbsp; 수주가 <b>${F(P.order)}</b> · 목표가(목표원가) <b>${F(P.target)}</b> · 전체 이익금(목표) <b>${F(prof)}</b>${!P.profit&&P.profitEst?' <span style="color:#9aa5ad">(수주가−목표가로 추정)</span>':''} · ${mg}
