@@ -115,8 +115,8 @@ body.portrait .fig{height:200mm}
 @media print{.ov{display:none!important}}
 @page{size:A4 landscape;margin:6mm}
 body.portrait .sheet{width:198mm}
-/* v325: 화면에서는 도면을 50% 크기로 — 오른쪽 공정 버튼 칸을 넓게 쓴다 (인쇄 크기는 그대로) */
-@media screen{.sheet{zoom:.5}}
+/* v338: 화면에서는 도면이 창 폭의 50% 를 차지하도록 배율을 맞춘다 (아래 스크립트가 창 크기에 따라 계산 · 인쇄 크기는 그대로) */
+@media screen{.sheet{zoom:var(--sheet-zoom,1)}}
 @media print{
  body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
  .wrap{padding:0;display:block}.side{display:none}.chip{cursor:default}
@@ -149,7 +149,12 @@ body.portrait .sheet{width:198mm}
    function apply(c){if(c==='auto')document.body.removeAttribute('data-cols');else document.body.setAttribute('data-cols',c);
     document.querySelectorAll('.colsel button').forEach(b=>b.classList.toggle('on',b.dataset.c===c))}
    document.querySelectorAll('.colsel button').forEach(b=>b.onclick=()=>{apply(b.dataset.c);try{localStorage.setItem(K,b.dataset.c)}catch(e){}});
-   apply(v)})();</script>
+   apply(v)})();
+  /* v338: 도면 배율 — 도면 종이가 창 폭의 절반이 되게 (창 크기가 바뀌면 다시 계산) */
+  (function(){const sh=document.getElementById('sheet');if(!sh)return;
+   function fit(){const w=sh.offsetWidth||1047;   /* 종이의 원래 폭(px) — offsetWidth 는 zoom 과 무관한 원래 값 */
+    const z=Math.max(.3,Math.min(1,(window.innerWidth*.5-20)/w));document.documentElement.style.setProperty('--sheet-zoom',z.toFixed(3))}
+   fit();window.addEventListener('resize',fit);window.addEventListener('load',fit)})();</script>
   <div class="hint">공정 마스터 전체입니다. 누르는 순서대로 도면 위 띠에 번호가 붙고, 다시 누르면 빠집니다. 띠나 이 목록 위 칸의 공정을 끌어 놓으면 순서가 바뀌고, 구분선 아래로 끌어 놓으면 빠집니다. 아래 칸 버튼을 띠·위 칸으로 끌어 오면 원하는 자리에 들어갑니다. 파란 「계획」 표시는 이 부품의 가공계획에 있는 공정입니다.</div>
   <div id="btns"></div>
   <div class="tools">
