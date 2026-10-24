@@ -45,7 +45,7 @@ tr.cm td{background:#fbfcfd}tr.cm td b{display:inline-block;min-width:130px;colo
 tr.cm.zero td b,tr.cm.zero td{color:#a9b4bc!important}
 tfoot tr.grand td{background:#cfe0ee!important;color:#12365a;font-size:12.5px}
 /* v343: 목표 대비 (제작계획) */
-tfoot tr.tgt td{background:#fff8e1!important;color:#5d4a00;font-weight:400;height:28px}
+tfoot tr.tgt td{background:#fff8e1!important;color:#5d4a00;font-weight:400;height:auto;min-height:28px;white-space:normal;word-break:keep-all;line-height:1.9;padding-top:2px;padding-bottom:2px}
 tfoot tr.tgt td b{color:#7a5c00}tfoot tr.tgt .bar{display:inline-block;vertical-align:middle;width:140px;height:11px;border:1px solid #c9b36a;background:#fff;border-radius:2px;overflow:hidden;margin:0 6px}
 tfoot tr.tgt .bar i{display:block;height:100%;background:#f0b429}tfoot tr.tgt .bar i.over{background:#d9534f}
 tfoot tr.tgt .ok{color:#2e7d32;font-weight:700}tfoot tr.tgt .over{color:#c62828;font-weight:700}
@@ -245,17 +245,24 @@ function planSum(rows){
  /* 저장 안 된 계획(옛 자료)은 이익금 = 수주가 − 목표가 로 대신 */
  if(!o.profit&&o.order&&o.target)o.profitEst=o.order-o.target;
  return o}
+/* v345: 관리비 실적 = 금형 총원가 × 관리비용(%) — 목표 = 목표가 + 관리비(목표), 실적 = 총원가 + 관리비(실적) 로 달성률·잔여 계산 */
+function mgmtPct(P){if(!P)return 0;if(P.pct!=null&&P.pct!=='')return N(P.pct);return P.order&&P.mgmt?P.mgmt/P.order*100:0}
+function tgtCalc(cost){const P=PLAN;if(!P||!P.target)return null;
+ const mp=mgmtPct(P),mgT=N(P.mgmt),mgA=Math.round(cost*mp/100);
+ const goal=P.target+mgT,act=cost+mgA,pct=goal?act/goal*100:0,remain=goal-act,cur=P.order?P.order-act:0;
+ return {P,mp,mgT,mgA,goal,act,pct,remain,cur,over:act>goal}}
 function targetHtml(cost,cols){
- const P=PLAN;if(!P||!P.target)return '';
- const pct=P.target?cost/P.target*100:0,over=cost>P.target,remain=P.target-cost;
- const cls=over?'over':(pct>=90?'ok':''),bar=Math.min(100,Math.round(pct));
- const prof=P.profit||P.profitEst||0,curProfit=P.order?P.order-cost:0;
- const mg=P.mgmt?`관리비(목표) <b>${F(P.mgmt)}</b>${P.pct!=null?` <span style="color:#8a7a3a">(수주가의 ${N(P.pct)}%)</span>`:''}`
+ const t=tgtCalc(cost);if(!t)return '';const P=t.P;
+ const cls=t.over?'over':(t.pct>=90?'ok':''),bar=Math.min(100,Math.round(t.pct));
+ const prof=P.profit||P.profitEst||0;
+ const mg=t.mgT?`관리비(목표) <b>${F(t.mgT)}</b>${t.mp?` <span style="color:#8a7a3a">(수주가의 ${+t.mp.toFixed(2)}%)</span>`:''}`
   :`관리비(목표) <span style="color:#9aa5ad">미저장 — 제작계획을 다시 저장하면 표시됩니다</span>`;
+ const ma=t.mp?`관리비(실적) <b>${F(t.mgA)}</b> <span style="color:#8a7a3a">(총원가의 ${+t.mp.toFixed(2)}%)</span>`:`관리비(실적) <span style="color:#9aa5ad">-</span>`;
  return `<tr class="tgt"><td colspan="${cols}" style="text-align:left;padding-left:10px">
    <b>목표 대비</b> &nbsp; 수주가 <b>${F(P.order)}</b> · 목표가(목표원가) <b>${F(P.target)}</b> · 전체 이익금(목표) <b>${F(prof)}</b>${!P.profit&&P.profitEst?' <span style="color:#9aa5ad">(수주가−목표가로 추정)</span>':''} · ${mg}
-   &nbsp;|&nbsp; 발생 총원가 <b>${F(cost)}</b> <span class="bar" title="목표가 대비 발생 총원가"><i class="${over?'over':''}" style="width:${bar}%"></i></span><span class="${cls}">달성률 ${pct.toFixed(1)}%</span>
-   · ${over?`<span class="over">목표 초과 ${F(-remain)}원</span>`:`잔여 <b>${F(remain)}</b>원`} · 현재 이익(수주가−발생원가) <b>${F(curProfit)}</b>원${P.order?` (${(curProfit/P.order*100).toFixed(1)}%)`:''}${P.n>1?` <span style="color:#8a7a3a">· 공정 제번 ${P.n}건 합산</span>`:''}</td></tr>`}
+   &nbsp;|&nbsp; 발생 총원가 <b>${F(cost)}</b> · ${ma} = 실적 <b>${F(t.act)}</b>
+   <span class="bar" title="목표(목표가 ${F(P.target)} + 관리비 ${F(t.mgT)} = ${F(t.goal)}) 대비 실적(총원가 + 관리비 실적)"><i class="${t.over?'over':''}" style="width:${bar}%"></i></span><span class="${cls}">달성률 ${t.pct.toFixed(1)}%</span>
+   · ${t.over?`<span class="over">목표 초과 ${F(-t.remain)}원</span>`:`잔여 <b>${F(t.remain)}</b>원`} · 현재 이익(수주가−실적) <b>${F(t.cur)}</b>원${P.order?` (${(t.cur/P.order*100).toFixed(1)}%)`:''}${P.n>1?` <span style="color:#8a7a3a">· 공정 제번 ${P.n}건 합산</span>`:''}</td></tr>`}
 /* v343: tfoot 줄들이 서로 겹치지 않게 아래쪽 줄 높이만큼 띄운다 */
 function stackFoot(){const trs=[...tfoot.querySelectorAll('tr')];let b=0;for(let i=trs.length-1;i>=0;i--){trs[i].style.setProperty('--sb',b+'px');b+=trs[i].offsetHeight||27}}
 function render(){
@@ -302,7 +309,7 @@ function render(){
    <tr class="grand"><td class="c" colspan="${(showJob?11:10)+(COLS.length||1)+1}">금형 총원가 = 부품 합계 ${F(S('total'))||0} + 금형 공통비 ${F(CT)||0}</td><td class="num">${F(S('total')+CT)}</td></tr>
    ${targetHtml(S('total')+CT,(showJob?11:10)+(COLS.length||1)+2)}`:'';
   stackFoot();
-  sumLine.innerHTML=v.length||CT?`원재료비 <b>${F(S('rawTot'))}</b> · 구매품비 <b>${F(S('buyTot'))}</b> · 가공비 <b>${F(S('procTot'))}</b> (사내 ${H(S('minTot'))}h 포함) · 금형 공통비 <b>${F(CT)}</b> · <b>금형 총원가 ${F(S('total')+CT)}</b>원${PLAN&&PLAN.target?` · 목표가 <b>${F(PLAN.target)}</b> · 달성률 <b>${((S('total')+CT)/PLAN.target*100).toFixed(1)}%</b>${PLAN.mgmt?` · 관리비(목표) <b>${F(PLAN.mgmt)}</b>`:''}`:''}`:'';
+  sumLine.innerHTML=v.length||CT?`원재료비 <b>${F(S('rawTot'))}</b> · 구매품비 <b>${F(S('buyTot'))}</b> · 가공비 <b>${F(S('procTot'))}</b> (사내 ${H(S('minTot'))}h 포함) · 금형 공통비 <b>${F(CT)}</b> · <b>금형 총원가 ${F(S('total')+CT)}</b>원${(t=>t?` · 관리비(실적) <b>${F(t.mgA)}</b> · 실적 <b>${F(t.act)}</b> / 목표 <b>${F(t.goal)}</b> · 달성률 <b>${t.pct.toFixed(1)}%</b> · 잔여 <b>${F(t.remain)}</b>`:'')(tgtCalc(S('total')+CT))}`:'';
  }else{
   thead.innerHTML=`<tr>
     <th class="grp" colspan="${showJob?7:6}">부품</th>
@@ -348,9 +355,10 @@ function csv(){
    rows.push(Array(w).fill(''),row('금형 공통비 · 외주설계',COMMON.dex.amt),row('금형 공통비 · SET외주',COMMON.sex.amt),row('금형 공통비 · 사내설계',COMMON.din.amt),row('금형 공통비 · 조립(금형 전체)',COMMON.asm.amt),
     row('금형 공통비 · 검사(금형 전체)',COMMON.insp.amt),row('금형 공통비 · 경비',COMMON.exp.amt),...(COMMON.etc.n?[row('금형 공통비 · 기타(부품 미지정)',COMMON.etc.amt)]:[]),
     row('금형 총원가',v.reduce((a,x)=>a+N(x.total),0)+COMMON.total));
-   if(PLAN&&PLAN.target){const cost=v.reduce((a,x)=>a+N(x.total),0)+COMMON.total;   /* v343: 목표 대비 */
-    rows.push(Array(w).fill(''),row('목표 · 수주가',PLAN.order),row('목표 · 목표가(목표원가)',PLAN.target),row('목표 · 전체 이익금',PLAN.profit||PLAN.profitEst||0),row('목표 · 관리비',PLAN.mgmt),
-     row('달성률(%) = 발생 총원가 ÷ 목표가',Math.round(cost/PLAN.target*1000)/10),row('잔여(목표가 − 발생 총원가)',PLAN.target-cost),row('현재 이익(수주가 − 발생 총원가)',PLAN.order-cost))}}
+   {const t=tgtCalc(v.reduce((a,x)=>a+N(x.total),0)+COMMON.total);if(t)   /* v345: 목표 대비 (관리비 실적 포함) */
+    rows.push(Array(w).fill(''),row('목표 · 수주가',t.P.order),row('목표 · 목표가(목표원가)',t.P.target),row('목표 · 전체 이익금',t.P.profit||t.P.profitEst||0),row('목표 · 관리비',t.mgT),row('목표 합계(목표가 + 관리비)',t.goal),
+     row('실적 · 관리비(총원가 × '+(+t.mp.toFixed(2))+'%)',t.mgA),row('실적 합계(총원가 + 관리비)',t.act),
+     row('달성률(%) = 실적 합계 ÷ 목표 합계',Math.round(t.pct*10)/10),row('잔여(목표 합계 − 실적 합계)',t.remain),row('현재 이익(수주가 − 실적 합계)',t.cur))}}
  }else{
   h=[...(showJob?['공정']:[]),'품번','부품명','재질','형태','규격','수량',...COLS.map(c=>pn(c)),'완료','전체','진행률'];
   rows=v.map(x=>[...(showJob?[x.seq]:[]),x.part,x.name,x.mat,x.shape||'',x.spec,x.qty??'',
