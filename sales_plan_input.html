@@ -473,6 +473,9 @@ function load(o){
  {const v=document.getElementById('machining_vendor');if(v)v.value=o.machining_vendor||''}
  ['design_vendor','assembly_vendor','tryout_vendor','complete_vendor'].forEach(k=>{const v=document.getElementById(k);if(v)v.value=o[k]||''});
  AK.forEach((k,i)=>{const n=document.getElementById('a'+(i+1));if(n)n.value=num(o[k])?fmt(num(o[k])):''});
+ /* v343: 저장된 전체 이익금 · 관리비용(%) 되살리기 (없으면 그대로) */
+ try{if(o.total_profit!=null&&num(o.total_profit))ad_profit.value=fmt(num(o.total_profit));
+  if(o.mgmt_pct!=null&&o.mgmt_pct!=='')ad_mgmt_pct.value=String(num(o.mgmt_pct));adCalc()}catch(e){}
  ['design','machining','assembly'].forEach(p=>{if(!document.getElementById(p+'_days').value)calcDays(p)});
  order_price.value=num(order_price.value)?fmt(num(order_price.value)):'';
  recalc();
@@ -529,6 +532,9 @@ function collect(){
  o.target_price=s||null;
  const op=num(order_price.value);
  o.profit_rate_pct=op?Math.round((op-s)/op*1000)/10:null;
+ /* v343: 전체 이익금 · 관리비용(%) · 관리비 도 저장 (금형원가내역 목표 대비 표시용) */
+ {const pf=num(ad_profit.value),m=num(ad_mgmt_pct.value);
+  o.total_profit=pf||null;o.mgmt_pct=m;o.mgmt_amount=pf?Math.round(pf*m/100):null}
  return o;
 }
 
@@ -636,12 +642,16 @@ async function saveOne(o){
   /* v39: 기존은 row_no 로 갱신, 신규는 DB identity 에 맡긴다 */
   /* v275: tryout_vendor·complete_vendor 컬럼이 아직 없으면(sql_v275 미실행) 그 둘만 빼고 저장 */
   const NEWC=['tryout_vendor','complete_vendor'];
+  const MGC=['total_profit','mgmt_pct','mgmt_amount'];   /* v343: 이익금·관리비 칸 (sql_v343 미실행이면 빼고 저장) */
   const put=async(body)=>{if(ex&&ex[0]){body.row_no=Number(ex[0].row_no);await MESDB.table('sales_plans').upsert(body,'row_no')}
    else{delete body.row_no;const ins=await MESDB.table('sales_plans').insertOne(body);if(ins&&ins.row_no!=null)o.row_no=Number(ins.row_no)}};
+  const isSchema=e=>/tryout_vendor|complete_vendor|total_profit|mgmt_pct|mgmt_amount|PGRST204|schema cache/i.test(String(e&&e.message||e));
   try{await put({...o})}
-  catch(e){const m=String(e&&e.message||e);if(!/tryout_vendor|complete_vendor|PGRST204|schema cache/i.test(m))throw e;
-   const b={...o};NEWC.forEach(k=>delete b[k]);await put(b);
-   if(NEWC.some(k=>o[k]))msg(`${o.job_no} 저장 — 초품·완료 외주업체는 저장되지 않았습니다 (sql_v275_plan_vendors.sql 실행 필요)`)}
+  catch(e){if(!isSchema(e))throw e;
+   const b={...o};MGC.forEach(k=>delete b[k]);
+   try{await put(b);msg(`${o.job_no} 저장 — 전체 이익금·관리비는 저장되지 않았습니다 (sql_v343_plan_mgmt.sql 실행 필요)`)}
+   catch(e2){if(!isSchema(e2))throw e2;NEWC.forEach(k=>delete b[k]);await put(b);
+    msg(`${o.job_no} 저장 — 초품·완료 외주업체·관리비는 저장되지 않았습니다 (sql_v275 · sql_v343 실행 필요)`)}}
   if(ex&&ex[0])o.row_no=Number(ex[0].row_no);
   /* 영업계획현황 행 동기화 — v62: 현황행은 job_no 로 찾아 갱신 (sales_plans.row_no 를 그대로 쓰면 다른 제번 행을 덮어씀) */
   let srNo=null;
@@ -687,6 +697,7 @@ async function save(){
    o.target_price=s||null;
    o.order_price=soP[jobs[i]]||part(base.order_price,i);
    o.profit_rate_pct=o.order_price?Math.round((o.order_price-s)/o.order_price*1000)/10:null;
+   o.total_profit=part(base.total_profit,i);o.mgmt_amount=part(base.mgmt_amount,i);   /* v343: 공정 수로 나눔 */
   }
   if(await saveOne(o))ok++;else fail.push(jobs[i]);
  }
