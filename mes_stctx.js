@@ -1,4 +1,4 @@
-/* mes_stctx.js — v346 (v346: 처리 후 목록 재조회 → 알림 순서로, 필터·체크 유지)
+/* mes_stctx.js — v347 (v347: [→ 다음] 이어 열 때 창 위치 유지) (v346: 처리 후 목록 재조회 → 알림 순서로, 필터·체크 유지)
  * v327
  * 원재료·구매품·외주가공 「발주/입고현황」 행 우클릭 처리 (입고 · 입고+확정 · 입고확정 · 입고취소 · 확정취소 · 발주취소)
  * v327: [✎ 수정] 열 — MESSTCTX.edit(ev, row) 발주 내용 수정창 (원재료·구매품)
@@ -109,7 +109,11 @@ function ensureUI() {
   }
   document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
 }
-function close() { const m = $('sxMask'), p = $('sxPop'); if (m) m.classList.remove('on'); if (p) p.classList.remove('on'); CTX = null; }
+/* v347: [→ 다음] 으로 이어 열 때는 창을 지금 있던 자리(끌어 옮긴 자리 포함)에 그대로 둔다 */
+let LASTPOS = null;
+function close() { const m = $('sxMask'), p = $('sxPop');
+  if (p && p.classList.contains('on')) LASTPOS = { x: p.offsetLeft, y: p.offsetTop };
+  if (m) m.classList.remove('on'); if (p) p.classList.remove('on'); CTX = null; }
 function open(ev, title, kind, bodyHtml, btns) {
   ensureUI();
   const p = $('sxPop');
@@ -124,6 +128,7 @@ function open(ev, title, kind, bodyHtml, btns) {
   p.style.left = '0px'; p.style.top = '0px';
   const W = p.offsetWidth || 440, H = p.offsetHeight || 260;
   let x = (ev && ev.clientX != null ? ev.clientX : 40) + 6, y = (ev && ev.clientY != null ? ev.clientY : 40) + 6;
+  if (ev && ev.keep && LASTPOS) { x = LASTPOS.x; y = LASTPOS.y; }   /* v347: 이어서 열기 — 자리 유지 */
   if (x + W > window.innerWidth - 8) x = Math.max(8, window.innerWidth - W - 8);
   if (y + H > window.innerHeight - 8) y = Math.max(8, window.innerHeight - H - 8);
   p.style.left = x + 'px'; p.style.top = y + 'px';
@@ -174,7 +179,7 @@ async function thenNext(fn) {
 function skipNext() {
   const r = CTX && CTX.r; if (!r) return;
   const nx = nextChecked(r), pos = CTX.pos; if (!nx) return say('다음 체크 행이 없습니다.');
-  close(); openRow(pos, nx);
+  close(); openRow(Object.assign(posOf(pos), { keep: true }), nx);
 }
 const seqBtns = (r, list) => seqCount(r) ? [...list, { t: '다음 ▶', title: '이 건은 그대로 두고 아래 체크한 다음 행으로', fn: skipNext }] : [];
 async function after(text, popTitle) {
@@ -195,7 +200,7 @@ async function after(text, popTitle) {
   try { (window.MESPOP || window.parent?.MESPOP)?.ok(text, popTitle || '처리 완료'); } catch (e) {}
   if (nx != null) {
     const row = VIEW().find(x => Number(x.no) === nx);
-    if (row) setTimeout(() => { try { openRow(posOf(pos), row); } catch (e) {} }, 60);
+    if (row) setTimeout(() => { try { openRow(Object.assign(posOf(pos), { keep: true }), row); } catch (e) {} }, 60);
     else say(text + ' · 다음 체크 행이 목록에 없어 멈췄습니다 (조회 조건을 확인하세요).');
   }
 }
