@@ -201,11 +201,11 @@ table.ev td .dcell .wd.late{background:#ffe45c;color:#5a4400;font-weight:700}
   <div></div><div class="lb r1">수주가</div><input id="order_price" class="field num" oninput="recalc()"><div class="lb r1">목표가</div><input id="target_price" class="field num" readonly title="아래 8개 금액의 합계 (자동)"><div class="lb r1">이익금</div><input id="profit_amount" class="field num" readonly title="수주가 − 목표가 (자동)"><div class="lb r1">이익률(%)</div><input id="profit_rate_pct" class="field num" readonly title="이익금 ÷ 수주가 (자동)">
   <div class="lb ad">자동배분</div>
   <div class="adtop ad" id="adist"><span class="lb">전체 이익금</span><input id="ad_profit" class="adin" placeholder="원" title="수주가 − 전체 이익금 = 배분할 총액. 전체 이익금은 관리비 + 목표 이익금 으로 나뉩니다">
-    <span class="lb">관리비율(%)</span><input id="ad_mgmt_pct" class="adin adpct" value="10" inputmode="decimal" title="관리비 = 수주가 × 관리비율. 기본 10%, 고치면 공용 설정으로 기억됩니다">
-    <span class="lb">관리비</span><input id="ad_mgmt" class="adin adro" readonly title="수주가 × 관리비율 (자동)">
+    <span class="lb">관리비용(%)</span><input id="ad_mgmt_pct" class="adin adpct" value="10" inputmode="decimal" title="관리비 = 수주가 × 관리비용(%). 기본 10%, 고치면 공용 설정으로 기억됩니다">
+    <span class="lb">관리비</span><input id="ad_mgmt" class="adin adro" readonly title="수주가 × 관리비용(%) (자동)">
     <span class="lb">목표 이익금</span><input id="ad_target" class="adin adro" readonly title="전체 이익금 − 관리비 (자동)">
     <span class="adsum" id="ad_sum">비율 합계 0%</span><button class="btn adbtn" type="button" onclick="autoDist()">⇩ 자동배분</button>
-    <span class="adnote">배분총액 = 수주가 − 전체 이익금 · 전체 이익금 = 관리비(수주가 × 관리비율) + 목표 이익금 · 항목금액 = 배분총액 × 비율 (10만원 미만 절사, 절사분은 이익금으로)</span></div>
+    <span class="adnote">배분총액 = 수주가 − 전체 이익금 · 전체 이익금 = 관리비(수주가 × 관리비용(%)) + 목표 이익금 · 항목금액 = 배분총액 × 비율 (10만원 미만 절사, 절사분은 이익금으로)</span></div>
   <div></div><div class="hd">설계 사내</div><div class="hd">설계 사외</div><div class="hd">원재료</div><div class="hd">구매</div><div class="hd">가공 사내</div><div class="hd">가공 사외</div><div class="hd">조립 사내</div><div class="hd">조립 사외</div>
   <div class="lb ad">비율(%)</div>
   <input id="r1" class="adr"><input id="r2" class="adr"><input id="r3" class="adr"><input id="r4" class="adr"><input id="r5" class="adr"><input id="r6" class="adr"><input id="r7" class="adr"><input id="r8" class="adr">
@@ -298,9 +298,9 @@ async function adLoad(){
  ad_profit.addEventListener('blur',()=>{const v=num(ad_profit.value);ad_profit.value=v?fmt(v):''});
  /* v328: 수주가·전체 이익금·관리비율이 바뀌면 관리비·목표 이익금을 다시 계산 */
  [ad_profit,ad_mgmt_pct,order_price].forEach(el=>el.addEventListener('input',adCalc));
- ad_mgmt_pct.addEventListener('blur',()=>{const v=num(ad_mgmt_pct.value);if(v<0||v>100){ad_mgmt_pct.value='10';msg('관리비율은 0~100% 사이로 입력하세요. 10%로 되돌렸습니다.')}adCalc()});
+ ad_mgmt_pct.addEventListener('blur',()=>{const v=num(ad_mgmt_pct.value);if(v<0||v>100){ad_mgmt_pct.value='10';msg('관리비용(%)은 0~100% 사이로 입력하세요. 10%로 되돌렸습니다.')}adCalc()});
  adSum();adCalc();setTimeout(adLoad,0)})();
-/* v328: 관리비 = 수주가 × 관리비율, 목표 이익금 = 전체 이익금 − 관리비 (표시용) */
+/* v328: 관리비 = 수주가 × 관리비용(%), 목표 이익금 = 전체 이익금 − 관리비 (표시용) */
 function adCalc(){const op=num(order_price.value),pf=num(ad_profit.value),m=num(ad_mgmt_pct.value);
  const mg=Math.round(op*m/100),tg=pf-mg;
  ad_mgmt.value=op?fmt(mg):'';ad_target.value=(op||pf)?fmt(tg):'';
