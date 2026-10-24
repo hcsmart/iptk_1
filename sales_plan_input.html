@@ -200,12 +200,12 @@ table.ev td .dcell .wd.late{background:#ffe45c;color:#5a4400;font-weight:700}
  <div class="amt" id="amtGrid">
   <div></div><div class="lb r1">수주가</div><input id="order_price" class="field num" oninput="recalc()"><div class="lb r1">목표가</div><input id="target_price" class="field num" readonly title="아래 8개 금액의 합계 (자동)"><div class="lb r1">이익금</div><input id="profit_amount" class="field num" readonly title="수주가 − 목표가 (자동)"><div class="lb r1">이익률(%)</div><input id="profit_rate_pct" class="field num" readonly title="이익금 ÷ 수주가 (자동)">
   <div class="lb ad">자동배분</div>
-  <div class="adtop ad" id="adist"><span class="lb">전체 이익금</span><input id="ad_profit" class="adin" placeholder="원" title="수주가 − 전체 이익금 = 배분할 총액. 전체 이익금은 관리비 + 목표 이익금 으로 나뉩니다">
+  <div class="adtop ad" id="adist"><span class="lb">전체 이익금</span><input id="ad_profit" class="adin" placeholder="원" title="전체 이익금 = 관리비 + 목표 이익금. 배분총액 = 수주가 − 목표 이익금">
     <span class="lb">관리비용(%)</span><input id="ad_mgmt_pct" class="adin adpct" value="10" inputmode="decimal" title="관리비 = 수주가 × 관리비용(%). 기본 10%, 고치면 공용 설정으로 기억됩니다">
     <span class="lb">관리비</span><input id="ad_mgmt" class="adin adro" readonly title="수주가 × 관리비용(%) (자동)">
     <span class="lb">목표 이익금</span><input id="ad_target" class="adin adro" readonly title="전체 이익금 − 관리비 (자동)">
     <span class="adsum" id="ad_sum">비율 합계 0%</span><button class="btn adbtn" type="button" onclick="autoDist()">⇩ 자동배분</button>
-    <span class="adnote">배분총액 = 수주가 − 전체 이익금 · 전체 이익금 = 관리비(수주가 × 관리비용(%)) + 목표 이익금 · 항목금액 = 배분총액 × 비율 (10만원 미만 절사, 절사분은 이익금으로)</span></div>
+    <span class="adnote">전체 이익금 = 관리비(수주가 × 관리비용(%)) + 목표 이익금 · 배분총액 = 수주가 − 목표 이익금 (관리비는 항목 금액에 포함) · 항목금액 = 배분총액 × 비율 (10만원 미만 절사, 절사분은 이익금으로)</span></div>
   <div></div><div class="hd">설계 사내</div><div class="hd">설계 사외</div><div class="hd">원재료</div><div class="hd">구매</div><div class="hd">가공 사내</div><div class="hd">가공 사외</div><div class="hd">조립 사내</div><div class="hd">조립 사외</div>
   <div class="lb ad">비율(%)</div>
   <input id="r1" class="adr"><input id="r2" class="adr"><input id="r3" class="adr"><input id="r4" class="adr"><input id="r5" class="adr"><input id="r6" class="adr"><input id="r7" class="adr"><input id="r8" class="adr">
@@ -309,9 +309,10 @@ function adCalc(){const op=num(order_price.value),pf=num(ad_profit.value),m=num(
 function autoDist(){
  const op=num(order_price.value);if(!op){msg('수주가를 먼저 입력하세요.');order_price.focus();return}
  const pf=num(ad_profit.value);if(pf<0){msg('전체 이익금은 0 이상이어야 합니다.');return}
- const base=op-pf;if(base<=0){msg(`전체 이익금(${fmt(pf)})이 수주가(${fmt(op)}) 이상입니다.`);ad_profit.focus();return}
  const {m,mg,tg}=adCalc();   /* v328: 관리비·목표 이익금 */
  if(tg<0&&!confirm(`관리비(수주가 × ${m}% = ${fmt(mg)}원)가 전체 이익금(${fmt(pf)}원)보다 큽니다.\n목표 이익금이 ${fmt(tg)}원(마이너스)이 됩니다. 그래도 배분할까요?`)){ad_profit.focus();return}
+ /* v340: 배분총액 = 수주가 − 목표 이익금 (관리비는 항목 금액 쪽에 포함, 남는 이익금이 목표 이익금) */
+ const base=op-tg;if(base<=0){msg(`목표 이익금(${fmt(tg)})이 수주가(${fmt(op)}) 이상입니다.`);ad_profit.focus();return}
  let tot=adSum();
  if(tot!==100){
   /* v273: 합계가 100% 가 아니면 하단 문구만 바뀌어 "배분이 안 된다"고 보였다 → 창으로 묻고, 원하면 100% 기준으로 환산해 배분 */
@@ -327,7 +328,7 @@ function autoDist(){
  for(let i=1;i<=8;i++){const r=num(document.getElementById('r'+i).value);
   const a=Math.floor(base*r/100/U)*U;sum+=a;document.getElementById('a'+i).value=a?fmt(a):''}
  recalc();adSave();adStore();try{document.dispatchEvent(new Event('change'))}catch(e){}
- msg(`자동배분 완료: 배분총액 ${fmt(base)}원 → 목표가 ${fmt(sum)}원 (절사분 ${fmt(base-sum)}원) / 이익금 ${fmt(op-sum)}원 = 관리비 ${fmt(mg)}원(${m}%) + 목표 이익금 ${fmt(tg+(base-sum))}원`);
+ msg(`자동배분 완료: 배분총액 ${fmt(base)}원 → 목표가 ${fmt(sum)}원 (절사분 ${fmt(base-sum)}원) / 이익금 ${fmt(op-sum)}원 (목표 이익금 ${fmt(tg)}원 + 절사분 ${fmt(base-sum)}원 · 관리비 ${fmt(mg)}원(${m}%)은 항목 금액에 포함)`);
 }
 /* 일수 = 종료일 − 시작일 + 1 */
 function calcDays(p){
