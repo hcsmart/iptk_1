@@ -1,4 +1,5 @@
-/* mes_stctx.js — v327
+/* mes_stctx.js — v346 (v346: 처리 후 목록 재조회 → 알림 순서로, 필터·체크 유지)
+ * v327
  * 원재료·구매품·외주가공 「발주/입고현황」 행 우클릭 처리 (입고 · 입고+확정 · 입고확정 · 입고취소 · 확정취소 · 발주취소)
  * v327: [✎ 수정] 열 — MESSTCTX.edit(ev, row) 발주 내용 수정창 (원재료·구매품)
  * 원재료·구매품은 발주 화면(mes_ordctx.js)과 같은 order_lines 컬럼을 쓰고,
@@ -142,7 +143,7 @@ function batchRows(r) {
   const chk = CHKS(), view = VIEW();
   if (!chk || !chk.size) return [];
   const st = stOf(r);
-  return view.filter(x => x !== r && chk.has(Number(x.no)) && stOf(x) === st);
+  return view.filter(x => !sameRow(x, r) && chk.has(Number(x.no)) && stOf(x) === st);
 }
 function batchNote(list, what) {
   if (!list.length) return '';
@@ -154,12 +155,15 @@ const useBatch = () => { const c = $('sxBatch'); return !!(c && c.checked); };
 /* v313: 체크한 행을 위에서 아래로 한 건씩 — [→ 다음].
    함께 처리(같은 값 일괄)와 달리, 이 건만 입력한 값으로 처리한 뒤 아래쪽 다음 체크 행의 창을 바로 연다. */
 const posOf = ev => ({ clientX: ev && ev.clientX != null ? ev.clientX : 40, clientY: ev && ev.clientY != null ? ev.clientY : 40, preventDefault() {}, stopPropagation() {} });
+/* v346: 목록이 다시 읽히면 행 객체가 새로 만들어지므로 '같은 행'은 발주번호(no)로 비교한다 (종전 === 비교는 두 번째부터 못 찾았다) */
+const sameRow = (a, b) => !!a && !!b && Number(a.no) === Number(b.no);
 function nextChecked(r) {
   const chk = CHKS(), view = VIEW(); if (!chk || !chk.size) return null;
-  const i = view.indexOf(r);
-  return view.slice(i + 1).find(x => chk.has(Number(x.no))) || view.find(x => x !== r && chk.has(Number(x.no))) || null;
+  const i = view.findIndex(x => sameRow(x, r));
+  const ok = x => !sameRow(x, r) && chk.has(Number(x.no));
+  return view.slice(i + 1).find(ok) || view.find(ok) || null;
 }
-const seqCount = r => { const chk = CHKS(); return chk ? VIEW().filter(x => x !== r && chk.has(Number(x.no))).length : 0; };
+const seqCount = r => { const chk = CHKS(); return chk ? VIEW().filter(x => !sameRow(x, r) && chk.has(Number(x.no))).length : 0; };
 async function thenNext(fn) {
   const r = CTX && CTX.r; if (!r) return;
   const nx = nextChecked(r);
@@ -176,13 +180,17 @@ const seqBtns = (r, list) => seqCount(r) ? [...list, { t: '다음 ▶', title: '
 async function after(text, popTitle) {
   const nx = CTX && CTX.seqNext ? Number(CTX.seqNext) : null, pos = CTX && CTX.pos;   /* v313: [→ 다음] 이면 처리 후 다음 체크 행 */
   try { MESDB.dropCache && MESDB.dropCache('order_lines'); } catch (e) {}
-  try { MESDB.notify && MESDB.notify(OSP() ? ['order_lines', 'outsourcing_moves'] : ['order_lines']); } catch (e) {}
   try { OSP() && window.MESMOVE && MESMOVE.invalidate(); } catch (e) {}
   close();
+  /* v346: 목록을 먼저 다시 읽고 나서 다른 화면에 알린다.
+     (종전: notify 가 먼저 나가 이 화면도 즉시 다시 읽기 시작 → 바로 뒤의 reloadLines 는 '읽는 중' 이라 건너뜀 →
+      옛 목록 위에 다음 창이 열리고, 잠시 뒤 첫 읽기가 끝나며 필터 없는 전체 목록으로 표가 바뀌어 체크·건수가 어긋났다) */
   try { if (MESDB.reloadLines) await MESDB.reloadLines(); } catch (e) {}
   try { typeof window.itemLoad === 'function' && window.itemLoad(); } catch (e) {}
   try { typeof window.loadVendorSel === 'function' && window.loadVendorSel(); } catch (e) {}
   try { typeof window._filterNow === 'function' ? window._filterNow() : (typeof window.search === 'function' && window.search()); } catch (e) {}
+  try { typeof window.syncChkAll === 'function' && window.syncChkAll(); typeof window.updCount === 'function' && window.updCount(); } catch (e) {}
+  try { MESDB.notify && MESDB.notify(OSP() ? ['order_lines', 'outsourcing_moves'] : ['order_lines']); } catch (e) {}
   say(text);
   try { (window.MESPOP || window.parent?.MESPOP)?.ok(text, popTitle || '처리 완료'); } catch (e) {}
   if (nx != null) {
