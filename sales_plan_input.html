@@ -39,6 +39,8 @@ table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th
 .adsum{font-size:11px;color:#5d6d7b;min-width:88px}.adsum.bad{color:#c62828;font-weight:700}.adsum.ok{color:#2e7d32;font-weight:700}
 .adbtn{background:linear-gradient(#e9f3fc,#c9def0)!important;border-color:#6f9cc4!important;font-weight:700}
 .adnote{font-size:10.5px;color:#7a8894;margin-left:auto}
+/* v328: 관리비율 · 관리비 · 목표 이익금 (자동 계산 칸은 회색) */
+.adin.adpct{width:56px!important}.adin.adro{background:#eef2f5;color:#3a4e60}
 .amt input.adr,.adr{height:24px;border:1px solid #b5c0c9;text-align:right;padding:0 16px 0 3px;background:#f4f8fb url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12'><text x='1' y='10' font-size='10' fill='%238796a1'>%</text></svg>") no-repeat right 2px center}
 @media(max-width:1000px){.amt{grid-template-columns:[lb] 74px [c1] minmax(84px,1fr) [c2] minmax(84px,1fr) [c3] minmax(84px,1fr) [c4] minmax(84px,1fr) [c5] minmax(84px,1fr) [c6] minmax(84px,1fr) [c7] minmax(84px,1fr) [c8] minmax(84px,1fr) [end];overflow-x:auto}.amt .lb.r1{font-size:11px}}
 .note{font-size:11px;color:#6b7a87;line-height:1.5}.note b{color:#3d5163}
@@ -198,9 +200,12 @@ table.ev td .dcell .wd.late{background:#ffe45c;color:#5a4400;font-weight:700}
  <div class="amt" id="amtGrid">
   <div></div><div class="lb r1">수주가</div><input id="order_price" class="field num" oninput="recalc()"><div class="lb r1">목표가</div><input id="target_price" class="field num" readonly title="아래 8개 금액의 합계 (자동)"><div class="lb r1">이익금</div><input id="profit_amount" class="field num" readonly title="수주가 − 목표가 (자동)"><div class="lb r1">이익률(%)</div><input id="profit_rate_pct" class="field num" readonly title="이익금 ÷ 수주가 (자동)">
   <div class="lb ad">자동배분</div>
-  <div class="adtop ad" id="adist"><span class="lb">목표 이익금</span><input id="ad_profit" class="adin" placeholder="원" title="수주가 − 목표 이익금 = 배분할 총액">
+  <div class="adtop ad" id="adist"><span class="lb">전체 이익금</span><input id="ad_profit" class="adin" placeholder="원" title="수주가 − 전체 이익금 = 배분할 총액. 전체 이익금은 관리비 + 목표 이익금 으로 나뉩니다">
+    <span class="lb">관리비율(%)</span><input id="ad_mgmt_pct" class="adin adpct" value="10" inputmode="decimal" title="관리비 = 수주가 × 관리비율. 기본 10%, 고치면 공용 설정으로 기억됩니다">
+    <span class="lb">관리비</span><input id="ad_mgmt" class="adin adro" readonly title="수주가 × 관리비율 (자동)">
+    <span class="lb">목표 이익금</span><input id="ad_target" class="adin adro" readonly title="전체 이익금 − 관리비 (자동)">
     <span class="adsum" id="ad_sum">비율 합계 0%</span><button class="btn adbtn" type="button" onclick="autoDist()">⇩ 자동배분</button>
-    <span class="adnote">배분총액 = 수주가 − 목표 이익금, 항목금액 = 배분총액 × 비율 (10만원 미만 절사, 절사분은 이익금으로)</span></div>
+    <span class="adnote">배분총액 = 수주가 − 전체 이익금 · 전체 이익금 = 관리비(수주가 × 관리비율) + 목표 이익금 · 항목금액 = 배분총액 × 비율 (10만원 미만 절사, 절사분은 이익금으로)</span></div>
   <div></div><div class="hd">설계 사내</div><div class="hd">설계 사외</div><div class="hd">원재료</div><div class="hd">구매</div><div class="hd">가공 사내</div><div class="hd">가공 사외</div><div class="hd">조립 사내</div><div class="hd">조립 사외</div>
   <div class="lb ad">비율(%)</div>
   <input id="r1" class="adr"><input id="r2" class="adr"><input id="r3" class="adr"><input id="r4" class="adr"><input id="r5" class="adr"><input id="r6" class="adr"><input id="r7" class="adr"><input id="r8" class="adr">
@@ -262,22 +267,24 @@ for(let i=1;i<=8;i++){const n=document.getElementById('a'+i);
 const AD_KEY='mes_sp_autodist';
 function adSum(){let t=0;for(let i=1;i<=8;i++)t+=num(document.getElementById('r'+i).value);t=Math.round(t*100)/100;
  const e=document.getElementById('ad_sum');e.textContent='비율 합계 '+t+'%';e.className='adsum '+(t===100?'ok':t?'bad':'');return t}
-function adSave(){try{const o={p:ad_profit.value,r:[]};for(let i=1;i<=8;i++)o.r.push(document.getElementById('r'+i).value);localStorage.setItem(AD_KEY,JSON.stringify(o))}catch(e){}}
+function adSave(){try{const o={p:ad_profit.value,m:ad_mgmt_pct.value,r:[]};for(let i=1;i<=8;i++)o.r.push(document.getElementById('r'+i).value);localStorage.setItem(AD_KEY,JSON.stringify(o))}catch(e){}}
 /* v116: 기본 배분율은 DB(page_state, page='cfg:sales_plan_autodist')에 공용 저장 — 저장 시 비율 합계 100%면 갱신 */
 const AD_PAGE='cfg:sales_plan_autodist';
 function adGet(){const r=[];for(let i=1;i<=8;i++)r.push(num(document.getElementById('r'+i).value));return r}
 function adPut(r){(r||[]).forEach((v,i)=>{const n=document.getElementById('r'+(i+1));if(n)n.value=v?String(v):''});adSum()}
 async function adStore(){
  const r=adGet();if(adSum()!==100)return '';
- try{localStorage.setItem(AD_KEY,JSON.stringify({r}))}catch(e){}
+ const m=num(ad_mgmt_pct.value);   /* v328: 관리비율도 공용 설정에 함께 */
+ try{localStorage.setItem(AD_KEY,JSON.stringify({r,m}))}catch(e){}
  try{await waitDB();if(!window.MESDB)return '';
-  await MESDB.table('page_state').upsert({page:AD_PAGE,data:{ratios:r,updated_at:new Date().toISOString()}},'page');
+  await MESDB.table('page_state').upsert({page:AD_PAGE,data:{ratios:r,mgmt_pct:m,updated_at:new Date().toISOString()}},'page');
   return ' / 기본 배분율 저장'}catch(e){return ' / 기본 배분율 저장 실패'}}
 async function adLoad(){
- try{const o=JSON.parse(localStorage.getItem(AD_KEY)||'null');if(o&&o.r)adPut(o.r)}catch(e){}
+ try{const o=JSON.parse(localStorage.getItem(AD_KEY)||'null');if(o&&o.r)adPut(o.r);if(o&&o.m!=null&&o.m!=='')ad_mgmt_pct.value=String(num(o.m))}catch(e){}
  await waitDB();if(!window.MESDB)return;
  for(let i=0;i<5;i++){   /* 로그인 토큰 준비 전이면 RLS 로 실패 → 잠시 뒤 재시도 */
   try{const rs=await MESDB.table('page_state').select(`select=data&page=eq.${encodeURIComponent(AD_PAGE)}&limit=1`,{fresh:true});
+   if(rs&&rs[0]&&rs[0].data&&rs[0].data.mgmt_pct!=null){ad_mgmt_pct.value=String(num(rs[0].data.mgmt_pct));adCalc()}   /* v328 */
    if(rs&&rs[0]&&rs[0].data&&Array.isArray(rs[0].data.ratios)){adPut(rs[0].data.ratios);return}
    /* 저장된 기본값이 없으면 최근 제작계획의 구성비(%)를 기본값으로 */
    const sp=await MESDB.table('sales_plans').select('select=design_internal_pct,design_external_pct,raw_material_pct,purchase_pct,machining_internal_pct,machining_external_pct,assembly_internal_pct,assembly_external_pct&target_price=gt.0&order=row_no.desc&limit=1',{fresh:true});
@@ -289,11 +296,22 @@ async function adLoad(){
  for(let i=1;i<=8;i++)document.getElementById('r'+i).addEventListener('input',adSum);
  ad_profit.addEventListener('focus',()=>{const v=num(ad_profit.value);ad_profit.value=v?String(v):''});
  ad_profit.addEventListener('blur',()=>{const v=num(ad_profit.value);ad_profit.value=v?fmt(v):''});
- adSum();setTimeout(adLoad,0)})();
+ /* v328: 수주가·전체 이익금·관리비율이 바뀌면 관리비·목표 이익금을 다시 계산 */
+ [ad_profit,ad_mgmt_pct,order_price].forEach(el=>el.addEventListener('input',adCalc));
+ ad_mgmt_pct.addEventListener('blur',()=>{const v=num(ad_mgmt_pct.value);if(v<0||v>100){ad_mgmt_pct.value='10';msg('관리비율은 0~100% 사이로 입력하세요. 10%로 되돌렸습니다.')}adCalc()});
+ adSum();adCalc();setTimeout(adLoad,0)})();
+/* v328: 관리비 = 수주가 × 관리비율, 목표 이익금 = 전체 이익금 − 관리비 (표시용) */
+function adCalc(){const op=num(order_price.value),pf=num(ad_profit.value),m=num(ad_mgmt_pct.value);
+ const mg=Math.round(op*m/100),tg=pf-mg;
+ ad_mgmt.value=op?fmt(mg):'';ad_target.value=(op||pf)?fmt(tg):'';
+ ad_target.style.color=tg<0?'#c62828':'';ad_target.title=tg<0?'전체 이익금이 관리비보다 작습니다 (목표 이익금이 마이너스)':'전체 이익금 − 관리비 (자동)';
+ return {op,pf,m,mg,tg}}
 function autoDist(){
  const op=num(order_price.value);if(!op){msg('수주가를 먼저 입력하세요.');order_price.focus();return}
- const pf=num(ad_profit.value);if(pf<0){msg('목표 이익금은 0 이상이어야 합니다.');return}
- const base=op-pf;if(base<=0){msg(`목표 이익금(${fmt(pf)})이 수주가(${fmt(op)}) 이상입니다.`);ad_profit.focus();return}
+ const pf=num(ad_profit.value);if(pf<0){msg('전체 이익금은 0 이상이어야 합니다.');return}
+ const base=op-pf;if(base<=0){msg(`전체 이익금(${fmt(pf)})이 수주가(${fmt(op)}) 이상입니다.`);ad_profit.focus();return}
+ const {m,mg,tg}=adCalc();   /* v328: 관리비·목표 이익금 */
+ if(tg<0&&!confirm(`관리비(수주가 × ${m}% = ${fmt(mg)}원)가 전체 이익금(${fmt(pf)}원)보다 큽니다.\n목표 이익금이 ${fmt(tg)}원(마이너스)이 됩니다. 그래도 배분할까요?`)){ad_profit.focus();return}
  let tot=adSum();
  if(tot!==100){
   /* v273: 합계가 100% 가 아니면 하단 문구만 바뀌어 "배분이 안 된다"고 보였다 → 창으로 묻고, 원하면 100% 기준으로 환산해 배분 */
@@ -309,7 +327,7 @@ function autoDist(){
  for(let i=1;i<=8;i++){const r=num(document.getElementById('r'+i).value);
   const a=Math.floor(base*r/100/U)*U;sum+=a;document.getElementById('a'+i).value=a?fmt(a):''}
  recalc();adSave();adStore();try{document.dispatchEvent(new Event('change'))}catch(e){}
- msg(`자동배분 완료: 배분총액 ${fmt(base)}원 → 목표가 ${fmt(sum)}원 (절사분 ${fmt(base-sum)}원) / 이익금 ${fmt(op-sum)}원`);
+ msg(`자동배분 완료: 배분총액 ${fmt(base)}원 → 목표가 ${fmt(sum)}원 (절사분 ${fmt(base-sum)}원) / 이익금 ${fmt(op-sum)}원 = 관리비 ${fmt(mg)}원(${m}%) + 목표 이익금 ${fmt(tg+(base-sum))}원`);
 }
 /* 일수 = 종료일 − 시작일 + 1 */
 function calcDays(p){
@@ -462,7 +480,8 @@ function load(o){
 }
 var DEF_MAKER='일평기연';   /* v293: 제작계획등록 제작처 기본값 */
 function clearForm(quiet){
- document.querySelectorAll('input:not(.adr)').forEach(n=>{if(n.type==='checkbox')n.checked=false;else if(n.type!=='radio')n.value=''});
+ document.querySelectorAll('input:not(.adr):not(#ad_mgmt_pct)').forEach(n=>{if(n.type==='checkbox')n.checked=false;else if(n.type!=='radio')n.value=''});   /* v328: 관리비율은 설정값이라 비우지 않는다 */
+ try{adCalc()}catch(e){}
  document.getElementById('remark').value='';PLOG=[];plRender();shapeShow('');markLate();
  setSel('maker_name',DEF_MAKER);   /* v294: 빈 화면에서도 제작처 기본값 */
  ['design','machining','assembly'].forEach(calcDays);

@@ -4,7 +4,11 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;font-size:12px
 .wrap{display:flex;gap:10px;padding:10px;align-items:flex-start}
 .sheet{background:#fff;width:277mm;min-height:190mm;box-shadow:0 2px 10px rgba(0,0,0,.2);padding:8mm 10mm;box-sizing:border-box;flex:0 0 auto}
 .side{flex:1 1 520px;min-width:300px;background:#f7f9fb;border:1px solid #cfd8df;border-radius:4px;padding:10px;position:sticky;top:10px}
-.side h3{margin:0 0 6px;font-size:13px;color:#2f5f8a}
+.side h3{margin:0 0 6px;font-size:13px;color:#2f5f8a;display:flex;align-items:center;gap:8px}
+/* v327: 공정 버튼 열 수 선택 (자동/1/2/3) — 제목 오른쪽 */
+.colsel{margin-left:auto;display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:400;color:#5d6b77}
+.colsel button{font:inherit;height:20px;min-width:26px;padding:0 6px;border:1px solid #b8c6d2;background:#fff;border-radius:3px;cursor:pointer;color:#3c5a78}
+.colsel button.on{background:#2f5f8a;border-color:#2f5f8a;color:#fff;font-weight:700}
 .side .hint{font-size:11px;color:#6b7a86;margin-bottom:8px;line-height:1.45}
 .pbtn{display:flex;align-items:center;gap:6px;width:100%;min-width:0;margin:0;padding:6px 8px;border:1px solid #9fb0bf;background:linear-gradient(#fff,#e9eef2);cursor:pointer;font:inherit;font-size:12.5px;text-align:left;border-radius:3px}
 .pbtn:hover{background:#fff}
@@ -18,6 +22,10 @@ body{font-family:'Malgun Gothic','맑은 고딕',Arial,sans-serif;font-size:12px
 #btns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;align-items:stretch}
 @media(max-width:1500px){#btns{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:1100px){#btns{grid-template-columns:minmax(0,1fr)}}
+/* v327: 사용자가 열 수를 고르면 화면 폭과 상관없이 그 열 수로 (body[data-cols]) */
+body[data-cols="1"] #btns{grid-template-columns:minmax(0,1fr)}
+body[data-cols="2"] #btns{grid-template-columns:repeat(2,minmax(0,1fr))}
+body[data-cols="3"] #btns{grid-template-columns:repeat(3,minmax(0,1fr))}
 /* 적용된 공정(위쪽)은 기존처럼 1열, 나머지(아래쪽)만 3열 */
 .pbtn.on{grid-column:1/-1}
 .pbtn.pdb{box-shadow:-3px 0 0 0 #e53935}.pbtn.pda{box-shadow:3px 0 0 0 #e53935}
@@ -107,6 +115,8 @@ body.portrait .fig{height:200mm}
 @media print{.ov{display:none!important}}
 @page{size:A4 landscape;margin:6mm}
 body.portrait .sheet{width:198mm}
+/* v325: 화면에서는 도면을 50% 크기로 — 오른쪽 공정 버튼 칸을 넓게 쓴다 (인쇄 크기는 그대로) */
+@media screen{.sheet{zoom:.5}}
 @media print{
  body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
  .wrap{padding:0;display:block}.side{display:none}.chip{cursor:default}
@@ -133,7 +143,13 @@ body.portrait .sheet{width:198mm}
   <div class="foot"><span id="footL"></span><span>IPTK MES · 사내외가공 발주</span></div>
  </div>
  <div class="side">
-  <h3 id="sideTitle">가공공정</h3>
+  <h3><span id="sideTitle">가공공정</span><span class="colsel" title="공정 버튼을 몇 열로 늘어놓을지 고릅니다. 「자동」은 화면 폭에 맞춰 1~3열로 바뀝니다. 선택은 이 브라우저에 기억됩니다.">열 <button data-c="auto">자동</button><button data-c="1">1</button><button data-c="2">2</button><button data-c="3">3</button></span></h3>
+  <script>/* v327: 열 수 선택 — localStorage 에 기억 */
+  (function(){const K='mes_drawboard_cols';let v='auto';try{v=localStorage.getItem(K)||'auto'}catch(e){}
+   function apply(c){if(c==='auto')document.body.removeAttribute('data-cols');else document.body.setAttribute('data-cols',c);
+    document.querySelectorAll('.colsel button').forEach(b=>b.classList.toggle('on',b.dataset.c===c))}
+   document.querySelectorAll('.colsel button').forEach(b=>b.onclick=()=>{apply(b.dataset.c);try{localStorage.setItem(K,b.dataset.c)}catch(e){}});
+   apply(v)})();</script>
   <div class="hint">공정 마스터 전체입니다. 누르는 순서대로 도면 위 띠에 번호가 붙고, 다시 누르면 빠집니다. 띠나 이 목록 위 칸의 공정을 끌어 놓으면 순서가 바뀌고, 구분선 아래로 끌어 놓으면 빠집니다. 아래 칸 버튼을 띠·위 칸으로 끌어 오면 원하는 자리에 들어갑니다. 파란 「계획」 표시는 이 부품의 가공계획에 있는 공정입니다.</div>
   <div id="btns"></div>
   <div class="tools">
