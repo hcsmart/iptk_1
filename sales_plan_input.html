@@ -39,6 +39,8 @@ table{border-collapse:collapse;min-width:1040px;width:100%;table-layout:fixed}th
 .adsum{font-size:11px;color:#5d6d7b;min-width:88px}.adsum.bad{color:#c62828;font-weight:700}.adsum.ok{color:#2e7d32;font-weight:700}
 .adbtn{background:linear-gradient(#e9f3fc,#c9def0)!important;border-color:#6f9cc4!important;font-weight:700}
 .adnote{font-size:10.5px;color:#7a8894;margin-left:auto}
+/* v328: 관리비율 · 관리비 · 목표 이익금 (자동 계산 칸은 회색) */
+.adin.adpct{width:56px!important}.adin.adro{background:#eef2f5;color:#3a4e60}
 .amt input.adr,.adr{height:24px;border:1px solid #b5c0c9;text-align:right;padding:0 16px 0 3px;background:#f4f8fb url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12'><text x='1' y='10' font-size='10' fill='%238796a1'>%</text></svg>") no-repeat right 2px center}
 @media(max-width:1000px){.amt{grid-template-columns:[lb] 74px [c1] minmax(84px,1fr) [c2] minmax(84px,1fr) [c3] minmax(84px,1fr) [c4] minmax(84px,1fr) [c5] minmax(84px,1fr) [c6] minmax(84px,1fr) [c7] minmax(84px,1fr) [c8] minmax(84px,1fr) [end];overflow-x:auto}.amt .lb.r1{font-size:11px}}
 .note{font-size:11px;color:#6b7a87;line-height:1.5}.note b{color:#3d5163}
@@ -198,9 +200,12 @@ table.ev td .dcell .wd.late{background:#ffe45c;color:#5a4400;font-weight:700}
  <div class="amt" id="amtGrid">
   <div></div><div class="lb r1">수주가</div><input id="order_price" class="field num" oninput="recalc()"><div class="lb r1">목표가</div><input id="target_price" class="field num" readonly title="아래 8개 금액의 합계 (자동)"><div class="lb r1">이익금</div><input id="profit_amount" class="field num" readonly title="수주가 − 목표가 (자동)"><div class="lb r1">이익률(%)</div><input id="profit_rate_pct" class="field num" readonly title="이익금 ÷ 수주가 (자동)">
   <div class="lb ad">자동배분</div>
-  <div class="adtop ad" id="adist"><span class="lb">목표 이익금</span><input id="ad_profit" class="adin" placeholder="원" title="수주가 − 목표 이익금 = 배분할 총액">
+  <div class="adtop ad" id="adist"><span class="lb">전체 이익금</span><input id="ad_profit" class="adin" placeholder="원" title="배분총액 = 수주가 − (전체 이익금 + 관리비)">
+    <span class="lb">관리비용(%)</span><input id="ad_mgmt_pct" class="adin adpct" value="7" inputmode="decimal" title="관리비 = 수주가 × 관리비용(%). 기본 7%, 고치면 공용 설정으로 기억됩니다">
+    <span class="lb">관리비</span><input id="ad_mgmt" class="adin adro" readonly title="수주가 × 관리비용(%) (자동)">
+    <span class="lb">공제 합계</span><input id="ad_target" class="adin adro" readonly title="전체 이익금 + 관리비 (자동) — 수주가에서 이 금액을 빼고 배분">
     <span class="adsum" id="ad_sum">비율 합계 0%</span><button class="btn adbtn" type="button" onclick="autoDist()">⇩ 자동배분</button>
-    <span class="adnote">배분총액 = 수주가 − 목표 이익금, 항목금액 = 배분총액 × 비율 (10만원 미만 절사, 절사분은 이익금으로)</span></div>
+    <span class="adnote">관리비 = 수주가 × 관리비용(%) · 배분총액 = 수주가 − (전체 이익금 + 관리비) · 항목금액 = 배분총액 × 비율 (10만원 미만 절사, 절사분은 이익금으로)</span></div>
   <div></div><div class="hd">설계 사내</div><div class="hd">설계 사외</div><div class="hd">원재료</div><div class="hd">구매</div><div class="hd">가공 사내</div><div class="hd">가공 사외</div><div class="hd">조립 사내</div><div class="hd">조립 사외</div>
   <div class="lb ad">비율(%)</div>
   <input id="r1" class="adr"><input id="r2" class="adr"><input id="r3" class="adr"><input id="r4" class="adr"><input id="r5" class="adr"><input id="r6" class="adr"><input id="r7" class="adr"><input id="r8" class="adr">
@@ -262,22 +267,24 @@ for(let i=1;i<=8;i++){const n=document.getElementById('a'+i);
 const AD_KEY='mes_sp_autodist';
 function adSum(){let t=0;for(let i=1;i<=8;i++)t+=num(document.getElementById('r'+i).value);t=Math.round(t*100)/100;
  const e=document.getElementById('ad_sum');e.textContent='비율 합계 '+t+'%';e.className='adsum '+(t===100?'ok':t?'bad':'');return t}
-function adSave(){try{const o={p:ad_profit.value,r:[]};for(let i=1;i<=8;i++)o.r.push(document.getElementById('r'+i).value);localStorage.setItem(AD_KEY,JSON.stringify(o))}catch(e){}}
+function adSave(){try{const o={p:ad_profit.value,m:ad_mgmt_pct.value,r:[]};for(let i=1;i<=8;i++)o.r.push(document.getElementById('r'+i).value);localStorage.setItem(AD_KEY,JSON.stringify(o))}catch(e){}}
 /* v116: 기본 배분율은 DB(page_state, page='cfg:sales_plan_autodist')에 공용 저장 — 저장 시 비율 합계 100%면 갱신 */
 const AD_PAGE='cfg:sales_plan_autodist';
 function adGet(){const r=[];for(let i=1;i<=8;i++)r.push(num(document.getElementById('r'+i).value));return r}
 function adPut(r){(r||[]).forEach((v,i)=>{const n=document.getElementById('r'+(i+1));if(n)n.value=v?String(v):''});adSum()}
 async function adStore(){
  const r=adGet();if(adSum()!==100)return '';
- try{localStorage.setItem(AD_KEY,JSON.stringify({r}))}catch(e){}
+ const m=num(ad_mgmt_pct.value);   /* v328: 관리비율도 공용 설정에 함께 */
+ try{localStorage.setItem(AD_KEY,JSON.stringify({r,m}))}catch(e){}
  try{await waitDB();if(!window.MESDB)return '';
-  await MESDB.table('page_state').upsert({page:AD_PAGE,data:{ratios:r,updated_at:new Date().toISOString()}},'page');
+  await MESDB.table('page_state').upsert({page:AD_PAGE,data:{ratios:r,mgmt_pct:m,updated_at:new Date().toISOString()}},'page');
   return ' / 기본 배분율 저장'}catch(e){return ' / 기본 배분율 저장 실패'}}
 async function adLoad(){
- try{const o=JSON.parse(localStorage.getItem(AD_KEY)||'null');if(o&&o.r)adPut(o.r)}catch(e){}
+ try{const o=JSON.parse(localStorage.getItem(AD_KEY)||'null');if(o&&o.r)adPut(o.r);if(o&&o.m!=null&&o.m!=='')ad_mgmt_pct.value=String(num(o.m))}catch(e){}
  await waitDB();if(!window.MESDB)return;
  for(let i=0;i<5;i++){   /* 로그인 토큰 준비 전이면 RLS 로 실패 → 잠시 뒤 재시도 */
   try{const rs=await MESDB.table('page_state').select(`select=data&page=eq.${encodeURIComponent(AD_PAGE)}&limit=1`,{fresh:true});
+   if(rs&&rs[0]&&rs[0].data&&rs[0].data.mgmt_pct!=null){ad_mgmt_pct.value=String(num(rs[0].data.mgmt_pct));adCalc()}   /* v328 */
    if(rs&&rs[0]&&rs[0].data&&Array.isArray(rs[0].data.ratios)){adPut(rs[0].data.ratios);return}
    /* 저장된 기본값이 없으면 최근 제작계획의 구성비(%)를 기본값으로 */
    const sp=await MESDB.table('sales_plans').select('select=design_internal_pct,design_external_pct,raw_material_pct,purchase_pct,machining_internal_pct,machining_external_pct,assembly_internal_pct,assembly_external_pct&target_price=gt.0&order=row_no.desc&limit=1',{fresh:true});
@@ -289,11 +296,21 @@ async function adLoad(){
  for(let i=1;i<=8;i++)document.getElementById('r'+i).addEventListener('input',adSum);
  ad_profit.addEventListener('focus',()=>{const v=num(ad_profit.value);ad_profit.value=v?String(v):''});
  ad_profit.addEventListener('blur',()=>{const v=num(ad_profit.value);ad_profit.value=v?fmt(v):''});
- adSum();setTimeout(adLoad,0)})();
+ /* v328: 수주가·전체 이익금·관리비율이 바뀌면 관리비·목표 이익금을 다시 계산 */
+ [ad_profit,ad_mgmt_pct,order_price].forEach(el=>el.addEventListener('input',adCalc));
+ ad_mgmt_pct.addEventListener('blur',()=>{const v=num(ad_mgmt_pct.value);if(v<0||v>100){ad_mgmt_pct.value='7';msg('관리비용(%)은 0~100% 사이로 입력하세요. 7%로 되돌렸습니다.')}adCalc()});
+ adSum();adCalc();setTimeout(adLoad,0)})();
+/* v341: 관리비 = 수주가 × 관리비용(%), 공제 합계 = 전체 이익금 + 관리비 → 배분총액 = 수주가 − 공제 합계 */
+function adCalc(){const op=num(order_price.value),pf=num(ad_profit.value),m=num(ad_mgmt_pct.value);
+ const mg=Math.round(op*m/100),tg=pf+mg,base=op-tg;   /* v344: 관리비 = 수주가 × % */
+ ad_mgmt.value=op?fmt(mg):'';ad_target.value=(op||pf)?fmt(tg):'';
+ ad_target.style.color=op&&base<=0?'#c62828':'';ad_target.title=op&&base<=0?'공제 합계가 수주가 이상이라 배분할 금액이 없습니다':'전체 이익금 + 관리비 (자동) — 수주가에서 이 금액을 빼고 배분';
+ return {op,pf,m,mg,tg,base}}
 function autoDist(){
  const op=num(order_price.value);if(!op){msg('수주가를 먼저 입력하세요.');order_price.focus();return}
- const pf=num(ad_profit.value);if(pf<0){msg('목표 이익금은 0 이상이어야 합니다.');return}
- const base=op-pf;if(base<=0){msg(`목표 이익금(${fmt(pf)})이 수주가(${fmt(op)}) 이상입니다.`);ad_profit.focus();return}
+ const pf=num(ad_profit.value);if(pf<0){msg('전체 이익금은 0 이상이어야 합니다.');return}
+ const {m,mg,tg,base}=adCalc();   /* v341: 관리비·공제 합계·배분총액 */
+ if(base<=0){msg(`공제 합계(전체 이익금 ${fmt(pf)} + 관리비 ${fmt(mg)} = ${fmt(tg)})이 수주가(${fmt(op)}) 이상이라 배분할 금액이 없습니다.`);ad_profit.focus();return}
  let tot=adSum();
  if(tot!==100){
   /* v273: 합계가 100% 가 아니면 하단 문구만 바뀌어 "배분이 안 된다"고 보였다 → 창으로 묻고, 원하면 100% 기준으로 환산해 배분 */
@@ -309,7 +326,7 @@ function autoDist(){
  for(let i=1;i<=8;i++){const r=num(document.getElementById('r'+i).value);
   const a=Math.floor(base*r/100/U)*U;sum+=a;document.getElementById('a'+i).value=a?fmt(a):''}
  recalc();adSave();adStore();try{document.dispatchEvent(new Event('change'))}catch(e){}
- msg(`자동배분 완료: 배분총액 ${fmt(base)}원 → 목표가 ${fmt(sum)}원 (절사분 ${fmt(base-sum)}원) / 이익금 ${fmt(op-sum)}원`);
+ msg(`자동배분 완료: 배분총액 ${fmt(base)}원 → 목표가 ${fmt(sum)}원 (절사분 ${fmt(base-sum)}원) / 이익금 ${fmt(op-sum)}원 = 전체 이익금 ${fmt(pf)}원 + 관리비 ${fmt(mg)}원(수주가의 ${m}%) + 절사분 ${fmt(base-sum)}원`);
 }
 /* 일수 = 종료일 − 시작일 + 1 */
 function calcDays(p){
@@ -456,13 +473,17 @@ function load(o){
  {const v=document.getElementById('machining_vendor');if(v)v.value=o.machining_vendor||''}
  ['design_vendor','assembly_vendor','tryout_vendor','complete_vendor'].forEach(k=>{const v=document.getElementById(k);if(v)v.value=o[k]||''});
  AK.forEach((k,i)=>{const n=document.getElementById('a'+(i+1));if(n)n.value=num(o[k])?fmt(num(o[k])):''});
+ /* v343: 저장된 전체 이익금 · 관리비용(%) 되살리기 (없으면 그대로) */
+ try{if(o.total_profit!=null&&num(o.total_profit))ad_profit.value=fmt(num(o.total_profit));
+  if(o.mgmt_pct!=null&&o.mgmt_pct!=='')ad_mgmt_pct.value=String(num(o.mgmt_pct));adCalc()}catch(e){}
  ['design','machining','assembly'].forEach(p=>{if(!document.getElementById(p+'_days').value)calcDays(p)});
  order_price.value=num(order_price.value)?fmt(num(order_price.value)):'';
  recalc();
 }
 var DEF_MAKER='일평기연';   /* v293: 제작계획등록 제작처 기본값 */
 function clearForm(quiet){
- document.querySelectorAll('input:not(.adr)').forEach(n=>{if(n.type==='checkbox')n.checked=false;else if(n.type!=='radio')n.value=''});
+ document.querySelectorAll('input:not(.adr):not(#ad_mgmt_pct)').forEach(n=>{if(n.type==='checkbox')n.checked=false;else if(n.type!=='radio')n.value=''});   /* v328: 관리비율은 설정값이라 비우지 않는다 */
+ try{adCalc()}catch(e){}
  document.getElementById('remark').value='';PLOG=[];plRender();shapeShow('');markLate();
  setSel('maker_name',DEF_MAKER);   /* v294: 빈 화면에서도 제작처 기본값 */
  ['design','machining','assembly'].forEach(calcDays);
@@ -511,6 +532,9 @@ function collect(){
  o.target_price=s||null;
  const op=num(order_price.value);
  o.profit_rate_pct=op?Math.round((op-s)/op*1000)/10:null;
+ /* v343: 전체 이익금 · 관리비용(%) · 관리비 도 저장 (금형원가내역 목표 대비 표시용) */
+ {const pf=num(ad_profit.value),m=num(ad_mgmt_pct.value);
+  o.total_profit=pf||null;o.mgmt_pct=m;o.mgmt_amount=op?Math.round(op*m/100):null}
  return o;
 }
 
@@ -618,12 +642,16 @@ async function saveOne(o){
   /* v39: 기존은 row_no 로 갱신, 신규는 DB identity 에 맡긴다 */
   /* v275: tryout_vendor·complete_vendor 컬럼이 아직 없으면(sql_v275 미실행) 그 둘만 빼고 저장 */
   const NEWC=['tryout_vendor','complete_vendor'];
+  const MGC=['total_profit','mgmt_pct','mgmt_amount'];   /* v343: 이익금·관리비 칸 (sql_v343 미실행이면 빼고 저장) */
   const put=async(body)=>{if(ex&&ex[0]){body.row_no=Number(ex[0].row_no);await MESDB.table('sales_plans').upsert(body,'row_no')}
    else{delete body.row_no;const ins=await MESDB.table('sales_plans').insertOne(body);if(ins&&ins.row_no!=null)o.row_no=Number(ins.row_no)}};
+  const isSchema=e=>/tryout_vendor|complete_vendor|total_profit|mgmt_pct|mgmt_amount|PGRST204|schema cache/i.test(String(e&&e.message||e));
   try{await put({...o})}
-  catch(e){const m=String(e&&e.message||e);if(!/tryout_vendor|complete_vendor|PGRST204|schema cache/i.test(m))throw e;
-   const b={...o};NEWC.forEach(k=>delete b[k]);await put(b);
-   if(NEWC.some(k=>o[k]))msg(`${o.job_no} 저장 — 초품·완료 외주업체는 저장되지 않았습니다 (sql_v275_plan_vendors.sql 실행 필요)`)}
+  catch(e){if(!isSchema(e))throw e;
+   const b={...o};MGC.forEach(k=>delete b[k]);
+   try{await put(b);msg(`${o.job_no} 저장 — 전체 이익금·관리비는 저장되지 않았습니다 (sql_v343_plan_mgmt.sql 실행 필요)`)}
+   catch(e2){if(!isSchema(e2))throw e2;NEWC.forEach(k=>delete b[k]);await put(b);
+    msg(`${o.job_no} 저장 — 초품·완료 외주업체·관리비는 저장되지 않았습니다 (sql_v275 · sql_v343 실행 필요)`)}}
   if(ex&&ex[0])o.row_no=Number(ex[0].row_no);
   /* 영업계획현황 행 동기화 — v62: 현황행은 job_no 로 찾아 갱신 (sales_plans.row_no 를 그대로 쓰면 다른 제번 행을 덮어씀) */
   let srNo=null;
@@ -669,6 +697,7 @@ async function save(){
    o.target_price=s||null;
    o.order_price=soP[jobs[i]]||part(base.order_price,i);
    o.profit_rate_pct=o.order_price?Math.round((o.order_price-s)/o.order_price*1000)/10:null;
+   o.total_profit=part(base.total_profit,i);o.mgmt_amount=part(base.mgmt_amount,i);   /* v343: 공정 수로 나눔 */
   }
   if(await saveOne(o))ok++;else fail.push(jobs[i]);
  }
