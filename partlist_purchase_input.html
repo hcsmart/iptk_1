@@ -71,6 +71,7 @@ body.drag-on .screen{outline:3px dashed #2f75b5;outline-offset:-6px}
  <!-- v309: 일괄삭제 버튼 숨김 — 체크박스 선택 후 [✕ 삭제] 로 지운다 (제번 단위 일괄삭제 창은 코드만 남김) -->
  <button style="display:none" class="btn red" onclick="bulkOpen()" title="제번 단위로 구매품 PartList 전체를 삭제합니다">⌧ 일괄삭제</button>
  <button class="btn" onclick="manOpen()" title="엑셀 없이 한 행씩 직접 입력합니다">＋ 수동등록</button>
+ <button class="btn" onclick="nameFill()" title="리스트에서 품명이 비어 있는 행을 금형번호 앞 3자리 코드(부품관리 → 내장 코드표)로 채웁니다. 이미 적힌 품명은 건드리지 않습니다">✎ 빈 품명 채우기</button>
  <button class="btn" onclick="imgPick()" title="체크한 부품의 그림 — 캐드 캡쳐를 Ctrl+V 로 붙여넣고 흰 바탕·A4 로 정리, 화살표·글자 표시 후 등록">📷 이미지등록</button><button class="btn" onclick="imgDel()" title="체크한 부품(여러 개 가능)의 그림을 지웁니다">🗑 이미지삭제</button>
  <input type="file" id="imgFile" accept="image/*" style="display:none" onchange="imgUp(this.files[0])">
  <button class="btn" onclick="xls()">▤ 엑셀불러오기</button>
@@ -551,6 +552,28 @@ async function imgDel(){
  render();msg(`그림 ${n}건을 지웠습니다.`+(fail?` (${fail}건 실패)`:''));
 }
 /* v117: 수동등록 — 엑셀 없이 한 행씩 리스트에 올린다 (추가 후 체크 → [▤ 등록]) */
+/* 빈 품명 채우기 — 리스트(미등록 포함)에서 품명이 빈 행을 금형번호 코드로 채운다. 이미 적힌 품명은 건드리지 않는다 */
+async function nameFill(){
+ if(!window.MESPARTNAME)return msg('품명 코드표(mes_partname.js)가 없습니다.');
+ await MESPARTNAME.load();
+ const rows=[...data,...pend].filter(r=>!String(r.part_name||'').trim());
+ if(!rows.length)return msg('품명이 비어 있는 행이 없습니다.');
+ const hit=rows.map(r=>({r,name:MESPARTNAME.nameOf(r.part_no)})).filter(x=>x.name);
+ const miss=rows.length-hit.length;
+ if(!hit.length)return msg(`빈 품명 ${rows.length}행이 있지만 금형번호 앞 3자리가 코드표에 없어 채울 수 없습니다. (${rows.slice(0,6).map(r=>r.part_no).join(', ')}${rows.length>6?' …':''})`);
+ const list=hit.slice(0,12).map(x=>`  ${x.r.part_no} → ${x.name}`).join('\n')+(hit.length>12?`\n  … 외 ${hit.length-12}건`:'');
+ if(!confirm(`품명이 빈 ${rows.length}행 중 ${hit.length}행을 코드표로 채웁니다.${miss?` (코드 없는 ${miss}행은 그대로)`:''}\n\n${list}\n\n계속할까요?`))return;
+ let ok=0,ng=0;
+ for(const x of hit){
+  x.r.part_name=x.name;
+  if(x.r._new||x.r.row_no==null||x.r.row_no<0){ok++;continue}               /* 미등록 행은 리스트 값만 */
+  try{await MESDB.table('partlist_purchases').update({row_no:Number(x.r.row_no)},{part_name:x.name});ok++}
+  catch(e){ng++;msg('품명 저장 실패: '+String(e.message||e).slice(0,120))}
+ }
+ try{if(MESDB.ensureRefs)await MESDB.ensureRefs(hit.filter(x=>!x.r._new).map(x=>({part_no:x.r.part_no,part_name:x.name})))}catch(e){}
+ render();if(typeof notify==='function')try{notify()}catch(e){}
+ msg(`빈 품명 ${ok}행을 채웠습니다.${ng?` · 실패 ${ng}행`:''}${miss?` · 코드 없는 ${miss}행은 그대로 (${rows.filter(r=>!MESPARTNAME.nameOf(r.part_no)).slice(0,5).map(r=>r.part_no).join(', ')})`:''}`);
+}
 function manOpen(){
  const job=curJobNo();
  if(!job){msg('제번을 먼저 선택하세요.');q_job.focus();return}
