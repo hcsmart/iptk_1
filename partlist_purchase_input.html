@@ -234,6 +234,7 @@ async function saveChecked(){
    type:r.type||null,spec:r.spec||null,image_url:r.image_url||null,qty:r.qty??null,registered_by:by,registered_date:dt});
  }
  const fin=[...mp.values()];
+ if(window.MESPARTNAME)MESPARTNAME.fillRows(fin);   /* 품명 비어 있으면 금형번호 코드로 */
  try{localStorage.setItem('pl_pur_by',by)}catch(e){}
  try{
   if(MESDB.ensureRefs)await MESDB.ensureRefs(fin.map(r=>({part_no:r.part_no,part_name:r.part_name})));
@@ -352,7 +353,7 @@ function xlsRows(){
   if(/^예\s*\)/.test(pn))continue;
   if(COLS[0].re.test(pn)&&!XNUM(get(r,'qty')))continue;   /* v232: 다음 쪽 반복 머리행 */
   if(!pn){skipNo++;bad.push(i);continue}
-  rows.push({part_no:pn,part_name:get(r,'part_name'),type:get(r,'type')||null,spec:get(r,'spec')||null,qty:XNUM(get(r,'qty'))});
+  rows.push({part_no:pn,part_name:get(r,'part_name')||(window.MESPARTNAME?MESPARTNAME.nameOf(pn):''),type:get(r,'type')||null,spec:get(r,'spec')||null,qty:XNUM(get(r,'qty'))});
  }
  return {g,idx,head,rows,skipNo};
 }
@@ -554,6 +555,7 @@ function manOpen(){
  const job=curJobNo();
  if(!job){msg('제번을 먼저 선택하세요.');q_job.focus();return}
  mJob.textContent=job;mMask.classList.add('on');setTimeout(()=>mPn.focus(),50);
+ if(window.MESPARTNAME)MESPARTNAME.bind(mPn,mName);   /* 금형번호 앞 3자리 코드로 품명 자동 입력 */
 }
 function manClose(){mMask.classList.remove('on')}
 function manAdd(){
@@ -561,6 +563,7 @@ function manAdd(){
  if(!job)return alert('제번을 먼저 선택하세요.');
  const pn=(mPn.value||'').trim();
  if(!pn){alert('금형번호를 입력하세요.');mPn.focus();return}
+ if(!(mName.value||'').trim()&&window.MESPARTNAME)mName.value=MESPARTNAME.nameOf(pn);   /* 품명을 비워 두면 코드표에서 */
  const r={part_no:pn,part_name:(mName.value||'').trim(),type:(mType.value||'').trim()||null,
   spec:(mSpec.value||'').trim()||null,qty:XNUM(mQty.value)};
  let rep=false;const i=pend.findIndex(x=>x.part_no===pn);
@@ -579,7 +582,7 @@ function manAdd(){
 let EDIT=null;
 function editOpen(id){
  const r=rowById(id);if(!r)return;EDIT=id;
- eJob.textContent=r.job_no||curJob||'';ePn.value=r.part_no||'';eName.value=r.part_name||'';
+ eJob.textContent=r.job_no||curJob||'';ePn.value=r.part_no||'';eName.value=r.part_name||(window.MESPARTNAME?MESPARTNAME.nameOf(r.part_no):'');
  eType.value=r.type||'';eSpec.value=r.spec||'';eQty.value=fmt(r.qty);
  eInfo.innerHTML=r._new?'<b>미등록</b> 행입니다. 리스트 값만 바뀌며, 체크 후 <b>[▤ 등록]</b>을 눌러야 저장됩니다.'
   :'저장하면 바로 DB 에 반영됩니다.';
@@ -652,7 +655,7 @@ function search(){const j=curJobNo();if(j&&online())return loadJob(j);render()}
 window.MES={search,save,saveChecked,setMessage:msg,reload:loadJob,manOpen};render();
 (async()=>{await waitDB();const j=curJobNo();if(j)loadJob(j)})();
 </script>
-<script src="mes_sample.js?v=169"></script><script src="mes_scene.js?v=114"></script><script src="mes_demo.js?v=114"></script><script src="mes_db.js?v=196"></script>
+<script src="mes_sample.js?v=169"></script><script src="mes_scene.js?v=114"></script><script src="mes_demo.js?v=114"></script><script src="mes_db.js?v=196"></script><script src="mes_partname.js?v=2"></script><script>window.addEventListener("DOMContentLoaded",()=>{try{MESPARTNAME.load()}catch(e){}})</script>
 <script>
 /* MESDB.master 자동동기화는 쓰지 않는다 — 화면(선택 제번)과 전체 스냅샷 차이를 '삭제'로 판단해
    다른 제번의 PartList 를 지우던 문제(원재료 v86과 동일). 저장·삭제는 위 함수가 직접 처리한다. */
