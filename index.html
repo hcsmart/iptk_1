@@ -31,6 +31,7 @@ input,select{font:inherit}
 /* top */
 .brand{height:100%;display:flex;align-items:center;gap:10px;padding:0 16px 0 14px;flex-shrink:0;cursor:pointer;border-right:1px solid var(--line-2)}
 .brand .mark{width:28px;height:28px;flex-shrink:0;display:grid;place-items:center;background:var(--amber);color:var(--steel);font-weight:800;border-radius:6px}
+.brand .logo{height:28px;width:auto;flex-shrink:0;display:block;background:#fff;padding:3px 6px;border-radius:5px;box-sizing:content-box}
 .brand .name{font-weight:700;letter-spacing:.3px;white-space:nowrap;color:#fff;display:flex;align-items:center;gap:8px}
 .brand .name .home-lbl{font-size:14px;color:#fff}
 .brand:hover .name .home-lbl{color:var(--amber)}
@@ -168,7 +169,7 @@ a.menu-off,a.menu-off:hover{color:#9aa5ae!important;opacity:.55;cursor:not-allow
 <div class="app" id="app">
   <header class="top">
     <div class="brand" id="brand" title="홈">
-      <div class="mark">I</div>
+      <img class="logo" src="iptk_logo.png" alt="IPTK" onerror="this.outerHTML='<div class=&quot;mark&quot;>I</div>'">
       <div class="name"><span class="home-lbl">⌂ 홈</span><small>IPTK MES</small></div>
     </div>
 

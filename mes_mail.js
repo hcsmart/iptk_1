@@ -11,8 +11,17 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const won=v=>Math.round(Number(v)||0).toLocaleString('ko-KR');
 const T0=()=>new Date().toLocaleDateString('sv-SE');
-let O=null,VEND=null;
-/* v171: 발주서 메일 발송 — 구글 앱스 스크립트 웹앱 (doPost) */
+let O=null,VEND=null,FROM=null;
+/* v328: 웹앱이 어느 구글 계정으로 보내는지 물어본다 (한 번만) */
+async function senderInfo(){
+ if(FROM)return FROM;
+ try{const r=await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'whoami'}),redirect:'follow'});
+  const j=JSON.parse(await r.text());if(j&&j.from)FROM=j.from}catch(e){}
+ return FROM;
+}
+/* v171: 발주서 메일 발송 — 구글 앱스 스크립트 웹앱 (doPost)
+ * v328: 메일은 이 웹앱을 「배포한 구글 계정」으로 나간다 → 태진 구글 계정으로 mes_mail_gas.gs 를 배포하고
+ *       받은 웹앱 주소(…/exec)를 아래 GAS_URL 에 넣는다. 창 아래 안내줄에 실제 보내는 계정이 표시된다. */
 const GAS_URL='https://script.google.com/macros/s/AKfycbxWmPpH0vNtK5Abuk5fAvY1Se0OwRsv24lEXtKVWZ6m0PuzFtCWz3SeKFnCMgtbxxAf/exec';
 
 function ensureUI(){
@@ -77,6 +86,7 @@ window.MESMAIL={
   $('mlNote').innerHTML=(v.email?`업체 이메일: <b>${esc(v.email)}</b>${v.contact_name?' ('+esc(v.contact_name)+')':''}`:`<b>${esc(O.vendor)}</b> 의 이메일이 기준정보 › 협력업체관리에 없습니다. 받는 사람을 직접 넣거나 업체관리에 등록하세요.`)
    +` · 부품 그림 ${ni}장 ${ni?'본문 아래에 A4 로 첨부':'(PartList [📷 이미지]로 등록하면 함께 갑니다)'}`;
   {const sb=$('mlSend');sb.disabled=false;sb.textContent='✉ 보내기'}   /* v172: 직전 전송의 '보내는 중…' 상태가 남지 않게 */
+  {const nt=$('mlNote'),base=nt.innerHTML;senderInfo().then(f=>{if($('mlNote')===nt&&O)nt.innerHTML=base+'<br>'+(f?`보내는 계정: <b>${esc(f)}</b>`:'보내는 계정 확인 불가 — 웹앱이 예전 버전이면 mes_mail_gas.gs 로 다시 배포하세요')})}
   $('mlMask').classList.add('on');$('mlPop').classList.add('on');say('');
  },
  close(){if($('mlMask'))$('mlMask').classList.remove('on');if($('mlPop'))$('mlPop').classList.remove('on');O=null},
@@ -103,7 +113,8 @@ window.MESMAIL={
    }
    if(!res||res.ok===false)throw new Error((res&&(res.error||res.raw))||'구글 스크립트 응답 오류');
    try{await MESDB.table('mail_log').upsert([{kind:'발주서',category:O.category,vendor_name:O.vendor,job_no:O.job,to_addr:to,subject:$('mlSubj').value,sent_by:O.by||null,lines:O.lines.length}])}catch(e){}
-   say(res.unverified?`${to} 로 보냈습니다 (응답 확인 불가 — 받은편지함을 확인하세요).`:`${to} 로 발주서를 보냈습니다.`);b.disabled=false;b.textContent='✉ 보내기';setTimeout(MESMAIL.close,1200);
+   if(res.from)FROM=res.from;
+   say(res.unverified?`${to} 로 보냈습니다 (응답 확인 불가 — 받은편지함을 확인하세요).`:`${to} 로 발주서를 보냈습니다${res.from?' (보낸 계정 '+res.from+')':''}.`);b.disabled=false;b.textContent='✉ 보내기';setTimeout(MESMAIL.close,1200);
   }catch(e){say('전송 실패: '+String(e.message||e).slice(0,140)+' — [📨 메일 앱]으로 보내세요.');b.disabled=false;b.textContent='✉ 보내기'}
  },
  sheet:sheetHtml,
