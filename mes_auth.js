@@ -71,6 +71,7 @@ function ui(){
     -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 20px 60px rgba(0,6,18,.5);
     padding:46px 44px 34px;width:430px;max-width:100%;color:#fff}
   #loginGate h1{margin:0 0 6px;font-size:36px;font-weight:800;color:#fff;letter-spacing:-.5px;white-space:nowrap}#loginGate h1 b{color:#2bb8f0}#loginGate h1 i{font-style:normal;font-size:22px;font-weight:500;color:#5fa8e8;margin-left:6px}
+  #loginGate .lglogo{display:block;height:46px;width:auto;background:#fff;padding:9px 16px;border-radius:10px;box-sizing:content-box;margin:0 0 14px;box-shadow:0 4px 16px rgba(0,6,18,.4)}
   #loginGate .sub{font-size:15px;color:#aebbd0;margin-bottom:30px}
   #loginGate label{display:block;font-size:15px;color:#fff;margin:18px 0 8px}
   #loginGate input{width:100%;height:46px;border:1px solid rgba(255,255,255,.2);border-radius:3px;background:rgba(4,10,22,.78);color:#fff;padding:0 14px;font-size:15px;box-sizing:border-box;outline:0}
@@ -84,7 +85,7 @@ function ui(){
   @media (max-width:480px){#loginGate .card{padding:32px 24px 26px}#loginGate h1{font-size:28px}#loginGate h1 i{font-size:17px}}
   </style>
   <div class="card">
-    <h1><b>HC</b> Smart <i>Mold</i></h1><div class="sub">MES 로그인</div>
+    <img class="lglogo" src="iptk_logo.png?v=2" alt="IPTK" onerror="this.outerHTML='<h1>IPTK</h1>'"><div class="sub">MES 로그인</div>
     <label>이름 (또는 아이디)</label><input id="lgEmail" type="text" autocomplete="username" placeholder="예: 김민수">
     <label>비밀번호</label><input id="lgPw" type="password" autocomplete="current-password" placeholder="6자리 이상">
     <button id="lgBtn">로그인</button><div class="err" id="lgErr"></div>
