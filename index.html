@@ -14,10 +14,10 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
 :root{
-  --side-w:260px; --side-min:56px; --top-h:48px; --tab-h:40px;
+  --side-w:260px; --side-min:56px; --top-h:56px; --tab-h:40px;
   --ink:#1c2430; --ink-2:#4a5568; --ink-3:#8a94a6;
-  --steel:#1f2733; --steel-2:#28323f; --steel-3:#343f50;
-  --paper:#f1f3f6; --white:#fff; --line:#dfe3ea; --line-2:#303b4c;
+  --steel:#0b1626; --steel-2:#13233b; --steel-3:#1c3050; --cy:#2bb8f0; --ci:#2b5cb8;
+  --paper:#f1f3f6; --white:#fff; --line:#dfe3ea; --line-2:#1f3350;
   --amber:#f2a93b; --green:#2fb27c; --red:#e05a4a; --blue:#3b82f6; --gray:#9aa4b5;
   --r:6px; --shadow:0 8px 24px rgba(20,28,40,.18);
   font-size:14px;
@@ -29,14 +29,17 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 input,select{font:inherit}
 ::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:#c2c9d4;border-radius:4px}
 
-.app{display:grid;grid-template-columns:1fr;grid-template-rows:var(--top-h) 1fr;height:100vh}
+.app{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:var(--top-h) 1fr;height:100vh}
 .top{grid-column:1/-1;display:flex;align-items:center;background:var(--steel);color:#dfe5ee;padding:0 12px 0 0;border-bottom:1px solid var(--line-2);position:relative;z-index:50}
 .main{display:flex;flex-direction:column;min-width:0;min-height:0}
 
 /* top */
 .brand{height:100%;display:flex;align-items:center;gap:10px;padding:0 16px 0 14px;flex-shrink:0;cursor:pointer;border-right:1px solid var(--line-2)}
 .brand .mark{width:28px;height:28px;flex-shrink:0;display:grid;place-items:center;background:var(--amber);color:var(--steel);font-weight:800;border-radius:6px}
-.brand .logo{height:28px;width:auto;flex-shrink:0;display:block;background:#fff;padding:3px 8px;border-radius:5px;box-sizing:content-box}
+.brand .logo{height:30px;width:auto;flex-shrink:0;display:block;background:#fff;padding:5px 10px;border-radius:8px;box-sizing:content-box;box-shadow:0 2px 10px rgba(0,0,0,.35)}
+.brand .home-ic{width:34px;height:34px;display:grid;place-items:center;border-radius:8px;color:#fff}
+.brand .home-ic svg{width:22px;height:22px;fill:currentColor}
+.brand:hover .home-ic{color:var(--cy);background:var(--steel-3)}
 .brand .name{font-weight:700;letter-spacing:.3px;white-space:nowrap;color:#fff;display:flex;align-items:center;gap:8px}
 .brand .name .home-lbl{font-size:14px;color:#fff}
 .brand:hover .name .home-lbl{color:var(--amber)}
@@ -44,32 +47,32 @@ input,select{font:inherit}
 
 .top-menu{display:flex;gap:2px;margin-left:8px;height:100%}
 .top-menu>li{position:relative;list-style:none;height:100%;display:flex}
-.top-menu>li>button{padding:0 16px;height:100%;color:#c7cfdb;font-weight:600;font-size:15px;border-bottom:2px solid transparent;white-space:nowrap}
-.top-menu>li:hover>button{color:#fff;border-bottom-color:var(--amber)}
-.top-menu>li.on>button{color:#fff;border-bottom-color:var(--amber)}
-.top-menu>li.pin>button{color:#fff;border-bottom-color:var(--amber);background:var(--steel-2)}
+.top-menu>li>button{padding:0 16px;height:100%;color:#c3cede;font-weight:500;font-size:15.5px;border-bottom:3px solid transparent;border-top:3px solid transparent;white-space:nowrap}
+.top-menu>li:hover>button{color:#fff;border-bottom-color:var(--cy)}
+.top-menu>li.on>button{color:#fff;border-bottom-color:var(--cy)}
+.top-menu>li.pin>button{color:#fff;border-bottom-color:var(--cy);background:var(--steel-2)}
 .top-menu>li.pin .mega{display:flex}
-.mega{position:absolute;top:100%;left:0;display:none;background:var(--white);color:var(--ink);border:1px solid var(--line);border-radius:0 0 var(--r) var(--r);box-shadow:var(--shadow);padding:14px 4px;z-index:60;flex-wrap:wrap;width:max-content;max-width:calc(100vw - 24px);max-height:calc(100vh - var(--top-h) - 12px);overflow-y:auto;overscroll-behavior:contain}
+.mega{position:absolute;top:100%;left:0;display:none;background:var(--white);color:var(--ink);border:1px solid var(--line);border-radius:0 0 12px 12px;box-shadow:0 18px 40px rgba(4,12,26,.35);padding:20px 8px 14px;z-index:60;flex-wrap:wrap;width:max-content;max-width:calc(100vw - 24px);max-height:calc(100vh - var(--top-h) - 12px);overflow-y:auto;overscroll-behavior:contain}
 .top-menu>li:hover .mega{display:flex}
 .mega .col{padding:0 16px 8px;border-right:1px solid var(--line);min-width:150px;align-self:start}
 .mega .col:last-child{border-right:0}
-.mega h4{font-size:14px;color:var(--ink-3);font-weight:600;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--line);white-space:nowrap}
+.mega h4{font-size:15px;color:var(--ink);font-weight:600;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--line);white-space:nowrap}
 .mega h5{font-size:12.5px;color:var(--ink-3);font-weight:500;margin:8px 0 2px}
 .mega h5:first-of-type{margin-top:0}
 .mega a{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:14px;color:var(--ink);text-decoration:none;white-space:nowrap}
-.mega a:hover{color:var(--blue)}
-.mega a.active{color:var(--blue);font-weight:600}
+.mega a:hover{color:var(--ci)}
+.mega a.active{color:var(--ci);font-weight:600}
 .mega a .star{margin-left:auto;padding-left:14px;color:#c9d0da;opacity:0;font-size:12px}
 .mega a:hover .star{opacity:1}
 .mega a .star.on{opacity:1;color:var(--amber)}
 
-.search{margin-left:auto;position:relative;width:280px}
-.search input{width:100%;height:32px;background:var(--steel-2);border:1px solid var(--line-2);border-radius:var(--r);color:#fff;padding:0 32px 0 34px;outline:0}
-.search input:focus{border-color:var(--amber)}
+.search{margin-left:auto;position:relative;width:280px;flex:0 1 280px;min-width:120px}
+.search input{width:100%;height:34px;background:var(--steel-2);border:1px solid var(--line-2);border-radius:var(--r);color:#fff;padding:0 32px 0 34px;outline:0}
+.search input:focus{border-color:var(--cy)}
 .search input::placeholder{color:#7f8aa0}
-.search .ico{position:absolute;left:11px;top:9px;color:#7f8aa0}
-.search kbd{position:absolute;right:8px;top:8px;font:11px Pretendard;color:#7f8aa0;border:1px solid #4a5568;border-radius:4px;padding:1px 5px}
-.search-res{position:absolute;top:36px;left:0;right:0;background:var(--white);color:var(--ink);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);display:none;max-height:360px;overflow:auto;z-index:80}
+.search .ico{position:absolute;left:11px;top:10px;color:#7f8aa0}
+.search kbd{position:absolute;right:8px;top:9px;font:11px Pretendard;color:#7f8aa0;border:1px solid #4a5568;border-radius:4px;padding:1px 5px}
+.search-res{position:absolute;top:38px;left:0;right:0;background:var(--white);color:var(--ink);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);display:none;max-height:360px;overflow:auto;z-index:80}
 .search-res.open{display:block}
 .search-res button{display:flex;justify-content:space-between;width:100%;text-align:left;padding:9px 12px;font-size:14px}
 .search-res button:hover,.search-res button.sel{background:#eef2f8}
@@ -78,7 +81,7 @@ input,select{font:inherit}
 .top-actions{display:flex;align-items:center;gap:4px;margin-left:12px}
 .icon-btn{width:34px;height:34px;border-radius:var(--r);display:grid;place-items:center;color:#c7cfdb;position:relative}
 .icon-btn:hover{background:var(--steel-3);color:#fff}
-.icon-btn.txt{width:auto;padding:0 10px;display:flex;gap:6px;align-items:center;font-size:13px;color:var(--amber);border:1px solid var(--line-2)}
+.icon-btn.txt{width:auto;padding:0 10px;white-space:nowrap;flex-shrink:0;display:flex;gap:6px;align-items:center;font-size:13px;color:var(--amber);border:1px solid var(--line-2)}
 .icon-btn.txt:hover{color:#fff;border-color:var(--amber)}
 @media (max-width:900px){.icon-btn.txt span{display:none}}
 .ubtn{display:flex;align-items:center;gap:8px;padding:4px 8px 4px 4px;border-radius:var(--r);margin-left:6px}
@@ -107,18 +110,18 @@ input,select{font:inherit}
 .dd-menu .hd{padding:6px 10px;font-size:11px;color:var(--ink-3)}
 
 /* tabs */
-.tabs{display:flex;align-items:flex-end;height:var(--tab-h);background:#e4e8ee;border-bottom:1px solid var(--line);padding:0 8px;gap:2px;overflow:hidden;flex-shrink:0}
+.tabs{display:flex;align-items:flex-end;height:var(--tab-h);background:var(--steel-2);border-bottom:1px solid var(--line-2);padding:0 8px;gap:2px;overflow:hidden;flex-shrink:0}
 .tabs-scroll{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0}
 .tabs-scroll::-webkit-scrollbar{display:none}
-.tab{display:flex;align-items:center;gap:8px;height:34px;padding:0 10px 0 12px;background:#d6dce5;border-radius:6px 6px 0 0;color:var(--ink-2);white-space:nowrap;cursor:pointer;border:1px solid transparent;border-bottom:0;font-size:14px;user-select:none}
-.tab:hover{background:#e9edf3}
+.tab{display:flex;align-items:center;gap:8px;height:34px;padding:0 10px 0 12px;background:rgba(255,255,255,.07);border-radius:8px 8px 0 0;color:#b9c5d6;white-space:nowrap;cursor:pointer;border:1px solid transparent;border-bottom:0;font-size:14px;user-select:none}
+.tab:hover{background:rgba(255,255,255,.14);color:#fff}
 .tab.active{background:var(--white);color:var(--ink);border-color:var(--line);font-weight:600;position:relative}
 .tab.active::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;background:var(--white)}
 .tab .x{width:16px;height:16px;border-radius:4px;display:grid;place-items:center;color:var(--ink-3);font-size:14px;line-height:1}
-.tab .x:hover{background:#c8cfda;color:var(--ink)}
+.tab .x:hover{background:rgba(120,140,170,.35);color:inherit}
 .tabs-act{display:flex;gap:2px;padding-bottom:3px}
 .tabs-act button{width:28px;height:28px;border-radius:4px;color:var(--ink-3);display:grid;place-items:center}
-.tabs-act button:hover{background:#d6dce5;color:var(--ink)}
+.tabs-act button:hover{background:var(--steel-3);color:#fff}
 .ctx{position:fixed;display:none;background:var(--white);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:5px;min-width:170px;z-index:200}
 .ctx.open{display:block}
 .ctx button{display:block;width:100%;text-align:left;padding:7px 10px;border-radius:4px}
@@ -141,31 +144,48 @@ input,select{font:inherit}
 .ph code{background:#e9edf3;padding:2px 6px;border-radius:4px;font-family:ui-monospace,Consolas,monospace;font-size:12px}
 .card{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px}
 
-/* home */
-.home{padding:18px 22px;display:grid;gap:14px;grid-template-columns:repeat(12,1fr);height:100%;overflow:auto;align-content:start}
-.home .card h3{font-size:14px;font-weight:600;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
-.home .card h3 span{font-size:12px;color:var(--ink-3);font-weight:400}
-.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.quick button{border:1px solid var(--line);border-radius:var(--r);padding:12px 8px;display:grid;gap:6px;justify-items:center;font-size:12px;color:var(--ink-2);text-align:center}
-.quick button:hover{border-color:var(--blue);color:var(--blue);background:#f4f8ff}
+/* home — v332: 어두운 남색 바탕 + 유리 카드 */
+.mesbg{position:relative;overflow:hidden;isolation:isolate;--ring-d:520px;--ring-x:38%;--ring-y:-170px;
+  background:radial-gradient(900px 620px at 32% 0%,#12325e 0%,transparent 62%),radial-gradient(800px 560px at 100% 100%,#0f2b50 0%,transparent 66%),linear-gradient(160deg,#0b1628,#07101e 58%,#0a1730)}
+.mesbg::before{content:"";position:absolute;z-index:-1;left:var(--ring-x);top:var(--ring-y);width:var(--ring-d);aspect-ratio:1;border-radius:50%;
+  background:conic-gradient(from 215deg,#1d5fd8,#35e0c8 28%,#2b8cf0 52%,#123a8a 74%,#1d5fd8);
+  -webkit-mask:radial-gradient(closest-side,transparent 76%,#000 79%,#000 96%,transparent 100%);mask:radial-gradient(closest-side,transparent 76%,#000 79%,#000 96%,transparent 100%);
+  filter:blur(4px);opacity:.8;pointer-events:none}
+.mesbg::after{content:"";position:absolute;z-index:-1;left:0;right:0;bottom:0;height:62%;background:url(bg_wave.svg) left bottom/cover no-repeat;opacity:.75;pointer-events:none}
+.placeholder.homebg{padding:0;color:#e8eef7}
+.placeholder.homebg{--ring-d:620px;--ring-x:calc(100% - 520px);--ring-y:-360px}.placeholder.homebg::before{opacity:.45}
+.homebg .iso{position:absolute;right:-30px;bottom:-40px;width:min(780px,62%);opacity:.55;z-index:-1;pointer-events:none;user-select:none}
+.home{padding:26px 30px 30px;display:grid;gap:22px;grid-template-columns:repeat(12,1fr);height:100%;overflow:auto;align-content:start;max-width:1500px;margin:0 auto}
+.home .card{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.17);border-radius:12px;padding:22px 26px 24px;color:#e8eef7;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 10px 30px rgba(2,8,20,.28)}
+.home .card h3{font-size:21px;font-weight:600;color:#fff;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;letter-spacing:-.2px}
+.home .card h3 span{font-size:13px;color:#9fb1ca;font-weight:400}
+.quick{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px}
+.quick button{background:#fff;border:1px solid rgba(255,255,255,.6);border-radius:10px;padding:24px 10px 20px;display:grid;gap:12px;justify-items:center;font-size:15.5px;font-weight:500;color:var(--ink);text-align:center;transition:transform .15s,box-shadow .15s}
+.quick button svg{width:36px;height:36px}
+.quick button:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(43,184,240,.35);color:var(--ci)}
 .modcard{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-.modcard button{border:1px solid var(--line);border-radius:var(--r);padding:14px 12px;text-align:left;display:grid;gap:4px}
+.modcard button{border:1px solid rgba(255,255,255,.17);border-radius:var(--r);padding:14px 12px;text-align:left;display:grid;gap:4px}
 .modcard button b{font-size:14px}
-.modcard button small{color:var(--ink-3);font-size:11px;line-height:1.4;white-space:normal}
-.modcard button:hover{border-color:var(--blue);background:#f4f8ff}
-.favlist{display:grid;gap:4px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
-.favlist button{display:flex;justify-content:space-between;padding:7px 10px;border-radius:4px;border:1px solid var(--line)}
-.favlist button:hover{border-color:var(--blue);color:var(--blue)}
-.favlist small{color:var(--ink-3)}
+.modcard button small{color:#9fb1ca;font-size:11px;line-height:1.4;white-space:normal}
+.favlist{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+.favlist button{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.17);background:rgba(255,255,255,.07);color:#fff;font-size:14.5px}
+.favlist button:hover{border-color:var(--cy);background:rgba(43,184,240,.16)}
+.favlist small{color:#9fb1ca}
+.home .none{color:#b9c6d9;font-size:15px}
+.home .guide{color:#c9d4e4;line-height:1.85;font-size:13.5px}
+.home .guide b{color:#fff}.home .guide button{color:#6cc8ff}.home .guide button:hover{text-decoration:underline}
+.main.is-home .crumb{display:none}
 
 .status{height:24px;background:var(--steel);color:#8f9bb0;font-size:11px;display:flex;align-items:center;gap:18px;padding:0 14px;flex-shrink:0}
 .status .dot{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;margin-right:5px}
 .status .r{margin-left:auto}
 
 @media (max-width:1100px){.modcard{grid-template-columns:repeat(2,1fr)}.home>.card{grid-column:span 12!important}}
+@media (max-width:600px){.home{padding:14px 12px 20px;gap:14px}.home .card{padding:16px 14px 18px}.home .card h3{font-size:18px}.quick{grid-template-columns:repeat(2,1fr);gap:10px}.quick button{padding:16px 6px 14px;font-size:14px}.homebg .iso{width:120%;opacity:.3}}
+@media (max-width:1320px){.top-menu>li>button{padding:0 9px;font-size:14.5px}.icon-btn.txt span,.ubtn .txt{display:none}.brand{padding:0 10px}}
 @media (max-width:900px){.top-menu,.ubtn .txt{display:none}.search{width:170px}}
 /* v283: 모바일(≤600px) 상단바 폭 초과(가로 스크롤) 수정 */
-@media (max-width:600px){.top{padding:0 6px 0 0}.brand{padding:0 8px;gap:6px}.brand .name small{display:none}.search{width:auto;flex:1 1 auto;min-width:0}.search kbd{display:none}.search input{padding:0 8px 0 28px}.search .ico{left:9px}.top-actions{margin-left:6px;gap:0}.icon-btn{width:30px}.icon-btn.txt{padding:0 7px}.ubtn{margin-left:2px;padding:4px}}
+@media (max-width:600px){.top{padding:0 6px 0 0}.brand{padding:0 8px;gap:6px}.search{width:auto;flex:1 1 auto;min-width:0}.search kbd{display:none}.search input{padding:0 8px 0 28px}.search .ico{left:9px}.top-actions{margin-left:6px;gap:0}.icon-btn{width:30px}.icon-btn.txt{padding:0 7px}.ubtn{margin-left:2px;padding:4px}}
 a.menu-off,a.menu-off:hover{color:#9aa5ae!important;opacity:.55;cursor:not-allowed!important;background:none!important;text-decoration:none}
 </style>
 </head>
@@ -175,7 +195,7 @@ a.menu-off,a.menu-off:hover{color:#9aa5ae!important;opacity:.55;cursor:not-allow
   <header class="top">
     <div class="brand" id="brand" title="홈">
       <img class="logo" src="iptk_logo.png?v=2" alt="IPTK" onerror="this.outerHTML='<div class=&quot;mark&quot;>I</div>'">
-      <div class="name"><span class="home-lbl">⌂ 홈</span><small>IPTK MES</small></div>
+      <span class="home-ic" aria-label="홈"><svg viewBox="0 0 24 24"><path d="M12 3.2 2.6 11.4h2.6V20h5.2v-5.6h3.2V20h5.2v-8.6h2.6z"/></svg></span>
     </div>
 
     <ul class="top-menu" id="topMenu"></ul>
@@ -240,7 +260,7 @@ a.menu-off,a.menu-off:hover{color:#9aa5ae!important;opacity:.55;cursor:not-allow
 </div>
 
 <script>
-const APP_VER='350';
+const APP_VER='351';
 const APP={
   '영업관리':{
     secondary:[
@@ -668,6 +688,7 @@ function openPage(p){if(!openTabs.has(p.id))openTabs.set(p.id,p);if(activeId!==p
   statusMsg.textContent=p.home?'홈':p.file?`${p.title} 화면을 열었습니다.`:`${p.title} 화면은 준비 중입니다.`}
 function activate(id){if(activeId!==id)prevId=activeId;activeId=id;const p=openTabs.get(id);if(p&&p.mod)activeModule=p.mod;buildTop();renderTabs();renderStage();renderCrumb();saveTabs()}
 function renderCrumb(){
+  try{document.querySelector('.main').classList.toggle('is-home',activeId==='home')}catch(e){}
   const p=openTabs.get(activeId);const c=$('#crumb');
   if(!p){c.innerHTML='<span>IPTK MES</span>';return}
   c.innerHTML=`<span>IPTK MES</span>${p.mod?`<span>›</span><span>${esc(ML(p.mod))}</span><span>›</span><span>${esc(p.sec)}</span>`:''}<span>›</span><b>${esc(p.title)}</b><span class="right"><span>${p.file?esc(p.file):''}</span></span>`;
@@ -730,7 +751,7 @@ function viewReady(f){
 }
 function makeView(p){
   if(document.getElementById('view_'+p.id))return;
-  if(p.home){const d=el('div','placeholder',homeHTML());d.id='view_home';stage.appendChild(d);return}
+  if(p.home){const d=el('div','placeholder mesbg homebg',homeHTML());d.id='view_home';stage.appendChild(d);return}
   if(p.file){
     const f=document.createElement('iframe');f.id='view_'+p.id;
     f.setAttribute('allow','camera');  /* v112: QR스캔 등 iframe 안 카메라 허용 */
@@ -757,19 +778,30 @@ function renderStage(){
 }
 
 /* ---------- 홈 ---------- */
+/* v332: 바로가기 카드 그림 (선 그림, CI 파란색) */
+const QI=(()=>{const w=b=>`<svg viewBox="0 0 32 32" fill="none" stroke="#2b5cb8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${b}</svg>`,f='fill="#cfe2fb"';return{
+  '금형진척현황':w(`<rect x="5" y="4" width="22" height="24" rx="3"/><rect x="10" y="17" width="3" height="6" ${f}/><rect x="15" y="12" width="3" height="11" ${f}/><rect x="20" y="9" width="3" height="14" ${f}/>`),
+  '수주등록':w(`<rect x="7" y="6" width="18" height="22" rx="2.5"/><rect x="12" y="3.5" width="8" height="5" rx="1.5" ${f}/><path d="M11 14h10M11 18h6"/><path d="M17.5 25.5l1-3.5 6-6 2.5 2.5-6 6z" ${f}/>`),
+  '수주현황':w(`<rect x="7" y="5" width="18" height="22" rx="2.5" ${f}/><path d="M12 5v22M16 11h5M16 15h5"/><path d="M7 23h18"/>`),
+  '제작계획등록':w(`<rect x="5" y="7" width="22" height="20" rx="2.5"/><path d="M5 13h22M11 4v6M21 4v6"/><path d="M10 18l3 3 3-4 3 2 3-4" /><rect x="5" y="7" width="22" height="6" rx="2.5" ${f}/>`),
+  '설계실적등록':w(`<path d="M5 27l3-9L22 4l6 6-14 14z" ${f}/><path d="M19 7l6 6M8 18l6 6M5 27l9-3"/>`),
+  '사내외가공 발주':w(`<circle cx="16" cy="16" r="5" ${f}/><path d="M16 3.5v4M16 24.5v4M3.5 16h4M24.5 16h4M7.2 7.2l2.8 2.8M22 22l2.8 2.8M7.2 24.8L10 22M22 10l2.8-2.8"/><circle cx="16" cy="16" r="9.5"/>`),
+  '구매품 발주':w(`<path d="M4 6h4l3 14h13l3-10H9.5"/><path d="M11 20h13l2-7H9.6z" ${f}/><circle cx="12.5" cy="25" r="2"/><circle cx="22.5" cy="25" r="2"/>`),
+  '조립실적등록':w(`<rect x="5" y="5" width="9.5" height="9.5" rx="1.5" ${f}/><rect x="17.5" y="5" width="9.5" height="9.5" rx="1.5"/><rect x="5" y="17.5" width="9.5" height="9.5" rx="1.5"/><rect x="17.5" y="17.5" width="9.5" height="9.5" rx="1.5" ${f}/>`)}})();
 function homeHTML(){
   const mods=visibleModules().filter(m=>m!=='사용메뉴얼');
   const quick=['금형진척현황','수주등록','수주현황','제작계획등록','설계실적등록','사내외가공 발주','구매품 발주','조립실적등록'];
-  return `<div class="home">
+  const fv=favs.filter(n=>locate(n));
+  return `<img class="iso" src="bg_iso.svg" alt=""><div class="home">
   <!-- v282: 업무 모듈 카드 숨김 (상단 메뉴로 충분) -->
-  <div class="card" style="grid-column:span 8;display:none"><h3>업무 모듈 <span>상단 메뉴에 마우스를 올리면 세부 메뉴가 열립니다</span></h3>
+  <div class="card" style="grid-column:span 12;display:none"><h3>업무 모듈 <span>상단 메뉴에 마우스를 올리면 세부 메뉴가 열립니다</span></h3>
    <div class="modcard">${mods.map(m=>`<button onclick="pinModule('${m}')"><b>${MOD_ICON[m]||'▪'} ${esc(ML(m))}</b><small>${esc(MOD_DESC[m]||'')}</small></button>`).join('')}</div></div>
-  <div class="card" style="grid-column:span 12"><h3>즐겨찾기 <span>★ ${favs.length}</span></h3>
-   <div class="favlist">${favs.filter(n=>locate(n)).length?favs.filter(n=>locate(n)).map(n=>{const l=locate(n);return `<button onclick="openByName('${esc(n)}')"><span>${esc(MENU_LABEL[n]||n)}</span><small>${l?esc(l.mod):''}</small></button>`}).join(''):'<small style="color:var(--ink-3)">상단 메뉴 항목의 ★ 를 눌러 추가</small>'}</div></div>
-  <div class="card" style="grid-column:span 8"><h3>바로가기</h3>
-   <div class="quick">${quick.filter(n=>{const l=locate(n);return l&&canView(l.mod+'/'+l.sec+'/'+n)}).map(n=>`<button onclick="openByName('${esc(n)}')"><span style="font-size:18px">${MOD_ICON[locate(n).mod]}</span>${esc(MENU_LABEL[n]||n)}</button>`).join('')}</div></div>
-  <div class="card" style="grid-column:span 4"><h3>안내</h3>
-   <div style="color:var(--ink-2);line-height:1.7">· <b>Ctrl+K</b> 메뉴 검색<br>· 좌측 상단 <b>⌂ 홈</b> 클릭: 이 홈 화면으로 이동<br>· 상단 메뉴(영업관리 등)에 마우스를 올리면 세부 메뉴가 펼쳐지고, <b>클릭</b>하면 마우스를 떼도 펼쳐진 채로 고정됩니다 (다시 클릭하면 해제)<br>· 열린 화면은 상단에 <b>탭</b>으로 쌓입니다. 탭을 <b>마우스 오른쪽 클릭</b>하면 고정(실수로 닫히지 않게) · 새로고침 · 닫기 메뉴가 나옵니다<br>· 탭을 <b>마우스 휠 버튼</b>으로 누르면 바로 닫힙니다<br>· <button onclick="openByName('사용메뉴얼')" style="color:var(--blue)">사용메뉴얼 열기</button><br>· <button onclick="openByName('수정요청게시판')" style="color:var(--blue)">수정요청게시판 열기</button></div></div>
+  <div class="card" style="grid-column:span 12"><h3>즐겨찾기 <span>★ ${fv.length}</span></h3>
+   <div class="favlist">${fv.length?fv.map(n=>{const l=locate(n);return `<button onclick="openByName('${esc(n)}')"><span>${esc(MENU_LABEL[n]||n)}</span><small>${l?esc(ML(l.mod)):''}</small></button>`}).join(''):'<span class="none">상단 메뉴 항목의 ★ 를 눌러 추가</span>'}</div></div>
+  <div class="card" style="grid-column:span 12"><h3>바로가기</h3>
+   <div class="quick">${quick.filter(n=>{const l=locate(n);return l&&canView(l.mod+'/'+l.sec+'/'+n)}).map(n=>`<button onclick="openByName('${esc(n)}')">${QI[n]||''}${esc(MENU_LABEL[n]||n)}</button>`).join('')}</div></div>
+  <div class="card" style="grid-column:span 12"><h3>안내</h3>
+   <div class="guide">· <b>Ctrl+K</b> 메뉴 검색<br>· 좌측 상단 <b>로고 · 집 모양</b> 클릭: 이 홈 화면으로 이동<br>· 상단 메뉴(영업관리 등)에 마우스를 올리면 세부 메뉴가 펼쳐지고, <b>클릭</b>하면 마우스를 떼도 펼쳐진 채로 고정됩니다 (다시 클릭하면 해제)<br>· 열린 화면은 상단에 <b>탭</b>으로 쌓입니다. 탭을 <b>마우스 오른쪽 클릭</b>하면 고정(실수로 닫히지 않게) · 새로고침 · 닫기 메뉴가 나옵니다<br>· 탭을 <b>마우스 휠 버튼</b>으로 누르면 바로 닫힙니다<br>· <button onclick="openByName('사용메뉴얼')">사용메뉴얼 열기</button><br>· <button onclick="openByName('수정요청게시판')">수정요청게시판 열기</button></div></div>
   </div>`;
 }
 
