@@ -62,19 +62,26 @@ async function loadPerms(){
 
 function ui(){
   const div=document.createElement('div');div.id='loginGate';
+  div.className='mesbg';
   div.innerHTML=`<style>
-  #loginGate{position:fixed;inset:0;background:linear-gradient(135deg,#e8f0f7,#f7fafc);z-index:99999;
-    display:flex;align-items:center;justify-content:center;font-family:"Malgun Gothic",sans-serif}
-  #loginGate .card{background:#fff;border:1px solid #b9c6d2;box-shadow:0 8px 30px rgba(40,70,100,.15);
-    padding:34px 38px;width:330px}
-  #loginGate h1{margin:0 0 4px;font-size:26px;color:#1d3d5e;letter-spacing:-.5px;white-space:nowrap}#loginGate h1 b{color:#2e6da4}#loginGate h1 i{font-style:normal;font-size:17px;font-weight:600;color:#6b8bb5;margin-left:3px}
-  #loginGate .sub{font-size:12px;color:#6b7885;margin-bottom:20px}
-  #loginGate label{display:block;font-size:12px;color:#41556b;margin:10px 0 4px}
-  #loginGate input{width:100%;height:32px;border:1px solid #9ca9b5;padding:0 9px;font-size:13px;box-sizing:border-box}
-  #loginGate button{width:100%;height:36px;margin-top:18px;border:1px solid #2e6da4;
-    background:linear-gradient(#4a8ec2,#2e6da4);color:#fff;font-size:14px;cursor:pointer}
-  #loginGate .err{color:#c62828;font-size:12px;min-height:16px;margin-top:10px}
-  #loginGate .hintbox{margin-top:16px;font-size:11px;color:#8a97a5;border-top:1px dashed #d4dde5;padding-top:10px}
+  /* v332: 어두운 남색 바탕 + 유리 카드 (바탕 그림 .mesbg 는 index.html) */
+  #loginGate{position:fixed;inset:0;background-color:#0b1628;z-index:99999;--ring-d:min(560px,90vw);--ring-x:calc(50% - 60px);--ring-y:calc(50% - 470px);
+    display:flex;align-items:center;justify-content:center;padding:16px;font-family:Pretendard,"Malgun Gothic",sans-serif}
+  #loginGate .card{background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.3);border-radius:10px;
+    -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 20px 60px rgba(0,6,18,.5);
+    padding:46px 44px 34px;width:430px;max-width:100%;color:#fff}
+  #loginGate h1{margin:0 0 6px;font-size:36px;font-weight:800;color:#fff;letter-spacing:-.5px;white-space:nowrap}#loginGate h1 b{color:#2bb8f0}#loginGate h1 i{font-style:normal;font-size:22px;font-weight:500;color:#5fa8e8;margin-left:6px}
+  #loginGate .sub{font-size:15px;color:#aebbd0;margin-bottom:30px}
+  #loginGate label{display:block;font-size:15px;color:#fff;margin:18px 0 8px}
+  #loginGate input{width:100%;height:46px;border:1px solid rgba(255,255,255,.2);border-radius:3px;background:rgba(4,10,22,.78);color:#fff;padding:0 14px;font-size:15px;box-sizing:border-box;outline:0}
+  #loginGate input::placeholder{color:#6f7f97}
+  #loginGate input:focus{border-color:#2bb8f0;box-shadow:0 0 0 3px rgba(43,184,240,.2)}
+  #loginGate button{width:100%;height:52px;margin-top:30px;border:0;border-radius:26px;
+    background:linear-gradient(90deg,#2b8cf0,#1d55b0 55%,#0f2b5e);color:#fff;font-size:17px;font-weight:500;cursor:pointer;box-shadow:0 6px 18px rgba(0,10,30,.45)}
+  #loginGate button:hover{filter:brightness(1.12)}#loginGate button:disabled{opacity:.7;cursor:wait}
+  #loginGate .err{color:#ff9c92;font-size:13px;min-height:18px;margin-top:12px}
+  #loginGate .hintbox{margin-top:26px;font-size:13.5px;line-height:1.6;color:#b5c2d6;border-top:1px solid rgba(255,255,255,.16);padding-top:16px}
+  @media (max-width:480px){#loginGate .card{padding:32px 24px 26px}#loginGate h1{font-size:28px}#loginGate h1 i{font-size:17px}}
   </style>
   <div class="card">
     <h1><b>HC</b> Smart <i>Mold</i></h1><div class="sub">MES 로그인</div>
