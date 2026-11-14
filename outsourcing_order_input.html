@@ -1614,7 +1614,7 @@ function boardData(ri){
  const r=ROUTES[ri];if(!r)return null;const j=jobView[jobIdx]||{};
  const steps=(r.steps||[]).map((s,i)=>{const c=stepCode(s);if(!c)return null;const o=isHouse(r,i)?{vendor:'',st:''}:stepInfo(r,i);
   return {code:c,name:procName(c),inhouse:isHouse(r,i),vendor:o.vendor||'',state:o.st||''}}).filter(Boolean);
- return {job:j.job||'',item:j.item||'',part:r.part,name:r.name||'',qty:r.qty,image:PIMG[r.part]||'',steps,all:PROCLIST,by:OWNER,ri,jo:r.jo??null,saved:!!r.saved,cyc:rowCyc(r),cycOld:!!r.old,cycEnded:!!(window.MESCYCLE&&MESCYCLE.isEnded(r.part,rowCyc(r)))};   /* v228: 차수 → QR·머리글 */   /* v213: saved = 가공계획에 저장된 부품 */
+ return {job:j.job||'',item:j.item||'',part:r.part,name:r.name||'',qty:r.qty,image:PIMG[r.part]||'',pdfs:(PDWG[r.part]||[]).map(x=>({ref:x.file_url,name:x.drawing_name||x.drawing_no})),steps,all:PROCLIST,by:OWNER,ri,jo:r.jo??null,saved:!!r.saved,cyc:rowCyc(r),cycOld:!!r.old,cycEnded:!!(window.MESCYCLE&&MESCYCLE.isEnded(r.part,rowCyc(r)))};   /* v228: 차수 → QR·머리글 */   /* v213: saved = 가공계획에 저장된 부품 */
 }
 function drawBoard(ri){
  if(!window.MESDRAW)return msg('그림보드 모듈(mes_drawboard.js)이 없습니다.');
@@ -1901,7 +1901,7 @@ window.MESLOOK_RELOAD_VENDORS=async()=>{MESLOOK.invalidate('vendor_outsourcing')
  if(typeof renderRoutes==='function')renderRoutes();};
 </script>
 <script src="mes_price.js?v=162"></script>
-<script src="mes_mail.js?v=175"></script><script src="mes_drawboard.js?v=338"></script><script src="mes_cycle.js?v=269"></script>
+<script src="mes_mail.js?v=175"></script><script src="mes_drawboard.js?v=356"></script><script src="mes_cycle.js?v=269"></script>
 <script>
 /* v227: 차수 관리 — 체크한 부품(없으면 전체)의 차수 취소·종료 */
 async function cycManage(){if(ALL){const ck=[...document.querySelectorAll('#routeBody input[data-i]:checked')].map(c=>ROUTES[Number(c.dataset.i)]).filter(Boolean);
