@@ -1,0 +1,5 @@
+ezdxf==1.4.5
+matplotlib>=3.8
+shapely>=2.0
+cadquery==2.8.0
+requests>=2.31

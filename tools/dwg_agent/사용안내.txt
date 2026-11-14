@@ -1,0 +1,51 @@
+IPTK MES 도면변환 프로그램 — 사무실 PC 설치·사용 안내 (v358)
+================================================================
+
+무엇을 하나요
+-------------
+웹 [도면변환] 화면에서 관리제번·제번을 고르고 금형 전체 DWG 를 올리면,
+이 PC 에서 켜 둔 프로그램이 가져가서 아래 두 파일을 만들어 다시 올립니다.
+  · <제번>_도면PDF.zip   : 도곽(도면 테두리)마다 부품별 PDF  (예: B17A_BUTTON_DIE_A3.pdf)
+                           → 그대로 PartList [📄 도면PDF 일괄등록] 에 넣을 수 있는 이름
+  · <제번>_가공용3D.zip  : STEP/부품.step  (2.5D 솔리드)
+                           DXF/부품.dxf    (윗면 가공 윤곽, 1:1, 원점 기준)
+                           확인목록.csv    (부품마다 결과·두께·크기·구멍 수·주의사항)
+웹 화면에서 두 파일을 내려받습니다.
+
+AI 를 쓰지 않는 규칙 기반 변환입니다.
+  · 도곽 찾기 : A 용지 비율(1:√2)의 사각 테두리
+  · 금형번호  : 도곽 안 글자 중 PartList 에 있는 금형번호(영문1+숫자2+영문1, 예 B17A)
+  · 윗면 찾기 : PartList 규격(예 30*80*132)의 두 큰 치수와 크기가 맞는 뷰
+                원만 있는 뷰가 지름과 맞으면 원형 부품(펀치·핀)으로 봄
+  · STEP      : 윗면 외곽선 + 관통 구멍을 두께만큼 올림. 원은 진짜 원, 닫힌 폴리선은 원래 선·호 그대로
+※ 2D 도면이라 포켓 깊이·카운터보어·탭·경사면·라운드는 반영되지 않습니다. 가공 전 반드시 도면과 대조하세요.
+  (같은 중심에 원이 2개 이상이면 확인목록에 "카운터보어 확인" 이 적힙니다)
+
+처음 한 번 — 설치
+------------------
+1. 이 폴더(tools\dwg_agent)를 PC 에 복사합니다. (예: C:\IPTK\dwg_agent)
+2. config.sample.ini 를 복사해 config.ini 로 이름을 바꾸고 user / password 를 적습니다.
+   - MES 로그인 이름과 비밀번호. 도면변환 전용 계정을 하나 만들어 쓰기를 권합니다.
+3. setup_windows.bat 을 더블클릭합니다. (인터넷 필요, 처음 5~10분)
+   모든 파일은 임시 폴더 %TEMP%\iptk_dwg 에만 받습니다:
+     uv(파이썬 관리), Python 3.12, ezdxf, matplotlib, shapely, CadQuery, LibreDWG
+
+매일 — 실행
+-----------
+run_agent.bat 을 더블클릭해 창을 켜 둡니다. (웹 화면에 "변환 PC 연결됨" 으로 보입니다)
+  · 임시 폴더가 정리돼 도구가 지워졌으면 자동으로 다시 받습니다.
+  · 윈도우 시작 때 자동 실행: run_agent.bat 바로가기를 shell:startup 폴더에 넣으세요.
+
+DWG 를 못 읽을 때
+-----------------
+LibreDWG(오픈소스)가 못 읽는 DWG 는, 무료 ODA File Converter 가 설치돼 있으면 자동으로 그걸로 다시 읽습니다.
+  (https://www.opendesign.com/guestfiles/oda_file_converter — 설치만 해 두면 됩니다)
+또는 CAD 에서 DXF 로 저장해서 웹에 올려도 됩니다. (DXF 도 받습니다)
+
+서버 없이 파일만 시험
+---------------------
+%TEMP%\iptk_dwg\venv\Scripts\python.exe dwg_agent.py --file 도면.dwg --job 26ILA054A --out 결과폴더
+
+사용한 오픈소스
+---------------
+LibreDWG (GPL-3.0), ezdxf (MIT), matplotlib (PSF), shapely (BSD), CadQuery (Apache-2.0) / OpenCascade (LGPL-2.1), uv (MIT/Apache-2.0)
