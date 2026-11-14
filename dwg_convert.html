@@ -99,7 +99,7 @@ async function upload(f){
  await waitDB();if(!online())return msg('DB 미연결 — 로그인 후 사용하세요.');
  try{
   msg(`${f.name} 올리는 중…`);
-  const ref=await MESDB.drawingUpload(f,{job:j,part:'convert',dno:'convert_'+String(f.name).replace(/\.[^.]+$/,'')});
+  const ref=await MESDB.drawingUpload(f,{job:j,part:'convert',dno:'convert'});   /* v359: 저장소 경로는 영문·숫자만 (한글 파일 이름은 Invalid key) — 원래 이름은 src_name 에 */
   await MESDB.table('dwg_convert_jobs').upsert([{base_job:JSPL(j),job_no:j,src_name:f.name,src_path:String(ref).replace(/^sb:/,''),status:'waiting',requested_by:me()||null}]);
   msg(`${f.name} 을(를) 올렸습니다. 변환 PC 가 가져가면 상태가 「변환 중」→「완료」로 바뀝니다.`);
   load();
