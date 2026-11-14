@@ -57,7 +57,7 @@ tbody tr:nth-child(even) td{background:#fafcfd}tbody tr:hover td{background:#edf
  <button style="display:none" class="btn red" onclick="bulkOpen()" title="제번 단위로 PartList 전체를 삭제합니다">⌧ 일괄삭제</button>
  <button class="btn" onclick="manOpen()" title="엑셀 없이 한 행씩 직접 입력합니다">＋ 수동등록</button>
  <button class="btn" onclick="nameFill()" title="리스트에서 품명이 비어 있는 행을 금형번호 앞 3자리 코드(부품관리 → 내장 코드표)로 채웁니다. 이미 적힌 품명은 건드리지 않습니다">✎ 빈 품명 채우기</button>
- <button class="btn" onclick="imgPick()" title="체크한 부품의 그림 — 캐드 캡쳐를 Ctrl+V 로 붙여넣고 흰 바탕·A4 로 정리, 화살표·글자 표시 후 등록">📷 이미지등록</button><button class="btn" onclick="imgDel()" title="체크한 부품(여러 개 가능)의 그림을 지웁니다">🗑 이미지삭제</button><button class="btn" onclick="dwgPickFiles()" title="도면 PDF 여러 개(또는 ZIP)를 한 번에 올립니다 — 파일 이름 앞의 금형번호(예: B17A_BUTTON_DIE_A3.pdf → B17A)로 자동 연결, 도면대장에도 기록">📄 도면PDF 일괄등록</button><input type="file" id="dwgFiles" accept=".pdf,.zip,application/pdf,application/zip" multiple style="display:none" onchange="dwgFilesIn(this.files);this.value=''"><button class="btn" onclick="dwgDelChecked()" title="체크한 부품의 도면 PDF 연결을 지웁니다 — 지울 도면을 고르는 창이 뜹니다. 한 장만 지우려면 빨간 PDF 를 우클릭">🗑 도면PDF삭제</button>
+ <button class="btn" onclick="dwgPickOne()" title="체크한 부품 하나에 도면 PDF 한 개를 올립니다 — 파일 이름이 금형번호와 달라도 체크한 행에 연결됩니다 (이미 있으면 바꾸기/추가 선택)">📄 PDF 개별등록</button><input type="file" id="dwgOne" accept=".pdf,application/pdf" style="display:none" onchange="dwgOneIn(this.files[0]);this.value=''"><button class="btn" onclick="imgDel()" title="체크한 부품(여러 개 가능)의 그림을 지웁니다">🗑 이미지삭제</button><button class="btn" onclick="dwgPickFiles()" title="도면 PDF 여러 개(또는 ZIP)를 한 번에 올립니다 — 파일 이름 앞의 금형번호(예: B17A_BUTTON_DIE_A3.pdf → B17A)로 자동 연결, 도면대장에도 기록">📄 도면PDF 일괄등록</button><input type="file" id="dwgFiles" accept=".pdf,.zip,application/pdf,application/zip" multiple style="display:none" onchange="dwgFilesIn(this.files);this.value=''"><button class="btn" onclick="dwgDelChecked()" title="체크한 부품의 도면 PDF 연결을 지웁니다 — 지울 도면을 고르는 창이 뜹니다. 한 장만 지우려면 빨간 PDF 를 우클릭">🗑 도면PDF삭제</button>
  <input type="file" id="imgFile" accept="image/*" style="display:none" onchange="imgUp(this.files[0])">
  <button class="btn" onclick="xls()">▤ 엑셀불러오기</button>
  <button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button>
@@ -719,6 +719,33 @@ window.dwgDelChecked=async function(){
  if(done&&done.length){await dwgAfter();msg(`도면 PDF ${done.length}장을 지웠습니다.`)}
 };
 
+/* v357: PDF 개별등록 — 체크한 행 하나 + PDF 한 개. 파일 이름과 상관없이 그 금형번호에 연결 */
+let ONE=null;
+window.dwgPickOne=function(){
+ const job=curJobNo();if(!job)return msg('제번을 먼저 선택하세요.');
+ if(!online())return msg('DB 미연결 상태에서는 도면을 올릴 수 없습니다.');
+ const ids=[...chk];if(ids.length!==1)return msg('도면 PDF 를 올릴 행을 하나만 체크하세요.');
+ const r=rowById(ids[0]);if(!r||!r.part_no)return msg('체크한 행에 금형번호가 없습니다.');
+ ONE={job,pn:String(r.part_no).toUpperCase(),name:r.part_name||''};dwgOne.click()};
+window.dwgOneIn=async function(f){
+ const t=ONE;ONE=null;if(!f||!t)return;
+ if(!/\.pdf$/i.test(f.name)&&f.type!=='application/pdf')return msg('PDF 파일만 올릴 수 있습니다.');
+ if(f.size>20*1024*1024)return msg('파일이 너무 큽니다 (20MB 이하).');
+ const old=DWG.get(t.pn)||[];let replace=false;
+ if(old.length)replace=confirm(`${t.pn} 에 이미 도면 PDF ${old.length}장이 있습니다.\n${old.map(x=>' · '+(x.drawing_name||x.drawing_no)).join('\n')}\n\n[확인] = 기존 도면을 이 PDF 로 바꿉니다\n[취소] = 기존 도면은 두고 한 장 더 추가합니다`);
+ const st=stemOf(f.name),dno=t.job+'-'+(partOf(st)===t.pn?st:t.pn+'_'+st),   /* 파일 이름이 다른 금형번호로 시작하면 이 금형번호를 붙여 따로 보관 */
+      by=((typeof fBy!=='undefined'&&fBy.value)||'').trim()||null;
+ try{
+  msg(`${t.pn} 도면 PDF 올리는 중… (${f.name})`);
+  const ref=await MESDB.drawingUpload(f,{job:t.job,part:t.pn,dno:st});
+  await MESDB.table('drawings').upsert([{drawing_no:dno,drawing_name:st,job_no:t.job,part_no:t.pn,part_name:t.name||nameOf(st)||null,
+   rev_date:today(),owner:by,drawing_status:'유효',file_url:ref,remark:'PartList PDF 개별등록',updated_at:new Date().toISOString()}],'drawing_no');
+  let n=0;if(replace){const gone=old.filter(x=>x.drawing_no!==dno);if(gone.length)n=(await MESDWG.remove(gone)).done.length}
+  try{MESDB.notify&&MESDB.notify(['drawings'])}catch(e){}
+  await dwgLoad(t.job);render();
+  msg(`${t.pn} 에 도면 PDF 「${f.name}」 를 ${replace?'바꿔 ':''}등록했습니다.`+(n?` (기존 ${n}장 연결 해제)`:'')+' — 빨간 PDF 를 누르면 열립니다.');
+ }catch(e){msg('도면 PDF 올리기 실패: '+String(e.message||e).slice(0,140))}
+};
 window.dwgPickFiles=function(){
  if(!curJobNo())return msg('제번을 먼저 선택하세요.');
  if(!online())return msg('DB 미연결 상태에서는 도면을 올릴 수 없습니다.');
