@@ -337,7 +337,8 @@ MESDB.drawingUpload=async function(file,o){
   const tok=sbToken();if(!tok)throw new Error('로그인 후 도면을 올릴 수 있습니다.');
   if(file.size>20*1024*1024)throw new Error('파일이 너무 큽니다 (20MB 이하).');
   const ext=(String(file.name||'').split('.').pop()||'pdf').toLowerCase().replace(/[^a-z0-9]/g,'')||'pdf';
-  const safe=s=>String(s||'').replace(/[^\w.\-가-힣]/g,'_');
+  /* v359: 저장소 키는 영문·숫자·._- 만 (한글이 들어가면 InvalidKey — v237 그림 올리기와 같은 규칙) */
+  const safe=s=>String(s||'').replace(/[^A-Za-z0-9._-]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'')||'x';
   const path='dwg/'+safe(o.job||'공통')+'/'+safe(o.dno||o.part||'도면')+'_'+Date.now()+'.'+ext;
   const r=await fetch(CFG.url+'/storage/v1/object/'+DRW_BUCKET+'/'+path.split('/').map(encodeURIComponent).join('/'),
     {method:'POST',headers:{'apikey':CFG.key,'Authorization':'Bearer '+tok,

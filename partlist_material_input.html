@@ -694,6 +694,8 @@ const partOf=st=>{const p=st.split('_')[0].toUpperCase();return PART_RE.test(p)?
 const sheetOf=st=>{const m=/_A[0-4]_(\d+)$/i.exec(st);return m?Number(m[1]):1};
 const nameOf=st=>st.split('_').slice(1).filter(w=>!/^A[0-4]$/i.test(w)&&!/^\d+$/.test(w)).join(' ');
 const kb=n=>(n/1024).toFixed(0)+'KB';
+/* v359: 저장소 경로는 영문·숫자·_-. 만 (한글 이름 PDF 는 저장소가 Invalid key 로 거절) — 도면대장 이름(drawing_name)은 원래 이름 그대로 */
+const ASCII=s=>String(s||'').replace(/[^A-Za-z0-9_.-]+/g,'_').replace(/^_+|_+$/g,'')||'dwg';
 
 window.dwgLoad=async function(job){
  DWG.clear();if(!job||!window.MESDB)return;
@@ -737,7 +739,7 @@ window.dwgOneIn=async function(f){
       by=((typeof fBy!=='undefined'&&fBy.value)||'').trim()||null;
  try{
   msg(`${t.pn} 도면 PDF 올리는 중… (${f.name})`);
-  const ref=await MESDB.drawingUpload(f,{job:t.job,part:t.pn,dno:st});
+  const ref=await MESDB.drawingUpload(f,{job:t.job,part:t.pn,dno:ASCII(st)});
   await MESDB.table('drawings').upsert([{drawing_no:dno,drawing_name:st,job_no:t.job,part_no:t.pn,part_name:t.name||nameOf(st)||null,
    rev_date:today(),owner:by,drawing_status:'유효',file_url:ref,remark:'PartList PDF 개별등록',updated_at:new Date().toISOString()}],'drawing_no');
   let n=0;if(replace){const gone=old.filter(x=>x.drawing_no!==dno);if(gone.length)n=(await MESDWG.remove(gone)).done.length}
@@ -803,7 +805,7 @@ window.dwgRun=async function(){
  for(let k=0;k<todo.length;k++){const x=todo[k],st=document.getElementById('dwgSt'+x.i);
   bar.textContent=`올리는 중… ${k+1} / ${todo.length}  (${x.f.name})`;if(st)st.textContent='올리는 중…';
   try{
-   const ref=await MESDB.drawingUpload(x.f,{job,part:x.pn||'',dno:x.st});
+   const ref=await MESDB.drawingUpload(x.f,{job,part:x.pn||'',dno:ASCII(x.st)});
    rows.push({drawing_no:x.dno,drawing_name:x.st,job_no:job,part_no:x.pn||null,part_name:PN.get(x.pn)||x.name||null,
     rev_date:dt,owner:by,drawing_status:'유효',file_url:ref,remark:'PartList 도면PDF 일괄등록'+(x.sheet>1?` (${x.sheet}장째)`:''),updated_at:new Date().toISOString()});
    if(rows.length>=10)await flush();
