@@ -45,7 +45,7 @@ tbody tr:nth-child(even) td{background:#fafcfd}tbody tr:hover td{background:#edf
 
 <div class="gridbox"><table style="min-width:980px"><thead><tr>
  <th style="width:36px"><input type="checkbox" id="chkAll" onclick="chkAllRows(this.checked)" title="전체 선택"></th>
- <th style="width:50px">No</th><th style="width:40px" title="부품 이미지 — 행을 체크하고 [📷 이미지]">📷</th><th style="width:130px">금형번호</th><th style="width:220px">품명</th><th style="width:100px">재질</th><th style="width:64px" title="사각·환봉·파이프 — 중량 계산식이 달라집니다">형태</th>
+ <th style="width:50px">No</th><th style="width:62px" title="부품 이미지(📷) · 도면 PDF — 빨간 PDF 를 누르면 도면이 열립니다">📷 PDF</th><th style="width:130px">금형번호</th><th style="width:220px">품명</th><th style="width:100px">재질</th><th style="width:64px" title="사각·환봉·파이프 — 중량 계산식이 달라집니다">형태</th>
  <th style="width:190px">규격</th><th style="width:80px">두께</th><th style="width:70px">수량</th>
  <th style="width:90px">등록자</th><th>등록일자</th><th style="width:60px" title="행의 품명·재질·형태·규격·두께·수량을 고칩니다">수정</th>
 </tr></thead><tbody id="body"></tbody></table></div>
@@ -57,7 +57,7 @@ tbody tr:nth-child(even) td{background:#fafcfd}tbody tr:hover td{background:#edf
  <button style="display:none" class="btn red" onclick="bulkOpen()" title="제번 단위로 PartList 전체를 삭제합니다">⌧ 일괄삭제</button>
  <button class="btn" onclick="manOpen()" title="엑셀 없이 한 행씩 직접 입력합니다">＋ 수동등록</button>
  <button class="btn" onclick="nameFill()" title="리스트에서 품명이 비어 있는 행을 금형번호 앞 3자리 코드(부품관리 → 내장 코드표)로 채웁니다. 이미 적힌 품명은 건드리지 않습니다">✎ 빈 품명 채우기</button>
- <button class="btn" onclick="imgPick()" title="체크한 부품의 그림 — 캐드 캡쳐를 Ctrl+V 로 붙여넣고 흰 바탕·A4 로 정리, 화살표·글자 표시 후 등록">📷 이미지등록</button><button class="btn" onclick="imgDel()" title="체크한 부품(여러 개 가능)의 그림을 지웁니다">🗑 이미지삭제</button>
+ <button class="btn" onclick="imgPick()" title="체크한 부품의 그림 — 캐드 캡쳐를 Ctrl+V 로 붙여넣고 흰 바탕·A4 로 정리, 화살표·글자 표시 후 등록">📷 이미지등록</button><button class="btn" onclick="imgDel()" title="체크한 부품(여러 개 가능)의 그림을 지웁니다">🗑 이미지삭제</button><button class="btn" onclick="dwgPickFiles()" title="도면 PDF 여러 개(또는 ZIP)를 한 번에 올립니다 — 파일 이름 앞의 금형번호(예: B17A_BUTTON_DIE_A3.pdf → B17A)로 자동 연결, 도면대장에도 기록">📄 도면PDF 일괄등록</button><input type="file" id="dwgFiles" accept=".pdf,.zip,application/pdf,application/zip" multiple style="display:none" onchange="dwgFilesIn(this.files);this.value=''">
  <input type="file" id="imgFile" accept="image/*" style="display:none" onchange="imgUp(this.files[0])">
  <button class="btn" onclick="xls()">▤ 엑셀불러오기</button>
  <button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button>
@@ -172,7 +172,7 @@ const view=()=>[...data,...pend];
 const rowById=id=>view().find(x=>x.row_no===id);
 function render(){
  const v=view();
- body.innerHTML=v.length?v.map((r,i)=>`<tr class="${r._new?'new':''}" onclick="rowClick(${r.row_no},event)"><td class="c"><input type="checkbox" data-row="${r.row_no}" ${chk.has(r.row_no)?'checked':''} onclick="toggleChk(${r.row_no},this.checked)"></td><td class="c">${i+1}</td><td class="c">${r.image_url?MESDB.imgBox(r.image_url,22):''}</td><td>${esc(r.part_no)}</td><td>${esc(r.part_name)}</td><td class="c">${esc(r.material||'')}</td><td class="c">${esc(r.shape||'')}</td><td>${esc(SPECOF(r))}</td><td class="num">${fmt(r.thickness_dia)}</td><td class="num">${fmt(r.qty)}</td><td class="c">${r._new?'<span class="tag">미등록</span>':esc(r.registered_by||'')}</td><td class="c">${r._new?'':esc(r.registered_date||'')}</td><td class="c"><button class="btn" style="height:20px;padding:0 8px;font-size:11px" onclick="event.stopPropagation();editOpen(${r.row_no})" title="이 행 수정">✎ 수정</button></td></tr>`).join('')
+ body.innerHTML=v.length?v.map((r,i)=>`<tr class="${r._new?'new':''}" onclick="rowClick(${r.row_no},event)"><td class="c"><input type="checkbox" data-row="${r.row_no}" ${chk.has(r.row_no)?'checked':''} onclick="toggleChk(${r.row_no},this.checked)"></td><td class="c">${i+1}</td><td class="c" style="white-space:nowrap">${r.image_url?MESDB.imgBox(r.image_url,22):''}${window.dwgCell?dwgCell(r.part_no):''}</td><td>${esc(r.part_no)}</td><td>${esc(r.part_name)}</td><td class="c">${esc(r.material||'')}</td><td class="c">${esc(r.shape||'')}</td><td>${esc(SPECOF(r))}</td><td class="num">${fmt(r.thickness_dia)}</td><td class="num">${fmt(r.qty)}</td><td class="c">${r._new?'<span class="tag">미등록</span>':esc(r.registered_by||'')}</td><td class="c">${r._new?'':esc(r.registered_date||'')}</td><td class="c"><button class="btn" style="height:20px;padding:0 8px;font-size:11px" onclick="event.stopPropagation();editOpen(${r.row_no})" title="이 행 수정">✎ 수정</button></td></tr>`).join('')
   :'<tr><td colspan="13" class="c" style="height:120px;color:#8a97a2">등록된 품목이 없습니다. 엑셀에서 복사(Ctrl+C) 후 이 화면에서 붙여넣기(Ctrl+V) 하세요.</td></tr>';
  chkAll.checked=v.length>0&&v.every(r=>chk.has(r.row_no));
  countText.textContent=`${v.length}건`+(pend.length?` (미등록 ${pend.length})`:'')+(chk.size?` · 선택 ${chk.size}`:'');
@@ -196,6 +196,7 @@ async function loadJob(job){
   const rs=await MESDB.table('partlist_materials').select(`select=*&job_no=eq.${encodeURIComponent(curJob)}&order=row_no`);
   rs.sort((a,b)=>joSort(a.process_code,b.process_code)||(Number(a.row_no)||0)-(Number(b.row_no)||0));
   data.length=0;data.push(...rs);
+  await dwgLoad(curJob);   /* v351: 금형번호별 도면 PDF (도면대장) */
   [...chk].forEach(id=>{if(!rowById(id))chk.delete(id)});
   render();msg(`${curJob} 원재료 PartList ${rs.length}건`+(pend.length?` · 미등록 ${pend.length}건 — 체크 후 [▤ 등록]`:''));
  }catch(e){msg('조회 실패: '+String(e.message||e).slice(0,120))}
@@ -679,5 +680,122 @@ MES.go=async function(p){p=p||{};const job=String(p.job||'');if(!job)return;
  if(!r)return msg(job+' PartList 에서 부품 '+p.part+' 을(를) 찾지 못했습니다.');
  const tr=[...body.querySelectorAll('tr')].find(t=>(t.getAttribute('onclick')||'').includes('rowClick('+r.row_no+','));
  MESGO.hold(()=>[...body.querySelectorAll('tr')].find(t=>(t.getAttribute('onclick')||'').includes('rowClick('+r.row_no+',')));msg(`${job} · ${p.part} — 금형원가내역에서 이동했습니다.`)};
+</script>
+<script>
+/* v351: 금형번호별 도면 PDF — 여러 PDF(또는 ZIP)를 한 번에 올려 파일 이름 앞의 금형번호로 연결
+ *  저장: 비공개 저장소(mes-drawing) + 도면대장(drawings) 한 줄씩 — drawing_no = 「제번-파일이름」 (같은 파일을 다시 올리면 덮어씀)
+ *  표시: 📷 칸에 📄 (같은 금형번호 도면이 여러 장이면 📄2) — 누르면 도면이 새 창으로 열림 */
+(function(){
+const DWG=new Map();   /* part_no → [{drawing_no,drawing_name,file_url}] */
+const PART_RE=/^[A-Z]\d{2}[A-Z]$/;
+const stemOf=n=>String(n||'').split(/[\\/]/).pop().replace(/\.pdf$/i,'');
+const partOf=st=>{const p=st.split('_')[0].toUpperCase();return PART_RE.test(p)?p:''};
+const sheetOf=st=>{const m=/_A[0-4]_(\d+)$/i.exec(st);return m?Number(m[1]):1};
+const nameOf=st=>st.split('_').slice(1).filter(w=>!/^A[0-4]$/i.test(w)&&!/^\d+$/.test(w)).join(' ');
+const kb=n=>(n/1024).toFixed(0)+'KB';
+
+window.dwgLoad=async function(job){
+ DWG.clear();if(!job||!window.MESDB)return;
+ try{const rs=await MESDB.table('drawings').select(`select=drawing_no,drawing_name,part_no,file_url&job_no=eq.${encodeURIComponent(job)}&order=drawing_no`,{fresh:true});
+  (rs||[]).forEach(r=>{if(!r.part_no||!r.file_url)return;const k=String(r.part_no).toUpperCase();if(!DWG.has(k))DWG.set(k,[]);DWG.get(k).push(r)})}
+ catch(e){console.warn('drawings',e.message)}
+};
+window.dwgCell=function(pn){const a=DWG.get(String(pn||'').toUpperCase());if(!a||!a.length)return '';
+ return `<span class="dwgi" onclick="event.stopPropagation();dwgOpen('${esc(String(pn).toUpperCase())}',this)" title="${esc(a.map(x=>x.drawing_name||x.drawing_no).join('\n'))}\n— 누르면 도면 PDF 가 열립니다">PDF${a.length>1?'<sub>'+a.length+'</sub>':''}</span>`};
+window.dwgOpen=function(pn,el){const a=DWG.get(pn)||[];if(!a.length)return;
+ if(a.length===1)return MESDB.openRef(a[0].file_url,msg);
+ let m=document.getElementById('dwgMenu');if(!m){m=document.createElement('div');m.id='dwgMenu';document.body.appendChild(m);
+  document.addEventListener('mousedown',e=>{if(!m.contains(e.target))m.style.display='none'})}
+ m.innerHTML=a.map((x,i)=>`<button type="button" data-i="${i}">📄 ${esc(x.drawing_name||x.drawing_no)}</button>`).join('');
+ m.onclick=e=>{const b=e.target.closest('button');if(!b)return;m.style.display='none';MESDB.openRef(a[Number(b.dataset.i)].file_url,msg)};
+ const r=el.getBoundingClientRect();m.style.left=(r.left+window.scrollX)+'px';m.style.top=(r.bottom+window.scrollY+2)+'px';m.style.display='block'};
+
+window.dwgPickFiles=function(){
+ if(!curJobNo())return msg('제번을 먼저 선택하세요.');
+ if(!online())return msg('DB 미연결 상태에서는 도면을 올릴 수 없습니다.');
+ dwgFiles.click()};
+
+const lib=(src,test)=>test()?Promise.resolve():new Promise((ok,ng)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>ng(new Error('ZIP 모듈을 불러오지 못했습니다 (인터넷 연결 확인)'));document.head.appendChild(s)});
+let PLAN=[];
+window.dwgFilesIn=async function(list){
+ const job=curJobNo();if(!job)return msg('제번을 먼저 선택하세요.');
+ const files=[];
+ try{
+  for(const f of [...(list||[])]){
+   if(/\.zip$/i.test(f.name)){msg(`${f.name} 압축 푸는 중…`);
+    await lib('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',()=>window.JSZip);
+    const z=await JSZip.loadAsync(f);
+    for(const e of Object.values(z.files)){if(e.dir||!/\.pdf$/i.test(e.name)||/(^|\/)(__MACOSX|\.)/.test(e.name))continue;
+     const b=await e.async('blob');files.push(new File([b],e.name.split('/').pop(),{type:'application/pdf'}))}}
+   else if(/\.pdf$/i.test(f.name))files.push(f)}
+ }catch(e){return msg('파일 읽기 실패: '+String(e.message||e).slice(0,120))}
+ if(!files.length)return msg('PDF 파일이 없습니다. (.pdf 또는 PDF가 든 .zip 을 고르세요)');
+ const have=new Set(data.map(r=>String(r.part_no||'').toUpperCase()));
+ PLAN=files.map(f=>{const st=stemOf(f.name),pn=partOf(st);
+  return {f,st,pn,sheet:sheetOf(st),name:nameOf(st),inList:!!pn&&have.has(pn),dno:job+'-'+st,
+   old:pn&&(DWG.get(pn)||[]).some(x=>x.drawing_no===job+'-'+st),big:f.size>20*1024*1024}})
+  .sort((a,b)=>(b.inList-a.inList)||a.st.localeCompare(b.st));
+ const nIn=PLAN.filter(x=>x.inList).length,nOut=PLAN.length-nIn;
+ const covered=new Set(PLAN.filter(x=>x.inList).map(x=>x.pn)),miss=[...have].filter(p=>p&&!covered.has(p));
+ dwgShow(`<div class="dwgsum"><b>${esc(job)}</b> · PDF <b>${PLAN.length}</b>개 — 목록의 금형번호와 맞음 <b class="ok">${nIn}</b>개 (금형번호 ${covered.size}/${have.size}개)${nOut?` · 목록에 없음 <b class="out">${nOut}</b>개`:''}${miss.length?`<br><span class="out">PDF 없는 금형번호 ${miss.length}개: ${esc(miss.join(', '))}</span>`:''}</div>
+  <label class="dwgopt"><input type="checkbox" id="dwgAll" checked> 목록에 없는 파일(조립도 00_ASSY… 등)도 도면대장에 함께 등록 <small>(이 화면 칸에는 안 보이고, 도면관리 화면에서 볼 수 있음)</small></label>
+  <div class="dwgtbl"><table><thead><tr><th style="width:36px">No</th><th>파일 이름</th><th style="width:80px">금형번호</th><th style="width:48px">장</th><th style="width:70px">크기</th><th style="width:150px">상태</th></tr></thead><tbody>${
+   PLAN.map((x,i)=>`<tr class="${x.inList?'':'o'}"><td class="c">${i+1}</td><td>${esc(x.f.name)}</td><td class="c">${esc(x.pn||'-')}</td><td class="c">${x.sheet}</td><td class="num">${kb(x.f.size)}</td><td class="c st" id="dwgSt${i}">${x.big?'<span class="out">20MB 초과 — 건너뜀</span>':x.inList?(x.old?'다시 올림(덮어씀)':'연결'):'<span class="out">목록에 없음</span>'}</td></tr>`).join('')
+  }</tbody></table></div>`);
+ msg(`PDF ${PLAN.length}개를 확인하세요 — [⇪ 올리기] 를 누르면 등록됩니다.`);
+};
+
+function dwgShow(html){
+ let w=document.getElementById('dwgPop');
+ if(!w){w=document.createElement('div');w.id='dwgPop';w.innerHTML=`<div class="dwgbox"><div class="dwgh">📄 도면 PDF 일괄등록<button type="button" class="x" onclick="dwgClose()">×</button></div><div class="dwgb" id="dwgBody"></div>
+   <div class="dwgf"><span id="dwgMsg"></span><button type="button" class="btn" id="dwgGo" onclick="dwgRun()">⇪ 올리기</button><button type="button" class="btn" onclick="dwgClose()">닫기</button></div></div>`;document.body.appendChild(w)}
+ document.getElementById('dwgBody').innerHTML=html;document.getElementById('dwgMsg').textContent='';
+ const g=document.getElementById('dwgGo');g.disabled=false;g.style.display='';w.classList.add('on')}
+let RUNNING=false;
+window.dwgClose=function(){if(RUNNING&&!confirm('올리는 중입니다. 창을 닫아도 계속 올라갑니다. 닫을까요?'))return;document.getElementById('dwgPop').classList.remove('on')};
+
+window.dwgRun=async function(){
+ if(RUNNING)return;const job=curJobNo();if(!job)return;
+ const all=document.getElementById('dwgAll').checked;
+ const todo=PLAN.map((x,i)=>({...x,i})).filter(x=>!x.big&&(x.inList||all));
+ if(!todo.length)return document.getElementById('dwgMsg').textContent='올릴 파일이 없습니다.';
+ RUNNING=true;const go=document.getElementById('dwgGo');go.disabled=true;
+ const by=((typeof fBy!=='undefined'&&fBy.value)||'').trim()||null,dt=today(),bar=document.getElementById('dwgMsg');
+ const PN=new Map(data.map(r=>[String(r.part_no||'').toUpperCase(),r.part_name||'']));
+ let ok=0,ng=0;const rows=[];
+ const flush=async()=>{if(!rows.length)return;const b=rows.splice(0);await MESDB.table('drawings').upsert(b,'drawing_no')};
+ for(let k=0;k<todo.length;k++){const x=todo[k],st=document.getElementById('dwgSt'+x.i);
+  bar.textContent=`올리는 중… ${k+1} / ${todo.length}  (${x.f.name})`;if(st)st.textContent='올리는 중…';
+  try{
+   const ref=await MESDB.drawingUpload(x.f,{job,part:x.pn||'',dno:x.st});
+   rows.push({drawing_no:x.dno,drawing_name:x.st,job_no:job,part_no:x.pn||null,part_name:PN.get(x.pn)||x.name||null,
+    rev_date:dt,owner:by,drawing_status:'유효',file_url:ref,remark:'PartList 도면PDF 일괄등록'+(x.sheet>1?` (${x.sheet}장째)`:''),updated_at:new Date().toISOString()});
+   if(rows.length>=10)await flush();
+   ok++;if(st)st.innerHTML='<span class="ok">✔ 완료</span>';
+  }catch(e){ng++;if(st){st.innerHTML='<span class="out">✕ 실패</span>';st.title=String(e.message||e)}}
+ }
+ try{await flush()}catch(e){ng+=rows.length;bar.textContent='도면대장 기록 실패: '+String(e.message||e).slice(0,120)}
+ RUNNING=false;go.style.display='none';
+ await dwgLoad(job);render();try{MESDB.notify&&MESDB.notify(['drawings'])}catch(e){}
+ const t=`도면 PDF ${ok}개 등록${ng?` · 실패 ${ng}개 (상태 칸에 마우스를 올리면 이유)`:''} — 빨간 PDF 를 누르면 도면이 열립니다.`;
+ if(!/실패:/.test(bar.textContent))bar.textContent=t;msg(t);
+};
+const st=document.createElement('style');st.textContent=`
+.dwgi{display:inline-block;margin-left:3px;cursor:pointer;font:700 9.5px/14px Arial,sans-serif;color:#fff;background:#d93025;border-radius:2px;padding:0 3px;vertical-align:middle;letter-spacing:.2px}.dwgi:hover{background:#a8231b}.dwgi sub{font-size:8px;vertical-align:baseline;margin-left:1px;color:#ffe2df}
+#dwgMenu{position:absolute;z-index:9600;display:none;background:#fff;border:1px solid #8fa3b5;box-shadow:0 3px 10px rgba(0,0,0,.2);padding:3px 0;min-width:220px}
+#dwgMenu button{display:block;width:100%;text-align:left;border:0;background:none;padding:5px 10px;cursor:pointer;font:inherit}#dwgMenu button:hover{background:#edf6fd}
+#dwgPop{position:fixed;inset:0;z-index:9400;background:rgba(30,40,50,.45);display:none;align-items:center;justify-content:center}#dwgPop.on{display:flex}
+#dwgPop .dwgbox{width:min(860px,96vw);max-height:90vh;display:flex;flex-direction:column;background:#fff;border:1px solid #5f7080;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+#dwgPop .dwgh{height:32px;display:flex;align-items:center;padding:0 6px 0 12px;font-weight:700;color:#fff;background:linear-gradient(#5f7f9f,#3f5f7d)}
+#dwgPop .dwgh .x{margin-left:auto;width:26px;height:22px;border:1px solid #b04a4a;background:#c9484a;color:#fff;cursor:pointer}
+#dwgPop .dwgb{flex:1;min-height:0;display:flex;flex-direction:column;padding:10px;gap:8px}
+#dwgPop .dwgsum{line-height:1.7}#dwgPop .ok{color:#2e7d32}#dwgPop .out{color:#b26a00}
+#dwgPop .dwgopt{display:flex;gap:5px;align-items:center}#dwgPop .dwgopt small{color:#7c8993}
+#dwgPop .dwgtbl{flex:1;min-height:120px;overflow:auto;border:1px solid #c5d0d8}
+#dwgPop table{min-width:0;width:100%}#dwgPop th,#dwgPop td{height:24px}#dwgPop tr.o td{color:#8b98a3}
+#dwgPop .dwgf{display:flex;gap:6px;align-items:center;padding:8px 10px;border-top:1px solid #d5dde3;background:#f6f8fa}
+#dwgPop .dwgf span{flex:1;color:#1d5da3;font-weight:700}
+`;document.head.appendChild(st);
+})();
 </script>
 </body></html>
