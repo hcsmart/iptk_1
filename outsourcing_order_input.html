@@ -35,7 +35,6 @@ td.route{user-select:none;background:#fff!important}
 .panes>.box:nth-child(2) th:nth-child(6),.panes>.box:nth-child(2) td:nth-child(6){left:346px;box-shadow:1px 0 0 #c5ced6}
 td.pimg{padding:1px 2px!important;text-align:center}
 td.pimg .dwgi{display:inline-block;margin:0 1px;cursor:pointer;font:700 9.5px/14px Arial,sans-serif;color:#fff;background:#d93025;border-radius:2px;padding:0 3px;vertical-align:middle}td.pimg .dwgi:hover{background:#a8231b}td.pimg .dwgi sub{font-size:8px;vertical-align:baseline;margin-left:1px;color:#ffe2df}
-#dwgMenu{position:absolute;z-index:9600;display:none;background:#fff;border:1px solid #8fa3b5;box-shadow:0 3px 10px rgba(0,0,0,.2);padding:3px 0;min-width:220px}#dwgMenu button{display:block;width:100%;text-align:left;border:0;background:none;padding:5px 10px;cursor:pointer;font:inherit}#dwgMenu button:hover{background:#edf6fd}
 td.pimg img{width:44px;height:40px;object-fit:contain;border:1px solid #d3dbe2;background:#fff;cursor:zoom-in;vertical-align:middle}
 td.route.s-next{background:#8fdc6b!important;color:#20461a;font-weight:700;cursor:pointer}
 td.route.s-next .st{background:#2e7d32;color:#fff}
@@ -162,7 +161,7 @@ tr.rdone td{color:#8b98a3}
     <span class="label">업체</span><input id="venF" class="field" style="width:130px" placeholder="업체 입력/선택" list="venDL" autocomplete="off"><datalist id="venDL"></datalist>
     <span class="label">최종완료</span><select id="doneF" class="field" onchange="renderRoutes()" title="전 공정이 입고된 줄(이전 차수 포함)을 숨기거나 보입니다"><option value="x">제외</option><option value="i">포함</option></select>
     <button class="btn" onclick="doQuery()" title="제번·품번·관리제번을 비우고 누르면 전체 부품, 업체를 넣으면 그 업체에 발주된 부품만">⌕ 조회</button><span id="vfTag" class="vftag" style="display:none" onclick="vfClear()" title="눌러서 업체 필터 해제"></span>
-    <button class="btn" id="btnRefresh" onclick="refreshAll()" title="DB에서 제번·부품별 가공공정을 다시 불러옵니다 (다른 화면의 발주·입고 반영)">⟳ 새로고침</button><button class="btn" id="btnXlOut" onclick="MESXLR.export()" title="보이는 부품별 가공공정을 부품×공정 한 줄씩 엑셀로 내려받습니다 — 기존 발주·입고·사내실적이 채워져 있고, ▶ 칸을 고치거나 채워 [엑셀 실적등록]으로 올리면 한 번에 반영됩니다">▦ 엑셀내보내기</button><button class="btn" onclick="xlrFile.click()" title="[엑셀내보내기]로 받아 ▶ 칸을 고친 파일을 올립니다 — 미리보기에서 확인 후 등록">⇪ 엑셀 실적등록</button><input type="file" id="xlrFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="MESXLR.load(this.files[0]);this.value=''"><button class="btn" onclick="cycOpen()" title="이미 가공 진행 중인 부품을 공정1부터 다시 — 기존 발주·입고 이력은 이전 차수로 남고 새 차수(빈 공정 칸)로 시작합니다. 부품 행을 체크하면 그 부품만 고릅니다" style="color:#7a4a12;font-weight:700">↻ 신규진행</button><button class="btn" onclick="cycManage()" title="차수 되돌리기(잘못 누른 신규진행 취소) · 차수 종료(미입고 발주를 지우고 닫기)">⚙ 차수 관리</button><button class="btn" onclick="purgeOpen()" title="잘못 등록된 품번·연습용 진행의 외주가공 발주를 통째로 취소(삭제)합니다 — 발주·입고·입고확정·차수 기록을 지우고 미발주 상태로 되돌립니다. 부품 행을 체크해 두면 그 부품이 미리 골라집니다" style="color:#a03235;font-weight:700">✕ 진행삭제</button><span class="ctxhint" title="공정 칸에서 마우스 오른쪽 버튼을 누르면 상태에 맞는 처리 창이 열립니다 (더블클릭도 같은 창).&#10;입고·완료 칸에서는 회차별 입고취소 · 입고 전체취소 · 확정취소, 같은 업체 발주건 함께 입고(다중입고)가 됩니다.&#10;연속 공정을 한 업체에 맡길 때는 마지막 공정 칸을 우클릭하면 그 사이 공정이 한꺼번에 발주됩니다.&#10;부품 그림 칸을 누르면 그림보드가 열려 공정 순서 끌어 바꾸기, 기준공정 불러오기, 가공계획 적용을 할 수 있습니다.">※ <b style="color:#7a4a12">외주 칸</b> 우클릭 → 발주 · 입고 · 확정 · 묶음 · <b>취소</b> <b>|</b> <b style="color:#8a6d3b">사내 칸</b> 우클릭 → <b>가공완료 등록</b> <b>|</b> 부품 행(조·그림·부품코드·부품명·소요수) 클릭 → <b>그림보드(공정 순서·기준공정·QR)</b></span>
+    <button class="btn" id="btnRefresh" onclick="refreshAll()" title="DB에서 제번·부품별 가공공정을 다시 불러옵니다 (다른 화면의 발주·입고 반영)">⟳ 새로고침</button><button class="btn" id="btnXlOut" onclick="MESXLR.export()" title="보이는 부품별 가공공정을 부품×공정 한 줄씩 엑셀로 내려받습니다 — 기존 발주·입고·사내실적이 채워져 있고, ▶ 칸을 고치거나 채워 [엑셀 실적등록]으로 올리면 한 번에 반영됩니다">▦ 엑셀내보내기</button><button class="btn" onclick="xlrFile.click()" title="[엑셀내보내기]로 받아 ▶ 칸을 고친 파일을 올립니다 — 미리보기에서 확인 후 등록">⇪ 엑셀 실적등록</button><input type="file" id="xlrFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="MESXLR.load(this.files[0]);this.value=''"><button class="btn" onclick="cycOpen()" title="이미 가공 진행 중인 부품을 공정1부터 다시 — 기존 발주·입고 이력은 이전 차수로 남고 새 차수(빈 공정 칸)로 시작합니다. 부품 행을 체크하면 그 부품만 고릅니다" style="color:#7a4a12;font-weight:700">↻ 신규진행</button><button class="btn" onclick="cycManage()" title="차수 되돌리기(잘못 누른 신규진행 취소) · 차수 종료(미입고 발주를 지우고 닫기)">⚙ 차수 관리</button><button class="btn" onclick="purgeOpen()" title="잘못 등록된 품번·연습용 진행의 외주가공 발주를 통째로 취소(삭제)합니다 — 발주·입고·입고확정·차수 기록을 지우고 미발주 상태로 되돌립니다. 부품 행을 체크해 두면 그 부품이 미리 골라집니다" style="color:#a03235;font-weight:700">✕ 진행삭제</button><button class="btn" onclick="dwgDelPicked()" title="체크한 부품의 도면 PDF 연결을 지웁니다 — 지울 도면을 고르는 창이 뜹니다. 한 장만 지우려면 그림 칸의 빨간 PDF 를 우클릭">🗑 도면PDF삭제</button><span class="ctxhint" title="공정 칸에서 마우스 오른쪽 버튼을 누르면 상태에 맞는 처리 창이 열립니다 (더블클릭도 같은 창).&#10;입고·완료 칸에서는 회차별 입고취소 · 입고 전체취소 · 확정취소, 같은 업체 발주건 함께 입고(다중입고)가 됩니다.&#10;연속 공정을 한 업체에 맡길 때는 마지막 공정 칸을 우클릭하면 그 사이 공정이 한꺼번에 발주됩니다.&#10;부품 그림 칸을 누르면 그림보드가 열려 공정 순서 끌어 바꾸기, 기준공정 불러오기, 가공계획 적용을 할 수 있습니다.">※ <b style="color:#7a4a12">외주 칸</b> 우클릭 → 발주 · 입고 · 확정 · 묶음 · <b>취소</b> <b>|</b> <b style="color:#8a6d3b">사내 칸</b> 우클릭 → <b>가공완료 등록</b> <b>|</b> 부품 행(조·그림·부품코드·부품명·소요수) 클릭 → <b>그림보드(공정 순서·기준공정·QR)</b></span>
   </section>
   <section class="panes">
     <div class="box"><div class="box-title">제번리스트</div><div class="tablewrap"><table id="jobListTable">
@@ -602,14 +601,26 @@ function useJob(job,sel){
 const DWG_COLS='job_no,part_no,drawing_no,drawing_name,file_url',DWG_Q='&part_no=not.is.null&file_url=not.is.null&order=drawing_no';
 function dwgGroup(rows){const m=new Map();(rows||[]).forEach(x=>{const j=String(x.job_no),o=m.get(j)||{};(o[x.part_no]=o[x.part_no]||[]).push(x);m.set(j,o)});return m}
 function dwgBadge(pn){const a=PDWG[pn];if(!a||!a.length)return '';
- return `<span class="dwgi" onclick="event.stopPropagation();dwgOpen('${_esc(pn)}',this)" title="${_esc(a.map(x=>x.drawing_name||x.drawing_no).join('\n'))}\n— 누르면 도면 PDF 가 열립니다">PDF${a.length>1?'<sub>'+a.length+'</sub>':''}</span>`}
+ return `<span class="dwgi" onclick="event.stopPropagation();dwgOpen('${_esc(pn)}',this)" oncontextmenu="event.preventDefault();event.stopPropagation();dwgMenu('${_esc(pn)}',this)" title="${_esc(a.map(x=>x.drawing_name||x.drawing_no).join('\n'))}\n— 누르면 도면 PDF 가 열립니다 · 우클릭 = 열기/삭제">PDF${a.length>1?'<sub>'+a.length+'</sub>':''}</span>`}
+/* v355: 지운 도면을 화면 목록에서 빼고 다시 그린다 (PDWG 는 제번별 자료 s.pdwg 와 같은 객체) */
+function dwgAfter(done){const d=new Set(done||[]);
+ for(const k of Object.keys(PDWG)){PDWG[k]=PDWG[k].filter(x=>!d.has(x.drawing_no));if(!PDWG[k].length)delete PDWG[k]}
+ try{renderRoutes()}catch(e){}}
 function dwgOpen(pn,el){const a=PDWG[pn]||[];if(!a.length)return;
  if(a.length===1)return MESDB.openRef(a[0].file_url,msg);
- let m=document.getElementById('dwgMenu');if(!m){m=document.createElement('div');m.id='dwgMenu';document.body.appendChild(m);
-  document.addEventListener('mousedown',e=>{if(!m.contains(e.target))m.style.display='none'})}
- m.innerHTML=a.map((x,i)=>`<button type="button" data-i="${i}">📄 ${_esc(x.drawing_name||x.drawing_no)}</button>`).join('');
- m.onclick=e=>{const b=e.target.closest('button');if(!b)return;m.style.display='none';MESDB.openRef(a[Number(b.dataset.i)].file_url,msg)};
- const r=el.getBoundingClientRect();m.style.left=(r.left+window.scrollX)+'px';m.style.top=(r.bottom+window.scrollY+2)+'px';m.style.display='block'}
+ MESDWG.menu(el,a,dwgAfter)}
+/* v355: PDF 표시 우클릭 → 장마다 [열기] [✕ 삭제] */
+function dwgMenu(pn,el){const a=PDWG[pn]||[];if(a.length)MESDWG.menu(el,a,dwgAfter)}
+/* v355: 체크한 부품의 도면 PDF 삭제 */
+async function dwgDelPicked(){
+ if(!_online())return msg('DB 미연결 — 도면 PDF 삭제는 DB 연결 상태에서만 됩니다.');
+ const parts=[...new Set([...PICK.keys()].map(k=>ROUTES[Number(k)]).filter(Boolean).map(r=>r.part))];
+ if(!parts.length)return msg('도면 PDF 를 지울 부품 행을 체크하세요. (한 장만 지우려면 빨간 PDF 를 우클릭)');
+ const list=parts.flatMap(pn=>PDWG[pn]||[]);
+ if(!list.length)return msg('체크한 부품에 등록된 도면 PDF 가 없습니다.');
+ const done=await MESDWG.delDialog(list,'도면 PDF 삭제 — 체크한 부품 '+parts.length+'개');
+ if(done&&done.length){dwgAfter(done);msg(`도면 PDF ${done.length}장을 지웠습니다.`)}
+}
 async function qMany(table,sel,jobs,extra){
  const out=[];
  for(let i=0;i<jobs.length;i+=40){
@@ -1858,7 +1869,7 @@ window.MES={search,save,exportCsv,setMessage:msg,reload:refreshAll};
 </script>
 <div id="ctxMask" onclick="ctxClose()"></div>
 <div id="ctxPop"><div class="ch" id="ctxHead"><span id="ctxTitle"></span><button class="x" onclick="ctxClose()">✕</button></div><div class="cb" id="ctxBody"></div><div class="cf" id="ctxFoot"></div></div>
-<script src="mes_sample.js?v=169"></script><script src="mes_scene.js?v=92"></script><script src="mes_demo.js?v=92"></script><script src="mes_db.js?v=196"></script>
+<script src="mes_sample.js?v=169"></script><script src="mes_scene.js?v=92"></script><script src="mes_demo.js?v=92"></script><script src="mes_db.js?v=196"></script><script src="mes_dwg.js?v=355"></script>
 <script>
 /* v39: JOBS/ROUTES 는 page_state 스냅샷이 아니라 실데이터에서 매번 로드한다.
    (스냅샷에 갇혀 신규 수주가 안 뜨던 문제) */
