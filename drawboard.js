@@ -1,4 +1,4 @@
-/* drawboard.js (v260: 가공계획 적용 결과 회신·확인창 이 창에서 · v221: 적용 공정 1열·나머지 3열 · v220: 공정 목록 3열 · v219: 확인란에 업체명(5자)·사내 표시, 공정명 한 줄 · v217: 그림에 박힌 머리글 자동 잘라내기 · v215: 공정 순서 띠 → 격자(확인란) + QR · v214: 이전·다음 품번은 열 때 받은 부품 리스트 순서로 · v213: ◀ 이전 · 다음 ▶ 품번 — 가공계획이 등록된 부품은 등록된 순서로, 아니면 띠 공정 그대로 / v212: 오른쪽 목록 끌어서 순서·해제 · 기준공정 불러오기 / v211: 공정 목록 — 선택한 공정 위 · 구분선 · 나머지 가나다 / v210: 그림 등록 / v209: 끌어서 순서) — 부품 그림보드 화면 스크립트
+/* drawboard.js (v356: 도면 PDF 를 그림 칸에 표시 · v260: 가공계획 적용 결과 회신·확인창 이 창에서 · v221: 적용 공정 1열·나머지 3열 · v220: 공정 목록 3열 · v219: 확인란에 업체명(5자)·사내 표시, 공정명 한 줄 · v217: 그림에 박힌 머리글 자동 잘라내기 · v215: 공정 순서 띠 → 격자(확인란) + QR · v214: 이전·다음 품번은 열 때 받은 부품 리스트 순서로 · v213: ◀ 이전 · 다음 ▶ 품번 — 가공계획이 등록된 부품은 등록된 순서로, 아니면 띠 공정 그대로 / v212: 오른쪽 목록 끌어서 순서·해제 · 기준공정 불러오기 / v211: 공정 목록 — 선택한 공정 위 · 구분선 · 나머지 가나다 / v210: 그림 등록 / v209: 끌어서 순서) — 부품 그림보드 화면 스크립트
  * 사내외가공 발주(mes_drawboard.js)가 sessionStorage 'mes_drawboard' 에 넣어 준 자료를 읽어 그린다.
  * 문서를 스크립트로 써 넣지 않고(document.write 없음) DOM 만 만든다. */
 (function(){
@@ -41,15 +41,44 @@
    const top=Math.min(h-1,hit+Math.round(6*K));
    const o2=document.createElement('canvas');o2.width=w;o2.height=h-top;o2.getContext('2d').drawImage(im,0,top,w,h-top,0,0,w,h-top);
    return o2.toDataURL('image/png')}catch(e){return null}}
- function setFig(url){fig.textContent='';
-  if(url){const im=el('img');im.alt=o.part||'';im.crossOrigin='anonymous';
+ let FIGSRC='';   /* v356: 지금 그림 칸에 보이는 그림 (이미지만 보기에 사용) */
+ function setFig(url,noTrim){fig.textContent='';FIGSRC=url||'';
+  if(url){const im=el('img');im.alt=o.part||'';im.crossOrigin='anonymous';if(noTrim)im.__trim=1;
    im.addEventListener('load',()=>{if(!im.__trim){im.__trim=1;const t=trimHeader(im);if(t){im.src=t;return}}if(!ORI_SET)setOri(bestOri(im.naturalWidth,im.naturalHeight))});
    im.addEventListener('error',()=>{if(im.crossOrigin){im.crossOrigin=null;im.__trim=1;im.src=url}});
    im.src=url;fig.appendChild(im)}
   else{const n=el('div','none');n.appendChild(el('div',null,'PartList 에 등록된 부품 그림이 없습니다.'));
    const b=el('button','addpic','📷 그림 등록 (캡쳐·이미지·PDF)');b.type='button';b.addEventListener('click',picOpen);n.appendChild(b);
    n.appendChild(el('small',null,'여기서 등록하면 PartList 부품 그림에도 같이 저장됩니다.'));fig.appendChild(n)}}
- setFig(o.image);
+ /* v356: 도면 PDF — 금형번호에 연결된 PDF(도면대장) 1쪽을 그림으로 그려 그림 칸에 보여 준다.
+  *  여러 장이면 오른쪽 위 [1장][2장] (+ 등록 그림) 으로 고른다. PDF 가 없으면 종전처럼 PartList 부품 그림.
+  *  비공개 저장소라 열람 주소(서명 URL)는 이 창을 연 화면(사내외가공 발주)의 로그인으로 받는다. */
+ const PDFJS='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',PDFW='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+ const PNG=new Map();let SHEET=0,FIGSEQ=0;
+ const lib=(src,test)=>test()?Promise.resolve():new Promise((ok,ng)=>{const t=el('script');t.src=src;t.onload=ok;t.onerror=()=>ng(new Error('PDF 모듈을 불러오지 못했습니다 (인터넷 연결 확인)'));document.head.appendChild(t)});
+ async function pdfPng(ref){
+  if(PNG.has(ref))return PNG.get(ref);
+  let op=null;try{op=window.opener&&window.opener.MESDB?window.opener:null}catch(e){}
+  if(!op||!op.MESDB.signedUrl)throw new Error('사내외가공 발주 화면이 닫혀 있어 도면을 불러올 수 없습니다. 그 화면에서 다시 여세요.');
+  const url=await op.MESDB.signedUrl(ref,600);
+  await lib(PDFJS,()=>window.pdfjsLib);window.pdfjsLib.GlobalWorkerOptions.workerSrc=PDFW;
+  const doc=await window.pdfjsLib.getDocument({url}).promise;const pg=await doc.getPage(1);
+  const v1=pg.getViewport({scale:1}),k=Math.min(5,3200/Math.max(v1.width,v1.height)),vp=pg.getViewport({scale:k});
+  const c=el('canvas');c.width=Math.round(vp.width);c.height=Math.round(vp.height);const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);
+  await pg.render({canvasContext:x,viewport:vp}).promise;try{doc.destroy()}catch(e){}
+  const d=c.toDataURL('image/png');PNG.set(ref,d);return d}
+ function sheetBar(){const P=o.pdfs||[],n=P.length+(o.image&&P.length?1:0);if(n<2)return;
+  const bar=el('div','sheets');bar.setAttribute('data-noprint','');
+  P.forEach((p,i)=>{const b=el('button',i===SHEET?'on':null,(i+1)+'장');b.type='button';b.title=p.name||'';b.addEventListener('click',()=>{SHEET=i;showFig()});bar.appendChild(b)});
+  if(o.image){const b=el('button',SHEET>=P.length?'on':null,'등록 그림');b.type='button';b.addEventListener('click',()=>{SHEET=P.length;showFig()});bar.appendChild(b)}
+  fig.appendChild(bar)}
+ function showFig(){const P=o.pdfs||[],my=++FIGSEQ;
+  if(!P.length||SHEET>=P.length){setFig(o.image);sheetBar();return}
+  const p=P[SHEET];fig.textContent='';FIGSRC='';fig.appendChild(el('div','wait','도면 PDF 불러오는 중… '+(p.name||'')));sheetBar();
+  pdfPng(p.ref).then(d=>{if(my!==FIGSEQ)return;setFig(d,true);sheetBar()})
+   .catch(e=>{if(my!==FIGSEQ)return;if(o.image){setFig(o.image);sheetBar();return}
+    fig.textContent='';fig.appendChild(el('div','wait err','도면 PDF 를 열지 못했습니다: '+String(e.message||e).slice(0,120)));sheetBar()})}
+ showFig();
  /* 용지 방향: 세로 도면이면 자동 세로. @page 는 스타일을 바꿔 넣어 인쇄 방향을 맞춘다 */
  let ORI='landscape',ORI_SET=false;const pageSt=el('style');document.head.appendChild(pageSt);
  /* 도면 화소 비율로 가로·세로 중 도면이 더 크게 실리는 쪽을 고른다 (머리글 약 48mm 제외한 도면 영역: 가로 285×150, 세로 198×237) */
@@ -227,7 +256,7 @@
    if(!t){t={idx:STEPS.length,code:c,name:ps.name||c,inhouse:!!ps.inhouse,vendor:'',state:'',plan:[]};STEPS.push(t);makeBtn(t)}
    t.plan.push(k+1);if(!t.vendor)t.vendor=ps.vendor||'';if(!t.state)t.state=ps.state||''});
   PLANSEQ=[];PLAN.forEach(ps=>{const c=String(ps.code||'').trim();const t=STEPS.find(x=>x.code===c||x.code.toUpperCase()===c.toUpperCase());if(t&&!PLANSEQ.includes(t.idx))PLANSEQ.push(t.idx)});
-  renderMeta();ORI_SET=false;setFig(o.image);ovImg=null;try{$('ovB').querySelectorAll('img').forEach(x=>x.remove())}catch(e){}
+  renderMeta();ORI_SET=false;SHEET=0;showFig();ovImg=null;try{$('ovB').querySelectorAll('img').forEach(x=>x.remove())}catch(e){}
   $('sideTitle').textContent='가공공정 전체 ('+STEPS.length+') · 계획 '+PLANSEQ.length;
   let kept=true;
   if(o.saved&&PLAN.length){kept=false;SEQ=PLANSEQ.slice();   /* 등록된 가공계획 → 등록된 순서 · 사내 표시 그대로 */
@@ -297,8 +326,9 @@
  const ov=$('ov'),ovB=$('ovB');let ovImg=null;
  function ovMode(real){ovB.classList.toggle('real',!!real)}
  $('bImg').addEventListener('click',()=>{
-  if(!o.image)return alert('PartList 에 등록된 부품 그림이 없습니다.');
-  if(!ovImg){ovImg=el('img');ovImg.alt=o.part||'';ovImg.addEventListener('load',()=>{$('ovS').textContent=' · '+ovImg.naturalWidth+' × '+ovImg.naturalHeight+' px'});ovImg.src=o.image;ovImg.addEventListener('click',()=>ovMode(!ovB.classList.contains('real')));ovB.appendChild(ovImg)}
+  if(!FIGSRC)return alert('보여 줄 그림이 없습니다. (부품 그림·도면 PDF 없음)');
+  if(ovImg&&ovImg.dataset.src!==FIGSRC){ovImg.remove();ovImg=null}   /* v356: 장을 바꿨으면 새로 */
+  if(!ovImg){ovImg=el('img');ovImg.alt=o.part||'';ovImg.dataset.src=FIGSRC;ovImg.addEventListener('load',()=>{$('ovS').textContent=' · '+ovImg.naturalWidth+' × '+ovImg.naturalHeight+' px'});ovImg.src=FIGSRC;ovImg.addEventListener('click',()=>ovMode(!ovB.classList.contains('real')));ovB.appendChild(ovImg)}
   $('ovT').textContent='원본 이미지 — '+(o.part||'')+' '+(o.name||'');ovMode(false);ov.classList.add('show')});
  $('ovFit').addEventListener('click',()=>ovMode(false));$('ovReal').addEventListener('click',()=>ovMode(true));
  $('ovClose').addEventListener('click',()=>ov.classList.remove('show'));
