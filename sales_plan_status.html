@@ -373,4 +373,66 @@ MESDB.master({page:"sales_plan_status:plans",table:"sales_plans",pk:"row_no",map
 (function(){const tb=document.querySelector('tbody');if(!tb||typeof renderTotal!=='function')return;new MutationObserver(()=>renderTotal()).observe(tb,{childList:true});renderTotal()})();
 </script>
 <script src="mes_ctx.js?v=306"></script>
+<script src="mes_print.js?v=348"></script>
+<script>
+/* v348: 출력 — 인쇄·PDF 는 화면 그대로(스크롤에 가려진 행 포함), Excel 은 화면 표와 같은 양식 (제번당 요구/목표/가능 3줄, 병합·색) */
+(function(){
+async function excel(ExcelJS,X){
+ const wb=new ExcelJS.Workbook();wb.creator='IPTK MES';
+ const ws=wb.addWorksheet('제작진행현황',{views:[{state:'frozen',xSplit:6,ySplit:4,showGridLines:false}]});
+ const WID=[5,14,24,12,9,6,9,11,11,11,11,11,11,34,24,26,14,14,9];
+ ws.columns=WID.map(w=>({width:w}));
+ const C=X.C,H={b:true,fill:C.head,al:'center'};
+ X.merge(ws,1,1,1,19,'제작진행현황',{b:true,size:16,border:false,color:'1D3F5F'});ws.getRow(1).height=28;
+ const flt=[q_job.value.trim()&&'관리제번 "'+q_job.value.trim()+'"',q_model.value.trim()&&'품번 "'+q_model.value.trim()+'"',(document.getElementById('q_late')||{}).checked&&'지연만',(document.getElementById('q_hideDone')||{}).checked&&'완료 숨김'].filter(Boolean).join(' · ');
+ X.merge(ws,2,1,2,12,'조건 : '+(flt||'전체')+`   ·   관리제번 ${view.length}건`,{border:false,color:'555555'});
+ X.merge(ws,2,13,2,19,'출력 : '+X.stamp(),{border:false,al:'right',color:'666666'});
+ for(let c=1;c<=19;c++){ws.getCell(1,c).border={};ws.getCell(2,c).border={}}
+ const top=['NO','관리제번','도번 · 품명 · 품번','제품형상','제작구분','조수'],tail=['진척현황','설계처\n제작처·양산처','특기사항','수주가','목표가','이익률'];
+ top.forEach((t,i)=>X.merge(ws,3,i+1,4,i+1,t,H));
+ X.merge(ws,3,7,3,13,'금형제작 EVENT',{b:true,fill:'B9D2E6',al:'center'});
+ ['구분','접수','설계','가공','조립','초품','완료'].forEach((t,i)=>X.put(ws,ws.getCell(4,7+i).address,t,H));
+ tail.forEach((t,i)=>X.merge(ws,3,14+i,4,14+i,t,H));
+ ws.getRow(3).height=20;ws.getRow(4).height=20;
+ let r=5;const NF='#,##0';
+ for(let i=0;i<view.length;i++){
+  const g=view[i],pl=planOf(g.job_no)||{},lt=lateOf(pl);
+  let L=pl.progress_log;if(typeof L==='string'){try{L=JSON.parse(L)}catch(e){L=[]}}L=Array.isArray(L)?L:[];
+  const sub=g.label&&g.label!==g.base?g.label.slice(g.base.length).trim():'';
+  X.merge(ws,r,1,r+2,1,i+1,{al:'center'});
+  X.merge(ws,r,2,r+2,2,[g.base||g.job_no,sub,lt?`지연 +${lt}일`:''].filter(Boolean).join('\n'),{b:true,al:'center',fill:lt?C.late:undefined});
+  X.merge(ws,r,3,r+2,3,[pl.drawing_no,pl.product_name||g.item_name,pl.model,pl.customer_contact,[pl.material_spec,pl.size_spec].filter(Boolean).join(' · ')].filter(Boolean).join('\n'),{});
+  X.merge(ws,r,4,r+2,4,'',{al:'center'});
+  X.merge(ws,r,5,r+2,5,pl.make_type||'',{al:'center'});
+  X.merge(ws,r,6,r+2,6,X.num(pl.process_set_qty??g.process_set_qty??''),{al:'center'});
+  [['요구일정','req',k=>pl['req_'+k+'_date']],['목표일정','goal',(k,gk)=>pl[gk]],['가능일정','can',k=>pl['can_'+k+'_date']]].forEach(([lab,cls,get],j)=>{
+   const goal=cls==='goal';X.put(ws,ws.getCell(r+j,7).address,lab,{b:true,al:'center',fill:goal?C.goalHead:C.label,color:goal?'1D5DA3':undefined});
+   EV.forEach(([k,gk],m)=>{const v=get(k,gk),gv=pl[gk];let f=goal?C.goal:undefined;
+    if(cls==='can'&&v&&gv)f=v>gv?C.late:(v<gv?C.early:f);
+    X.put(ws,ws.getCell(r+j,8+m).address,MDT(v),{al:'center',b:goal||(cls==='can'&&v&&gv&&v>gv),fill:f})});
+   ws.getRow(r+j).height=Math.max(20,Math.ceil(Math.max(L.length,3)/3)*15)});
+  X.merge(ws,r,14,r+2,14,L.map(e=>'● '+MDT(e.d)+' '+e.t).join('\n'),{});
+  X.merge(ws,r,15,r+2,15,[pl.design_partner&&'설계처 : '+pl.design_partner,pl.maker_name&&'제작처 : '+pl.maker_name,'양산처 : '+(pl.mass_vendor||'미확정')].filter(Boolean).join('\n'),{});
+  X.merge(ws,r,16,r+2,16,pl.remark||'',{});
+  X.merge(ws,r,17,r+2,17,g.order_price==null?'':Number(g.order_price),{al:'right',num:NF});
+  X.merge(ws,r,18,r+2,18,g.target_price==null?'':Number(g.target_price),{al:'right',num:NF});
+  X.merge(ws,r,19,r+2,19,g.profit_rate_pct==null||g.profit_rate_pct===''?'':Number(g.profit_rate_pct),{al:'right',num:'0.0'});
+  if(pl.image_url){const im=await X.image(wb,window.MESDB&&MESDB.thumbUrl?MESDB.thumbUrl(pl.image_url):pl.image_url,160);
+   if(im){const hh=Math.min(56,im.h),ww=Math.min(80,im.w*hh/im.h);ws.addImage(im.id,{tl:{col:3+Math.max(0,(90-ww)/2)/90,row:r-1+0.15},ext:{width:ww,height:ww*im.h/im.w}})}}
+  r+=3;
+ }
+ if(!view.length){X.merge(ws,r,1,r,19,'조회된 자료가 없습니다.',{al:'center',color:'8A97A2'});r++}
+ X.merge(ws,r,1,r,19,(document.getElementById('totline')||{}).textContent||'',{b:true,al:'center',fill:C.total});ws.getRow(r).height=22;
+ X.page(ws,{paperSize:8});ws.pageSetup.printTitlesRow='3:4';ws.pageSetup.printArea=`A1:S${r}`;
+ return wb;
+}
+(function(){const f=document.querySelector('.filt'),g=f&&f.querySelector('.f2');if(f){f.style.display='flex';f.style.alignItems='center';f.style.gap='12px'}if(g)g.style.flex='1'})();
+MESPRINT.mount({where:'.filt',capture:()=>document.querySelector('.screen'),expand:'.gridbox',hide:['.foot','.mask'],breaks:'tr.g1,tfoot tr',
+ title:()=>'제작진행현황  ·  관리제번 '+view.length+'건',
+ name:ext=>`제작진행현황_${MESPRINT.stamp().slice(0,10).replace(/-/g,'')}.${ext}`,
+ beforeSnap:()=>{try{pick(-1)}catch(e){}try{freezeCols()}catch(e){}},
+ check:()=>{if(!view.length)msg('조회된 관리제번이 없습니다 — 빈 표로 출력합니다.')},
+ excel});
+})();
+</script>
 </body></html>

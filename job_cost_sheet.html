@@ -49,6 +49,21 @@ tfoot tr.tgt td{background:#fff8e1!important;color:#5d4a00;font-weight:400;heigh
 tfoot tr.tgt td b{color:#7a5c00}tfoot tr.tgt .bar{display:inline-block;vertical-align:middle;width:140px;height:11px;border:1px solid #c9b36a;background:#fff;border-radius:2px;overflow:hidden;margin:0 6px}
 tfoot tr.tgt .bar i{display:block;height:100%;background:#f0b429}tfoot tr.tgt .bar i.over{background:#d9534f}
 tfoot tr.tgt .ok{color:#2e7d32;font-weight:700}tfoot tr.tgt .over{color:#c62828;font-weight:700}
+/* v349: 목표 대비 — 한 줄 나열 대신 [목표]·[실적]·[결과] 세 묶음, 항목명은 위 작게 · 금액은 아래 크게 */
+tfoot tr.tgt td{line-height:1.3!important;padding:5px 8px!important}
+.tg{display:flex;flex-wrap:wrap;gap:6px;align-items:stretch}
+.tg .g{display:flex;align-items:center;gap:0;border:1px solid #e6d28f;background:#fffdf3;border-radius:4px;padding:3px 4px}
+.tg .h{writing-mode:horizontal-tb;font-weight:700;color:#fff;background:#b58a00;border-radius:3px;padding:2px 7px;margin-right:6px;font-size:11.5px;white-space:nowrap}
+.tg .g.act .h{background:#2f75b5}.tg .g.res .h{background:#4b5c6a}
+.tg .k{display:flex;flex-direction:column;align-items:flex-end;padding:0 9px;border-left:1px dotted #e0cf95;white-space:nowrap}
+.tg .h+.k{border-left:0}
+.tg .k small{font-size:10.5px;color:#8a7a3a;font-weight:400}
+.tg .k b{font-size:13px;color:#3f3000!important;font-weight:700;min-width:0!important}
+.tg .k.sum b{color:#7a2e00!important}.tg .k.sum{background:#fff1c2;border-radius:3px}
+.tg .op{color:#a08b46;font-weight:700;padding:0 1px;align-self:flex-end;margin-bottom:1px}
+.tg .k.overk b{color:#c62828!important}.tg .k b.ok{color:#2e7d32!important}.tg .k b.over{color:#c62828!important}
+.tg .bar{display:inline-block;vertical-align:middle;width:110px!important;height:9px!important;margin:0 0 0 6px!important}
+.tg .na{color:#9aa5ad;font-weight:400;font-size:11px}
 tfoot tr td{bottom:var(--sb,0px)}   /* v343: 바닥 고정 줄이 3개 — 각 줄의 아래 간격은 스크립트가 계산 */
 /* v196: 더블클릭 이동 */
 #body td.go{cursor:pointer}#body td.go:hover{box-shadow:inset 0 0 0 1px #2f75b5}
@@ -255,14 +270,22 @@ function targetHtml(cost,cols){
  const t=tgtCalc(cost);if(!t)return '';const P=t.P;
  const cls=t.over?'over':(t.pct>=90?'ok':''),bar=Math.min(100,Math.round(t.pct));
  const prof=P.profit||P.profitEst||0;
- const mg=t.mgT?`관리비(목표) <b>${F(t.mgT)}</b>${t.mp?` <span style="color:#8a7a3a">(수주가의 ${+t.mp.toFixed(2)}%)</span>`:''}`
-  :`관리비(목표) <span style="color:#9aa5ad">미저장 — 제작계획을 다시 저장하면 표시됩니다</span>`;
- const ma=t.mp?`관리비(실적) <b>${F(t.mgA)}</b> <span style="color:#8a7a3a">(총원가의 ${+t.mp.toFixed(2)}%)</span>`:`관리비(실적) <span style="color:#9aa5ad">-</span>`;
- return `<tr class="tgt"><td colspan="${cols}" style="text-align:left;padding-left:10px">
-   <b>목표 대비</b> &nbsp; 수주가 <b>${F(P.order)}</b> · 목표가(목표원가) <b>${F(P.target)}</b> · 전체 이익금(목표) <b>${F(prof)}</b>${!P.profit&&P.profitEst?' <span style="color:#9aa5ad">(수주가−목표가로 추정)</span>':''} · ${mg}
-   &nbsp;|&nbsp; 발생 총원가 <b>${F(cost)}</b> · ${ma} = 실적 <b>${F(t.act)}</b>
-   <span class="bar" title="목표(목표가 ${F(P.target)} + 관리비 ${F(t.mgT)} = ${F(t.goal)}) 대비 실적(총원가 + 관리비 실적)"><i class="${t.over?'over':''}" style="width:${bar}%"></i></span><span class="${cls}">달성률 ${t.pct.toFixed(1)}%</span>
-   · ${t.over?`<span class="over">목표 초과 ${F(-t.remain)}원</span>`:`잔여 <b>${F(t.remain)}</b>원`} · 현재 이익(수주가−실적) <b>${F(t.cur)}</b>원${P.order?` (${(t.cur/P.order*100).toFixed(1)}%)`:''}${P.n>1?` <span style="color:#8a7a3a">· 공정 제번 ${P.n}건 합산</span>`:''}</td></tr>`}
+ const pc=t.mp?` ${+t.mp.toFixed(2)}%`:'';
+ const k=(lab,val,c)=>`<span class="k${c?' '+c:''}"><small>${lab}</small><b>${val}</b></span>`;
+ const op=o=>`<span class="op">${o}</span>`;
+ const mgT=t.mgT?F(t.mgT):'<span class="na" title="제작계획을 다시 저장하면 표시됩니다">미저장</span>';
+ return `<tr class="tgt"><td colspan="${cols}" style="text-align:left"><div class="tg">
+  <div class="g goal" title="목표 합계 = 목표가 + 관리비(목표)"><span class="h">목표</span>
+   ${k('수주가',F(P.order))}${k('전체 이익금'+(!P.profit&&P.profitEst?' (추정)':''),F(prof))}
+   ${k('목표가(목표원가)',F(P.target))}${op('+')}${k('관리비(수주가'+pc+')',mgT)}${op('=')}${k('목표 합계',F(t.goal),'sum')}</div>
+  <div class="g act" title="실적 합계 = 발생 총원가 + 관리비(실적)"><span class="h">실적</span>
+   ${k('발생 총원가',F(cost))}${op('+')}${k('관리비(총원가'+pc+')',t.mp?F(t.mgA):'-')}${op('=')}${k('실적 합계',F(t.act),'sum')}</div>
+  <div class="g res"><span class="h">결과</span>
+   <span class="k" title="실적 합계 ÷ 목표 합계"><small>달성률</small><b class="${cls}">${t.pct.toFixed(1)}%<span class="bar"><i class="${t.over?'over':''}" style="width:${bar}%"></i></span></b></span>
+   ${t.over?k('목표 초과',F(-t.remain),'overk'):k('잔여 (목표 − 실적)',F(t.remain))}
+   ${k('현재 이익 (수주가 − 실적)',F(t.cur)+(P.order?` <span class="na">(${(t.cur/P.order*100).toFixed(1)}%)</span>`:''))}
+   ${P.n>1?`<span class="k"><small>공정 제번</small><b>${P.n}건 합산</b></span>`:''}</div>
+ </div></td></tr>`}
 /* v343: tfoot 줄들이 서로 겹치지 않게 아래쪽 줄 높이만큼 띄운다 */
 function stackFoot(){const trs=[...tfoot.querySelectorAll('tr')];let b=0;for(let i=trs.length-1;i>=0;i--){trs[i].style.setProperty('--sb',b+'px');b+=trs[i].offsetHeight||27}}
 function render(){
