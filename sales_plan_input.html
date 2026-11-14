@@ -115,7 +115,7 @@ table.ev td .dcell .wd.late{background:#ffe45c;color:#5a4400;font-weight:700}
 @media(max-width:1100px){.blk.two{flex-wrap:wrap}.blk.two>div:first-child{min-width:0;flex-basis:100%!important}.blk.two>div:last-child{flex:1 1 100%!important;width:auto!important;border-left:1px solid var(--line);border-top:0}}
 </style></head><body><div class="screen">
 <div class="title"><h1>제작계획등록</h1><small>영업관리 · 제작계획</small></div>
-<div class="blk"><div class="bt">기본정보</div><div class="gg g4">
+<div class="blk"><div class="bt" id="prtBar" style="display:flex;align-items:center">기본정보</div><div class="gg g4">
  <div class="lb" title="관리제번을 고르면 공정 제번(A~D 등) 전체에 같은 계획이 저장됩니다 (v183)">관리제번</div><div><input id="job_no" class="field cbo" list="dl_job" autocomplete="off" placeholder="입력 또는 선택"></div>
  <div class="lb">고객사</div><div><input id="customer_name" class="field cbo" list="dl_cust" autocomplete="off" placeholder="입력 또는 선택"></div>
  <div class="lb">아이템</div><div><input id="item_name" class="field cbo" list="dl_item" autocomplete="off" placeholder="입력 또는 선택"></div>
@@ -753,5 +753,76 @@ function sampleFill(){
   if(!window.MESSAMPLE)return say('예제 모듈을 불러오지 못했습니다.');
   say(MESSAMPLE.fill('sales_plan_input',{keyId:'job_no',auto:null}).msg);
 }
+</script>
+<script src="mes_print.js?v=348"></script>
+<script>
+/* v348: 출력 — 인쇄·PDF 는 화면 그대로, Excel 은 제작계획서 양식 (테두리·색·병합) */
+(function(){
+const V=id=>{const e=document.getElementById(id);return e?String(e.value??'').trim():''};
+const WD='일월화수목금토';
+const dt=v=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(v||''))return v||'';const d=new Date(v+'T00:00:00');return `${v} (${WD[d.getDay()]})`};
+const BASIC=[['관리제번','job_no'],['고객사','customer_name'],['아이템','item_name'],['금형타입','mold_type_name'],['도번','drawing_no'],['품명','product_name'],['품번','model'],['제작구분','make_type'],['조수','process_set_qty'],['수주일','order_date'],['재질·두께','material_spec'],['사이즈','size_spec'],['고객담당','customer_contact'],['설계처','design_partner'],['제작처','maker_name'],['양산처','mass_vendor']];
+const STEP=['접수','설계','가공','조립','초품','완료'];
+const EVR=[['요구일정',['req_receipt_date','req_design_date','req_machining_date','req_assembly_date','req_tryout_date','req_complete_date'],'고객 요구',1],
+ ['목표일정',['receipt_date','design_end_date','machining_end_date','assembly_end_date','s1_planned_date','delivery_planned_date'],'우리 계획',1],
+ ['가능일정',['can_receipt_date','can_design_date','can_machining_date','can_assembly_date','can_tryout_date','can_complete_date'],'지금 예상',1],
+ ['담당자',['receipt_manager','design_manager','machining_manager','assembly_manager','tryout_manager','complete_manager'],'',0]];
+const AMT=['설계 사내','설계 사외','원재료','구매','가공 사내','가공 사외','조립 사내','조립 사외'];
+const lateOf=id=>{const e=document.getElementById(id);return e?(e.classList.contains('late')?'late':e.classList.contains('early')?'early':''):''};
+const logs=()=>{try{return Array.isArray(PLOG)?PLOG:[]}catch(e){return []}};
+
+async function excel(ExcelJS,X){
+ const wb=new ExcelJS.Workbook();wb.creator='IPTK MES';
+ const ws=wb.addWorksheet('제작계획서',{views:[{showGridLines:false}]});
+ ws.columns=[14,16,16,16,16,16,16,16,13].map(w=>({width:w}));   /* A~I 9칸 */
+ const C=X.C,NF='#,##0';let r=1;
+ const sect=t=>{X.merge(ws,r,1,r,9,'■ '+t,{b:true,fill:C.sect,color:'1D3F5F'});ws.getRow(r).height=19;r++};
+ X.merge(ws,r,1,r,9,'제 작 계 획 서',{b:true,size:18,al:'center',border:false,color:'1D3F5F'});ws.getCell(r,1).border={bottom:{style:'medium',color:{argb:'FF2F5F8A'}}};ws.getRow(r).height=32;r++;
+ X.merge(ws,r,1,r,4,'관리제번 : '+(V('job_no')||'-'),{b:true,border:false});X.merge(ws,r,6,r,9,'출력 : '+X.stamp(),{al:'right',border:false,color:'666666'});
+ for(let c=1;c<=9;c++)ws.getCell(r,c).border={};r+=2;
+ sect('기본정보');
+ for(let i=0;i<BASIC.length;i+=4){
+  BASIC.slice(i,i+4).forEach(([l,id],k)=>{const c=1+k*2;X.put(ws,ws.getCell(r,c).address,l,{b:true,fill:C.head,al:'center'});
+   const v=id==='order_date'?dt(V(id)):(id==='process_set_qty'?X.num(V(id)):V(id));
+   if(k===3)X.merge(ws,r,c+1,r,c+2,v,{});else X.put(ws,ws.getCell(r,c+1).address,v,{})});
+  ws.getRow(r).height=20;r++}
+ r++;sect('금형제작 EVENT  (가능일정이 목표보다 늦으면 노랑, 앞당기면 연두)');
+ X.put(ws,ws.getCell(r,1).address,'구분',{b:true,fill:C.head,al:'center'});
+ STEP.forEach((s,i)=>X.put(ws,ws.getCell(r,2+i).address,s,{b:true,fill:C.head,al:'center'}));X.merge(ws,r,8,r,9,'비고',{b:true,fill:C.head,al:'center'});r++;
+ EVR.forEach(([l,ids,note,isD],ri)=>{
+  const goal=ri===1;X.put(ws,ws.getCell(r,1).address,l,{b:true,fill:goal?C.goalHead:C.label,al:'center',color:goal?'1D5DA3':undefined});
+  ids.forEach((id,i)=>{const k=ri===2?lateOf(id):'';X.put(ws,ws.getCell(r,2+i).address,isD?dt(V(id)):V(id),{al:'center',b:goal||k==='late',fill:k==='late'?C.late:k==='early'?C.early:goal?C.goal:undefined})});
+  X.merge(ws,r,8,r,9,note,{al:'center',color:'7C8993'});ws.getRow(r).height=20;r++});
+ r++;sect('제품 형상');
+ const img=await X.image(wb,(()=>{const i=document.getElementById('shapeImg');return i&&i.style.display!=='none'&&i.getAttribute('src')?i.src:V('image_url')})(),420);
+ const imgRows=img?Math.max(4,Math.ceil(Math.min(img.h,200)/20)):1;
+ X.merge(ws,r,1,r+imgRows-1,9,img?'':'그림 없음',{al:'center',color:'999999'});
+ for(let k=0;k<imgRows;k++)ws.getRow(r+k).height=20;
+ if(img){const h=Math.min(img.h,imgRows*26-8),w=img.w*h/img.h,W=[14,16,16,16,16,16,16,16,13].map(x=>x*7.5);
+  let x=Math.max(0,(W.reduce((a,b)=>a+b,0)-w)/2),col=0;while(col<8&&x>W[col]){x-=W[col];col++}
+  ws.addImage(img.id,{tl:{col:col+x/W[col],row:r-1+0.15},ext:{width:w,height:h}})}
+ r+=imgRows+1;sect('금액');
+ const kv=(pairs)=>{pairs.forEach(([l,id,isNum],k)=>{const c=1+k*2;X.put(ws,ws.getCell(r,c).address,l,{b:true,fill:C.head,al:'center'});
+   const v=isNum?X.num(V(id)):V(id);if(k===3)X.merge(ws,r,c+1,r,c+2,v,{al:'right',num:isNum===1?NF:'0.0'});else X.put(ws,ws.getCell(r,c+1).address,v,{al:'right',num:isNum===1?NF:'0.0'})});ws.getRow(r).height=20;r++};
+ kv([['수주가','order_price',1],['목표가','target_price',1],['이익금','profit_amount',1],['이익률(%)','profit_rate_pct',2]]);
+ kv([['전체 이익금','ad_profit',1],['관리비용(%)','ad_mgmt_pct',2],['관리비','ad_mgmt',1],['공제 합계','ad_target',1]]);
+ X.put(ws,ws.getCell(r,1).address,'항목',{b:true,fill:C.head,al:'center'});AMT.forEach((a,i)=>X.put(ws,ws.getCell(r,2+i).address,a,{b:true,fill:C.head,al:'center'}));r++;
+ X.put(ws,ws.getCell(r,1).address,'금액',{b:true,fill:C.label,al:'center'});AMT.forEach((a,i)=>X.put(ws,ws.getCell(r,2+i).address,X.num(V('a'+(i+1))),{al:'right',num:NF}));r++;
+ X.put(ws,ws.getCell(r,1).address,'구성비',{b:true,fill:C.label,al:'center'});AMT.forEach((a,i)=>{const e=document.getElementById('p'+(i+1));X.put(ws,ws.getCell(r,2+i).address,e?e.textContent:'',{al:'right',color:'5D6D7B'})});r++;
+ r++;sect('진척현황');
+ X.put(ws,ws.getCell(r,1).address,'일자',{b:true,fill:C.head,al:'center'});X.merge(ws,r,2,r,9,'내용',{b:true,fill:C.head,al:'center'});r++;
+ const L=logs();(L.length?L:[{d:'',t:'기록 없음'}]).forEach(e=>{X.put(ws,ws.getCell(r,1).address,dt(e.d||''),{al:'center'});X.merge(ws,r,2,r,9,e.t||'',{});ws.getRow(r).height=18;r++});
+ r++;sect('특기사항');
+ const rm=V('remark');const lines=Math.max(3,rm.split('\n').length+1);
+ X.merge(ws,r,1,r+lines-1,9,rm,{wrap:true});ws.getCell(r,1).alignment={vertical:'top',horizontal:'left',wrapText:true};r+=lines;
+ X.page(ws);ws.pageSetup.printArea=`A1:I${r}`;
+ return wb;
+}
+MESPRINT.mount({where:'#prtBar',capture:()=>document.querySelector('.screen'),hide:['.foot'],breaks:'.blk,table.ev tr',
+ title:()=>'제작계획등록'+(V('job_no')?'  ·  관리제번 '+V('job_no'):''),
+ name:ext=>`제작계획_${MESPRINT.safe(V('job_no')||'미지정')}_${MESPRINT.stamp().slice(0,10).replace(/-/g,'')}.${ext}`,
+ check:()=>{if(!V('job_no'))msg('관리제번이 비어 있습니다 — 화면에 입력된 내용 그대로 출력합니다.')},
+ excel});
+})();
 </script>
 </body></html>
