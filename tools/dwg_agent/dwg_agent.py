@@ -975,6 +975,23 @@ def undup(s):
     return s
 
 
+def ungzip_if(path, tmp):
+    """gzip 으로 압축된 파일이면 풀어서 그 경로 (확장자는 원래 파일 이름 기준: .dxf)"""
+    import gzip
+    with open(path, "rb") as f:
+        head = f.read(2)
+    if head != b"\x1f\x8b":
+        return path
+    base = os.path.basename(path)
+    base = base[:-3] if base.lower().endswith(".gz") else base
+    if not base.lower().endswith((".dxf", ".dwg")):
+        base += ".dxf"
+    out = os.path.join(tmp, "unz_" + base)
+    with gzip.open(path, "rb") as fi, open(out, "wb") as fo:
+        shutil.copyfileobj(fi, fo)
+    return out
+
+
 def safe(s):
     return re.sub(r"[^\w\-가-힣.]+", "_", str(s or "")).strip("_")[:60]
 
@@ -983,6 +1000,7 @@ def convert(src, job, parts_rows, out_dir):
     """src(DWG/DXF) → out_dir 에 PDF zip · 가공용 zip. 결과 요약 dict"""
     tmp = tempfile.mkdtemp(prefix="cv_", dir=work_dir())
     try:
+        src = ungzip_if(src, tmp)   # v361: 웹이 압축(gzip)해 올린 DXF 는 풀어서
         dxf = to_dxf(src, tmp)
         doc = load_doc(dxf)
         msp = doc.modelspace()
