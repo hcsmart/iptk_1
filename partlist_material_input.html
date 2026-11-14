@@ -57,7 +57,7 @@ tbody tr:nth-child(even) td{background:#fafcfd}tbody tr:hover td{background:#edf
  <button style="display:none" class="btn red" onclick="bulkOpen()" title="제번 단위로 PartList 전체를 삭제합니다">⌧ 일괄삭제</button>
  <button class="btn" onclick="manOpen()" title="엑셀 없이 한 행씩 직접 입력합니다">＋ 수동등록</button>
  <button class="btn" onclick="nameFill()" title="리스트에서 품명이 비어 있는 행을 금형번호 앞 3자리 코드(부품관리 → 내장 코드표)로 채웁니다. 이미 적힌 품명은 건드리지 않습니다">✎ 빈 품명 채우기</button>
- <button class="btn" onclick="imgPick()" title="체크한 부품의 그림 — 캐드 캡쳐를 Ctrl+V 로 붙여넣고 흰 바탕·A4 로 정리, 화살표·글자 표시 후 등록">📷 이미지등록</button><button class="btn" onclick="imgDel()" title="체크한 부품(여러 개 가능)의 그림을 지웁니다">🗑 이미지삭제</button><button class="btn" onclick="dwgPickFiles()" title="도면 PDF 여러 개(또는 ZIP)를 한 번에 올립니다 — 파일 이름 앞의 금형번호(예: B17A_BUTTON_DIE_A3.pdf → B17A)로 자동 연결, 도면대장에도 기록">📄 도면PDF 일괄등록</button><input type="file" id="dwgFiles" accept=".pdf,.zip,application/pdf,application/zip" multiple style="display:none" onchange="dwgFilesIn(this.files);this.value=''">
+ <button class="btn" onclick="imgPick()" title="체크한 부품의 그림 — 캐드 캡쳐를 Ctrl+V 로 붙여넣고 흰 바탕·A4 로 정리, 화살표·글자 표시 후 등록">📷 이미지등록</button><button class="btn" onclick="imgDel()" title="체크한 부품(여러 개 가능)의 그림을 지웁니다">🗑 이미지삭제</button><button class="btn" onclick="dwgPickFiles()" title="도면 PDF 여러 개(또는 ZIP)를 한 번에 올립니다 — 파일 이름 앞의 금형번호(예: B17A_BUTTON_DIE_A3.pdf → B17A)로 자동 연결, 도면대장에도 기록">📄 도면PDF 일괄등록</button><input type="file" id="dwgFiles" accept=".pdf,.zip,application/pdf,application/zip" multiple style="display:none" onchange="dwgFilesIn(this.files);this.value=''"><button class="btn" onclick="dwgDelChecked()" title="체크한 부품의 도면 PDF 연결을 지웁니다 — 지울 도면을 고르는 창이 뜹니다. 한 장만 지우려면 빨간 PDF 를 우클릭">🗑 도면PDF삭제</button>
  <input type="file" id="imgFile" accept="image/*" style="display:none" onchange="imgUp(this.files[0])">
  <button class="btn" onclick="xls()">▤ 엑셀불러오기</button>
  <button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button>
@@ -681,6 +681,7 @@ MES.go=async function(p){p=p||{};const job=String(p.job||'');if(!job)return;
  const tr=[...body.querySelectorAll('tr')].find(t=>(t.getAttribute('onclick')||'').includes('rowClick('+r.row_no+','));
  MESGO.hold(()=>[...body.querySelectorAll('tr')].find(t=>(t.getAttribute('onclick')||'').includes('rowClick('+r.row_no+',')));msg(`${job} · ${p.part} — 금형원가내역에서 이동했습니다.`)};
 </script>
+<script src="mes_dwg.js?v=355"></script>
 <script>
 /* v351: 금형번호별 도면 PDF — 여러 PDF(또는 ZIP)를 한 번에 올려 파일 이름 앞의 금형번호로 연결
  *  저장: 비공개 저장소(mes-drawing) + 도면대장(drawings) 한 줄씩 — drawing_no = 「제번-파일이름」 (같은 파일을 다시 올리면 덮어씀)
@@ -701,14 +702,22 @@ window.dwgLoad=async function(job){
  catch(e){console.warn('drawings',e.message)}
 };
 window.dwgCell=function(pn){const a=DWG.get(String(pn||'').toUpperCase());if(!a||!a.length)return '';
- return `<span class="dwgi" onclick="event.stopPropagation();dwgOpen('${esc(String(pn).toUpperCase())}',this)" title="${esc(a.map(x=>x.drawing_name||x.drawing_no).join('\n'))}\n— 누르면 도면 PDF 가 열립니다">PDF${a.length>1?'<sub>'+a.length+'</sub>':''}</span>`};
+ return `<span class="dwgi" onclick="event.stopPropagation();dwgOpen('${esc(String(pn).toUpperCase())}',this)" oncontextmenu="event.preventDefault();event.stopPropagation();dwgMenu('${esc(String(pn).toUpperCase())}',this)" title="${esc(a.map(x=>x.drawing_name||x.drawing_no).join('\n'))}\n— 누르면 도면 PDF 가 열립니다 · 우클릭 = 열기/삭제">PDF${a.length>1?'<sub>'+a.length+'</sub>':''}</span>`};
+const dwgAfter=async()=>{await dwgLoad(curJobNo());render()};
 window.dwgOpen=function(pn,el){const a=DWG.get(pn)||[];if(!a.length)return;
  if(a.length===1)return MESDB.openRef(a[0].file_url,msg);
- let m=document.getElementById('dwgMenu');if(!m){m=document.createElement('div');m.id='dwgMenu';document.body.appendChild(m);
-  document.addEventListener('mousedown',e=>{if(!m.contains(e.target))m.style.display='none'})}
- m.innerHTML=a.map((x,i)=>`<button type="button" data-i="${i}">📄 ${esc(x.drawing_name||x.drawing_no)}</button>`).join('');
- m.onclick=e=>{const b=e.target.closest('button');if(!b)return;m.style.display='none';MESDB.openRef(a[Number(b.dataset.i)].file_url,msg)};
- const r=el.getBoundingClientRect();m.style.left=(r.left+window.scrollX)+'px';m.style.top=(r.bottom+window.scrollY+2)+'px';m.style.display='block'};
+ MESDWG.menu(el,a,dwgAfter)};
+/* v355: PDF 표시 우클릭 → 장마다 [열기] [✕ 삭제] */
+window.dwgMenu=function(pn,el){const a=DWG.get(pn)||[];if(a.length)MESDWG.menu(el,a,dwgAfter)};
+/* v355: 체크한 행의 도면 PDF 삭제 (도면대장 기록) */
+window.dwgDelChecked=async function(){
+ const job=curJobNo();if(!job)return msg('제번을 먼저 선택하세요.');
+ if(!chk.size)return msg('도면 PDF 를 지울 행을 체크하세요.');
+ const list=[...chk].map(rowById).filter(Boolean).flatMap(r=>DWG.get(String(r.part_no||'').toUpperCase())||[]);
+ if(!list.length)return msg('체크한 행에 등록된 도면 PDF 가 없습니다.');
+ const done=await MESDWG.delDialog(list,`도면 PDF 삭제 — ${job}`);
+ if(done&&done.length){await dwgAfter();msg(`도면 PDF ${done.length}장을 지웠습니다.`)}
+};
 
 window.dwgPickFiles=function(){
  if(!curJobNo())return msg('제번을 먼저 선택하세요.');
@@ -782,8 +791,6 @@ window.dwgRun=async function(){
 };
 const st=document.createElement('style');st.textContent=`
 .dwgi{display:inline-block;margin-left:3px;cursor:pointer;font:700 9.5px/14px Arial,sans-serif;color:#fff;background:#d93025;border-radius:2px;padding:0 3px;vertical-align:middle;letter-spacing:.2px}.dwgi:hover{background:#a8231b}.dwgi sub{font-size:8px;vertical-align:baseline;margin-left:1px;color:#ffe2df}
-#dwgMenu{position:absolute;z-index:9600;display:none;background:#fff;border:1px solid #8fa3b5;box-shadow:0 3px 10px rgba(0,0,0,.2);padding:3px 0;min-width:220px}
-#dwgMenu button{display:block;width:100%;text-align:left;border:0;background:none;padding:5px 10px;cursor:pointer;font:inherit}#dwgMenu button:hover{background:#edf6fd}
 #dwgPop{position:fixed;inset:0;z-index:9400;background:rgba(30,40,50,.45);display:none;align-items:center;justify-content:center}#dwgPop.on{display:flex}
 #dwgPop .dwgbox{width:min(860px,96vw);max-height:90vh;display:flex;flex-direction:column;background:#fff;border:1px solid #5f7080;box-shadow:0 10px 30px rgba(0,0,0,.3)}
 #dwgPop .dwgh{height:32px;display:flex;align-items:center;padding:0 6px 0 12px;font-weight:700;color:#fff;background:linear-gradient(#5f7f9f,#3f5f7d)}
