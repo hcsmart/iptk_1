@@ -26,6 +26,16 @@ tr.det td{background:#fafcfd;white-space:normal;height:auto;padding:6px 10px}
 .rows{width:100%;min-width:0;table-layout:auto;border:1px solid #d5dde3}.rows th,.rows td{height:24px;font-size:11.5px}.rows td.warn{color:#9a5410;white-space:normal}
 .foot{height:42px;display:flex;align-items:center;padding:5px 14px;border-top:1px solid var(--line);background:#eef2f5;gap:5px;margin-top:10px}.msg{margin-left:8px;color:#1d5da3;font-weight:700}
 .empty{color:#8a97a2;text-align:center;height:80px}
+/* v362: 이 PC 를 변환 PC 로 — 설치 안내 창 */
+#pcPop{position:fixed;inset:0;z-index:9000;background:rgba(30,40,50,.45);display:none;align-items:center;justify-content:center}#pcPop.on{display:flex}
+#pcPop .bx{width:min(640px,94vw);background:#fff;border:1px solid #5f7080;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+#pcPop .hd{height:34px;display:flex;align-items:center;padding:0 8px 0 14px;font-weight:700;color:#fff;background:linear-gradient(#5f7f9f,#3f5f7d)}
+#pcPop .hd button{margin-left:auto;width:26px;height:22px;border:1px solid #b04a4a;background:#c9484a;color:#fff;cursor:pointer}
+#pcPop .bd{padding:14px 16px;line-height:1.8}
+#pcPop ol{margin:6px 0 10px 18px;padding:0}#pcPop li{margin:3px 0}
+#pcPop .big{display:block;margin:10px auto 6px;height:40px;padding:0 22px;font-size:14px;font-weight:700;border:1px solid #2e7d32;background:linear-gradient(#eaf7ea,#c8e8c9);color:#1e5e22;cursor:pointer;border-radius:3px}
+#pcPop .note{font-size:11.5px;color:#7c8993;border-top:1px dashed #d5dde3;margin-top:8px;padding-top:8px}
+#pcPop b{color:#1d5da3}
 </style></head><body><div class="screen">
 <div class="title"><h1>도면변환</h1><small>DXF → 부품별 PDF · 가공용 STEP/DXF</small></div>
 <section class="filt">
@@ -33,7 +43,8 @@ tr.det td{background:#fafcfd;white-space:normal;height:auto;padding:6px 10px}
  <button class="btn" onclick="load()">⌕ 조회</button>
  <button class="btn go" onclick="pickFile()" title="금형 전체 도면을 CAD 에서 DXF 로 저장해 1개 올립니다">⇪ DXF 올리기</button>
  <input type="file" id="dwgFile" accept=".dxf" style="display:none" onchange="upload(this.files[0]);this.value=''">
- <span class="agent" id="agent" title="사무실 PC 의 도면변환 프로그램(run_agent.bat) 상태"><i></i><span>변환 PC 확인 중…</span></span>
+ <span class="agent" id="agent" title="사무실 PC 의 도면변환 프로그램(run_agent.bat) 상태" onclick="pcOpen()" style="cursor:pointer"><i></i><span>변환 PC 확인 중…</span></span>
+ <button class="btn" onclick="pcOpen()" title="이 PC 에 도면변환 프로그램을 설치합니다 — 설치 파일을 받아 더블클릭하면 끝">🖥 이 PC 를 변환 PC 로</button>
 </section>
 <div class="guide">
  ① 관리제번·제번을 고르고 ② <b>금형 전체 도면을 DXF 로 저장</b>해 올리면 <span style="color:#7c8993">(CAD 에서 다른 이름으로 저장 → AutoCAD 2018 DXF)</span> ③ 사무실 PC 의 <b>도면변환 프로그램</b>이 가져가 변환합니다 (보통 1~3분).<br>
@@ -44,6 +55,19 @@ tr.det td{background:#fafcfd;white-space:normal;height:auto;padding:6px 10px}
 <div class="gridbox"><table><thead><tr>
  <th style="width:54px">No</th><th style="width:130px">요청 시각</th><th style="width:110px">제번</th><th>올린 파일</th><th style="width:84px">상태</th><th style="width:250px">결과</th><th style="width:320px">내려받기</th><th style="width:80px">요청자</th>
 </tr></thead><tbody id="body"><tr><td colspan="8" class="empty">관리제번·제번을 고르세요.</td></tr></tbody></table></div>
+<div id="pcPop"><div class="bx"><div class="hd">🖥 이 PC 를 변환 PC 로 만들기<button type="button" onclick="pcPop.classList.remove('on')">×</button></div><div class="bd">
+ 사무실에서 <b>항상 켜 두는 PC 한 대</b>에서 아래 버튼을 누르세요. 그 PC 가 올린 DXF 를 가져가 변환합니다.
+ <button type="button" class="big" onclick="pcDownload()">⬇ 설치 파일 받기</button>
+ <ol>
+  <li>받은 <b>IPTK_도면변환PC_설치.bat</b> 을 <b>더블클릭</b> 합니다.<br><span style="color:#7c8993">「Windows의 PC 보호」 창이 뜨면 <b>추가 정보 → 실행</b></span></li>
+  <li>검은 창에서 <b>MES 비밀번호</b>를 입력합니다 (아이디는 미리 채워져 있습니다).</li>
+  <li>나머지(프로그램·파이썬·변환 도구 설치, 자동 실행 등록)는 <b>자동</b>입니다. 처음엔 5~10분.</li>
+  <li>끝나면 이 화면 오른쪽 위가 <span style="color:#2e7d32;font-weight:700">● 변환 PC 연결됨</span> 으로 바뀝니다.</li>
+ </ol>
+ <div class="note">· 설치 위치: 프로그램 <code>%LOCALAPPDATA%\IPTK\dwg_agent</code> · 변환 도구 <code>%TEMP%\iptk_dwg</code> (오픈소스: ezdxf · CadQuery · LibreDWG · uv)<br>
+ · 비밀번호는 그 PC 의 설정 파일에만 저장됩니다. 도면변환 전용 계정을 하나 만들어 쓰면 더 안전합니다.<br>
+ · 다시 실행하면 최신 버전으로 업데이트됩니다. 그만 쓰려면 시작프로그램의 「IPTK 도면변환」 바로가기를 지우세요.</div>
+</div></div></div>
 <footer class="foot"><button class="btn" onclick="load()">⟳ 새로고침</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message"></span></footer>
 </div>
 <script src="mes_db.js?v=196"></script>
@@ -116,6 +140,18 @@ async function upload(f){
  }catch(e){msg('올리기 실패: '+String(e.message||e).slice(0,140))}
 }
 window.upload=upload;
+/* v362: 이 PC 를 변환 PC 로 — 아이디를 채운 작은 설치 파일(.bat)을 내려 준다. 그 파일이 install_windows.ps1 을 받아 실행 */
+window.pcOpen=()=>pcPop.classList.add('on');
+window.pcDownload=function(){
+ let u='';try{const a=window.MES_AUTH||window.parent.MES_AUTH;u=(a&&a.session&&a.session.user&&a.session.user.email)||''}catch(e){}
+ u=String(u).replace(/[^A-Za-z0-9@._+-]/g,'');   /* 배치 파일에 넣어도 안전한 글자만 (이메일) */
+ const ps="$f=Join-Path $env:TEMP 'iptk_dwg_install.ps1'; Invoke-WebRequest -UseBasicParsing 'https://hcsmart.github.io/iptk_1/tools/dwg_agent/install_windows.ps1' -OutFile $f; & $f -User '"+u+"'";
+ const bat=['@echo off','chcp 65001 >nul','title IPTK 도면변환 PC 설치','echo IPTK MES 도면변환 PC 설치를 시작합니다...',
+  'powershell -NoProfile -ExecutionPolicy Bypass -Command "'+ps+'"',''].join('\r\n');
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([bat],{type:'application/octet-stream'}));a.download='IPTK_도면변환PC_설치.bat';
+ document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);
+ msg('설치 파일을 받았습니다 — 다운로드 폴더의 IPTK_도면변환PC_설치.bat 을 더블클릭하세요.');
+};
 (function(){const d=document.getElementById('drop');
  ['dragenter','dragover'].forEach(k=>d.addEventListener(k,e=>{e.preventDefault();d.classList.add('over')}));
  ['dragleave','drop'].forEach(k=>d.addEventListener(k,e=>{e.preventDefault();d.classList.remove('over')}));
