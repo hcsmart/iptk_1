@@ -20,7 +20,7 @@ IPTK MES 도면변환 프로그램 (사무실 PC 에서 실행)  — v358
 import argparse, configparser, csv, io, json, math, os, re, shutil, socket, subprocess, sys, tempfile, time, traceback, zipfile
 from datetime import datetime, timezone
 
-VERSION = "359"
+VERSION = "360"
 HERE = os.path.dirname(os.path.abspath(__file__))
 PART_RE = re.compile(r"^[A-Z]\d{2}[A-Z]$")
 PAPER = {"A0": (1189, 841), "A1": (841, 594), "A2": (594, 420), "A3": (420, 297), "A4": (297, 210)}
@@ -600,7 +600,80 @@ def as_circle(pts, circles):
     return (cx, cy, r)
 
 
-def make_step(outer, holes, circles, t, dest, exact=None):
+# ───────────────────────── 구멍표 (A : M8 THRU · B : Ø7 THRU Ø12 DP15 (UP) …) ─────────────────────────
+TAP_PITCH = {2: .4, 2.5: .45, 3: .5, 4: .7, 5: .8, 6: 1, 8: 1.25, 10: 1.5, 12: 1.75, 14: 2, 16: 2, 18: 2.5, 20: 2.5, 24: 3}
+
+
+def norm_txt(s):
+    u = str(s or "").upper()
+    for a in ("%%C", "Φ", "∅", "⌀", "ø"):
+        u = u.replace(a.upper(), "Ø")
+    return re.sub(r"\s+", " ", u).strip()
+
+
+def parse_hole(spec):
+    """'Ø7 THRU Ø12 DP15 (UP)' → {d, depth(None=관통), cb_d, cb_depth, side, tap, text}"""
+    u = norm_txt(spec)
+    side = "LO" if re.search(r"\(\s*LO\s*\)", u) else "UP"
+    segs = []
+    for m in re.finditer(r"(M|Ø)\s*(\d+(?:\.\d+)?)", u):
+        segs.append((m.group(1), float(m.group(2)), m.end()))
+    if not segs:
+        return None
+    out = []
+    for k, (kind, d, end) in enumerate(segs):
+        nxt = segs[k + 1][2] - len(str(segs[k + 1][1])) - 2 if k + 1 < len(segs) else len(u)
+        tail = u[end:max(end, nxt)]
+        dp = re.search(r"DP\s*(\d+(?:\.\d+)?)", tail)
+        out.append({"kind": kind, "d": d, "thru": "THRU" in tail, "dp": float(dp.group(1)) if dp else None})
+    a = out[0]
+    tap = a["kind"] == "M"
+    d = a["d"] - TAP_PITCH.get(a["d"], a["d"] * 0.15) if tap else a["d"]
+    res = {"d": round(d, 3), "depth": None if (a["thru"] or a["dp"] is None) else a["dp"], "cb_d": None, "cb_depth": None,
+           "side": side, "tap": a["d"] if tap else None, "text": spec}
+    if len(out) > 1 and out[1]["kind"] == "Ø" and out[1]["d"] > d and out[1]["dp"]:
+        res["cb_d"], res["cb_depth"] = out[1]["d"], out[1]["dp"]
+    return res
+
+
+def hole_table(texts):
+    """도곽 안 글자에서 구멍표: {'A': spec, ...}"""
+    tab = {}
+    for s, x, y in texts:
+        m = re.match(r"^\s*([A-Z])\s*:\s*(.*(?:Ø|M\d|%%C|Φ).*)$", norm_txt(s))
+        if m:
+            p = parse_hole(m.group(2))
+            if p:
+                tab[m.group(1)] = p
+    return tab
+
+
+def label_holes(holes, circles, texts, tab):
+    """구멍마다 가장 가까운 표시글자(B1, A2 …)로 구멍표 내용을 붙인다 → [spec 또는 None]"""
+    labs = []
+    for s, x, y in texts:
+        m = re.match(r"^\s*([A-Z])\s*(\d{1,2})\s*$", norm_txt(s))
+        if m and m.group(1) in tab:
+            labs.append((m.group(1), x, y))
+    res = []
+    for h in holes:
+        c = as_circle(h, circles)
+        if not c or not labs:
+            res.append(None)
+            continue
+        cx, cy, r = c
+        best = min(labs, key=lambda L: math.hypot(L[1] - cx, L[2] - cy))
+        dist = math.hypot(best[1] - cx, best[2] - cy)
+        sp = tab[best[0]]
+        big = max(sp["cb_d"] or 0, sp["tap"] or 0, sp["d"])
+        if dist <= max(4 * r, 15) and (abs(2 * r - big) / big < 0.2 or abs(2 * r - sp["d"]) / sp["d"] < 0.2):
+            res.append(dict(sp, label=best[0], cx=cx, cy=cy))
+        else:
+            res.append(None)
+    return res
+
+
+def make_step(outer, holes, circles, t, dest, exact=None, specs=None):
     """2.5D 솔리드: 외곽을 두께만큼 올리고 구멍을 관통. 원은 진짜 원, 닫힌 폴리선은 원래 선·호 그대로(곡면)"""
     import cadquery as cq
     exact = exact or [None] * (1 + len(holes))
@@ -616,8 +689,24 @@ def make_step(outer, holes, circles, t, dest, exact=None):
                 pass
         return cq.Workplane("XY").polyline(simplify(ring)).close().extrude(t)
 
+    def cyl(cx, cy, d, z0, h):
+        return cq.Workplane("XY").workplane(offset=z0).center(cx, cy).circle(d / 2.0).extrude(h)
+
+    def from_side(side, depth):
+        depth = min(depth, t)
+        return (t - depth, depth) if side == "UP" else (0.0, depth)
+
+    specs = specs or [None] * len(holes)
     wp = body(outer, exact[0])
-    for h, ex in zip(holes, exact[1:]):
+    for h, ex, sp in zip(holes, exact[1:], specs):
+        if sp:   # 구멍표대로: 본 구멍(관통 또는 깊이) + 카운터보어(깊이·방향)
+            cx, cy = sp["cx"], sp["cy"]
+            z0, hh = (0.0, t) if sp["depth"] is None else from_side(sp["side"], sp["depth"])
+            wp = wp.cut(cyl(cx, cy, sp["d"], z0, hh))
+            if sp["cb_d"]:
+                z0, hh = from_side(sp["side"], sp["cb_depth"])
+                wp = wp.cut(cyl(cx, cy, sp["cb_d"], z0, hh))
+            continue
         wp = wp.cut(body(h, ex))
     cq.exporters.export(wp, dest)
     return len(holes)
@@ -722,6 +811,13 @@ def convert(src, job, parts_rows, out_dir):
                 geo = frame_geometry(doc, msp, box, fe, cache)
                 views = clusters(geo, gap=max(box.w, box.h) * 0.012)
                 nums, t = spec_dims(row)
+                ftexts = texts_in(msp, box, cache)
+                if not nums:   # PartList 규격이 없으면 표제란 MAT'L SIZE (예: 30.00*80.00*132.00)
+                    for s0, _, _ in ftexts:
+                        if re.match(r"^\s*\d+(\.\d+)?\s*[*xX×]\s*\d+(\.\d+)?(\s*[*xX×]\s*\d+(\.\d+)?)?\s*$", s0):
+                            nums = [float(v) for v in re.findall(r"\d+(?:\.\d+)?", s0)]
+                            note.append("규격은 표제란 MAT'L SIZE(%s) 사용" % s0.strip())
+                            break
                 top, t, why = pick_top_view(views, nums, t)
                 if why:
                     note.append(why)
@@ -738,10 +834,30 @@ def convert(src, job, parts_rows, out_dir):
                     shape = outer
                     if shape is not None and t and t > 0:
                         try:
-                            h = make_step(outer, holes, circles, t, os.path.join(step_dir, name + ".step"), exact)
+                            tab = hole_table(ftexts)
+                            specs = label_holes(holes, circles, ftexts, tab) if tab else None
+                            h = make_step(outer, holes, circles, t, os.path.join(step_dir, name + ".step"), exact, specs)
                             th, nh = "%g" % t, str(h)
-                            if nested_circles(circles):
-                                note.append("같은 중심 원 %d곳 — 카운터보어·단차는 관통구멍(큰 지름)으로 만들었으니 확인" % nested_circles(circles))
+                            if specs and any(specs):
+                                cnt = {}
+                                for sp in specs:
+                                    if sp:
+                                        cnt.setdefault(sp["label"], [sp, 0])[1] += 1
+                                desc = []
+                                for L in sorted(cnt):
+                                    sp, n = cnt[L]
+                                    d = ("M%g 탭(드릴 Ø%g)" % (sp["tap"], sp["d"])) if sp["tap"] else "Ø%g" % sp["d"]
+                                    d += " 관통" if sp["depth"] is None else " 깊이%g" % sp["depth"]
+                                    if sp["cb_d"]:
+                                        d += " + Ø%g 깊이%g" % (sp["cb_d"], sp["cb_depth"])
+                                    d += "(아래)" if sp["side"] == "LO" else ""
+                                    desc.append("%s %s×%d" % (L, d, n))
+                                note.append("구멍표 반영: " + ", ".join(desc))
+                                if any(sp and sp["tap"] for sp in specs):
+                                    note.append("탭은 드릴 구멍으로만 만듦 — 나사는 CAM 에서")
+                            left = sum(1 for k, hh in enumerate(holes) if not (specs and specs[k]) and as_circle(hh, circles))
+                            if nested_circles(circles) and left:
+                                note.append("구멍표에 없는 동심원 구멍 — 카운터보어·단차는 관통구멍(큰 지름)으로 만들었으니 확인")
                             if not why:
                                 st = "자동 (2.5D)"
                         except Exception as ex:
