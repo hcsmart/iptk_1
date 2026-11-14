@@ -34,6 +34,8 @@ td.route{user-select:none;background:#fff!important}
 .panes>.box:nth-child(2) th:nth-child(5),.panes>.box:nth-child(2) td:nth-child(5){left:214px}
 .panes>.box:nth-child(2) th:nth-child(6),.panes>.box:nth-child(2) td:nth-child(6){left:346px;box-shadow:1px 0 0 #c5ced6}
 td.pimg{padding:1px 2px!important;text-align:center}
+td.pimg .dwgi{display:inline-block;margin:0 1px;cursor:pointer;font:700 9.5px/14px Arial,sans-serif;color:#fff;background:#d93025;border-radius:2px;padding:0 3px;vertical-align:middle}td.pimg .dwgi:hover{background:#a8231b}td.pimg .dwgi sub{font-size:8px;vertical-align:baseline;margin-left:1px;color:#ffe2df}
+#dwgMenu{position:absolute;z-index:9600;display:none;background:#fff;border:1px solid #8fa3b5;box-shadow:0 3px 10px rgba(0,0,0,.2);padding:3px 0;min-width:220px}#dwgMenu button{display:block;width:100%;text-align:left;border:0;background:none;padding:5px 10px;cursor:pointer;font:inherit}#dwgMenu button:hover{background:#edf6fd}
 td.pimg img{width:44px;height:40px;object-fit:contain;border:1px solid #d3dbe2;background:#fff;cursor:zoom-in;vertical-align:middle}
 td.route.s-next{background:#8fdc6b!important;color:#20461a;font-weight:700;cursor:pointer}
 td.route.s-next .st{background:#2e7d32;color:#fff}
@@ -168,7 +170,7 @@ tr.rdone td{color:#8b98a3}
       <thead><tr><th>제번</th><th>품번</th><th>공정</th><th>공정명</th></tr></thead><tbody id="jobBody"></tbody></table></div></div>
     <div class="box"><div class="box-title">부품별 가공공정 리스트<span class="legend"><i style="background:#8fdc6b"></i>다음 공정(우클릭=발주)<i style="background:#8e6bb0"></i>요청<i style="background:#e07a1f"></i>출고<i style="background:#2f6fb5"></i>입고<i style="background:#8b98a3"></i>완료<i style="background:#efe0bf;box-shadow:inset 4px 0 0 #8a6d3b"></i>사내 미완료<i style="background:#cbb894;box-shadow:inset 4px 0 0 #6b5327"></i>사내 완료(시간 입력)</span></div><div class="tablewrap"><table style="min-width:1294px">
       <!-- v149: 공정1~10. 화면보다 넓으면 가로로 밀어(스크롤) 보고, 왼쪽 5칸(조·부품코드·부품명·수량)은 고정된다 --><colgroup><col style="width:30px"><col style="width:40px"><col style="width:52px"><col style="width:92px"><col style="width:132px"><col style="width:58px"><col style="width:92px"><col style="width:92px"><col style="width:92px"><col style="width:92px"><col style="width:92px"><col style="width:92px"><col style="width:92px"><col style="width:92px"><col style="width:92px"><col style="width:92px"></colgroup>
-      <thead><tr><th></th><th title="공정(조)">조</th><th title="PartList 등록(원재료)의 부품 그림">그림</th><th>부품코드</th><th>부품명</th><th title="PartList에서 가져온 소요수량 — 외주가공 발주 기본수량">소요수량</th><th>공정1</th><th>공정2</th><th>공정3</th><th>공정4</th><th>공정5</th><th>공정6</th><th>공정7</th><th>공정8</th><th>공정9</th><th>공정10</th></tr></thead>
+      <thead><tr><th></th><th title="공정(조)">조</th><th title="PartList 등록(원재료)의 부품 그림 · 빨간 PDF = 도면 (누르면 열림)">그림</th><th>부품코드</th><th>부품명</th><th title="PartList에서 가져온 소요수량 — 외주가공 발주 기본수량">소요수량</th><th>공정1</th><th>공정2</th><th>공정3</th><th>공정4</th><th>공정5</th><th>공정6</th><th>공정7</th><th>공정8</th><th>공정9</th><th>공정10</th></tr></thead>
       <tbody id="routeBody"></tbody></table></div></div>
     <div class="box venbox"><div class="box-title">협력업체리스트</div>
       <div class="searchbar"><input id="venQ" placeholder="업체 검색" oninput="venFind()" title="입력하면 협력업체가 걸러집니다 (Esc: 지우기)" onkeydown="if(event.key==='Escape'){this.value='';venFind()}"></div>
@@ -356,7 +358,7 @@ function pickRow(ri,on){if(on){pickOnlyJob(ri);if(!PICK.has(ri))PICK.set(ri,1)}e
 let PICKT=null;
 function pickCellLater(ri,i){clearTimeout(PICKT);PICKT=setTimeout(()=>pickCell(ri,i),220)}
 const ROUTES=[];     /* v39: 선택 제번의 가공공정(machining_plan_parts / PartList)에서 로드 */
-let PIMG={};         /* v202: 품번 → PartList 부품 그림 URL */
+let PIMG={};let PDWG={};   /* v354: 품번 → 도면 PDF 목록 (도면대장 drawings — PartList 도면PDF 일괄등록) */         /* v202: 품번 → PartList 부품 그림 URL */
 const REQ=[];
 let jobIdx=0,venIdx=6,jobView=[...JOBS],venView=[...VENDORS];
 function renderJobs(){jobBody.innerHTML=jobView.map((j,i)=>`<tr class="${i===jobIdx?'sel':''}" onclick="pickJob(${i})"><td>${j.job}</td><td>${j.model||''}</td><td class="c">${j.proc}</td><td class="c">${j.procName}</td></tr>`).join('');countText.textContent=`제번 ${jobView.length}건 / 요청 ${REQ.length}건`}
@@ -395,7 +397,7 @@ function renderRoutes(){
   return `<tr data-ri="${ri}" class="${dis&&n?'rdone':''}${r.old?' cycold':''}"${HID[ri]?' style="display:none"':''}${tip?` title="${_esc(tip)}"`:''} onclick="return rowClk(event,${ri})">`+
    `<td class="c"><input type="checkbox" data-i="${ri}"${n===0?' disabled':''}${PICK.has(ri)?' checked':''} onchange="pickRow(${ri},this.checked)" title="${n===0?'가공공정이 없습니다':'함께 발주 · 가공계획 함께 적용 등에 씁니다'}"></td>`+   /* v324: 공정이 없는 행만 체크 불가 — 발주 진행 중·완료 행도 체크 가능 (함께 발주는 순서 검사로 걸러진다) */
    `<td class="c">${_esc(String(r.jo||'').replace(/조$/,''))}</td>`+
-   `<td class="pimg" onclick="event.stopPropagation();drawBoard(${ri})" title="${_esc(r.part)} — 클릭하면 그림보드 (공정 순서 표시 · 인쇄 · PDF)">${PIMG[r.part]?`<img src="${_esc(window.MESDB&&MESDB.thumbUrl?MESDB.thumbUrl(PIMG[r.part]):PIMG[r.part])}" data-full="${_esc(PIMG[r.part])}" onerror="window.MESDB&&MESDB.thumbFallback&&MESDB.thumbFallback(this)" loading="lazy">`:'<span style="color:#b8c2ca;font-size:11px;cursor:pointer" title="그림 없음 — 그래도 그림보드는 열 수 있습니다">보드</span>'}</td>`+
+   `<td class="pimg" onclick="event.stopPropagation();drawBoard(${ri})" title="${_esc(r.part)} — 클릭하면 그림보드 (공정 순서 표시 · 인쇄 · PDF)">${PIMG[r.part]?`<img src="${_esc(window.MESDB&&MESDB.thumbUrl?MESDB.thumbUrl(PIMG[r.part]):PIMG[r.part])}" data-full="${_esc(PIMG[r.part])}" onerror="window.MESDB&&MESDB.thumbFallback&&MESDB.thumbFallback(this)" loading="lazy">`:(PDWG[r.part]?'':'<span style="color:#b8c2ca;font-size:11px;cursor:pointer" title="그림 없음 — 그래도 그림보드는 열 수 있습니다">보드</span>')}${dwgBadge(r.part)}</td>`+
    `<td>${_esc(r.part)}${tag?'&nbsp;'+tag:''}</td>`+
    `<td>${_esc(r.name)}</td>`+
    `<td class="c">${r.qty==null?'':Number(r.qty)}</td>`+
@@ -591,11 +593,23 @@ function useJob(job,sel){
  if(CURJ===job)return;const s=JS.get(job);if(!s)return;
  ORDERED.clear();s.ordered.forEach((v,k)=>ORDERED.set(k,v));
  HOUSE.clear();s.house.forEach((v,k)=>HOUSE.set(k,v));
- PIMG=s.pimg||{};
+ PIMG=s.pimg||{};PDWG=s.pdwg||{};
  if(window.MESCYCLE&&MESCYCLE.restore)MESCYCLE.restore(s.cyc||{JOB:job,CAT:'외주가공',HIST:new Map()});
  CURJ=job;
 }
 /* 여러 제번을 40건씩 끊어 한 번에 읽는다 */
+/* v354: 도면 PDF — 그림 칸에 빨간 PDF 표시, 누르면 도면이 열림 (여러 장이면 목록에서 선택). 표시를 누를 땐 그림보드는 안 열림 */
+const DWG_COLS='job_no,part_no,drawing_no,drawing_name,file_url',DWG_Q='&part_no=not.is.null&file_url=not.is.null&order=drawing_no';
+function dwgGroup(rows){const m=new Map();(rows||[]).forEach(x=>{const j=String(x.job_no),o=m.get(j)||{};(o[x.part_no]=o[x.part_no]||[]).push(x);m.set(j,o)});return m}
+function dwgBadge(pn){const a=PDWG[pn];if(!a||!a.length)return '';
+ return `<span class="dwgi" onclick="event.stopPropagation();dwgOpen('${_esc(pn)}',this)" title="${_esc(a.map(x=>x.drawing_name||x.drawing_no).join('\n'))}\n— 누르면 도면 PDF 가 열립니다">PDF${a.length>1?'<sub>'+a.length+'</sub>':''}</span>`}
+function dwgOpen(pn,el){const a=PDWG[pn]||[];if(!a.length)return;
+ if(a.length===1)return MESDB.openRef(a[0].file_url,msg);
+ let m=document.getElementById('dwgMenu');if(!m){m=document.createElement('div');m.id='dwgMenu';document.body.appendChild(m);
+  document.addEventListener('mousedown',e=>{if(!m.contains(e.target))m.style.display='none'})}
+ m.innerHTML=a.map((x,i)=>`<button type="button" data-i="${i}">📄 ${_esc(x.drawing_name||x.drawing_no)}</button>`).join('');
+ m.onclick=e=>{const b=e.target.closest('button');if(!b)return;m.style.display='none';MESDB.openRef(a[Number(b.dataset.i)].file_url,msg)};
+ const r=el.getBoundingClientRect();m.style.left=(r.left+window.scrollX)+'px';m.style.top=(r.bottom+window.scrollY+2)+'px';m.style.display='block'}
 async function qMany(table,sel,jobs,extra){
  const out=[];
  for(let i=0;i<jobs.length;i+=40){
@@ -614,7 +628,7 @@ async function loadAll(){
  try{
   const OL=c=>`line_id,job_no,part_no,vendor_name,machining_process_code,step_no,status,order_qty,receipt_qty,unit_price,quote_price,confirm_price,nego_rate,order_date,required_date,receipt_date,confirm_date,remark${c?',cycle_no':''}`;
   const oq=`&category=eq.${encodeURIComponent('외주가공')}&order=line_id`;
-  const [rs,pm,std,ol,hs,pu,cyc]=await Promise.all([
+  const [rs,pm,std,ol,hs,pu,cyc,dw]=await Promise.all([
    qMany('machining_plan_parts','*',jobs,'&order=row_no'),
    qMany('partlist_materials','job_no,part_no,part_name,process_code,qty,image_url',jobs,'&order=row_no'),
    MESDB.table('machining_standard_routes').select('select=*&order=standard_process_no&limit=1'),
@@ -622,9 +636,10 @@ async function loadAll(){
    qMany('design_results','row_no,job_no,part_no,machining_process_code,work_date,work_minutes,labor_cost,worker_name,equipment_code,cycle_no',jobs,'&work_type=eq.가공&order=work_date').then(r=>{HOUSE_CYC=true;return r})
     .catch(()=>qMany('design_results','row_no,job_no,part_no,machining_process_code,work_date,work_minutes,labor_cost,worker_name,equipment_code',jobs,'&work_type=eq.가공&order=work_date')).catch(()=>[]),
    qMany('partlist_purchases','job_no,part_no,image_url',jobs,'').catch(()=>[]),
-   (window.MESCYCLE&&MESCYCLE.loadMany)?MESCYCLE.loadMany(jobs,'외주가공').catch(()=>null):null]);
+   (window.MESCYCLE&&MESCYCLE.loadMany)?MESCYCLE.loadMany(jobs,'외주가공').catch(()=>null):null,
+   qMany('drawings',DWG_COLS,jobs,DWG_Q).catch(()=>[])]);
   if(my!==_routeSeq||!ALL)return;
-  const gR=byJob(rs),gP=byJob(pm),gO=byJob(ol),gH=byJob(hs),img=new Map();
+  const gR=byJob(rs),gP=byJob(pm),gO=byJob(ol),gH=byJob(hs),img=new Map(),dwg=dwgGroup(dw);
   [...(pm||[]),...(pu||[])].forEach(x=>{if(!x.image_url)return;const k=String(x.job_no);const o=img.get(k)||{};o[x.part_no]=x.image_url;img.set(k,o)});
   ROUTES.length=0;JS.clear();CURJ='';PICK.clear();
   let nj=0,noStd=false;
@@ -632,7 +647,7 @@ async function loadAll(){
    const {base,added,steps}=buildBase(gR.get(j.job)||[],gP.get(j.job)||[],std);
    if(!base.length)continue;
    if(added&&!steps.length)noStd=true;
-   const s={ordered:buildOrdered(gO.get(j.job)||[]),house:buildHouse(gH.get(j.job)||[]),pimg:img.get(j.job)||{},cyc:(cyc&&cyc.get(j.job))||{JOB:j.job,CAT:'외주가공',HIST:new Map()}};
+   const s={ordered:buildOrdered(gO.get(j.job)||[]),house:buildHouse(gH.get(j.job)||[]),pimg:img.get(j.job)||{},pdwg:dwg.get(j.job)||{},cyc:(cyc&&cyc.get(j.job))||{JOB:j.job,CAT:'외주가공',HIST:new Map()}};
    JS.set(j.job,s);
    if(window.MESCYCLE&&MESCYCLE.restore)MESCYCLE.restore(s.cyc);
    for(const r of base){const n=window.MESCYCLE?MESCYCLE.cur(r.part):1;for(let c=1;c<=n;c++)ROUTES.push(Object.assign({},r,{cyc:c,old:c<n,job:j.job,jobItem:j.item||'',jobModel:j.model||''}))}
@@ -717,6 +732,7 @@ async function loadRoutes(){
   for(const r of base){const n=window.MESCYCLE?MESCYCLE.cur(r.part):1;for(let c=1;c<=n;c++)ROUTES.push(Object.assign({},r,{cyc:c,old:c<n}))}
   await loadHouse(j.job);
   try{PIMG=(MESDB.partImages?await MESDB.partImages(j.job):{})||{}}catch(e){PIMG={}}   /* v202 */
+  try{PDWG=dwgGroup(await qMany('drawings',DWG_COLS,[j.job],DWG_Q)).get(j.job)||{}}catch(e){PDWG={}}   /* v354 */
   if(my!==_routeSeq)return;
   renderRoutes();
   PICK.clear();
