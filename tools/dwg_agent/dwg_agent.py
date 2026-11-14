@@ -20,7 +20,7 @@ IPTK MES 도면변환 프로그램 (사무실 PC 에서 실행)  — v358
 import argparse, configparser, csv, io, json, math, os, re, shutil, socket, subprocess, sys, tempfile, time, traceback, zipfile
 from datetime import datetime, timezone
 
-VERSION = "358"
+VERSION = "359"
 HERE = os.path.dirname(os.path.abspath(__file__))
 PART_RE = re.compile(r"^[A-Z]\d{2}[A-Z]$")
 PAPER = {"A0": (1189, 841), "A1": (841, 594), "A2": (594, 420), "A3": (420, 297), "A4": (297, 210)}
@@ -660,6 +660,15 @@ def write_dxf(doc, ents, box, dest):
 
 
 # ───────────────────────── 변환 전체 ─────────────────────────
+def undup(s):
+    """'BUTTON, DIE BUTTON, DIE' 처럼 같은 말이 두 번 붙은 품명 → 'BUTTON, DIE'"""
+    s = re.sub(r"\s+", " ", str(s or "")).strip()
+    n = len(s)
+    if n > 2 and n % 2 == 1 and s[n // 2] == " " and s[:n // 2] == s[n // 2 + 1:]:
+        return s[:n // 2]
+    return s
+
+
 def safe(s):
     return re.sub(r"[^\w\-가-힣.]+", "_", str(s or "")).strip("_")[:60]
 
@@ -698,7 +707,7 @@ def convert(src, job, parts_rows, out_dir):
             used[key] = used.get(key, 0) + 1
             name = key if used[key] == 1 else "%s_%d" % (key, used[key])
             row = parts.get(pn or "", {})
-            pname = safe(row.get("part_name") or "")
+            pname = safe(undup(row.get("part_name") or ""))
             paper = paper_of(box.w, box.h)[0]
             note = []
             # PDF
@@ -741,7 +750,7 @@ def convert(src, job, parts_rows, out_dir):
                         note.append("두께를 알 수 없어 STEP 은 만들지 않음 (PartList 규격·두께 확인)")
             if not pn:
                 note.append("도곽에서 금형번호를 찾지 못함")
-            rows.append({"부품": name, "품명": row.get("part_name") or "", "용지": paper, "결과": st, "두께": th, "윗면 가로": ow, "윗면 세로": oh,
+            rows.append({"부품": name, "품명": undup(row.get("part_name") or ""), "용지": paper, "결과": st, "두께": th, "윗면 가로": ow, "윗면 세로": oh,
                          "구멍 수": nh, "주의": " / ".join(note)})
             log(" ", name, paper, st, (" / ".join(note))[:120])
         # 확인목록
@@ -835,6 +844,7 @@ def process_one(sv):
             pass
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+        heartbeat(sv, "idle")   # 끝나면 바로 '대기' 로
     return True
 
 
