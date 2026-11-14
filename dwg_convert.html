@@ -38,7 +38,7 @@ tr.det td{background:#fafcfd;white-space:normal;height:auto;padding:6px 10px}
 <div class="guide">
  ① 관리제번·제번을 고르고 ② <b>금형 전체 DWG</b>(2D 도면, 도곽 여러 장)를 올리면 ③ 사무실 PC 의 <b>도면변환 프로그램</b>이 가져가 변환합니다 (보통 1~3분).<br>
  결과: <b>부품별 PDF zip</b> (도곽마다 <b>금형번호_품명_용지.pdf</b> — 그대로 PartList [📄 도면PDF 일괄등록] 에 넣을 수 있음) · <b>가공용 zip</b> (STEP 2.5D 솔리드 · 윗면 DXF · 확인목록)<br>
- <span class="warn">※ STEP 은 2D 도면의 윗면 외곽과 관통 구멍을 PartList 두께만큼 올린 것입니다. 포켓·카운터보어·탭·경사면은 반영되지 않으니 가공 전 확인목록과 도면을 꼭 대조하세요.</span>
+ <span class="warn">※ STEP 은 2D 도면의 윗면 외곽과 구멍을 두께만큼 올린 것입니다. 도면 구멍표(카운터보어 깊이·방향, 탭)는 반영하지만 포켓·경사면·라운드는 반영되지 않으니 가공 전 확인목록과 도면을 꼭 대조하세요.</span>
 </div>
 <div class="drop" id="drop" onclick="pickFile()">여기에 <b>DWG / DXF 파일</b>을 끌어다 놓거나 누르세요 &nbsp;·&nbsp; 20MB 이하</div>
 <div class="gridbox"><table><thead><tr>
