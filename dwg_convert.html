@@ -1,0 +1,119 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>도면변환</title><style>
+/* v358: 도면변환 — 금형 전체 DWG(2D) → 부품별 PDF zip · 가공용(STEP·DXF) zip. 변환은 사무실 PC 프로그램(tools/dwg_agent)이 한다 */
+:root{--line:#98a6b2;--line2:#c5d0d8;--blue:#2f75b5;--ink:#344757;--head1:#e8f1f8;--head2:#c8dbe9}
+*{box-sizing:border-box}html,body{height:100%;margin:0}body{font-family:"Malgun Gothic","맑은 고딕",Arial,sans-serif;font-size:12px;color:var(--ink);background:#fff;overflow:hidden}
+button,input,select{font:inherit;color:inherit}.screen{height:100%;display:flex;flex-direction:column;background:#fff}
+.title{height:48px;padding:8px 14px 5px;border-bottom:2px solid #3978ae;display:flex;align-items:center}.title h1{margin:0;font-size:22px;font-weight:500;color:#4b5c6a}.title small{font-size:11px;color:#9ca7af;margin-left:12px}
+.filt{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 14px;background:#fafbfc;border-bottom:1px solid var(--line2)}
+.lb{font-weight:700}.field{height:27px;border:1px solid #b5c0c9;background:#fff;padding:0 6px;min-width:0}
+.btn{height:29px;min-width:62px;border:1px solid #9ba8b4;background:linear-gradient(#fff,#dfe6eb);cursor:pointer;padding:0 10px}.btn:hover{background:#fff}
+.btn.go{border-color:#6f9cc4;background:linear-gradient(#e9f3fc,#c9def0);font-weight:700}
+.agent{margin-left:auto;display:flex;align-items:center;gap:6px;padding:3px 10px;border-radius:12px;border:1px solid #c5d0d8;background:#fff;font-weight:700}
+.agent i{width:9px;height:9px;border-radius:50%;background:#b9c3cb;display:inline-block}.agent.on i{background:#2e7d32;box-shadow:0 0 0 3px #d9f0da}.agent.on{color:#2e7d32}.agent.off{color:#9a5410}
+.guide{margin:10px 14px 0;padding:8px 12px;border:1px solid #d5dde3;background:#f6f9fb;line-height:1.75;color:#4d5c69}
+.guide b{color:#1d5da3}.guide .warn{color:#9a5410}
+.drop{margin:10px 14px 0;border:2px dashed #b5c0c9;border-radius:6px;padding:14px;text-align:center;color:#6b7a87;background:#fcfdfe;cursor:pointer}
+.drop.over{border-color:#2f75b5;background:#eef6fd;color:#1d5da3}.drop b{color:#1d5da3}
+.gridbox{margin:10px 14px 0;border:1px solid var(--line);overflow:auto;background:#fff;flex:1;min-height:0}
+table{border-collapse:collapse;width:100%;min-width:980px;table-layout:fixed}
+th,td{height:30px;border-right:1px solid var(--line2);border-bottom:1px solid var(--line2);padding:0 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+th{position:sticky;top:0;z-index:2;text-align:center;background:linear-gradient(var(--head1),var(--head2));color:#405266}
+td.c{text-align:center}
+.st{display:inline-block;min-width:58px;padding:1px 8px;border-radius:10px;font-weight:700;font-size:11px;text-align:center}
+.st.waiting{background:#eef2f5;color:#4b5c6a}.st.working{background:#fff3cd;color:#8a6100}.st.done{background:#e6f6e6;color:#2e7d32}.st.error{background:#fdecea;color:#b3261e}.st.cancelled{background:#f1f1f1;color:#999}
+td .btn{height:23px;min-width:0;padding:0 8px;font-size:11.5px}
+tr.det td{background:#fafcfd;white-space:normal;height:auto;padding:6px 10px}
+.rows{width:100%;min-width:0;table-layout:auto;border:1px solid #d5dde3}.rows th,.rows td{height:24px;font-size:11.5px}.rows td.warn{color:#9a5410;white-space:normal}
+.foot{height:42px;display:flex;align-items:center;padding:5px 14px;border-top:1px solid var(--line);background:#eef2f5;gap:5px;margin-top:10px}.msg{margin-left:8px;color:#1d5da3;font-weight:700}
+.empty{color:#8a97a2;text-align:center;height:80px}
+</style></head><body><div class="screen">
+<div class="title"><h1>도면변환</h1><small>DWG → 부품별 PDF · 가공용 STEP/DXF</small></div>
+<section class="filt">
+ <span class="lb">관리제번</span><input id="q_job" class="field" style="width:190px" autocomplete="off">
+ <button class="btn" onclick="load()">⌕ 조회</button>
+ <button class="btn go" onclick="pickFile()" title="금형 전체 DWG(또는 DXF) 1개를 올립니다">⇪ DWG 올리기</button>
+ <input type="file" id="dwgFile" accept=".dwg,.dxf" style="display:none" onchange="upload(this.files[0]);this.value=''">
+ <span class="agent" id="agent" title="사무실 PC 의 도면변환 프로그램(run_agent.bat) 상태"><i></i><span>변환 PC 확인 중…</span></span>
+</section>
+<div class="guide">
+ ① 관리제번·제번을 고르고 ② <b>금형 전체 DWG</b>(2D 도면, 도곽 여러 장)를 올리면 ③ 사무실 PC 의 <b>도면변환 프로그램</b>이 가져가 변환합니다 (보통 1~3분).<br>
+ 결과: <b>부품별 PDF zip</b> (도곽마다 <b>금형번호_품명_용지.pdf</b> — 그대로 PartList [📄 도면PDF 일괄등록] 에 넣을 수 있음) · <b>가공용 zip</b> (STEP 2.5D 솔리드 · 윗면 DXF · 확인목록)<br>
+ <span class="warn">※ STEP 은 2D 도면의 윗면 외곽과 관통 구멍을 PartList 두께만큼 올린 것입니다. 포켓·카운터보어·탭·경사면은 반영되지 않으니 가공 전 확인목록과 도면을 꼭 대조하세요.</span>
+</div>
+<div class="drop" id="drop" onclick="pickFile()">여기에 <b>DWG / DXF 파일</b>을 끌어다 놓거나 누르세요 &nbsp;·&nbsp; 20MB 이하</div>
+<div class="gridbox"><table><thead><tr>
+ <th style="width:54px">No</th><th style="width:130px">요청 시각</th><th style="width:110px">제번</th><th>올린 파일</th><th style="width:84px">상태</th><th style="width:250px">결과</th><th style="width:320px">내려받기</th><th style="width:80px">요청자</th>
+</tr></thead><tbody id="body"><tr><td colspan="8" class="empty">관리제번·제번을 고르세요.</td></tr></tbody></table></div>
+<footer class="foot"><button class="btn" onclick="load()">⟳ 새로고침</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message"></span></footer>
+</div>
+<script src="mes_db.js?v=196"></script>
+<script src="mes_jobpick.js?v=268"></script>
+<script>
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const msg=t=>message.textContent=t;
+const online=()=>!!(window.MESDB&&MESDB.online);
+const ST={waiting:'대기',working:'변환 중',done:'완료',error:'실패',cancelled:'취소'};
+const JSPL=j=>{const m=/^(.*\d)([A-Z])$/.exec(String(j||'').trim());return m?m[1]:String(j||'').trim()};
+let ROWS=[],OPEN=new Set(),TIMER=null;
+const curJob=()=>(q_job.value||'').trim();
+const when=t=>{if(!t)return '';const d=new Date(t),p=n=>String(n).padStart(2,'0');return `${d.getMonth()+1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`};
+const me=()=>{try{const a=window.MES_AUTH||window.parent.MES_AUTH;return (a&&(a.name||a.session?.user?.email))||''}catch(e){return ''}};
+
+async function waitDB(){for(let i=0;i<80&&!window.MESDB;i++)await new Promise(r=>setTimeout(r,50));if(window.MESDB&&MESDB.ready){try{await MESDB.ready}catch(e){}}}
+
+async function agentState(){
+ const el=document.getElementById('agent'),tx=el.querySelector('span');
+ try{const rs=await MESDB.table('page_state').select('select=data&page=eq.'+encodeURIComponent('cfg:dwg_agent')+'&limit=1',{fresh:true});
+  const d=rs&&rs[0]&&rs[0].data;const age=d&&d.last_seen?(Date.now()-new Date(d.last_seen))/1000:1e9;
+  if(age<120){el.className='agent on';tx.textContent='변환 PC 연결됨'+(d.state==='working'?' · 변환 중':'');el.title=`${d.host||''} · v${d.version||''} · ${Math.round(age)}초 전 확인`}
+  else{el.className='agent off';tx.textContent='변환 PC 꺼짐';el.title='사무실 PC 에서 tools/dwg_agent/run_agent.bat 을 실행하세요'+(d&&d.last_seen?` (마지막 확인 ${when(d.last_seen)})`:'')}
+ }catch(e){el.className='agent off';tx.textContent='변환 PC 확인 실패'}}
+
+async function load(){
+ await waitDB();if(!online()){msg('DB 미연결 — 로그인 후 사용하세요.');return}
+ const j=curJob();
+ try{
+  const q='select=id,base_job,job_no,src_name,status,message,pdf_path,cad_path,summary,requested_by,created_at,finished_at&order=id.desc&limit=50'+(j?'&base_job=eq.'+encodeURIComponent(JSPL(j)):'');
+  ROWS=await MESDB.table('dwg_convert_jobs').select(q,{fresh:true})||[];render();
+ }catch(e){msg('조회 실패: '+String(e.message||e).slice(0,120))}
+ agentState();
+ clearTimeout(TIMER);if(ROWS.some(r=>r.status==='waiting'||r.status==='working'))TIMER=setTimeout(load,5000);   /* 진행 중이면 5초마다 */
+}
+function render(){
+ body.innerHTML=ROWS.length?ROWS.map(r=>{
+  const s=r.summary||{},dl=r.status==='done'?`<button class="btn" onclick="dl('${esc(r.pdf_path)}')">⬇ PDF zip</button> <button class="btn" onclick="dl('${esc(r.cad_path)}')">⬇ 가공용 zip</button> <button class="btn" onclick="tog(${r.id})">${OPEN.has(r.id)?'▲':'▼'} 확인목록</button>`
+   :r.status==='waiting'?`<button class="btn" onclick="cancelJob(${r.id})">취소</button>`:'';
+  const det=OPEN.has(r.id)&&s.rows?`<tr class="det"><td colspan="8"><table class="rows"><thead><tr><th>부품</th><th>품명</th><th>용지</th><th>결과</th><th>두께</th><th>윗면 가로</th><th>윗면 세로</th><th>구멍</th><th>주의</th></tr></thead><tbody>${
+   s.rows.map(x=>`<tr><td>${esc(x['부품'])}</td><td>${esc(x['품명'])}</td><td class="c">${esc(x['용지'])}</td><td class="c">${esc(x['결과'])}</td><td class="c">${esc(x['두께'])}</td><td class="c">${esc(x['윗면 가로'])}</td><td class="c">${esc(x['윗면 세로'])}</td><td class="c">${esc(x['구멍 수'])}</td><td class="warn">${esc(x['주의'])}</td></tr>`).join('')}</tbody></table></td></tr>`:'';
+  return `<tr><td class="c">${r.id}</td><td class="c">${when(r.created_at)}</td><td class="c">${esc(r.job_no)}</td><td title="${esc(r.src_name)}">${esc(r.src_name)}</td><td class="c"><span class="st ${esc(r.status)}">${ST[r.status]||esc(r.status)}</span></td><td title="${esc(r.message)}">${esc(r.message||(r.status==='waiting'?'변환 PC 를 기다리는 중':''))}</td><td>${dl}</td><td class="c">${esc(r.requested_by)}</td></tr>`+det}).join('')
+ :`<tr><td colspan="8" class="empty">${curJob()?'이 관리제번의 변환 기록이 없습니다. DWG 를 올려 보세요.':'관리제번·제번을 고르세요.'}</td></tr>`;
+}
+window.tog=id=>{OPEN.has(id)?OPEN.delete(id):OPEN.add(id);render()};
+window.dl=p=>{if(!p)return;MESDB.openRef('sb:'+p,msg)};
+window.cancelJob=async id=>{try{await MESDB.table('dwg_convert_jobs').update({id,status:'waiting'},{status:'cancelled',message:'요청 취소',finished_at:new Date().toISOString()});msg('변환 요청을 취소했습니다.');load()}catch(e){msg('취소 실패: '+String(e.message||e).slice(0,120))}};
+window.pickFile=()=>{if(!curJob())return msg('관리제번·제번을 먼저 고르세요.');dwgFile.click()};
+async function upload(f){
+ if(!f)return;const j=curJob();if(!j)return msg('관리제번·제번을 먼저 고르세요.');
+ if(!/\.(dwg|dxf)$/i.test(f.name))return msg('DWG 또는 DXF 파일만 올릴 수 있습니다.');
+ if(f.size>20*1024*1024)return msg('파일이 너무 큽니다 (20MB 이하). CAD 에서 쓰지 않는 블록·레이어를 정리(PURGE)한 뒤 올려 보세요.');
+ await waitDB();if(!online())return msg('DB 미연결 — 로그인 후 사용하세요.');
+ try{
+  msg(`${f.name} 올리는 중…`);
+  const ref=await MESDB.drawingUpload(f,{job:j,part:'convert',dno:'convert_'+String(f.name).replace(/\.[^.]+$/,'')});
+  await MESDB.table('dwg_convert_jobs').upsert([{base_job:JSPL(j),job_no:j,src_name:f.name,src_path:String(ref).replace(/^sb:/,''),status:'waiting',requested_by:me()||null}]);
+  msg(`${f.name} 을(를) 올렸습니다. 변환 PC 가 가져가면 상태가 「변환 중」→「완료」로 바뀝니다.`);
+  load();
+ }catch(e){msg('올리기 실패: '+String(e.message||e).slice(0,140))}
+}
+window.upload=upload;
+(function(){const d=document.getElementById('drop');
+ ['dragenter','dragover'].forEach(k=>d.addEventListener(k,e=>{e.preventDefault();d.classList.add('over')}));
+ ['dragleave','drop'].forEach(k=>d.addEventListener(k,e=>{e.preventDefault();d.classList.remove('over')}));
+ d.addEventListener('drop',e=>{const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];if(f)upload(f)})})();
+try{MESJOB.attachFilter('q_job',{onPick:()=>load(),onEnter:()=>load()})}catch(e){}
+setInterval(()=>{if(document.visibilityState==='visible'&&online())agentState()},30000);
+waitDB().then(load);
+window.MES={search:load,setMessage:msg};
+</script>
+<script src="mes_ctx.js?v=306"></script>
+</body></html>
