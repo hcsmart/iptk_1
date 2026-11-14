@@ -20,7 +20,7 @@ IPTK MES 도면변환 프로그램 (사무실 PC 에서 실행)  — v358
 import argparse, configparser, csv, io, json, math, os, re, shutil, socket, subprocess, sys, tempfile, time, traceback, zipfile
 from datetime import datetime, timezone
 
-VERSION = "360"
+VERSION = "361"
 HERE = os.path.dirname(os.path.abspath(__file__))
 PART_RE = re.compile(r"^[A-Z]\d{2}[A-Z]$")
 PAPER = {"A0": (1189, 841), "A1": (841, 594), "A2": (594, 420), "A3": (420, 297), "A4": (297, 210)}
@@ -140,6 +140,208 @@ def find_dwg2dxf():
     raise RuntimeError("dwg2dxf(LibreDWG)를 찾지 못했습니다 — setup_windows.bat 을 다시 실행하세요.")
 
 
+def find_dwgread():
+    d = os.path.dirname(find_dwg2dxf())
+    for n in ("dwgread.exe", "dwgread"):
+        c = os.path.join(d, n)
+        if os.path.exists(c):
+            return c
+    return shutil.which("dwgread")
+
+
+def json_to_dxf(jpath, out):
+    """LibreDWG 의 읽기 결과(JSON) → ezdxf 도면 → DXF.
+    (LibreDWG 의 DXF 쓰기가 실패하는 도면도 읽기는 대부분 되므로, 읽은 내용으로 직접 다시 그린다)"""
+    import ezdxf
+    with open(jpath, encoding="utf-8", errors="replace") as f:
+        O = json.load(f)["OBJECTS"]
+    H = {o["handle"][-1]: o for o in O if isinstance(o.get("handle"), list) and o["handle"]}
+    ref = lambda r: r[-1] if isinstance(r, list) and r else None
+    deg = lambda a: math.degrees(a or 0.0)
+    doc = ezdxf.new("R2010", setup=True)
+    doc.units = 4
+    # 한글 글꼴 (윈도우 맑은 고딕) — PDF 에 한글이 나오게
+    for fp in (r"C:\Windows\Fonts\malgun.ttf", "/usr/share/fonts/truetype/fonts-japanese-gothic.ttf"):
+        if os.path.exists(fp):
+            try:
+                doc.styles.get("Standard").dxf.font = os.path.basename(fp)
+            except Exception:
+                pass
+            break
+    for o in O:   # 선 종류
+        if o.get("object") == "LTYPE":
+            n = o.get("name") or ""
+            if n and n.upper() not in ("BYLAYER", "BYBLOCK") and n not in doc.linetypes:
+                dashed = any(k in n.upper() for k in ("HID", "DASH", "CENT", "PHAN", "DOT", "DIVIDE", "BORDER"))
+                try:
+                    doc.linetypes.add(n, pattern=[6.0, 4.0, -2.0] if dashed else [0.0], description=o.get("description") or "")
+                except Exception:
+                    pass
+    for o in O:   # 레이어
+        if o.get("object") == "LAYER":
+            n = o.get("name") or "0"
+            lt = H.get(ref(o.get("ltype")), {}).get("name") or "Continuous"
+            if lt not in doc.linetypes:
+                lt = "Continuous"
+            c = o.get("color")
+            c = abs(c) if isinstance(c, int) and 0 < abs(c) < 256 else 7
+            try:
+                if n in doc.layers:
+                    L = doc.layers.get(n)
+                    L.dxf.linetype, L.dxf.color = lt, c
+                else:
+                    doc.layers.add(n, color=c, linetype=lt)
+            except Exception:
+                pass
+    msp = doc.modelspace()
+    bh = {h: o for h, o in H.items() if o.get("object") == "BLOCK_HEADER"}
+    bname, cont = {}, {}
+    for h, o in bh.items():
+        n = o.get("name") or ""
+        if n.upper() == "*MODEL_SPACE":
+            cont[h] = msp
+            continue
+        if n.upper().startswith("*PAPER_SPACE"):
+            cont[h] = None
+            continue
+        nn = re.sub(r"[<>/\\\":;?*|=`]", "_", n)
+        if nn.startswith("_"):
+            nn = "ANON" + nn
+        base, k = nn or "B", 1
+        while nn in doc.blocks:
+            k += 1
+            nn = "%s_%d" % (base, k)
+        bp = o.get("base_pt") or [0, 0, 0]
+        cont[h] = doc.blocks.new(nn, base_point=(bp[0], bp[1]))
+        bname[h] = nn
+
+    # 블록마다 첫 항목 → next → … → 끝 항목 사슬을 따라 소속을 정한다 (R2000 도면의 ownerhandle 은 믿을 수 없는 경우가 있음)
+    owner_of = {}
+    for h, o in bh.items():
+        f, l = ref(o.get("first_entity")), ref(o.get("last_entity"))
+        k, seen = f, 0
+        while k and k in H and seen < 200000:
+            owner_of.setdefault(k, h)
+            if k == l:
+                break
+            k = ref(H[k].get("next_entity"))
+            seen += 1
+        for r in o.get("entities") or []:   # R2004+ 는 항목 목록
+            owner_of.setdefault(ref(r), h)
+
+    def target(e, depth=0):
+        hh = e["handle"][-1] if isinstance(e.get("handle"), list) else None
+        if hh in owner_of:
+            return cont.get(owner_of[hh])
+        if e.get("entmode") == 2:
+            return msp
+        if e.get("entmode") == 1:
+            return None
+        ow = ref(e.get("ownerhandle"))
+        if ow in cont:
+            return cont[ow]
+        o2 = H.get(ow)
+        if o2 is not None and o2.get("entity") and depth < 4:   # ATTRIB → 블록참조가 놓인 곳
+            return target(o2, depth + 1)
+        return None
+
+    def attribs(e):
+        a = {"layer": H.get(ref(e.get("layer")), {}).get("name") or "0"}
+        c = e.get("color")
+        if isinstance(c, int) and c != 256:
+            a["color"] = 0 if c == 0 else (abs(c) if abs(c) < 256 else 7)
+        lf = e.get("ltype_flags")
+        if lf == 3:
+            n = H.get(ref(e.get("ltype")), {}).get("name")
+            if n and n in doc.linetypes:
+                a["linetype"] = n
+        elif lf == 1:
+            a["linetype"] = "BYBLOCK"
+        elif lf == 2:
+            a["linetype"] = "Continuous"
+        ex = e.get("extrusion")
+        if ex and len(ex) == 3 and ex[2] < 0:
+            a["extrusion"] = tuple(ex)
+        return a
+
+    n_ok = 0
+    for e in O:
+        t = e.get("entity")
+        if not t or t in ("BLOCK", "ENDBLK", "SEQEND", "ATTDEF", "POINT", "VIEWPORT"):
+            continue
+        L = target(e)
+        if L is None:
+            continue
+        try:
+            a = attribs(e)
+            if t == "LINE":
+                L.add_line(e["start"], e["end"], dxfattribs=a)
+            elif t == "CIRCLE":
+                L.add_circle(e["center"], e["radius"], dxfattribs=a)
+            elif t == "ARC":
+                L.add_arc(e["center"], e["radius"], deg(e.get("start_angle")), deg(e.get("end_angle")), dxfattribs=a)
+            elif t == "LWPOLYLINE":
+                pts = e.get("points") or []
+                bl = e.get("bulges") or []
+                L.add_lwpolyline([(p[0], p[1], 0, 0, bl[i] if i < len(bl) else 0) for i, p in enumerate(pts)], format="xyseb",
+                                 close=bool((e.get("flag") or 0) & 512), dxfattribs=a)
+            elif t in ("TEXT", "ATTRIB"):
+                a.update({"height": e.get("height") or 2.5, "rotation": deg(e.get("rotation")), "width": e.get("width_factor") or 1.0,
+                          "insert": tuple(e["ins_pt"][:2])})
+                te = L.add_text(str(e.get("text_value") or ""), dxfattribs=a)
+                ha, va = e.get("horiz_alignment") or 0, e.get("vert_alignment") or 0
+                if (ha or va) and e.get("alignment_pt"):
+                    te.dxf.halign, te.dxf.valign = ha, va
+                    te.dxf.align_point = tuple(e["alignment_pt"][:2])
+            elif t == "MTEXT":
+                xd = e.get("x_axis_dir") or [1, 0, 0]
+                a.update({"insert": tuple(e["ins_pt"][:2]), "char_height": e.get("text_height") or 2.5, "width": e.get("rect_width") or 0,
+                          "attachment_point": e.get("attachment") or 1, "rotation": math.degrees(math.atan2(xd[1], xd[0]))})
+                L.add_mtext(str(e.get("text") or ""), dxfattribs=a)
+            elif t == "INSERT" or t == "MINSERT":
+                bn = bname.get(ref(e.get("block_header")))
+                if bn:
+                    sc = e.get("scale") or [1, 1, 1]
+                    a.update({"xscale": sc[0] or 1, "yscale": sc[1] or 1, "zscale": sc[2] or 1, "rotation": deg(e.get("rotation"))})
+                    L.add_blockref(bn, e["ins_pt"], dxfattribs=a)
+            elif t.startswith("DIMENSION"):   # 치수 = 미리 그려 둔 익명 블록
+                bn = bname.get(ref(e.get("block")))
+                if bn:
+                    sc = e.get("ins_scale") or [1, 1, 1]
+                    a.update({"xscale": sc[0] or 1, "yscale": sc[1] or 1, "rotation": deg(e.get("ins_rotation"))})
+                    a.pop("extrusion", None)
+                    L.add_blockref(bn, (0, 0), dxfattribs=a)
+            elif t == "SOLID":
+                L.add_solid([e["corner1"], e["corner2"], e["corner3"], e["corner4"]], dxfattribs=a)
+            elif t == "ELLIPSE":
+                L.add_ellipse(e["center"], major_axis=e["sm_axis"], ratio=e.get("axis_ratio") or 1, start_param=e.get("start_angle") or 0,
+                              end_param=e.get("end_angle") or math.tau, dxfattribs=a)
+            elif t == "SPLINE":
+                if e.get("fit_pts"):
+                    L.add_spline(fit_points=[p[:3] if len(p) >= 3 else (p[0], p[1], 0) for p in e["fit_pts"]], degree=e.get("degree") or 3, dxfattribs=a)
+                elif e.get("ctrl_pts"):
+                    cp = [(p[0], p[1], p[2] if len(p) > 2 else 0) for p in e["ctrl_pts"]]
+                    sp = L.add_spline(dxfattribs=a)
+                    sp.dxf.degree = e.get("degree") or 3
+                    sp.control_points = cp
+                    if e.get("knots"):
+                        sp.knots = e["knots"]
+            elif t == "HATCH" and e.get("is_solid_fill"):
+                h = L.add_hatch(color=a.get("color", 7), dxfattribs={"layer": a["layer"]})
+                for pth in e.get("paths") or []:
+                    pp = pth.get("polyline_paths")
+                    if pp:
+                        h.paths.add_polyline_path([(q["point"][0], q["point"][1], q.get("bulge", 0) or 0) for q in pp], is_closed=True)
+            else:
+                continue
+            n_ok += 1
+        except Exception:
+            continue
+    log("JSON 로 다시 그림:", n_ok, "개")
+    doc.saveas(out)
+    return out
+
+
 def find_oda():
     """무료 ODA File Converter 가 설치돼 있으면 그 경로 (LibreDWG 가 못 읽는 DWG 대비)"""
     import glob
@@ -174,6 +376,17 @@ def to_dxf(src, tmp):
         err = (p.stderr or p.stdout or "")[-200:]
     except Exception as ex:
         err = str(ex)
+    try:   # LibreDWG 의 DXF 쓰기가 실패하면: 읽기(JSON) 결과로 직접 다시 그린다
+        rd = find_dwgread()
+        if rd:
+            js = os.path.abspath(os.path.join(tmp, "in.json"))
+            subprocess.run([rd, "-O", "json", "-o", js, src], capture_output=True, timeout=1800, cwd=os.path.dirname(rd))
+            if os.path.exists(js) and os.path.getsize(js) > 1000:
+                o3 = json_to_dxf(js, os.path.abspath(os.path.join(tmp, "in_json.dxf")))
+                if dxf_ok(o3):
+                    return o3
+    except Exception as ex:
+        err += " / JSON: %s" % str(ex)[:120]
     oda = find_oda()
     if oda:
         log("LibreDWG 로 읽지 못해 ODA File Converter 로 다시 시도")
@@ -259,6 +472,10 @@ def find_frames(msp, cache):
         t = e.dxftype()
         if t not in ("INSERT", "LWPOLYLINE", "POLYLINE"):
             continue
+        if t == "INSERT":
+            bn = (e.dxf.get("name") or "").upper()
+            if bn.startswith("*") or bn.startswith("ANON"):   # 치수·익명 블록은 도곽이 아님
+                continue
         if t != "INSERT":
             try:
                 closed = e.closed if t == "LWPOLYLINE" else e.is_closed
@@ -758,6 +975,23 @@ def undup(s):
     return s
 
 
+def ungzip_if(path, tmp):
+    """gzip 으로 압축된 파일이면 풀어서 그 경로 (확장자는 원래 파일 이름 기준: .dxf)"""
+    import gzip
+    with open(path, "rb") as f:
+        head = f.read(2)
+    if head != b"\x1f\x8b":
+        return path
+    base = os.path.basename(path)
+    base = base[:-3] if base.lower().endswith(".gz") else base
+    if not base.lower().endswith((".dxf", ".dwg")):
+        base += ".dxf"
+    out = os.path.join(tmp, "unz_" + base)
+    with gzip.open(path, "rb") as fi, open(out, "wb") as fo:
+        shutil.copyfileobj(fi, fo)
+    return out
+
+
 def safe(s):
     return re.sub(r"[^\w\-가-힣.]+", "_", str(s or "")).strip("_")[:60]
 
@@ -766,6 +1000,7 @@ def convert(src, job, parts_rows, out_dir):
     """src(DWG/DXF) → out_dir 에 PDF zip · 가공용 zip. 결과 요약 dict"""
     tmp = tempfile.mkdtemp(prefix="cv_", dir=work_dir())
     try:
+        src = ungzip_if(src, tmp)   # v361: 웹이 압축(gzip)해 올린 DXF 는 풀어서
         dxf = to_dxf(src, tmp)
         doc = load_doc(dxf)
         msp = doc.modelspace()

@@ -27,20 +27,20 @@ tr.det td{background:#fafcfd;white-space:normal;height:auto;padding:6px 10px}
 .foot{height:42px;display:flex;align-items:center;padding:5px 14px;border-top:1px solid var(--line);background:#eef2f5;gap:5px;margin-top:10px}.msg{margin-left:8px;color:#1d5da3;font-weight:700}
 .empty{color:#8a97a2;text-align:center;height:80px}
 </style></head><body><div class="screen">
-<div class="title"><h1>도면변환</h1><small>DWG → 부품별 PDF · 가공용 STEP/DXF</small></div>
+<div class="title"><h1>도면변환</h1><small>DXF → 부품별 PDF · 가공용 STEP/DXF</small></div>
 <section class="filt">
  <span class="lb">관리제번</span><input id="q_job" class="field" style="width:190px" autocomplete="off">
  <button class="btn" onclick="load()">⌕ 조회</button>
- <button class="btn go" onclick="pickFile()" title="금형 전체 DWG(또는 DXF) 1개를 올립니다">⇪ DWG 올리기</button>
- <input type="file" id="dwgFile" accept=".dwg,.dxf" style="display:none" onchange="upload(this.files[0]);this.value=''">
+ <button class="btn go" onclick="pickFile()" title="금형 전체 도면을 CAD 에서 DXF 로 저장해 1개 올립니다">⇪ DXF 올리기</button>
+ <input type="file" id="dwgFile" accept=".dxf" style="display:none" onchange="upload(this.files[0]);this.value=''">
  <span class="agent" id="agent" title="사무실 PC 의 도면변환 프로그램(run_agent.bat) 상태"><i></i><span>변환 PC 확인 중…</span></span>
 </section>
 <div class="guide">
- ① 관리제번·제번을 고르고 ② <b>금형 전체 DWG</b>(2D 도면, 도곽 여러 장)를 올리면 ③ 사무실 PC 의 <b>도면변환 프로그램</b>이 가져가 변환합니다 (보통 1~3분).<br>
+ ① 관리제번·제번을 고르고 ② <b>금형 전체 도면을 DXF 로 저장</b>해 올리면 <span style="color:#7c8993">(CAD 에서 다른 이름으로 저장 → AutoCAD 2018 DXF)</span> ③ 사무실 PC 의 <b>도면변환 프로그램</b>이 가져가 변환합니다 (보통 1~3분).<br>
  결과: <b>부품별 PDF zip</b> (도곽마다 <b>금형번호_품명_용지.pdf</b> — 그대로 PartList [📄 도면PDF 일괄등록] 에 넣을 수 있음) · <b>가공용 zip</b> (STEP 2.5D 솔리드 · 윗면 DXF · 확인목록)<br>
  <span class="warn">※ STEP 은 2D 도면의 윗면 외곽과 구멍을 두께만큼 올린 것입니다. 도면 구멍표(카운터보어 깊이·방향, 탭)는 반영하지만 포켓·경사면·라운드는 반영되지 않으니 가공 전 확인목록과 도면을 꼭 대조하세요.</span>
 </div>
-<div class="drop" id="drop" onclick="pickFile()">여기에 <b>DWG / DXF 파일</b>을 끌어다 놓거나 누르세요 &nbsp;·&nbsp; 20MB 이하</div>
+<div class="drop" id="drop" onclick="pickFile()">여기에 <b>DXF 파일</b>을 끌어다 놓거나 누르세요 &nbsp;·&nbsp; 올릴 때 자동으로 압축합니다 (압축 후 20MB 이하)</div>
 <div class="gridbox"><table><thead><tr>
  <th style="width:54px">No</th><th style="width:130px">요청 시각</th><th style="width:110px">제번</th><th>올린 파일</th><th style="width:84px">상태</th><th style="width:250px">결과</th><th style="width:320px">내려받기</th><th style="width:80px">요청자</th>
 </tr></thead><tbody id="body"><tr><td colspan="8" class="empty">관리제번·제번을 고르세요.</td></tr></tbody></table></div>
@@ -86,20 +86,30 @@ function render(){
   const det=OPEN.has(r.id)&&s.rows?`<tr class="det"><td colspan="8"><table class="rows"><thead><tr><th>부품</th><th>품명</th><th>용지</th><th>결과</th><th>두께</th><th>윗면 가로</th><th>윗면 세로</th><th>구멍</th><th>주의</th></tr></thead><tbody>${
    s.rows.map(x=>`<tr><td>${esc(x['부품'])}</td><td>${esc(x['품명'])}</td><td class="c">${esc(x['용지'])}</td><td class="c">${esc(x['결과'])}</td><td class="c">${esc(x['두께'])}</td><td class="c">${esc(x['윗면 가로'])}</td><td class="c">${esc(x['윗면 세로'])}</td><td class="c">${esc(x['구멍 수'])}</td><td class="warn">${esc(x['주의'])}</td></tr>`).join('')}</tbody></table></td></tr>`:'';
   return `<tr><td class="c">${r.id}</td><td class="c">${when(r.created_at)}</td><td class="c">${esc(r.job_no)}</td><td title="${esc(r.src_name)}">${esc(r.src_name)}</td><td class="c"><span class="st ${esc(r.status)}">${ST[r.status]||esc(r.status)}</span></td><td title="${esc(r.message)}">${esc(r.message||(r.status==='waiting'?'변환 PC 를 기다리는 중':''))}</td><td>${dl}</td><td class="c">${esc(r.requested_by)}</td></tr>`+det}).join('')
- :`<tr><td colspan="8" class="empty">${curJob()?'이 관리제번의 변환 기록이 없습니다. DWG 를 올려 보세요.':'관리제번·제번을 고르세요.'}</td></tr>`;
+ :`<tr><td colspan="8" class="empty">${curJob()?'이 관리제번의 변환 기록이 없습니다. DXF 를 올려 보세요.':'관리제번·제번을 고르세요.'}</td></tr>`;
 }
 window.tog=id=>{OPEN.has(id)?OPEN.delete(id):OPEN.add(id);render()};
 window.dl=p=>{if(!p)return;MESDB.openRef('sb:'+p,msg)};
 window.cancelJob=async id=>{try{await MESDB.table('dwg_convert_jobs').update({id,status:'waiting'},{status:'cancelled',message:'요청 취소',finished_at:new Date().toISOString()});msg('변환 요청을 취소했습니다.');load()}catch(e){msg('취소 실패: '+String(e.message||e).slice(0,120))}};
 window.pickFile=()=>{if(!curJob())return msg('관리제번·제번을 먼저 고르세요.');dwgFile.click()};
+/* v361: DXF 만 받는다 (DWG 는 오픈소스로 읽을 때 블록이 섞이는 도면이 있어 — CAD 가 직접 풀어 저장한 DXF 가 정확).
+   DXF 는 DWG 보다 몇 배 커서 브라우저에서 gzip 으로 압축해 올린다 (보통 1/10). 변환 프로그램이 풀어서 읽는다 */
+async function gz(f){
+ if(!window.CompressionStream)return null;
+ const cs=f.stream().pipeThrough(new CompressionStream('gzip'));
+ const b=await new Response(cs).blob();
+ return new File([b],'convert.dxf.gz',{type:'application/gzip'});
+}
 async function upload(f){
  if(!f)return;const j=curJob();if(!j)return msg('관리제번·제번을 먼저 고르세요.');
- if(!/\.(dwg|dxf)$/i.test(f.name))return msg('DWG 또는 DXF 파일만 올릴 수 있습니다.');
- if(f.size>20*1024*1024)return msg('파일이 너무 큽니다 (20MB 이하). CAD 에서 쓰지 않는 블록·레이어를 정리(PURGE)한 뒤 올려 보세요.');
+ if(!/\.dxf$/i.test(f.name))return msg(/\.dwg$/i.test(f.name)?'DWG 는 받지 않습니다 — CAD 에서 [다른 이름으로 저장] → 파일 형식 AutoCAD 2018 DXF 로 저장해서 올려 주세요.':'DXF 파일만 올릴 수 있습니다.');
  await waitDB();if(!online())return msg('DB 미연결 — 로그인 후 사용하세요.');
  try{
-  msg(`${f.name} 올리는 중…`);
-  const ref=await MESDB.drawingUpload(f,{job:j,part:'convert',dno:'convert'});   /* v359: 저장소 경로는 영문·숫자만 (한글 파일 이름은 Invalid key) — 원래 이름은 src_name 에 */
+  msg(`${f.name} 압축 중… (${(f.size/1048576).toFixed(1)}MB)`);
+  let up=f;try{const z=await gz(f);if(z&&z.size<f.size)up=z}catch(e){}
+  if(up.size>20*1024*1024)return msg(`파일이 너무 큽니다 (압축 후 ${(up.size/1048576).toFixed(1)}MB, 20MB 이하). CAD 에서 PURGE(정리) 후 다시 저장해 보세요.`);
+  msg(`${f.name} 올리는 중… (${(f.size/1048576).toFixed(1)}MB → ${(up.size/1048576).toFixed(1)}MB)`);
+  const ref=await MESDB.drawingUpload(up,{job:j,part:'convert',dno:'convert'});   /* v359: 저장소 경로는 영문·숫자만 — 원래 이름은 src_name 에 */
   await MESDB.table('dwg_convert_jobs').upsert([{base_job:JSPL(j),job_no:j,src_name:f.name,src_path:String(ref).replace(/^sb:/,''),status:'waiting',requested_by:me()||null}]);
   msg(`${f.name} 을(를) 올렸습니다. 변환 PC 가 가져가면 상태가 「변환 중」→「완료」로 바뀝니다.`);
   load();
