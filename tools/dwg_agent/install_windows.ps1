@@ -47,7 +47,7 @@ try {
     }
   }
   if (-not $ok) { throw "로그인 확인 실패 — 설치를 멈춥니다." }
-  $ini = "[server]`r`nurl = $Url`r`nkey = $Key`r`nuser = $User`r`npassword = $pw`r`n"
+  $ini = "[server]`r`nurl = $Url`r`nkey = $Key`r`nuser = $User`r`npassword = $pw`r`nbase = $Base`r`n"   # base = 자동 업데이트 받을 곳
   [IO.File]::WriteAllText($cfg, $ini, (New-Object Text.UTF8Encoding $false))
   Write-Host "  로그인 확인 완료 — 설정 저장 (이 PC 에만)"
 
@@ -63,12 +63,21 @@ try {
   $lnk.WindowStyle = 7
   $lnk.Description = 'IPTK MES 도면변환 프로그램'
   $lnk.Save()
+  # 절전 모드면 프로그램도 멈춰 '변환 PC 꺼짐' 이 된다 → 전원 연결 시 절전 안 함 (물어보고)
+  $ans = Read-Host "이 PC 가 절전 모드로 들어가면 변환이 멈춥니다. 전원 연결 시 절전 모드를 끌까요? (Y/n)"
+  if ($ans -notmatch '^[nN]') {
+    powercfg /change standby-timeout-ac 0 | Out-Null
+    powercfg /change hibernate-timeout-ac 0 | Out-Null
+    Write-Host "  절전 모드 끔 (전원 연결 시). 화면 꺼짐은 그대로입니다."
+  }
+  # 이전에 켜 둔 변환 프로그램(창 + 파이썬)이 있으면 끄고 새로 켠다 — 두 개가 같이 돌지 않게
+  Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -and ($_.CommandLine -like "*$App\run_agent.bat*" -or $_.CommandLine -like "*$App\dwg_agent.py*") } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
   Start-Process -FilePath (Join-Path $App 'run_agent.bat') -WorkingDirectory $App -WindowStyle Minimized
 
   Write-Host ""
   Write-Host "==== 설치 완료 ====" -ForegroundColor Green
   Write-Host "이 PC 가 변환 PC 가 되었습니다. 웹 [도면변환] 화면 오른쪽 위가 '변환 PC 연결됨' 으로 바뀝니다 (30초 안)."
-  Write-Host "작업표시줄의 'IPTK 도면변환' 창은 끄지 마세요. (윈도우를 켜면 자동으로 다시 실행됩니다)"
+  Write-Host "작업표시줄의 'IPTK 도면변환' 창은 끄지 마세요. (윈도우를 켜면 자동으로 다시 실행되고, 새 버전은 자동으로 받습니다)"
 } catch {
   Write-Host ""
   Write-Host "설치 중 문제: $($_.Exception.Message)" -ForegroundColor Red

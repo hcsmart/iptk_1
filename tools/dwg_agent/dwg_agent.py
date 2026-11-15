@@ -17,10 +17,11 @@ IPTK MES 도면변환 프로그램 (사무실 PC 에서 실행)  — v358
        python dwg_agent.py --once     (대기 중인 요청 1건만 처리하고 끝)
        python dwg_agent.py --file 도면.dwg --job 26ILA054A --out 결과폴더   (서버 없이 파일만 변환 — 시험용)
 """
-import argparse, configparser, csv, io, json, math, os, re, shutil, socket, subprocess, sys, tempfile, time, traceback, zipfile
+import argparse, configparser, csv, io, json, math, os, re, shutil, socket, subprocess, sys, tempfile, threading, time, traceback, zipfile
 from datetime import datetime, timezone
 
-VERSION = "361"
+VERSION = "364"
+DEFAULT_BASE = "https://hcsmart.github.io/iptk_1/tools/dwg_agent"   # 자동 업데이트를 받아 올 곳 (config.ini 의 base 가 있으면 그것)
 HERE = os.path.dirname(os.path.abspath(__file__))
 PART_RE = re.compile(r"^[A-Z]\d{2}[A-Z]$")
 PAPER = {"A0": (1189, 841), "A1": (841, 594), "A2": (594, 420), "A3": (420, 297), "A4": (297, 210)}
@@ -54,6 +55,7 @@ class Server:
         self.tok = None
         self.refresh = None
         self.exp = 0
+        self.lock = threading.Lock()   # v364: 상태 알림(별도 스레드)과 변환이 로그인 갱신을 동시에 하지 않게
 
     def _h(self, extra=None):
         h = {"apikey": self.key, "Authorization": "Bearer " + (self.tok or self.key)}
@@ -82,6 +84,10 @@ class Server:
         self.exp = time.time() + int(j.get("expires_in", 3600)) - 120
 
     def ensure(self):
+        with self.lock:
+            self._ensure()
+
+    def _ensure(self):
         if self.tok and time.time() < self.exp:
             return
         if self.refresh:
@@ -1144,6 +1150,39 @@ def now():
     return datetime.now(timezone.utc).isoformat()
 
 
+STATE = {"s": "idle"}
+
+
+def heartbeat_loop(sv):
+    """v364: 20초마다 '살아 있음' 알림 — 변환이 몇 분 걸려도 웹에 '변환 PC 연결됨' 이 계속 보이게 (전엔 변환 중엔 알림이 멈춰 2분 뒤 '꺼짐' 으로 보였음)"""
+    while True:
+        heartbeat(sv, STATE["s"])
+        time.sleep(20)
+
+
+def self_update(base):
+    """v364: 사이트에 새 버전 dwg_agent.py 가 있으면 받아서 바꾸고 다시 시작 (run_agent.bat 이 10초 뒤 다시 켬)"""
+    try:
+        import requests
+        r = requests.get(base.rstrip("/") + "/dwg_agent.py?t=%d" % time.time(), timeout=30)
+        if r.status_code != 200:
+            return
+        m = re.search(r'^VERSION = "(\d+)"', r.text, re.M)
+        if not m or int(m.group(1)) <= int(VERSION):
+            return
+        compile(r.text, "dwg_agent.py", "exec")   # 받은 파일이 깨져 있으면 바꾸지 않는다
+        me = os.path.abspath(__file__)
+        with open(me + ".new", "w", encoding="utf-8") as f:
+            f.write(r.text)
+        os.replace(me + ".new", me)
+        log("새 버전 v%s 로 업데이트했습니다 — 곧 다시 시작합니다." % m.group(1))
+        sys.exit(3)
+    except SystemExit:
+        raise
+    except Exception as ex:
+        log("업데이트 확인 실패(무시):", str(ex)[:120])
+
+
 def heartbeat(sv, state):
     try:
         sv.upsert("page_state", [{"page": "cfg:dwg_agent", "data": {"last_seen": now(), "host": socket.gethostname(), "version": VERSION, "state": state}}], "page")
@@ -1170,6 +1209,7 @@ def process_one(sv):
     if not got:
         return True   # 다른 PC 가 먼저 가져감
     log("변환 시작", j["id"], j.get("job_no"), j.get("src_name"))
+    STATE["s"] = "working"
     heartbeat(sv, "working")
     tmp = tempfile.mkdtemp(prefix="job_", dir=work_dir())
     try:
@@ -1195,6 +1235,7 @@ def process_one(sv):
             pass
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+        STATE["s"] = "idle"
         heartbeat(sv, "idle")   # 끝나면 바로 '대기' 로
     return True
 
@@ -1208,7 +1249,9 @@ def read_cfg():
     for k in ("url", "key", "user", "password"):
         if not s.get(k) or "여기에" in s.get(k):
             raise SystemExit("config.ini 의 [server] %s 를 채우세요." % k)
-    return {k: s.get(k).strip() for k in ("url", "key", "user", "password")}
+    out = {k: s.get(k).strip() for k in ("url", "key", "user", "password")}
+    out["base"] = (s.get("base") or "").strip() or DEFAULT_BASE
+    return out
 
 
 def main():
@@ -1226,15 +1269,18 @@ def main():
         for r in res["rows"]:
             print(r)
         return
-    sv = Server(read_cfg())
+    cfg = read_cfg()
+    self_update(cfg["base"])
+    sv = Server(cfg)
     sv.login()
-    log("도면변환 프로그램 v%s 시작 — 웹 [도면변환] 화면에서 DWG 를 올리면 여기서 변환합니다. (끝내려면 이 창을 닫으세요)" % VERSION)
-    last_hb = 0
+    log("도면변환 프로그램 v%s 시작 — 웹 [도면변환] 화면에서 DXF 를 올리면 여기서 변환합니다. (끝내려면 이 창을 닫으세요)" % VERSION)
+    threading.Thread(target=heartbeat_loop, args=(sv,), daemon=True).start()
+    last_up = time.time()
     while True:
         try:
-            if time.time() - last_hb > 30:
-                heartbeat(sv, "idle")
-                last_hb = time.time()
+            if not a.once and time.time() - last_up > 6 * 3600:   # 6시간마다 새 버전 확인 (쉬는 중일 때만)
+                self_update(cfg["base"])
+                last_up = time.time()
             did = process_one(sv)
             if a.once:
                 break
