@@ -20,14 +20,15 @@
 <div class="wrap"><div class="card">
  <div class="top"><img src="icon-192.png?v=2" alt="IPTK"><div>
   <h2>바탕화면에 IPTK MES 바로가기 만들기</h2>
-  <p>아래 버튼을 누르면 이 PC 바탕화면에 <b>IPTK 로고</b> 아이콘의 바로가기가 생깁니다.<br>다음부터는 바탕화면 아이콘을 더블클릭해 바로 들어오세요.</p>
+  <p>아래 버튼을 누르면 이 PC 바탕화면에 <b>IPTK 로고</b> 아이콘의 바로가기가 생깁니다.<br>바로가기는 <b>평소 쓰는 브라우저</b>(크롬·엣지 등)로 IPTK MES 를 엽니다.</p>
  </div></div>
  <button class="go" id="go" type="button">🖥 바탕화면에 바로가기 만들기</button>
  <div id="msg"></div>
  <div class="how">
-  <b>크롬·엣지</b>: 버튼을 누르면 「앱 설치」 창이 뜹니다 → <b>설치</b> 를 누르면 바탕화면·시작 메뉴에 IPTK 아이콘이 생깁니다. (엣지는 「바탕화면 바로가기 만들기」 에 체크)<br>
-  <b>그 밖의 경우</b> (이미 설치했거나 다른 브라우저): 작은 파일 <b>IPTK_바탕화면바로가기.bat</b> 을 내려받습니다 → <b>더블클릭</b> 하면 바탕화면에 <b>IPTK MES</b> 바로가기가 생깁니다.
-  <br><button class="alt" id="alt" type="button">⬇ 파일로 만들기 (브라우저로 열리는 바로가기)</button>
+  <b>윈도우 PC</b>: 버튼을 누르면 작은 파일 <b>IPTK_바탕화면바로가기.bat</b> 이 받아집니다 → 브라우저 아래(또는 다운로드 폴더)에서 <b>한 번 클릭/더블클릭</b> 하면 바탕화면에 <b>IPTK MES</b> 아이콘이 생깁니다.
+  <br><span style="color:#7c8993">· 「Windows의 PC 보호」 창이 뜨면 <b>추가 정보 → 실행</b> · 브라우저가 "흔하지 않은 파일" 이라고 하면 <b>유지</b></span>
+  <br><b>휴대폰·태블릿</b>: 버튼을 누르면 「홈 화면에 추가 / 앱 설치」 창이 뜹니다.
+  <br><button class="alt" id="app" type="button">🗔 앱으로 설치 (주소창 없는 따로 창 · 크롬·엣지)</button>
  </div>
 </div></div>
 <script>
@@ -39,27 +40,30 @@ function batFile(){
  const ps="$d=Join-Path $env:LOCALAPPDATA 'IPTK'; New-Item -ItemType Directory -Force -Path $d | Out-Null; $ico=Join-Path $d 'iptk_mes.ico'; "+
   "Invoke-WebRequest -UseBasicParsing '"+q(SITE)+"/favicon.ico?v=2' -OutFile $ico; "+
   "$f=Join-Path ([Environment]::GetFolderPath('Desktop')) 'IPTK MES.url'; "+
-  "Set-Content -Path $f -Encoding Default -Value @('[InternetShortcut]','URL="+q(SITE)+"/index.html','IconFile='+$ico,'IconIndex=0')";
+  "Set-Content -Path $f -Encoding Default -Value @('[InternetShortcut]','URL="+q(SITE)+"/index.html','IconFile='+$ico,'IconIndex=0'); "+
+  "try{ & ie4uinit.exe -show }catch{}";   /* 바탕화면 아이콘 그림을 바로 새로 그림 */
  const bat=['@echo off','chcp 65001 >nul','title IPTK MES 바탕화면 바로가기','echo 바탕화면에 IPTK MES 바로가기를 만드는 중...',
   'powershell -NoProfile -ExecutionPolicy Bypass -Command "'+ps+'"','echo 완료 - 바탕화면의 IPTK MES 아이콘을 더블클릭하세요.','timeout /t 4 >nul',''].join('\r\n');
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([bat],{type:'application/octet-stream'}));a.download='IPTK_바탕화면바로가기.bat';
  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);
  say('파일을 받았습니다 — 다운로드 폴더의 IPTK_바탕화면바로가기.bat 을 더블클릭하세요. (「Windows의 PC 보호」 창이 뜨면 추가 정보 → 실행)','warn');
 }
-async function make(){
+const IS_PC=/Windows NT/i.test(navigator.userAgent);   /* v366: 윈도우 PC 는 일반 바탕화면 바로가기가 기본 */
+async function appInstall(){
  let p=null,inst=false;try{p=window.parent.MES_INSTALL;inst=!!window.parent.MES_INSTALLED}catch(e){}
  const standalone=(()=>{try{return (window.parent||window).matchMedia('(display-mode: standalone)').matches}catch(e){return false}})();
- if(standalone){say('이미 IPTK 앱으로 실행 중입니다 — 바탕화면에 아이콘이 없으면 [파일로 만들기] 를 누르세요.','ok');return}
+ if(standalone)return say('이미 IPTK 앱으로 실행 중입니다.','ok');
  if(p){
   try{p.prompt();const r=await p.userChoice;try{window.parent.MES_INSTALL=null}catch(e){}
-   if(r&&r.outcome==='accepted')return say('설치했습니다 — 바탕화면과 시작 메뉴에 IPTK 아이콘이 생겼습니다.','ok');
+   if(r&&r.outcome==='accepted')return say('설치했습니다 — 바탕화면·시작 메뉴(또는 홈 화면)에 IPTK 아이콘이 생겼습니다.','ok');
    return say('설치를 취소했습니다. 다시 하려면 이 화면을 새로 열어 주세요.','warn')}catch(e){}
  }
- if(inst)return say('이미 설치되어 있습니다 — 바탕화면에 아이콘이 없으면 [파일로 만들기] 를 누르세요.','ok');
- batFile();
+ if(inst)return say('이미 앱으로 설치되어 있습니다.','ok');
+ say(IS_PC?'이 브라우저에서는 앱 설치를 할 수 없습니다 — 위의 [바탕화면에 바로가기 만들기] 를 쓰세요.':'브라우저 메뉴(⋮ 또는 공유 버튼)의 「홈 화면에 추가」 를 눌러 주세요.','warn');
 }
+async function make(){ if(IS_PC)return batFile(); return appInstall(); }
 document.getElementById('go').onclick=make;
-document.getElementById('alt').onclick=batFile;
+document.getElementById('app').onclick=appInstall;
 </script>
 <script src="mes_ctx.js?v=306"></script>
 </body></html>
