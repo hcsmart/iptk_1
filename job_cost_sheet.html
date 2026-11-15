@@ -65,6 +65,13 @@ tfoot tr.tgt td{line-height:1.3!important;padding:5px 8px!important}
 .tg .bar{display:inline-block;vertical-align:middle;width:110px!important;height:9px!important;margin:0 0 0 6px!important}
 .tg .na{color:#9aa5ad;font-weight:400;font-size:11px}
 tfoot tr td{bottom:var(--sb,0px)}   /* v343: 바닥 고정 줄이 3개 — 각 줄의 아래 간격은 스크립트가 계산 */
+/* v367: 목표·실적·결과 세부 항목 — 항목명 2배(10.5→21px), 금액 1.5배(13→20px). 큰 글자가 위 줄에 가려지지 않게 넘침 허용 */
+tfoot tr.tgt td{overflow:visible}
+.tg .k small{font-size:21px}
+.tg .k b{font-size:20px}
+.tg .na{font-size:16px}
+.tg .op{font-size:20px}
+.tg .bar{width:160px!important;height:13px!important}
 /* v196: 더블클릭 이동 */
 #body td.go{cursor:pointer}#body td.go:hover{box-shadow:inset 0 0 0 1px #2f75b5}
 </style></head><body><div class="screen">
@@ -288,6 +295,9 @@ function targetHtml(cost,cols){
  </div></td></tr>`}
 /* v343: tfoot 줄들이 서로 겹치지 않게 아래쪽 줄 높이만큼 띄운다 */
 function stackFoot(){const trs=[...tfoot.querySelectorAll('tr')];let b=0;for(let i=trs.length-1;i>=0;i--){trs[i].style.setProperty('--sb',b+'px');b+=trs[i].offsetHeight||27}}
+/* v367: 글꼴 로딩·창 크기·줄바꿈으로 바닥 줄 높이가 바뀌면 간격을 다시 계산 (요약 줄이 위 줄에 가려지던 문제) */
+try{new ResizeObserver(()=>stackFoot()).observe(tfoot)}catch(e){window.addEventListener('resize',stackFoot)}
+try{document.fonts&&document.fonts.ready.then(stackFoot)}catch(e){}
 function render(){
  const v=view(), showJob=BASEMODE;
  const pcW=Math.max(62,Math.min(96,Math.round(760/Math.max(1,COLS.length))));
