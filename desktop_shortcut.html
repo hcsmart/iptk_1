@@ -1,0 +1,65 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>바탕화면 바로가기</title><style>
+/* v365: 바탕화면 바로가기 — 크롬·엣지는 「앱 설치」(IPTK 로고 아이콘), 안 되면 바로가기 만드는 작은 파일 */
+:root{--line:#98a6b2;--ink:#344757}
+*{box-sizing:border-box}html,body{height:100%;margin:0}body{font-family:"Malgun Gothic","맑은 고딕",Arial,sans-serif;font-size:13px;color:var(--ink);background:#f3f6f9}
+.title{height:48px;padding:8px 14px 5px;border-bottom:2px solid #3978ae;display:flex;align-items:center;background:#fff}.title h1{margin:0;font-size:22px;font-weight:500;color:#4b5c6a}
+.wrap{max-width:760px;margin:24px auto;padding:0 16px}
+.card{background:#fff;border:1px solid #c5d0d8;border-radius:8px;padding:22px 24px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.top{display:flex;gap:22px;align-items:center}
+.top img{width:112px;height:112px;border-radius:20px;box-shadow:0 2px 10px rgba(0,0,0,.18);background:#fff}
+.top h2{margin:0 0 6px;font-size:19px;color:#1d3f5f}.top p{margin:0;color:#5d6e7d;line-height:1.7}
+.go{display:block;width:100%;margin:22px 0 8px;height:54px;font-size:17px;font-weight:700;border:1px solid #2e7d32;border-radius:6px;background:linear-gradient(#eaf7ea,#c8e8c9);color:#1e5e22;cursor:pointer}
+.go:hover{background:#dff3e0}
+#msg{min-height:22px;font-weight:700;color:#1d5da3;text-align:center}
+#msg.ok{color:#2e7d32}#msg.warn{color:#b26a00}
+.how{margin-top:18px;border-top:1px dashed #d5dde3;padding-top:14px;color:#5d6e7d;line-height:1.8}
+.how b{color:#1d5da3}.how ol{margin:4px 0 0 18px;padding:0}
+.alt{margin-top:10px;height:30px;padding:0 12px;border:1px solid #9ba8b4;background:linear-gradient(#fff,#e9eef2);border-radius:3px;cursor:pointer;font:inherit;font-size:12px}
+</style></head><body>
+<div class="title"><h1>바탕화면 바로가기</h1></div>
+<div class="wrap"><div class="card">
+ <div class="top"><img src="icon-192.png?v=2" alt="IPTK"><div>
+  <h2>바탕화면에 IPTK MES 바로가기 만들기</h2>
+  <p>아래 버튼을 누르면 이 PC 바탕화면에 <b>IPTK 로고</b> 아이콘의 바로가기가 생깁니다.<br>다음부터는 바탕화면 아이콘을 더블클릭해 바로 들어오세요.</p>
+ </div></div>
+ <button class="go" id="go" type="button">🖥 바탕화면에 바로가기 만들기</button>
+ <div id="msg"></div>
+ <div class="how">
+  <b>크롬·엣지</b>: 버튼을 누르면 「앱 설치」 창이 뜹니다 → <b>설치</b> 를 누르면 바탕화면·시작 메뉴에 IPTK 아이콘이 생깁니다. (엣지는 「바탕화면 바로가기 만들기」 에 체크)<br>
+  <b>그 밖의 경우</b> (이미 설치했거나 다른 브라우저): 작은 파일 <b>IPTK_바탕화면바로가기.bat</b> 을 내려받습니다 → <b>더블클릭</b> 하면 바탕화면에 <b>IPTK MES</b> 바로가기가 생깁니다.
+  <br><button class="alt" id="alt" type="button">⬇ 파일로 만들기 (브라우저로 열리는 바로가기)</button>
+ </div>
+</div></div>
+<script>
+const say=(t,c)=>{const m=document.getElementById('msg');m.textContent=t;m.className=c||''};
+const SITE=(location.origin+location.pathname.replace(/[^/]*$/,'')).replace(/\/$/,'');
+function batFile(){
+ /* 바탕화면에 「IPTK MES.url」(인터넷 바로가기) + 아이콘은 사이트의 favicon.ico 를 %LOCALAPPDATA%\IPTK 에 받아서 */
+ const q=v=>String(v).replace(/[^A-Za-z0-9:/._?=&%-]/g,'');
+ const ps="$d=Join-Path $env:LOCALAPPDATA 'IPTK'; New-Item -ItemType Directory -Force -Path $d | Out-Null; $ico=Join-Path $d 'iptk_mes.ico'; "+
+  "Invoke-WebRequest -UseBasicParsing '"+q(SITE)+"/favicon.ico?v=2' -OutFile $ico; "+
+  "$f=Join-Path ([Environment]::GetFolderPath('Desktop')) 'IPTK MES.url'; "+
+  "Set-Content -Path $f -Encoding Default -Value @('[InternetShortcut]','URL="+q(SITE)+"/index.html','IconFile='+$ico,'IconIndex=0')";
+ const bat=['@echo off','chcp 65001 >nul','title IPTK MES 바탕화면 바로가기','echo 바탕화면에 IPTK MES 바로가기를 만드는 중...',
+  'powershell -NoProfile -ExecutionPolicy Bypass -Command "'+ps+'"','echo 완료 - 바탕화면의 IPTK MES 아이콘을 더블클릭하세요.','timeout /t 4 >nul',''].join('\r\n');
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([bat],{type:'application/octet-stream'}));a.download='IPTK_바탕화면바로가기.bat';
+ document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);
+ say('파일을 받았습니다 — 다운로드 폴더의 IPTK_바탕화면바로가기.bat 을 더블클릭하세요. (「Windows의 PC 보호」 창이 뜨면 추가 정보 → 실행)','warn');
+}
+async function make(){
+ let p=null,inst=false;try{p=window.parent.MES_INSTALL;inst=!!window.parent.MES_INSTALLED}catch(e){}
+ const standalone=(()=>{try{return (window.parent||window).matchMedia('(display-mode: standalone)').matches}catch(e){return false}})();
+ if(standalone){say('이미 IPTK 앱으로 실행 중입니다 — 바탕화면에 아이콘이 없으면 [파일로 만들기] 를 누르세요.','ok');return}
+ if(p){
+  try{p.prompt();const r=await p.userChoice;try{window.parent.MES_INSTALL=null}catch(e){}
+   if(r&&r.outcome==='accepted')return say('설치했습니다 — 바탕화면과 시작 메뉴에 IPTK 아이콘이 생겼습니다.','ok');
+   return say('설치를 취소했습니다. 다시 하려면 이 화면을 새로 열어 주세요.','warn')}catch(e){}
+ }
+ if(inst)return say('이미 설치되어 있습니다 — 바탕화면에 아이콘이 없으면 [파일로 만들기] 를 누르세요.','ok');
+ batFile();
+}
+document.getElementById('go').onclick=make;
+document.getElementById('alt').onclick=batFile;
+</script>
+<script src="mes_ctx.js?v=306"></script>
+</body></html>

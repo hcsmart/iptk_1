@@ -4,10 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>IPTK MES</title>
-<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon.ico?v=2" sizes="any">
 <link rel="icon" type="image/png" href="icon-192.png">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
+<link rel="manifest" href="manifest.webmanifest?v=2">
+<script>/* v365: 바탕화면 바로가기 — 브라우저의 「앱 설치」 요청을 받아 두었다가 [바탕화면 바로가기] 화면에서 쓴다 */
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();window.MES_INSTALL=e});
+window.addEventListener('appinstalled',()=>{window.MES_INSTALL=null;window.MES_INSTALLED=true});</script>
 <meta name="theme-color" content="#1f2733">
 <link rel="preconnect" href="https://ipggvrzxfcryzryileuv.supabase.co" crossorigin>
 <link rel="dns-prefetch" href="https://ipggvrzxfcryzryileuv.supabase.co">
@@ -260,7 +263,7 @@ a.menu-off,a.menu-off:hover{color:#9aa5ae!important;opacity:.55;cursor:not-allow
 </div>
 
 <script>
-const APP_VER='363';   // v363: 수주등록 T/O 완료일·납기예정일 자리 바꿈 · v362: 이 PC 를 변환 PC 로 (설치 파일)
+const APP_VER='365';   // v365: 바탕화면 바로가기 (IPTK 로고)
 const APP={
   '영업관리':{
     secondary:[
@@ -407,7 +410,8 @@ const APP={
         {name:'시스템',items:['DB 동기화','에러로그']},
         {name:'인사',items:['부서정보','직급정보']},
         {name:'단가관리',items:['자재단가변동등록','자재단가변동현황','공정단가변동등록','공정단가변동현황','작업단가']},
-        {name:'알림',items:['알림등록']}   /* v230 */
+        {name:'알림',items:['알림등록']},   /* v230 */
+        {name:'바로가기',items:['바탕화면 바로가기']}   /* v365 */
       ]
     }
   }
@@ -543,6 +547,7 @@ const pageRegistry={
 '협력업체 인증현황':{id:'vendor_certificate_status',file:'vendor_certificate_status.html',title:'협력업체 인증현황'},
 '월간보고서':{id:'monthly_report',file:'monthly_report.html',title:'월간보고서'},   /* v285 */
 '사용메뉴얼':{id:'user_manual',file:'user_manual.html',title:'사용메뉴얼'},
+'바탕화면 바로가기':{id:'desktop_shortcut',file:'desktop_shortcut.html',title:'바탕화면 바로가기'},   /* v365 */
 '도면변환':{id:'dwg_convert',file:'dwg_convert.html',title:'도면변환'},   /* v358 */
 '수정요청게시판':{id:'mod_request_board',file:'mod_request_board.html',title:'수정요청게시판'},
 '조직도':{id:'org_chart',file:'org_chart.html',title:'조직도'}
