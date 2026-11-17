@@ -20,7 +20,7 @@ IPTK MES 도면변환 프로그램 (사무실 PC 에서 실행)  — v358
 import argparse, configparser, csv, io, json, math, os, re, shutil, socket, subprocess, sys, tempfile, threading, time, traceback, zipfile
 from datetime import datetime, timezone
 
-VERSION = "364"
+VERSION = "370"
 DEFAULT_BASE = "https://hcsmart.github.io/iptk_1/tools/dwg_agent"   # 자동 업데이트를 받아 올 곳 (config.ini 의 base 가 있으면 그것)
 HERE = os.path.dirname(os.path.abspath(__file__))
 PART_RE = re.compile(r"^[A-Z]\d{2}[A-Z]$")
@@ -1002,18 +1002,23 @@ def safe(s):
     return re.sub(r"[^\w\-가-힣.]+", "_", str(s or "")).strip("_")[:60]
 
 
-def convert(src, job, parts_rows, out_dir):
-    """src(DWG/DXF) → out_dir 에 PDF zip · 가공용 zip. 결과 요약 dict"""
+def convert(src, job, parts_rows, out_dir, progress=None):
+    """src(DWG/DXF) → out_dir 에 PDF zip · 가공용 zip. 결과 요약 dict
+    v370: progress(pct, text) 를 주면 단계마다 진행률(0~100)을 알린다"""
+    prog = progress or (lambda pct, text: None)
     tmp = tempfile.mkdtemp(prefix="cv_", dir=work_dir())
     try:
+        prog(6, "도면 파일 여는 중")
         src = ungzip_if(src, tmp)   # v361: 웹이 압축(gzip)해 올린 DXF 는 풀어서
         dxf = to_dxf(src, tmp)
         doc = load_doc(dxf)
+        prog(12, "도곽(도면 테두리) 찾는 중")
         msp = doc.modelspace()
         cache = {}
         parts = {str(r.get("part_no") or "").upper(): r for r in parts_rows if r.get("part_no")}
         frames = find_frames(msp, cache)
         log("도곽", len(frames), "개")
+        prog(18, "도곽 %d장 찾음" % len(frames))
         pdf_dir = os.path.join(tmp, "pdf")
         step_dir = os.path.join(tmp, "cad", "STEP")
         dxf_dir = os.path.join(tmp, "cad", "DXF")
@@ -1032,6 +1037,7 @@ def convert(src, job, parts_rows, out_dir):
             log("도곽을 찾지 못해 도면 전체를 한 장으로 처리")
         used = {}
         for i, (box, fe) in enumerate(frames, 1):
+            prog(18 + int(67 * (i - 1) / max(1, len(frames))), "도곽 %d/%d 처리 중" % (i, len(frames)))   # v370: 18% → 85%
             pn = part_of_frame(texts_in(msp, box, cache), box, parts) if fe is not None else None
             key = pn or ("SHEET%02d" % i)
             used[key] = used.get(key, 0) + 1
@@ -1121,6 +1127,7 @@ def convert(src, job, parts_rows, out_dir):
                     "      포켓 깊이·카운터보어·탭·경사면·라운드 등은 반영되지 않으니 가공 전에 반드시 도면과 대조하세요.\n"
                     "DXF : 윗면(가공 윤곽) 도형을 1:1, 왼쪽 아래 원점으로 옮긴 것입니다.\n"
                     "확인목록.csv: 부품마다 결과와 주의사항.\n")
+        prog(86, "결과 압축 중")
         os.makedirs(out_dir, exist_ok=True)
         pz = os.path.join(out_dir, "%s_도면PDF.zip" % safe(job))
         cz = os.path.join(out_dir, "%s_가공용3D.zip" % safe(job))
@@ -1209,22 +1216,37 @@ def process_one(sv):
     if not got:
         return True   # 다른 PC 가 먼저 가져감
     log("변환 시작", j["id"], j.get("job_no"), j.get("src_name"))
+    last = {"t": 0.0, "pct": -1}
+
+    def progress(pct, text, force=False):
+        """v370: 진행률(0~100)·단계를 웹에 알린다. 너무 잦지 않게 2초에 한 번 (단계가 크게 바뀌면 바로)"""
+        pct = max(0, min(100, int(pct)))
+        if not force and time.time() - last["t"] < 2 and pct - last["pct"] < 10:
+            return
+        last["t"], last["pct"] = time.time(), pct
+        try:
+            sv.patch(TABLE, {"id": j["id"]}, {"progress": pct, "progress_text": text})
+        except Exception as ex:
+            log("진행률 알림 실패(무시):", str(ex)[:80])
     STATE["s"] = "working"
     heartbeat(sv, "working")
     tmp = tempfile.mkdtemp(prefix="job_", dir=work_dir())
     try:
         ext = os.path.splitext(j.get("src_name") or "a.dwg")[1].lower() or ".dwg"
         src = os.path.join(tmp, "src" + ext)
+        progress(2, "도면 받는 중", True)
         sv.download(BUCKET, j["src_path"], src)
-        res = convert(src, j["job_no"], parts_of(sv, j["job_no"]), os.path.join(tmp, "out"))
+        res = convert(src, j["job_no"], parts_of(sv, j["job_no"]), os.path.join(tmp, "out"), progress)
         base = "convert/%s/" % j["id"]
+        progress(90, "PDF 결과 올리는 중", True)
         sv.upload(BUCKET, base + "pdf.zip", res["pdf_zip"], "application/zip")
+        progress(95, "가공용 결과 올리는 중", True)
         sv.upload(BUCKET, base + "cad.zip", res["cad_zip"], "application/zip")
         summary = {k: res[k] for k in ("sheets", "step_auto", "step_files", "dxf_files", "pdf_files")}
         summary["rows"] = res["rows"][:300]
         msg = "도곽 %d장 → PDF %d · STEP %d (자동 %d) · DXF %d" % (res["sheets"], res["pdf_files"], res["step_files"], res["step_auto"], res["dxf_files"])
         sv.patch(TABLE, {"id": j["id"]}, {"status": "done", "message": msg, "pdf_path": base + "pdf.zip", "cad_path": base + "cad.zip",
-                                          "summary": summary, "finished_at": now()})
+                                          "summary": summary, "finished_at": now(), "progress": 100, "progress_text": "완료"})
         log("완료", msg)
     except Exception as ex:
         log("실패", ex)
