@@ -21,6 +21,7 @@ th{position:sticky;top:0;z-index:2;text-align:center;background:linear-gradient(
 td.c{text-align:center}
 .st{display:inline-block;min-width:58px;padding:1px 8px;border-radius:10px;font-weight:700;font-size:11px;text-align:center}
 .st.waiting{background:#eef2f5;color:#4b5c6a}.st.working{background:#fff3cd;color:#8a6100}.st.done{background:#e6f6e6;color:#2e7d32}.st.error{background:#fdecea;color:#b3261e}.st.cancelled{background:#f1f1f1;color:#999}
+.btn.del{color:#b3261e!important;border-color:#e8b4b0;min-width:0}.btn.del:hover{background:#fdecea}
 td .btn{height:23px;min-width:0;padding:0 8px;font-size:11.5px}
 tr.det td{background:#fafcfd;white-space:normal;height:auto;padding:6px 10px}
 .rows{width:100%;min-width:0;table-layout:auto;border:1px solid #d5dde3}.rows th,.rows td{height:24px;font-size:11.5px}.rows td.warn{color:#9a5410;white-space:normal}
@@ -97,7 +98,7 @@ async function load(){
  await waitDB();if(!online()){msg('DB 미연결 — 로그인 후 사용하세요.');return}
  const j=curJob();
  try{
-  const q='select=id,base_job,job_no,src_name,status,message,pdf_path,cad_path,summary,requested_by,created_at,finished_at&order=id.desc&limit=50'+(j?'&base_job=eq.'+encodeURIComponent(JSPL(j)):'');
+  const q='select=id,base_job,job_no,src_name,status,message,pdf_path,cad_path,summary,requested_by,created_at,started_at,finished_at&order=id.desc&limit=50'+(j?'&base_job=eq.'+encodeURIComponent(JSPL(j)):'');
   ROWS=await MESDB.table('dwg_convert_jobs').select(q,{fresh:true})||[];render();
  }catch(e){msg('조회 실패: '+String(e.message||e).slice(0,120))}
  agentState();
@@ -106,7 +107,8 @@ async function load(){
 function render(){
  body.innerHTML=ROWS.length?ROWS.map(r=>{
   const s=r.summary||{},dl=r.status==='done'?`<button class="btn" onclick="dl('${esc(r.pdf_path)}')">⬇ PDF zip</button> <button class="btn" onclick="dl('${esc(r.cad_path)}')">⬇ 가공용 zip</button> <button class="btn" onclick="tog(${r.id})">${OPEN.has(r.id)?'▲':'▼'} 확인목록</button>`
-   :r.status==='waiting'?`<button class="btn" onclick="cancelJob(${r.id})">취소</button>`:'';
+   :r.status==='waiting'?`<button class="btn" onclick="cancelJob(${r.id})">취소</button>`
+   :DELOK.has(r.status)?`<button class="btn del" title="목록에서 삭제" onclick="delJob(${r.id})">🗑 삭제</button>`:'';
   const det=OPEN.has(r.id)&&s.rows?`<tr class="det"><td colspan="8"><table class="rows"><thead><tr><th>부품</th><th>품명</th><th>용지</th><th>결과</th><th>두께</th><th>윗면 가로</th><th>윗면 세로</th><th>구멍</th><th>주의</th></tr></thead><tbody>${
    s.rows.map(x=>`<tr><td>${esc(x['부품'])}</td><td>${esc(x['품명'])}</td><td class="c">${esc(x['용지'])}</td><td class="c">${esc(x['결과'])}</td><td class="c">${esc(x['두께'])}</td><td class="c">${esc(x['윗면 가로'])}</td><td class="c">${esc(x['윗면 세로'])}</td><td class="c">${esc(x['구멍 수'])}</td><td class="warn">${esc(x['주의'])}</td></tr>`).join('')}</tbody></table></td></tr>`:'';
   return `<tr><td class="c">${r.id}</td><td class="c">${when(r.created_at)}</td><td class="c">${esc(r.job_no)}</td><td title="${esc(r.src_name)}">${esc(r.src_name)}</td><td class="c"><span class="st ${esc(r.status)}">${ST[r.status]||esc(r.status)}</span></td><td title="${esc(r.message)}">${esc(r.message||(r.status==='waiting'?'변환 PC 를 기다리는 중':''))}</td><td>${dl}</td><td class="c">${esc(r.requested_by)}</td></tr>`+det}).join('')
@@ -114,6 +116,15 @@ function render(){
 }
 window.tog=id=>{OPEN.has(id)?OPEN.delete(id):OPEN.add(id);render()};
 window.dl=p=>{if(!p)return;MESDB.openRef('sb:'+p,msg)};
+/* v368: 실패·취소·변환 중(멈춘 작업) 기록을 목록에서 지운다. 변환 중은 변환 PC 가 아직 작업 중일 수 있어 한 번 더 확인 */
+const DELOK=new Set(['error','cancelled','working']);
+window.delJob=async id=>{
+ const r=ROWS.find(x=>x.id===id);if(!r||!DELOK.has(r.status))return;
+ let q=`${r.id}번 「${r.src_name||r.job_no}」 ${ST[r.status]} 기록을 목록에서 삭제할까요?`;
+ if(r.status==='working'){const m=r.started_at?Math.round((Date.now()-new Date(r.started_at))/60000):null;
+  q+=`\n\n⚠ 변환 중인 작업입니다${m!=null?` (시작 후 ${m}분)`:''}. 변환 PC 가 아직 작업 중이면 결과가 버려집니다.`+(m!=null&&m<30?'\n방금 시작한 작업이니 끝날 때까지 기다리는 것을 권합니다.':'')}
+ if(!confirm(q))return;
+ try{await MESDB.table('dwg_convert_jobs').delete({id});OPEN.delete(id);msg(`${id}번 기록을 삭제했습니다.`);load()}catch(e){msg('삭제 실패: '+String(e.message||e).slice(0,120))}};
 window.cancelJob=async id=>{try{await MESDB.table('dwg_convert_jobs').update({id,status:'waiting'},{status:'cancelled',message:'요청 취소',finished_at:new Date().toISOString()});msg('변환 요청을 취소했습니다.');load()}catch(e){msg('취소 실패: '+String(e.message||e).slice(0,120))}};
 window.pickFile=()=>{if(!curJob())return msg('관리제번·제번을 먼저 고르세요.');dwgFile.click()};
 /* v361: DXF 만 받는다 (DWG 는 오픈소스로 읽을 때 블록이 섞이는 도면이 있어 — CAD 가 직접 풀어 저장한 DXF 가 정확).
