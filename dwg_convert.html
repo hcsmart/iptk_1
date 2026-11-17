@@ -21,7 +21,8 @@ th{position:sticky;top:0;z-index:2;text-align:center;background:linear-gradient(
 td.c{text-align:center}
 .st{display:inline-block;min-width:58px;padding:1px 8px;border-radius:10px;font-weight:700;font-size:11px;text-align:center}
 .st.waiting{background:#eef2f5;color:#4b5c6a}.st.working{background:#fff3cd;color:#8a6100}.st.done{background:#e6f6e6;color:#2e7d32}.st.error{background:#fdecea;color:#b3261e}.st.cancelled{background:#f1f1f1;color:#999}
-.btn.del{color:#b3261e!important;border-color:#e8b4b0;min-width:0}.btn.del:hover{background:#fdecea}
+.btn.del{color:#b3261e!important;border-color:#e8b4b0;min-width:0}.btn.del:hover{background:#fdecea}.btn.del:disabled{color:#c9a9a6!important;cursor:default;background:#f7f7f7}
+tr.sel td{background:#fff4f2!important}th input,td input[type=checkbox]{cursor:pointer;width:15px;height:15px;vertical-align:middle}
 td .btn{height:23px;min-width:0;padding:0 8px;font-size:11.5px}
 tr.det td{background:#fafcfd;white-space:normal;height:auto;padding:6px 10px}
 .rows{width:100%;min-width:0;table-layout:auto;border:1px solid #d5dde3}.rows th,.rows td{height:24px;font-size:11.5px}.rows td.warn{color:#9a5410;white-space:normal}
@@ -54,8 +55,8 @@ tr.det td{background:#fafcfd;white-space:normal;height:auto;padding:6px 10px}
 </div>
 <div class="drop" id="drop" onclick="pickFile()">여기에 <b>DXF 파일</b>을 끌어다 놓거나 누르세요 &nbsp;·&nbsp; 올릴 때 자동으로 압축합니다 (압축 후 20MB 이하)</div>
 <div class="gridbox"><table><thead><tr>
- <th style="width:54px">No</th><th style="width:130px">요청 시각</th><th style="width:110px">제번</th><th>올린 파일</th><th style="width:84px">상태</th><th style="width:250px">결과</th><th style="width:320px">내려받기</th><th style="width:80px">요청자</th>
-</tr></thead><tbody id="body"><tr><td colspan="8" class="empty">관리제번·제번을 고르세요.</td></tr></tbody></table></div>
+ <th style="width:34px"><input type="checkbox" id="chkAll" title="삭제할 수 있는 기록 모두 선택" onclick="selAll(this.checked)"></th><th style="width:54px">No</th><th style="width:130px">요청 시각</th><th style="width:110px">제번</th><th>올린 파일</th><th style="width:84px">상태</th><th style="width:250px">결과</th><th style="width:320px">내려받기</th><th style="width:80px">요청자</th>
+</tr></thead><tbody id="body"><tr><td colspan="9" class="empty">관리제번·제번을 고르세요.</td></tr></tbody></table></div>
 <div id="pcPop"><div class="bx"><div class="hd">🖥 이 PC 를 변환 PC 로 만들기<button type="button" onclick="pcPop.classList.remove('on')">×</button></div><div class="bd">
  사무실에서 <b>항상 켜 두는 PC 한 대</b>에서 아래 버튼을 누르세요. 그 PC 가 올린 DXF 를 가져가 변환합니다.
  <button type="button" class="big" onclick="pcDownload()">⬇ 설치 파일 받기</button>
@@ -69,7 +70,7 @@ tr.det td{background:#fafcfd;white-space:normal;height:auto;padding:6px 10px}
  · 비밀번호는 그 PC 의 설정 파일에만 저장됩니다. 도면변환 전용 계정을 하나 만들어 쓰면 더 안전합니다.<br>
  · 다시 실행하면 최신 버전으로 업데이트됩니다. 그만 쓰려면 시작프로그램의 「IPTK 도면변환」 바로가기를 지우세요.</div>
 </div></div></div>
-<footer class="foot"><button class="btn" onclick="load()">⟳ 새로고침</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message"></span></footer>
+<footer class="foot"><button class="btn" onclick="load()">⟳ 새로고침</button><button class="btn del" id="btnDelSel" onclick="delSel()" disabled>🗑 선택 삭제</button><button class="btn" onclick="window.parent?.closeActive?.()">⊠ 닫기</button><span class="msg" id="message"></span></footer>
 </div>
 <script src="mes_db.js?v=196"></script>
 <script src="mes_jobpick.js?v=268"></script>
@@ -109,22 +110,39 @@ function render(){
   const s=r.summary||{},dl=r.status==='done'?`<button class="btn" onclick="dl('${esc(r.pdf_path)}')">⬇ PDF zip</button> <button class="btn" onclick="dl('${esc(r.cad_path)}')">⬇ 가공용 zip</button> <button class="btn" onclick="tog(${r.id})">${OPEN.has(r.id)?'▲':'▼'} 확인목록</button>`
    :r.status==='waiting'?`<button class="btn" onclick="cancelJob(${r.id})">취소</button>`
    :DELOK.has(r.status)?`<button class="btn del" title="목록에서 삭제" onclick="delJob(${r.id})">🗑 삭제</button>`:'';
-  const det=OPEN.has(r.id)&&s.rows?`<tr class="det"><td colspan="8"><table class="rows"><thead><tr><th>부품</th><th>품명</th><th>용지</th><th>결과</th><th>두께</th><th>윗면 가로</th><th>윗면 세로</th><th>구멍</th><th>주의</th></tr></thead><tbody>${
+  const det=OPEN.has(r.id)&&s.rows?`<tr class="det"><td colspan="9"><table class="rows"><thead><tr><th>부품</th><th>품명</th><th>용지</th><th>결과</th><th>두께</th><th>윗면 가로</th><th>윗면 세로</th><th>구멍</th><th>주의</th></tr></thead><tbody>${
    s.rows.map(x=>`<tr><td>${esc(x['부품'])}</td><td>${esc(x['품명'])}</td><td class="c">${esc(x['용지'])}</td><td class="c">${esc(x['결과'])}</td><td class="c">${esc(x['두께'])}</td><td class="c">${esc(x['윗면 가로'])}</td><td class="c">${esc(x['윗면 세로'])}</td><td class="c">${esc(x['구멍 수'])}</td><td class="warn">${esc(x['주의'])}</td></tr>`).join('')}</tbody></table></td></tr>`:'';
-  return `<tr><td class="c">${r.id}</td><td class="c">${when(r.created_at)}</td><td class="c">${esc(r.job_no)}</td><td title="${esc(r.src_name)}">${esc(r.src_name)}</td><td class="c"><span class="st ${esc(r.status)}">${ST[r.status]||esc(r.status)}</span></td><td title="${esc(r.message)}">${esc(r.message||(r.status==='waiting'?'변환 PC 를 기다리는 중':''))}</td><td>${dl}</td><td class="c">${esc(r.requested_by)}</td></tr>`+det}).join('')
- :`<tr><td colspan="8" class="empty">${curJob()?'이 관리제번의 변환 기록이 없습니다. DXF 를 올려 보세요.':'관리제번·제번을 고르세요.'}</td></tr>`;
+  return `<tr class="${SEL.has(r.id)?'sel':''}"><td class="c">${DELOK.has(r.status)?`<input type="checkbox" ${SEL.has(r.id)?'checked':''} onclick="selOne(${r.id},this.checked)">`:''}</td><td class="c">${r.id}</td><td class="c">${when(r.created_at)}</td><td class="c">${esc(r.job_no)}</td><td title="${esc(r.src_name)}">${esc(r.src_name)}</td><td class="c"><span class="st ${esc(r.status)}">${ST[r.status]||esc(r.status)}</span></td><td title="${esc(r.message)}">${esc(r.message||(r.status==='waiting'?'변환 PC 를 기다리는 중':''))}</td><td>${dl}</td><td class="c">${esc(r.requested_by)}</td></tr>`+det}).join('')
+ :`<tr><td colspan="9" class="empty">${curJob()?'이 관리제번의 변환 기록이 없습니다. DXF 를 올려 보세요.':'관리제번·제번을 고르세요.'}</td></tr>`;
+ selSync();
 }
 window.tog=id=>{OPEN.has(id)?OPEN.delete(id):OPEN.add(id);render()};
 window.dl=p=>{if(!p)return;MESDB.openRef('sb:'+p,msg)};
 /* v368: 실패·취소·변환 중(멈춘 작업) 기록을 목록에서 지운다. 변환 중은 변환 PC 가 아직 작업 중일 수 있어 한 번 더 확인 */
 const DELOK=new Set(['error','cancelled','working']);
+/* v369: 체크한 기록을 한 번에 삭제 (실패·취소·변환 중만 체크 가능) */
+const SEL=new Set();
+function selSync(){const ok=ROWS.filter(r=>DELOK.has(r.status));[...SEL].forEach(id=>{if(!ok.some(r=>r.id===id))SEL.delete(id)});
+ btnDelSel.disabled=!SEL.size;btnDelSel.textContent=SEL.size?`🗑 선택 삭제 (${SEL.size})`:'🗑 선택 삭제';
+ chkAll.checked=ok.length>0&&ok.every(r=>SEL.has(r.id));chkAll.disabled=!ok.length}
+window.selOne=(id,on)=>{on?SEL.add(id):SEL.delete(id);render()};
+window.selAll=on=>{ROWS.forEach(r=>{if(DELOK.has(r.status))on?SEL.add(r.id):SEL.delete(r.id)});render()};
+window.delSel=async()=>{
+ const rs=ROWS.filter(r=>SEL.has(r.id));if(!rs.length)return;
+ const w=rs.filter(r=>r.status==='working');
+ let q=`선택한 ${rs.length}건(${rs.map(r=>r.id+'번').join(', ')})을 목록에서 삭제할까요?`;
+ if(w.length)q+=`\n\n⚠ 변환 중인 작업 ${w.length}건(${w.map(r=>r.id+'번').join(', ')})이 포함돼 있습니다. 변환 PC 가 아직 작업 중이면 결과가 버려집니다.`;
+ if(!confirm(q))return;
+ let ok=0,fail=[];
+ for(const r of rs){try{await MESDB.table('dwg_convert_jobs').delete({id:r.id});SEL.delete(r.id);OPEN.delete(r.id);ok++}catch(e){fail.push(r.id)}}
+ msg(fail.length?`${ok}건 삭제, ${fail.length}건 실패(${fail.join(', ')}번)`:`${ok}건을 삭제했습니다.`);load()};
 window.delJob=async id=>{
  const r=ROWS.find(x=>x.id===id);if(!r||!DELOK.has(r.status))return;
  let q=`${r.id}번 「${r.src_name||r.job_no}」 ${ST[r.status]} 기록을 목록에서 삭제할까요?`;
  if(r.status==='working'){const m=r.started_at?Math.round((Date.now()-new Date(r.started_at))/60000):null;
   q+=`\n\n⚠ 변환 중인 작업입니다${m!=null?` (시작 후 ${m}분)`:''}. 변환 PC 가 아직 작업 중이면 결과가 버려집니다.`+(m!=null&&m<30?'\n방금 시작한 작업이니 끝날 때까지 기다리는 것을 권합니다.':'')}
  if(!confirm(q))return;
- try{await MESDB.table('dwg_convert_jobs').delete({id});OPEN.delete(id);msg(`${id}번 기록을 삭제했습니다.`);load()}catch(e){msg('삭제 실패: '+String(e.message||e).slice(0,120))}};
+ try{await MESDB.table('dwg_convert_jobs').delete({id});OPEN.delete(id);SEL.delete(id);msg(`${id}번 기록을 삭제했습니다.`);load()}catch(e){msg('삭제 실패: '+String(e.message||e).slice(0,120))}};
 window.cancelJob=async id=>{try{await MESDB.table('dwg_convert_jobs').update({id,status:'waiting'},{status:'cancelled',message:'요청 취소',finished_at:new Date().toISOString()});msg('변환 요청을 취소했습니다.');load()}catch(e){msg('취소 실패: '+String(e.message||e).slice(0,120))}};
 window.pickFile=()=>{if(!curJob())return msg('관리제번·제번을 먼저 고르세요.');dwgFile.click()};
 /* v361: DXF 만 받는다 (DWG 는 오픈소스로 읽을 때 블록이 섞이는 도면이 있어 — CAD 가 직접 풀어 저장한 DXF 가 정확).
