@@ -401,7 +401,8 @@ function xlsMap(){
 function xlsRows(){
  const {g,idx,head,start,nameCols}=xlsMap();
  const get=(r,k)=>{
-  if(k==='part_name')return nameCols.map(c=>String(r[c]??'').trim()).filter(Boolean).join(' ');
+  /* v373: 품명이 두 칸에 같은 값이면(엑셀 병합/복사) 한 번만 — 'BUTTON, DIE BUTTON, DIE' → 'BUTTON, DIE'. 한 칸에 'X X' 로 반복돼 있어도 하나로 */
+  if(k==='part_name'){const v=[];nameCols.forEach(c=>{const s=String(r[c]??'').trim();if(s&&!v.some(x=>x.toUpperCase()===s.toUpperCase()))v.push(s)});const t=v.join(' ');const m=t.match(/^(.+?)\s+\1$/i);return m?m[1]:t}
   return idx[k]==null?'':String(r[idx[k]]??'').trim()};
  const rows=[];let skipEx=0,skipNo=0;
  for(let i=start;i<g.length;i++){

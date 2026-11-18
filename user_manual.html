@@ -153,7 +153,7 @@ toc.addEventListener('click',function(e){if(e.target.closest('.tsub'))toc.classL
 /* 인쇄 시 전부 펼침 */
 window.addEventListener('beforeprint',function(){foldAll(false)});
 
-/* v373: 인쇄·PDF 저장 — 표지(로고·제목·날짜)와 목차를 맨 앞에, 아래에 쪽 번호.
+/* v374: 인쇄·PDF 저장 — 표지(로고·제목·날짜)와 목차를 맨 앞에, 아래에 쪽 번호.
    검색 중이면 검색된 항목만 낼지 묻는다. PDF 는 브라우저 인쇄 창의 「PDF로 저장」을 쓴다 (글자가 그대로 살아 있는 PDF) */
 function buildCover(){
   var old=document.getElementById('pcover');if(old)old.remove();
