@@ -28,7 +28,7 @@ table{border-collapse:collapse;width:100%}th,td{border-bottom:1px solid var(--li
 th{position:sticky;top:0;background:#eef3f8;text-align:center;white-space:nowrap}td.c{text-align:center;white-space:nowrap}
 .foot{height:43px;display:flex;align-items:center;padding:5px 14px;border-top:1px solid var(--line);background:#eef2f5;gap:5px;position:sticky;bottom:0}
 .msg{margin-left:10px;color:#1d5da3;font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tag{display:inline-block;padding:0 6px;border-radius:9px;font-size:11px;line-height:17px}.tag.qr{background:#dbeaf8;color:#1a4f7a}.tag.plan{background:#ffe9c2;color:#8a4f08}
+.tag{display:inline-block;padding:0 6px;border-radius:9px;font-size:11px;line-height:17px}.tag.qr{background:#dbeaf8;color:#1a4f7a}.tag.plan{background:#ffe9c2;color:#8a4f08}.tag.req{background:#e6ddfb;color:#4b2a8a}
 @media(max-width:760px){.wrap{grid-template-columns:1fr;padding:8px 6px}.card .bd{grid-template-columns:1fr}.card .bd label.k{text-align:left}.title h1{font-size:18px}
  .hist td:nth-child(5),.hist th:nth-child(5){display:none}}
 </style></head><body><div class="screen">
@@ -67,6 +67,20 @@ th{position:sticky;top:0;background:#eef3f8;text-align:center;white-space:nowrap
    <div class="note qrbox"><div class="q" data-qr></div><div class="t" data-sub></div></div>
   </div>
  </section>
+ <!-- v375: 수정요청게시판 새 글 -->
+ <section class="card" data-kind="mod_request">
+  <h2>✎ 수정요청게시판 새 글<label class="sw"><input type="checkbox" data-f="enabled"> 사용</label></h2>
+  <div class="bd">
+   <div class="note">수정요청게시판에 <b>새 글</b>이 올라오면 알립니다. 제목·요청자·화면·내용 앞부분이 갑니다. (글을 고칠 때는 다시 알리지 않습니다)</div>
+   <div class="sub"></div>
+   <label class="k">🔔 앱 알림</label><div class="v"><label><input type="checkbox" data-f="bell"> 상단 종에 표시</label></div>
+   <label class="k">받는 사람</label><div class="v"><input class="field" data-f="recipients" placeholder="사용자 이름 (쉼표로 여럿) — 비우면 전원"></div>
+   <label class="k">📱 ntfy</label><div class="v"><label><input type="checkbox" data-f="ntfy"> 휴대폰으로 보내기</label></div>
+   <label class="k">ntfy 서버</label><div class="v"><input class="field" data-f="ntfy_server" placeholder="https://ntfy.sh"></div>
+   <label class="k">토픽</label><div class="v" style="flex-wrap:nowrap"><input class="field" data-f="ntfy_topic" placeholder="예: HC_Smart"><button class="btn" data-a="rand">🎲</button><button class="btn" data-a="test">테스트</button></div>
+   <div class="note qrbox"><div class="q" data-qr></div><div class="t" data-sub></div></div>
+  </div>
+ </section>
  <div class="note" style="grid-column:1/-1"><b>ntfy 받는 법</b> — 휴대폰에 <b>ntfy</b> 앱(플레이스토어·앱스토어, 무료) 설치 → <b>＋</b> 구독 → 위 <b>토픽</b> 이름 입력(서버를 바꿨으면 서버도). 또는 위 QR 을 휴대폰 카메라로 읽으세요. 토픽 이름을 아는 사람은 누구나 받을 수 있으니 🎲 로 추측하기 어려운 이름을 쓰세요. 두 알림을 한 토픽으로 받아도 됩니다.</div>
  <section class="hist"><h2>최근 알림 <small style="font-weight:400;color:#687784">100건</small><button class="btn" style="margin-left:auto" onclick="loadHist()">⟳</button></h2>
   <div class="tb"><table><thead><tr><th style="width:120px">시각</th><th style="width:80px">종류</th><th>제목</th><th>내용</th><th style="width:60px">ntfy</th><th style="width:120px">읽은 사람</th></tr></thead><tbody id="histBody"></tbody></table></div></section>
@@ -82,7 +96,9 @@ const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 const msg=t=>{$('#message').textContent=t};
 const OWNER=(function(){try{return (window.MES_AUTH||window.parent.MES_AUTH)?.name||''}catch(e){return ''}})();
 const DEF={qr_receive:{enabled:true,bell:true,ntfy:false,ntfy_server:'https://ntfy.sh',ntfy_topic:'',recipients:'',params:{out:true,in:true}},
-           plan_delay:{enabled:true,bell:true,ntfy:false,ntfy_server:'https://ntfy.sh',ntfy_topic:'',recipients:'',params:{stages:['receipt','design','machining','assembly','tryout','complete'],min_days:1}}};
+           plan_delay:{enabled:true,bell:true,ntfy:false,ntfy_server:'https://ntfy.sh',ntfy_topic:'',recipients:'',params:{stages:['receipt','design','machining','assembly','tryout','complete'],min_days:1}},
+           mod_request:{enabled:true,bell:false,ntfy:true,ntfy_server:'https://ntfy.sh',ntfy_topic:'HC_Smart',recipients:'',params:{}}};
+const KNAME={qr_receive:'QR 등록',plan_delay:'제작계획 지연',mod_request:'수정요청 새 글'};
 let RULES={};
 const cards=()=>[...document.querySelectorAll('section.card')];
 async function waitDB(){for(let i=0;i<60&&!window.MESDB;i++)await new Promise(r=>setTimeout(r,50));try{await MESDB.ready}catch(e){}return !!(window.MESDB&&MESDB.online)}
@@ -112,12 +128,12 @@ async function load(){
  loadHist()}
 async function save(){
  const rows=cards().map(read);
- for(const r of rows)if(r.ntfy&&!r.ntfy_topic)return msg(`${r.kind==='qr_receive'?'QR 등록':'제작계획 지연'} — ntfy 를 켜려면 토픽을 넣으세요.`);
+ for(const r of rows)if(r.ntfy&&!r.ntfy_topic)return msg(`${KNAME[r.kind]||r.kind} — ntfy 를 켜려면 토픽을 넣으세요.`);
  if(!(window.MESDB&&MESDB.online))return msg('DB 미연결 — 저장할 수 없습니다.');
  try{await MESDB.table('mes_alert_rules').upsert(rows,'kind');rows.forEach(r=>RULES[r.kind]=r);msg('알림 설정을 저장했습니다.')}
  catch(e){msg('저장 실패: '+String(e.message||e).slice(0,110))}}
 async function ntfyTest(c){const r=read(c);if(!r.ntfy_topic)return msg('토픽을 먼저 넣으세요.');
- try{const res=await fetch(r.ntfy_server.replace(/\/+$/,''),{method:'POST',body:JSON.stringify({topic:r.ntfy_topic,title:'IPTK MES 알림 테스트',message:`${r.kind==='qr_receive'?'사내외가공 QR 등록':'제작계획 지연'} 알림이 이 휴대폰으로 옵니다. (${new Date().toLocaleString('ko-KR')})`,tags:['bell']})});
+ try{const res=await fetch(r.ntfy_server.replace(/\/+$/,''),{method:'POST',body:JSON.stringify({topic:r.ntfy_topic,title:'IPTK MES 알림 테스트',message:`${({qr_receive:'사내외가공 QR 등록',plan_delay:'제작계획 지연',mod_request:'수정요청게시판 새 글'})[r.kind]||r.kind} 알림이 이 휴대폰으로 옵니다. (${new Date().toLocaleString('ko-KR')})`,tags:['bell']})});
   msg(res.ok?`ntfy 테스트를 보냈습니다 → ${r.ntfy_topic}. 휴대폰에 안 오면 ntfy 앱에서 이 토픽을 구독했는지 확인하세요.`:'ntfy 전송 실패: HTTP '+res.status)}
  catch(e){msg('ntfy 전송 실패: '+String(e.message||e).slice(0,90))}}
 async function planCheck(){if(!(window.MESDB&&MESDB.online))return msg('DB 미연결');
@@ -125,10 +141,10 @@ async function planCheck(){if(!(window.MESDB&&MESDB.online))return msg('DB 미�
  catch(e){msg('점검 실패: '+String(e.message||e).slice(0,110))}}
 async function loadHist(){const tb=$('#histBody');if(!(window.MESDB&&MESDB.online)){tb.innerHTML='';return}
  try{const rs=await MESDB.table('mes_alerts').select('select=id,kind,title,message,ntfy_sent,read_by,created_at&order=id.desc&limit=100',{fresh:true});
-  tb.innerHTML=(rs||[]).map(a=>`<tr><td class="c">${esc(new Date(a.created_at).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}))}</td><td class="c"><span class="tag ${a.kind==='qr_receive'?'qr':'plan'}">${a.kind==='qr_receive'?'QR 등록':'계획 지연'}</span></td><td>${esc(a.title)}</td><td>${esc(a.message||'')}</td><td class="c">${a.ntfy_sent?'✔':''}</td><td>${esc((a.read_by||[]).join(', '))}</td></tr>`).join('')||'<tr><td colspan="6" class="c" style="color:#8a97a2;height:50px">아직 알림이 없습니다.</td></tr>'}
+  tb.innerHTML=(rs||[]).map(a=>`<tr><td class="c">${esc(new Date(a.created_at).toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}))}</td><td class="c"><span class="tag ${a.kind==='qr_receive'?'qr':a.kind==='mod_request'?'req':'plan'}">${a.kind==='qr_receive'?'QR 등록':a.kind==='mod_request'?'수정요청':'계획 지연'}</span></td><td>${esc(a.title)}</td><td>${esc(a.message||'')}</td><td class="c">${a.ntfy_sent?'✔':''}</td><td>${esc((a.read_by||[]).join(', '))}</td></tr>`).join('')||'<tr><td colspan="6" class="c" style="color:#8a97a2;height:50px">아직 알림이 없습니다.</td></tr>'}
  catch(e){tb.innerHTML=''}}
 document.addEventListener('click',e=>{const b=e.target.closest('button[data-a]');if(!b)return;const c=b.closest('section.card');
- if(b.dataset.a==='rand'){const t=c.querySelector('[data-f=ntfy_topic]');t.value='iptk-'+(c.dataset.kind==='qr_receive'?'qr':'plan')+'-'+Math.random().toString(36).slice(2,8)+Math.random().toString(36).slice(2,6);subQR(c)}
+ if(b.dataset.a==='rand'){const t=c.querySelector('[data-f=ntfy_topic]');t.value='iptk-'+(c.dataset.kind==='qr_receive'?'qr':c.dataset.kind==='mod_request'?'req':'plan')+'-'+Math.random().toString(36).slice(2,8)+Math.random().toString(36).slice(2,6);subQR(c)}
  if(b.dataset.a==='test')ntfyTest(c);if(b.dataset.a==='check')planCheck()});
 document.addEventListener('input',e=>{if(e.target.matches('[data-f=ntfy_topic],[data-f=ntfy_server]'))subQR(e.target.closest('section.card'))});
 window.MES={search:load,save,setMessage:msg};

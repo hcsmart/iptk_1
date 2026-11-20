@@ -263,7 +263,7 @@ a.menu-off,a.menu-off:hover{color:#9aa5ae!important;opacity:.55;cursor:not-allow
 </div>
 
 <script>
-const APP_VER='374';   // v374: 사용메뉴얼 PDF 저장 버튼 (표지·목차·쪽 번호)
+const APP_VER='375';   // v375: 수정요청게시판 새 글 → ntfy(HC_Smart) 알림 · v374: 사용메뉴얼 PDF 저장 버튼 (표지·목차·쪽 번호)
 const APP={
   '영업관리':{
     secondary:[
@@ -872,15 +872,15 @@ window.MESBELL=(function(){
     const n=LIST.filter(unread).length,b=document.getElementById('bellN');if(b){b.hidden=!n;b.textContent=n>99?'99+':n}
     const m=document.getElementById('bellMenu');if(!m)return;
     m.innerHTML=`<div class="bh"><span>알림</span> ${n?`<span style="color:#e53935">${n}</span>`:''}<button id="bellAll">모두 읽음</button><button id="bellSet" style="margin-left:0">설정</button></div>`+
-      (LIST.length?LIST.map(a=>`<button class="bi${unread(a)?' un':''}" data-id="${a.id}" data-k="${esc(a.kind)}"><small>${a.kind==='qr_receive'?'QR 등록':'제작계획 지연'} · ${esc(when(a.created_at))}</small><b>${esc(a.title)}</b><span>${esc(a.message||'')}</span></button>`).join(''):'<div class="none">최근 2주 알림이 없습니다.</div>');
+      (LIST.length?LIST.map(a=>`<button class="bi${unread(a)?' un':''}" data-id="${a.id}" data-k="${esc(a.kind)}"><small>${a.kind==='qr_receive'?'QR 등록':a.kind==='mod_request'?'수정요청 새 글':'제작계획 지연'} · ${esc(when(a.created_at))}</small><b>${esc(a.title)}</b><span>${esc(a.message||'')}</span></button>`).join(''):'<div class="none">최근 2주 알림이 없습니다.</div>');
     m.querySelector('#bellAll').onclick=e=>{e.stopPropagation();read(LIST.filter(unread).map(a=>a.id))};
     m.querySelector('#bellSet').onclick=e=>{e.stopPropagation();closeDd();openByName('알림등록')};
-    m.querySelectorAll('.bi').forEach(x=>x.onclick=()=>{read([Number(x.dataset.id)]);closeDd();openByName(x.dataset.k==='qr_receive'?'사내외가공 발주':'제작계획등록')});
+    m.querySelectorAll('.bi').forEach(x=>x.onclick=()=>{read([Number(x.dataset.id)]);closeDd();openByName(x.dataset.k==='qr_receive'?'사내외가공 발주':x.dataset.k==='mod_request'?'수정요청게시판':'제작계획등록')});
   }
   async function read(ids){if(!ids.length||!me())return;LIST.forEach(a=>{if(ids.includes(a.id)&&unread(a))(a.read_by=a.read_by||[]).push(me())});render();
     try{await api('rpc/fn_alert_read',{method:'POST',body:JSON.stringify({p_ids:ids,p_name:me()})})}catch(e){}}
   async function ntfyRelay(){try{const rs=await api('rpc/fn_alert_ntfy_claim',{method:'POST',body:'{}'});
-    for(const a of rs||[])try{await fetch(String(a.ntfy_server||'https://ntfy.sh').replace(/\/+$/,''),{method:'POST',body:JSON.stringify({topic:a.ntfy_topic,title:a.title,message:a.message||'',tags:[a.kind==='qr_receive'?'package':'warning']})})}catch(e){}}catch(e){}}
+    for(const a of rs||[])try{await fetch(String(a.ntfy_server||'https://ntfy.sh').replace(/\/+$/,''),{method:'POST',body:JSON.stringify({topic:a.ntfy_topic,title:a.title,message:a.message||'',tags:[a.kind==='qr_receive'?'package':a.kind==='mod_request'?'memo':'warning']})})}catch(e){}}catch(e){}}
   async function daily(){const d=new Date().toLocaleDateString('sv-SE');let last='';try{last=localStorage.getItem('mesbell.plan')||''}catch(e){}
     if(last===d)return;try{await api('rpc/fn_alert_plan_check',{method:'POST',body:'{}'});localStorage.setItem('mesbell.plan',d)}catch(e){}}
   async function poll(){if(busy||!window.MES_AUTH?.token)return;busy=true;
